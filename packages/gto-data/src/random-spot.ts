@@ -66,9 +66,16 @@ export async function generateRandomSpot(opts: RandomSpotOptions = {}): Promise<
   }
 
   let pool: ComboKey[];
-  if (opts.difficulty === 'mixed-only') pool = buckets.mixed;
-  else if (opts.difficulty === 'clear-only') pool = [...buckets.raise, ...buckets.fold];
-  else pool = combos;
+  if (opts.difficulty === 'mixed-only') {
+    pool = buckets.mixed;
+  } else if (opts.difficulty === 'clear-only') {
+    pool = [...buckets.raise, ...buckets.fold];
+  } else {
+    // "any" default — exclude universal-fold trash (raise=0); those teach nothing
+    // and would just dilute the session with rubber-stamp decisions.
+    pool = combos.filter((c) => (chart[c]?.raise ?? 0) > 0);
+    if (pool.length === 0) pool = combos;
+  }
   if (pool.length === 0) pool = combos;
 
   const combo = pool[Math.floor(Math.random() * pool.length)]!;

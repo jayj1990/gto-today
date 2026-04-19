@@ -83,23 +83,69 @@ export function classifyAnswer(raise: number): 'raise' | 'fold' | 'mixed' {
 }
 
 /**
- * Weighted pick so the daily lineup has a healthy mix:
- *  - ~40% clear raise combos
- *  - ~40% clear fold combos
- *  - ~20% mixed-strategy combos (the teachable spots)
+ * Combos that are trivial everywhere — any player above beginner level
+ * raises these from any position. Excluded from the daily lineup because
+ * they teach nothing.
+ */
+const UNIVERSAL_RAISES: ReadonlySet<string> = new Set([
+  'AA',
+  'KK',
+  'QQ',
+  'JJ',
+  'AKs',
+  'AKo',
+]);
+
+/**
+ * "Mixedness" score — how close is the raise frequency to a 50/50 coin flip?
+ *   raise=0.5  → 1.0  (maximally educational, true mixed strategy)
+ *   raise=0.75 → 0.5  (borderline, still teachable)
+ *   raise=1.0  → 0.0  (trivial raise)
+ *   raise=0.0  → 0.0  (trivial fold)
+ */
+function mixedness(raise: number): number {
+  return 1 - Math.abs(raise - 0.5) * 2;
+}
+
+/**
+ * Pick a combo skewed toward the hardest (most educational) spots.
+ * Universal trivials are excluded entirely; the remaining pool is sampled
+ * with weight = 0.15 + mixedness^2 * 2, so a 50/50 spot is ~14× more
+ * likely than a 90/10 spot.
  */
 function pickCombo(chart: PreflopStrategyJson, rng: () => number): ComboKey {
-  const bucketed = { raise: [] as ComboKey[], fold: [] as ComboKey[], mixed: [] as ComboKey[] };
+  const scored: Array<{ combo: ComboKey; weight: number }> = [];
   for (const c of allCombos()) {
-    const entry = chart[c];
-    const r = entry?.raise ?? 0;
-    const bucket = classifyAnswer(r);
-    bucketed[bucket].push(c);
+    if (UNIVERSAL_RAISES.has(c)) continue;
+    const r = chart[c]?.raise ?? 0;
+    // Skip universal-fold combos: raise=0 hands the user will never face IRL anyway.
+    if (r === 0) continue;
+    const m = mixedness(r);
+    scored.push({ combo: c, weight: 0.15 + m * m * 2 });
   }
-  const roll = rng();
-  const key = roll < 0.4 ? 'raise' : roll < 0.8 ? 'fold' : 'mixed';
-  const bucket = bucketed[key].length > 0 ? bucketed[key] : bucketed.raise;
-  return bucket[Math.floor(rng() * bucket.length)]!;
+  if (scored.length === 0) {
+    // Fallback — shouldn't happen with any realistic chart
+    const any = allCombos()[0]!;
+    return any;
+  }
+  const total = scored.reduce((acc, s) => acc + s.weight, 0);
+  let roll = rng() * total;
+  for (const item of scored) {
+    roll -= item.weight;
+    if (roll <= 0) return item.combo;
+  }
+  return scored[scored.length - 1]!.combo;
+}
+
+/**
+ * True if a spot is worth explaining (and caching AI explanations for).
+ * Exported so Phase 5 warmup jobs can skip trivial combos.
+ */
+export function isEducational(raise: number, combo: string): boolean {
+  if (UNIVERSAL_RAISES.has(combo)) return false;
+  if (raise === 0) return false; // universal fold
+  if (raise >= 0.97) return false; // effectively auto-raise
+  return true;
 }
 
 export interface GenerateOptions {
