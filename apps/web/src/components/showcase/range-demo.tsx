@@ -79,25 +79,27 @@ export function RangeDemo() {
         <dl className="space-y-3 text-[13px]">
           <div>
             <dt className="font-mono text-[11px] uppercase tracking-[0.16em] text-fg-muted">
-              Position
+              포지션
             </dt>
             <dd className="font-display text-[24px] font-bold">{position}</dd>
           </div>
           <div>
             <dt className="font-mono text-[11px] uppercase tracking-[0.16em] text-fg-muted">
-              Combos played
+              플레이하는 핸드
             </dt>
             <dd className="font-mono text-[18px]">{playedCount} / 169</dd>
           </div>
           <div>
             <dt className="font-mono text-[11px] uppercase tracking-[0.16em] text-fg-muted">
-              Status
+              상태
             </dt>
-            <dd className="text-fg-muted">{loading ? 'Loading…' : 'Live from /data/preflop'}</dd>
+            <dd className="text-fg-muted">
+              {loading ? '불러오는 중…' : '실제 GTO 데이터 (/data/preflop)'}
+            </dd>
           </div>
           <p className="max-w-sm text-[12px] text-fg-muted">
-            차트 밀도는 raise 빈도에 선형 비례. 밝은 골드 = 항상 레이즈, 회색 = 항상 폴드,
-            중간 = mixed strategy.
+            칸이 밝을수록 레이즈 빈도가 높습니다. 진한 골드는 항상 레이즈, 회색은 항상 폴드,
+            그 중간은 믹스 전략입니다.
           </p>
         </dl>
       </div>

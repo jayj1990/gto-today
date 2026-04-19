@@ -9,7 +9,8 @@
     ".": "./src/index.ts",
     "./preflop": "./src/preflop.ts",
     "./postflop": "./src/postflop.ts",
-    "./combos": "./src/combos.ts"
+    "./combos": "./src/combos.ts",
+    "./spot-generator": "./src/spot-generator.ts"
   },
   "scripts": {
     "lint": "eslint src",

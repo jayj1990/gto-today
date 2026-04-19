@@ -80,7 +80,7 @@ export function MotionDemo() {
             onClick={handleFlip}
           />
           <p className="text-[13px] text-fg-muted">
-            클릭해서 뒤집어 보세요.
+            카드를 탭하면 뒤집힙니다.
             <br />
             <code className="font-mono text-[12px]">flipVariants</code> + 3D <em>preserve-3d</em>.
           </p>
@@ -187,7 +187,7 @@ export function MotionDemo() {
           transition={{ duration: d.base, ease: easeQuart }}
           className="rounded-[var(--radius-panel)] surface border-hair p-4 text-[14px] text-fg-muted"
         >
-          Scroll me — fades up on entry. 240ms, ease-out-quart.
+          스크롤해 보세요 — 뷰에 들어올 때 위로 페이드인합니다. 240ms, ease-out-quart.
         </motion.div>
       </Section>
     </div>

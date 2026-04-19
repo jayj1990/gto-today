@@ -18,7 +18,7 @@ export default function ShowcasePage() {
             Design system
           </h1>
           <p className="mt-2 text-fg-muted">
-            Phase 1 + 2 컴포넌트 전부. 모션은 섹션 7에서 직접 실행해보세요.
+            모든 컴포넌트가 여기 모여 있습니다. 아래 섹션에서 직접 만져보세요.
           </p>
         </header>
 
@@ -106,7 +106,7 @@ export default function ShowcasePage() {
             </div>
           </div>
           <p className="mt-3 font-mono text-[11px] text-fg-muted">
-            한국 토너먼트는 11-max까지 운영됩니다.
+            한국 토너먼트에서는 11맥스 테이블까지 사용됩니다.
           </p>
         </Section>
 
@@ -134,10 +134,10 @@ export default function ShowcasePage() {
             <p className="font-display text-[40px] font-bold tracking-[-0.02em]">
               Display LG — 오늘의 GTO.
             </p>
-            <p className="text-heading font-semibold">Heading — 매일 한 스팟.</p>
-            <p className="text-subheading">Subheading — 한 결정의 품질을 다듬는다.</p>
+            <p className="text-heading font-semibold">Heading — 매일 한 핸드.</p>
+            <p className="text-subheading">Subheading — 한 번의 판단을 다듬습니다.</p>
             <p className="text-body-lg">
-              Body LG — &quot;Sharp.&quot; / &quot;Here&rsquo;s why.&quot; 우리는 판단하지 않고 설명합니다.
+              Body LG — &quot;Sharp.&quot; / &quot;이유를 볼까요.&quot; 정답/오답 대신 설명을 드립니다.
             </p>
             <p className="font-mono text-mono-lg font-semibold">EV +2.14 BB</p>
             <p className="font-mono text-mono">Bet 75% · 68%</p>

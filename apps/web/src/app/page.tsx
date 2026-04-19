@@ -1,24 +1,28 @@
 import Link from 'next/link';
 import { CardView, Logo } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
+import { formatTodayKR } from '@/lib/date';
+
+// Re-render at most once per hour so "오늘 · 4월 19일" stays current.
+export const revalidate = 3600;
 
 const MODES: { title: string; desc: string; href: string; en: string }[] = [
   {
     title: '오늘의 챌린지',
     en: 'Daily Challenge',
-    desc: '매일 10개의 스팟. 끊기지 않는 스트릭.',
+    desc: '하루 10핸드, 연속 훈련을 이어가세요.',
     href: '/today',
   },
   {
     title: '실전 어시스트',
     en: 'Live Assist',
-    desc: '라이브 세션 옆에 띄워놓는 GTO 판단 보조.',
+    desc: '실전 중에 옆에 띄워두는 GTO 판단 가이드.',
     href: '/assist',
   },
   {
     title: '자유 시뮬레이션',
     en: 'Free Sim',
-    desc: '무한 스팟 스트림. 히트맵 리포트로 약점 파악.',
+    desc: '끝없는 핸드 연습. 히트맵으로 내 약점을 파악하세요.',
     href: '/sim',
   },
 ];
@@ -31,7 +35,7 @@ export default function HomePage() {
         <section className="relative overflow-hidden rounded-[var(--radius-panel)] mt-8 border-hair bg-felt-gradient grain">
           <div className="relative z-10 px-6 py-16 sm:px-12 sm:py-24">
             <p className="font-mono text-[13px] uppercase tracking-[0.24em] text-gold">
-              Today · 4월 19일
+              오늘 · {formatTodayKR()}
             </p>
             <h1 className="mt-4 font-display text-[44px] font-bold leading-[1.05] tracking-[-0.02em] text-ivory sm:text-[64px]">
               오늘의 GTO.
@@ -39,7 +43,7 @@ export default function HomePage() {
               <span className="text-gold">매일 한 걸음.</span>
             </h1>
             <p className="mt-5 max-w-xl text-body-lg text-ivory/80">
-              One spot. Every day. Better judgment. 매일의 결정을 다듬는 가장 빠른 루틴.
+              매일 한 핸드, 오늘의 판단을 다듬는 짧은 훈련.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
@@ -47,7 +51,7 @@ export default function HomePage() {
                 style={{ touchAction: 'manipulation' }}
                 className="inline-flex h-14 items-center rounded-[var(--radius-button)] bg-gold-gradient px-6 font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] transition-transform duration-[var(--dur-fast)] ease-[var(--ease-quart)] active:scale-[0.98] select-none"
               >
-                오늘의 스팟 풀기 →
+                오늘의 훈련 시작 →
               </Link>
               <Link
                 href="/assist"
@@ -69,7 +73,7 @@ export default function HomePage() {
           <h2 id="modes-h" className="font-display text-[28px] font-bold tracking-[-0.015em]">
             세 가지 모드
           </h2>
-          <p className="mt-2 text-fg-muted">부담 없이 시작해서, 실력으로 끝난다.</p>
+          <p className="mt-2 text-fg-muted">가볍게 시작해서 실력으로 끝냅니다.</p>
           <ul className="mt-6 grid gap-4 sm:grid-cols-3">
             {MODES.map((m, i) => (
               <li
@@ -109,7 +113,7 @@ export default function HomePage() {
         <footer className="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-6 text-[13px] text-fg-muted">
           <div className="flex items-center gap-2">
             <Logo variant="short" className="text-[16px]" />
-            <span>· Today awaits.</span>
+            <span>· 오늘이 기다립니다.</span>
           </div>
           <div className="flex gap-5">
             <Link href="/about">About</Link>

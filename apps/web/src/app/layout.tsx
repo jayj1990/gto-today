@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     default: 'gto.today — GTO, Today.',
     template: '%s · gto.today',
   },
-  description: '매일 한 스팟. 더 나은 판단. Poker GTO guide, daily training, and AI explanations.',
+  description: '매일 한 핸드, 더 나은 판단. 포커 GTO 가이드와 일일 훈련, AI 해설.',
   applicationName: 'gto.today',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://gto.today'),
   openGraph: {
