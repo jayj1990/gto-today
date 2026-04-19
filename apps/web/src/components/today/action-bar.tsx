@@ -19,7 +19,7 @@ export function ActionBar({ disabled = false, onAnswer, className }: ActionBarPr
   return (
     <div
       className={cn(
-        'safe-sticky-bottom sticky bottom-0 z-10 mt-6 grid grid-cols-2 gap-3 px-2',
+        'safe-bottom mt-5 grid grid-cols-2 gap-3',
         className,
       )}
     >

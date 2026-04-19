@@ -1,4 +1,4 @@
-import type { HTMLAttributes } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
 import { cn } from './cn';
 
 export type Seat =
@@ -17,16 +17,16 @@ export type Format = '6max' | '9max' | '10max' | '11max';
 
 export interface PokerTableProps extends HTMLAttributes<HTMLDivElement> {
   format?: Format;
-  /** Seat currently held by the hero. Highlights that position with a golden glow. */
+  /** Seat currently held by the hero. Highlighted in gold. */
   hero?: Seat;
-  /** Seats that already folded this street — rendered dim with a line through. */
+  /** Seats that already folded on this street. Rendered with strong dim + strike. */
   folded?: Seat[];
-  /** Show SB / BB chip markers. Defaults to true. */
-  showBlinds?: boolean;
-  /** Render the dealer (BTN) chip marker. Defaults to true. */
-  showButton?: boolean;
-  /** Diameter override for the base size. Defaults to responsive. */
-  size?: 'sm' | 'md' | 'lg';
+  /** Element rendered inside the hero seat (e.g. two hole cards). */
+  heroContent?: ReactNode;
+  /** Element rendered at the center of the table (e.g. board cards / pot label). */
+  centerContent?: ReactNode;
+  /** Show the little D/SB/BB blinds chips. Defaults true. */
+  showMarkers?: boolean;
 }
 
 const SEATS: Record<Format, Seat[]> = {
@@ -36,31 +36,32 @@ const SEATS: Record<Format, Seat[]> = {
   '11max': ['UTG', 'UTG1', 'UTG2', 'UTG3', 'MP', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'],
 };
 
-const SIZE_CLASS: Record<NonNullable<PokerTableProps['size']>, string> = {
-  sm: 'aspect-[16/10] w-full max-w-[320px]',
-  md: 'aspect-[16/10] w-full max-w-[460px]',
-  lg: 'aspect-[16/10] w-full',
-};
-
 /**
- * Overhead view of a poker table.
+ * Overhead poker table — GTO Wizard-inspired flat layout.
  *
- * The hero seat gets:
- *  - A larger, brighter marker with a golden outer ring
- *  - A "나" label above
- * Folded seats get:
- *  - Reduced opacity
- *  - A diagonal strike-through
- * BTN, SB, BB get small chip markers inside the felt for clarity.
+ * Uses explicit inline aspect-ratio + min-height so seat positioning math
+ * always has real pixels to work with (the previous `aspect-[16/10]` class
+ * silently collapsed inside some flex containers, smashing all seats into
+ * a horizontal strip).
+ *
+ * Design:
+ *  - Ellipse *outline*, no filled felt. Lets the surrounding panel breathe
+ *    and keeps the seat labels legible on mobile.
+ *  - Hero seat: gold ring + optional `heroContent` (typically hole cards)
+ *    docked to the right of the chip, so the player sees their hand exactly
+ *    where it would sit at a real table.
+ *  - Villain seats: pill-sized label, no chip border. Folded seats get a
+ *    diagonal strike + 40% opacity so the action history reads at a glance.
  */
 export function PokerTable({
   format = '9max',
   hero,
   folded = [],
-  showBlinds = true,
-  showButton = true,
-  size = 'md',
+  heroContent,
+  centerContent,
+  showMarkers = true,
   className,
+  style,
   ...rest
 }: PokerTableProps) {
   const seats = SEATS[format];
@@ -69,64 +70,50 @@ export function PokerTable({
 
   return (
     <div
-      className={cn('relative', SIZE_CLASS[size], className)}
+      className={cn('relative w-full', className)}
+      style={{ aspectRatio: '16 / 10', minHeight: 220, ...style }}
       role="img"
-      aria-label={`${format} poker table — hero on ${hero ?? 'none'}`}
+      aria-label={`${format} poker table${hero ? ` — hero on ${hero}` : ''}`}
       {...rest}
     >
-      <svg viewBox="0 0 320 200" className="absolute inset-0 h-full w-full">
-        <defs>
-          <radialGradient id="pt-felt" cx="50%" cy="50%" r="65%">
-            <stop offset="0%" stopColor="#1B6B4A" />
-            <stop offset="60%" stopColor="#0E3B2E" />
-            <stop offset="100%" stopColor="#072218" />
-          </radialGradient>
-          <filter id="pt-inner" x="-5%" y="-5%" width="110%" height="110%">
-            <feGaussianBlur stdDeviation="1" />
-          </filter>
-        </defs>
-        {/* rail */}
-        <rect x="0" y="6" width="320" height="188" rx="94" fill="#0A0A0A" />
-        {/* rail highlight */}
-        <rect
-          x="2"
-          y="8"
-          width="316"
-          height="184"
-          rx="92"
-          fill="none"
-          stroke="rgba(212,175,55,0.18)"
-          strokeWidth="1"
-        />
-        {/* felt */}
-        <rect
-          x="12"
-          y="18"
-          width="296"
-          height="164"
-          rx="82"
-          fill="url(#pt-felt)"
-          stroke="rgba(212,175,55,0.3)"
-          strokeWidth="1"
-        />
-        {/* subtle center line */}
+      <svg viewBox="0 0 320 200" className="absolute inset-0 h-full w-full" aria-hidden>
+        {/* Table outline only — no heavy felt fill. */}
         <ellipse
           cx="160"
           cy="100"
-          rx="118"
-          ry="58"
-          fill="none"
-          stroke="rgba(255,255,255,0.03)"
+          rx="150"
+          ry="86"
+          fill="rgba(14, 59, 46, 0.12)"
+          stroke="rgba(255, 255, 255, 0.12)"
+          strokeWidth="1.2"
         />
-        {/* center pot marker */}
-        <circle cx="160" cy="100" r="10" fill="rgba(212,175,55,0.12)" />
-        <circle cx="160" cy="100" r="3" fill="rgba(212,175,55,0.4)" />
+        <ellipse
+          cx="160"
+          cy="100"
+          rx="128"
+          ry="68"
+          fill="none"
+          stroke="rgba(212, 175, 55, 0.1)"
+          strokeWidth="0.8"
+        />
       </svg>
+
+      {/* Center content (board cards / pot marker for postflop). */}
+      {centerContent && (
+        <div
+          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+          style={{ width: '56%' }}
+        >
+          <div className="pointer-events-auto">{centerContent}</div>
+        </div>
+      )}
 
       {seats.map((seat, i) => {
         const { x, y } = seatPosition(i, count);
         const isHero = seat === hero;
         const isFolded = foldedSet.has(seat);
+        const marker =
+          showMarkers && (seat === 'BTN' ? 'D' : seat === 'SB' ? 'SB' : seat === 'BB' ? 'BB' : null);
 
         return (
           <div
@@ -134,52 +121,48 @@ export function PokerTable({
             className="absolute -translate-x-1/2 -translate-y-1/2"
             style={{ left: `${x}%`, top: `${y}%` }}
           >
-            {isHero && (
-              <span
-                className="absolute left-1/2 -top-5 -translate-x-1/2 rounded-full bg-[color:var(--color-gold)] px-2 py-[2px] text-[10px] font-bold text-noir shadow-[0_2px_6px_rgba(212,175,55,0.5)]"
-                aria-hidden
+            {isHero ? (
+              <div className="flex items-center gap-2">
+                <div
+                  className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold-gradient font-mono text-[11px] font-bold text-noir"
+                  style={{ boxShadow: '0 0 0 3px var(--color-gold), 0 0 16px rgba(212,175,55,0.5)' }}
+                >
+                  {seat}
+                </div>
+                {heroContent}
+              </div>
+            ) : (
+              <div
+                className={cn(
+                  'relative flex h-8 min-w-10 items-center justify-center rounded-full border px-2 font-mono text-[11px] tracking-[0.04em]',
+                  isFolded
+                    ? 'border-[color:var(--color-border)] text-fg-muted/60 opacity-40'
+                    : 'border-[color:var(--color-border)] text-fg-muted',
+                )}
               >
-                나
-              </span>
+                {seat}
+                {isFolded && (
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-1 top-1/2 h-[1px] -translate-y-1/2 -rotate-12 bg-[color:var(--color-raise)]"
+                  />
+                )}
+              </div>
             )}
 
-            <div
-              className={cn(
-                'relative flex items-center justify-center rounded-full font-mono font-semibold tracking-[0.08em] transition-all',
-                isHero
-                  ? 'h-12 w-14 bg-gold-gradient text-noir ring-[3px] ring-[color:var(--color-gold)] ring-offset-2 ring-offset-[#0A2A20] text-[12px]'
-                  : 'h-9 w-12 bg-[color:var(--color-charcoal)] text-ivory/85 border border-[color:var(--color-graphite)] text-[11px]',
-                isFolded && 'opacity-35',
-              )}
-              style={
-                isHero
-                  ? { boxShadow: '0 0 0 4px rgba(212,175,55,0.18), 0 4px 14px rgba(0,0,0,0.4)' }
-                  : undefined
-              }
-            >
-              {seat}
-              {isFolded && (
-                <span
-                  aria-hidden
-                  className="absolute inset-x-1 top-1/2 h-[1px] -translate-y-1/2 rotate-[18deg] bg-[color:var(--color-raise)]"
-                />
-              )}
-            </div>
-
-            {/* chip marker for BTN / SB / BB */}
-            {(showButton && seat === 'BTN') || (showBlinds && (seat === 'SB' || seat === 'BB')) ? (
-              <div
+            {marker && !isHero && (
+              <span
+                aria-hidden
                 className={cn(
                   'absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded-full px-1.5 py-[1px] font-mono text-[9px] font-bold',
                   seat === 'BTN' && 'bg-ivory text-noir',
-                  seat === 'SB' && 'bg-[color:var(--color-gold)]/85 text-noir',
+                  seat === 'SB' && 'bg-[color:var(--color-gold)]/90 text-noir',
                   seat === 'BB' && 'bg-[color:var(--color-gold)] text-noir',
                 )}
-                aria-hidden
               >
-                {seat === 'BTN' ? 'D' : seat}
-              </div>
-            ) : null}
+                {marker}
+              </span>
+            )}
           </div>
         );
       })}
@@ -188,16 +171,19 @@ export function PokerTable({
 }
 
 /**
- * Place seats along an ellipse, starting from bottom-center (hero's usual
- * seat in a poker UI) and going clockwise.
+ * Place seats along an ellipse whose radii are tuned for the SVG viewBox
+ * aspect. Start at bottom-center (hero's classic seat) and go clockwise.
+ * Result: seats are distributed around the outline evenly, not bunched on
+ * any single side.
  */
 function seatPosition(index: number, total: number): { x: number; y: number } {
-  const offset = Math.PI / 2; // start at bottom
+  const offset = Math.PI / 2; // 0 = bottom
   const angle = offset + (index / total) * Math.PI * 2;
   const cx = 50;
-  const cy = 52;
-  const rx = 42;
-  const ry = 36;
+  const cy = 50;
+  // Seat chips sit on the rail, just inside the outer ellipse.
+  const rx = 46;
+  const ry = 40;
   const x = cx + rx * Math.cos(angle);
   const y = cy + ry * Math.sin(angle);
   return { x, y };
