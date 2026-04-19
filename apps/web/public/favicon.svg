@@ -1,4 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#0E3B2E"/>
-  <circle cx="32" cy="32.5" r="7" fill="#D4AF37"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="gto.today">
+  <defs>
+    <linearGradient id="felt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0E3B2E"/>
+      <stop offset="100%" stop-color="#082018"/>
+    </linearGradient>
+    <radialGradient id="gold" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#E8CC72"/>
+      <stop offset="55%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#B8912A"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#felt)"/>
+  <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="13.25" fill="none" stroke="rgba(255,255,255,0.05)"/>
+  <circle cx="32" cy="30.5" r="9.5" fill="url(#gold)"/>
+  <rect x="14" y="46" width="36" height="1" fill="rgba(212,175,55,0.6)"/>
 </svg>

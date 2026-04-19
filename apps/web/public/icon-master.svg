@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="gto.today">
+  <defs>
+    <linearGradient id="felt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0E3B2E"/>
+      <stop offset="100%" stop-color="#082018"/>
+    </linearGradient>
+    <radialGradient id="gold" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#E8CC72"/>
+      <stop offset="55%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#B8912A"/>
+    </radialGradient>
+    <!-- faint carded-pattern for depth -->
+    <pattern id="weave" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="24" height="24" fill="transparent"/>
+      <path d="M 0 12 L 24 12" stroke="rgba(255,255,255,0.015)" stroke-width="1"/>
+      <path d="M 12 0 L 12 24" stroke="rgba(255,255,255,0.015)" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#felt)"/>
+  <rect width="512" height="512" rx="112" fill="url(#weave)"/>
+  <rect x="6" y="6" width="500" height="500" rx="106" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="2"/>
+  <circle cx="256" cy="244" r="76" fill="url(#gold)"/>
+  <!-- golden horizon line for the "today" concept -->
+  <rect x="112" y="368" width="288" height="8" rx="4" fill="rgba(212,175,55,0.55)"/>
+</svg>

@@ -1,5 +1,6 @@
-import { CardView, Chip, Logo } from '@gto/ui';
+import { CardView, Chip, Logo, PokerTable } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
+import { MotionDemo } from '@/components/showcase/motion-demo';
 
 export const metadata = { title: 'Showcase' };
 
@@ -16,19 +17,32 @@ export default function ShowcasePage() {
             Design system
           </h1>
           <p className="mt-2 text-fg-muted">
-            모든 Phase의 컴포넌트가 이 페이지에 모입니다. Phase 1 — 토큰·로고·카드·칩.
+            Phase 1 + 2 컴포넌트 전부. 모션은 섹션 7에서 직접 실행해보세요.
           </p>
         </header>
 
-        <Section title="Logo">
-          <div className="flex flex-wrap items-end gap-8">
-            <Logo variant="full" className="text-[40px]" />
-            <Logo variant="short" className="text-[40px]" />
-            <Logo variant="dot" className="text-[40px]" />
+        <Section title="01 · Logo">
+          <div className="flex flex-wrap items-end gap-10">
+            <div className="flex flex-col items-start gap-1">
+              <Logo variant="full" width={200} />
+              <span className="font-mono text-[11px] text-fg-muted">variant=&quot;full&quot;</span>
+            </div>
+            <div className="flex flex-col items-start gap-1">
+              <Logo variant="short" width={72} />
+              <span className="font-mono text-[11px] text-fg-muted">variant=&quot;short&quot;</span>
+            </div>
+            <div className="flex flex-col items-start gap-1">
+              <Logo variant="dot" width={32} height={32} />
+              <span className="font-mono text-[11px] text-fg-muted">variant=&quot;dot&quot;</span>
+            </div>
+            <div className="flex flex-col items-start gap-1">
+              <Logo variant="mark" width={64} height={64} />
+              <span className="font-mono text-[11px] text-fg-muted">variant=&quot;mark&quot;</span>
+            </div>
           </div>
         </Section>
 
-        <Section title="Color palette">
+        <Section title="02 · Color palette">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Swatch name="Felt" varName="--color-felt" />
             <Swatch name="Felt Deep" varName="--color-felt-deep" />
@@ -45,35 +59,58 @@ export default function ShowcasePage() {
           </div>
         </Section>
 
-        <Section title="Cards">
+        <Section title="03 · Cards (static)">
           <div className="flex flex-wrap gap-3">
-            <CardView rank="A" suit="s" size="md" />
-            <CardView rank="K" suit="h" size="md" />
+            <CardView rank="A" suit="s" size="md" deckScheme="four-color" />
+            <CardView rank="K" suit="h" size="md" deckScheme="four-color" />
             <CardView rank="Q" suit="d" size="md" deckScheme="four-color" />
             <CardView rank="J" suit="c" size="md" deckScheme="four-color" />
             <CardView face="down" size="md" />
-            <CardView rank="T" suit="h" size="lg" />
+            <CardView rank="T" suit="h" size="lg" deckScheme="two-color" />
           </div>
+          <p className="mt-3 font-mono text-[11px] text-fg-muted">
+            Left: four-color deck · Right: two-color (traditional)
+          </p>
         </Section>
 
-        <Section title="Chips">
+        <Section title="04 · Chips">
           <div className="flex flex-wrap items-center gap-3">
             <Chip value={1} tone="gold" />
             <Chip value={5} tone="felt" />
             <Chip value={25} tone="raise" />
             <Chip value={100} tone="call" />
+            <Chip value={500} tone="ivory" />
+            <Chip value="1K" tone="gold" size="lg" />
+            <Chip value="$" tone="felt" size="sm" />
           </div>
         </Section>
 
-        <Section title="Gradients">
+        <Section title="05 · Poker table (overhead)">
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div>
+              <p className="mb-2 font-mono text-[11px] text-fg-muted">6-max · hero on BTN</p>
+              <PokerTable format="6max" hero="BTN" folded={['UTG', 'MP']} />
+            </div>
+            <div>
+              <p className="mb-2 font-mono text-[11px] text-fg-muted">9-max · hero on CO</p>
+              <PokerTable format="9max" hero="CO" folded={['UTG', 'UTG1', 'MP', 'LJ']} />
+            </div>
+          </div>
+        </Section>
+
+        <Section title="06 · Gradients">
           <div className="grid gap-3 sm:grid-cols-3">
-            <GradientTile label="felt" className="bg-felt-gradient" />
-            <GradientTile label="gold" className="bg-gold-gradient" />
-            <GradientTile label="today" className="bg-today-gradient" />
+            <GradientTile label="felt" className="bg-felt-gradient text-ivory" />
+            <GradientTile label="gold" className="bg-gold-gradient text-noir" />
+            <GradientTile label="today" className="bg-today-gradient text-ivory" />
           </div>
         </Section>
 
-        <Section title="Typography">
+        <Section title="07 · Motion (live)">
+          <MotionDemo />
+        </Section>
+
+        <Section title="08 · Typography">
           <div className="space-y-4">
             <p className="font-display text-[56px] font-bold tracking-[-0.02em] leading-[1]">
               Display XL — GTO, Today.
@@ -84,12 +121,15 @@ export default function ShowcasePage() {
             <p className="text-heading font-semibold">Heading — 매일 한 스팟.</p>
             <p className="text-subheading">Subheading — 한 결정의 품질을 다듬는다.</p>
             <p className="text-body-lg">
-              Body LG — "Sharp." / "Here&rsquo;s why." 우리는 판단하지 않고 설명합니다.
+              Body LG — &quot;Sharp.&quot; / &quot;Here&rsquo;s why.&quot; 우리는 판단하지 않고 설명합니다.
             </p>
             <p className="font-mono text-mono-lg font-semibold">EV +2.14 BB</p>
             <p className="font-mono text-mono">Bet 75% · 68%</p>
-            <p className="font-mono text-caption uppercase tracking-[0.18em] text-fg-muted">
-              Caption — Meta · Labels
+            <p
+              className="font-mono text-caption uppercase tracking-[0.18em] text-fg-muted"
+              style={{ fontFamily: 'var(--font-serif)' }}
+            >
+              Serif accent (Fraunces) — Today awaits.
             </p>
           </div>
         </Section>
@@ -123,7 +163,7 @@ function Swatch({ name, varName }: { name: string; varName: string }) {
 
 function GradientTile({ label, className }: { label: string; className: string }) {
   return (
-    <div className={`${className} h-24 rounded-[var(--radius-button)] p-4 text-[13px] text-noir`}>
+    <div className={`${className} h-24 rounded-[var(--radius-button)] p-4 text-[13px]`}>
       <span className="font-mono uppercase tracking-[0.18em]">{label}</span>
     </div>
   );

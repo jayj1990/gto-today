@@ -10,7 +10,11 @@
     "./cn": "./src/cn.ts",
     "./logo": "./src/logo.tsx",
     "./card": "./src/card.tsx",
-    "./chip": "./src/chip.tsx"
+    "./chip": "./src/chip.tsx",
+    "./mix-bar": "./src/mix-bar.tsx",
+    "./count-up": "./src/count-up.tsx",
+    "./poker-table": "./src/poker-table.tsx",
+    "./motion": "./src/motion.ts"
   },
   "scripts": {
     "lint": "eslint src",
@@ -19,7 +23,8 @@
   },
   "peerDependencies": {
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "framer-motion": "^11.0.0"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -29,6 +34,7 @@
     "@gto/config": "workspace:*",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",
+    "framer-motion": "^11.16.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "typescript": "^5.7.3",
