@@ -25,32 +25,41 @@ export interface MixBarProps {
  * than a single stacked bar for decision review.
  */
 export function MixBar({ segments, labeled = true, className }: MixBarProps) {
+  // CSS grid guarantees every row's track starts at the same x position,
+  // regardless of how wide each Korean label happens to render.
   return (
-    <ul className={cn('space-y-2', className)}>
+    <ul
+      className={cn('grid gap-y-2', className)}
+      style={{
+        gridTemplateColumns: labeled ? '64px 1fr 56px' : '1fr',
+      }}
+    >
       {segments.map((seg, i) => {
         const color = seg.color ?? defaultColorFor(seg.label);
         return (
-          <li key={seg.label} className="flex items-center gap-3">
+          <li key={seg.label} className="contents">
             {labeled && (
-              <span className="w-20 font-mono text-[13px] uppercase tracking-[0.1em] text-fg-muted">
+              <span className="flex items-center font-mono text-[13px] text-fg-muted">
                 {seg.label}
               </span>
             )}
-            <div className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]">
-              <motion.div
-                initial={{ clipPath: 'inset(0 100% 0 0)' }}
-                animate={{ clipPath: `inset(0 ${Math.max(0, 100 - seg.value)}% 0 0)` }}
-                transition={{
-                  duration: d.mixBar,
-                  ease: easeQuart,
-                  delay: i * 0.06,
-                }}
-                className="absolute inset-0 rounded-full"
-                style={{ background: color }}
-              />
+            <div className="flex items-center">
+              <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-[color:var(--color-border)]">
+                <motion.div
+                  initial={{ clipPath: 'inset(0 100% 0 0)' }}
+                  animate={{ clipPath: `inset(0 ${Math.max(0, 100 - seg.value)}% 0 0)` }}
+                  transition={{
+                    duration: d.mixBar,
+                    ease: easeQuart,
+                    delay: i * 0.06,
+                  }}
+                  className="absolute inset-0 rounded-full"
+                  style={{ background: color }}
+                />
+              </div>
             </div>
             {labeled && (
-              <span className="w-14 text-right font-mono text-[13px] font-semibold tabular-nums">
+              <span className="flex items-center justify-end font-mono text-[13px] font-semibold tabular-nums">
                 {seg.value.toFixed(1)}%
               </span>
             )}

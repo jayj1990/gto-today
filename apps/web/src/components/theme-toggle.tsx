@@ -13,11 +13,11 @@ const MODES: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
 ];
 
 export function ThemeToggle() {
-  const [mode, setMode] = useState<ThemeMode>('auto');
+  const [mode, setMode] = useState<ThemeMode>('tonight');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const stored = (localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null) ?? 'auto';
+    const stored = (localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null) ?? 'tonight';
     setMode(stored);
     setMounted(true);
   }, []);

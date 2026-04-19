@@ -33,6 +33,7 @@ export default function TodayPlayPage() {
   const dateKey = useChallengeStore((s) => s.dateKey);
   const startDay = useChallengeStore((s) => s.startDay);
   const submit = useChallengeStore((s) => s.submit);
+  const popLastAnswer = useChallengeStore((s) => s.popLastAnswer);
   const advance = useChallengeStore((s) => s.advance);
   const completeDay = useChallengeStore((s) => s.completeDay);
 
@@ -68,6 +69,16 @@ export default function TodayPlayPage() {
   const handleNext = () => {
     setResultOpen(false);
     advance();
+  };
+
+  const handleRetry = () => {
+    // Undo the just-submitted answer so session stats stay honest, then
+    // close the result sheet; the same spot is still at cursor so the
+    // user can try a different action.
+    popLastAnswer();
+    setResultOpen(false);
+    setLastAnswer(null);
+    setLastGrade(null);
   };
 
   return (
@@ -130,6 +141,7 @@ export default function TodayPlayPage() {
           userAnswer={lastAnswer}
           grade={lastGrade}
           onNext={handleNext}
+          onRetry={handleRetry}
           isLast={spots !== null && cursor === TOTAL - 1}
         />
       </main>

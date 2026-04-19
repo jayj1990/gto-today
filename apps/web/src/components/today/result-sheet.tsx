@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MixBar, cn, type MixBarSegment } from '@gto/ui';
 import { sheetUp } from '@gto/ui/motion';
@@ -12,26 +12,9 @@ export interface ResultSheetProps {
   userAnswer: GradedAction | null;
   grade: AnswerGrade | null;
   onNext: () => void;
+  onRetry?: () => void;
   isLast?: boolean;
 }
-
-const HEADLINE: Record<AnswerGrade, { title: string; tone: string; subtitle: string }> = {
-  sharp: {
-    title: 'Sharp.',
-    tone: 'text-[color:var(--color-gold)]',
-    subtitle: '정확한 판단이에요.',
-  },
-  acceptable: {
-    title: 'Playable.',
-    tone: 'text-[color:var(--color-info)]',
-    subtitle: '믹스 스팟에서 선택 가능한 액션입니다.',
-  },
-  wrong: {
-    title: '이유를 볼까요.',
-    tone: 'text-[color:var(--color-raise)]',
-    subtitle: '다른 선택이 더 나았어요.',
-  },
-};
 
 const ACTION_LABEL: Record<GradedAction, string> = {
   fold: '폴드',
@@ -40,17 +23,44 @@ const ACTION_LABEL: Record<GradedAction, string> = {
   raise: '레이즈',
 };
 
+const ACTION_COLOR: Record<GradedAction, string> = {
+  fold: 'var(--color-fold)',
+  check: 'var(--color-info)',
+  call: 'var(--color-call)',
+  raise: 'var(--color-raise)',
+};
+
+/** Pick the single highest-frequency GTO action for a spot. */
+function dominantAction(spot: TrainingSpot): GradedAction {
+  if (spot.scenario === 'vs_open') {
+    const mix = { raise: spot.gtoRaise, call: spot.gtoCall ?? 0, fold: spot.gtoFold };
+    const max = Math.max(mix.raise, mix.call, mix.fold);
+    if (max === mix.raise) return 'raise';
+    if (max === mix.call) return 'call';
+    return 'fold';
+  }
+  return spot.gtoRaise > 0.5 ? 'raise' : 'fold';
+}
+
 export function ResultSheet({
   open,
   spot,
   userAnswer,
   grade,
   onNext,
+  onRetry,
   isLast = false,
 }: ResultSheetProps) {
   const [explanation, setExplanation] = useState<string | null>(null);
   const [explaining, setExplaining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Reset explanation state when the spot changes.
+  useEffect(() => {
+    setExplanation(null);
+    setError(null);
+    setExplaining(false);
+  }, [spot?.id]);
 
   const segments: MixBarSegment[] =
     spot?.scenario === 'vs_open'
@@ -65,13 +75,6 @@ export function ResultSheet({
             { label: '폴드', value: spot.gtoFold * 100, color: 'var(--color-fold)' },
           ]
         : [];
-
-  const resetAndNext = () => {
-    setExplanation(null);
-    setError(null);
-    setExplaining(false);
-    onNext();
-  };
 
   const fetchExplanation = async () => {
     if (!spot || explaining) return;
@@ -96,9 +99,36 @@ export function ResultSheet({
     }
   };
 
+  // Build the headline based on grade + GTO dominant action.
+  const headline = (() => {
+    if (!spot || !grade) return null;
+    if (grade === 'sharp') {
+      return {
+        title: 'Sharp.',
+        subtitle: '좋은 판단이에요.',
+        tone: 'gold' as const,
+      };
+    }
+    if (grade === 'acceptable') {
+      return {
+        title: 'Playable.',
+        subtitle: '이쪽 선택도 충분히 가능해요.',
+        tone: 'info' as const,
+      };
+    }
+    // wrong
+    const gto = dominantAction(spot);
+    return {
+      title: `${ACTION_LABEL[gto]}가 더 유리했어요`,
+      subtitle: '같은 상황에서 왜 그런지 확인해 보세요.',
+      tone: 'gtoColor' as const,
+      gtoAction: gto,
+    };
+  })();
+
   return (
     <AnimatePresence>
-      {open && spot && grade && (
+      {open && spot && grade && headline && (
         <>
           <motion.div
             key="backdrop"
@@ -136,14 +166,19 @@ export function ResultSheet({
             </p>
             <h2
               id="result-title"
-              className={cn(
-                'mt-1 font-display text-[36px] font-bold leading-none tracking-[-0.02em]',
-                HEADLINE[grade].tone,
-              )}
+              className="mt-1 font-display text-[30px] font-bold leading-tight tracking-[-0.02em]"
+              style={{
+                color:
+                  headline.tone === 'gold'
+                    ? 'var(--color-gold)'
+                    : headline.tone === 'info'
+                      ? 'var(--color-info)'
+                      : ACTION_COLOR[headline.gtoAction],
+              }}
             >
-              {HEADLINE[grade].title}
+              {headline.title}
             </h2>
-            <p className="mt-2 text-body text-fg-muted">{HEADLINE[grade].subtitle}</p>
+            <p className="mt-2 text-[13px] text-fg-muted">{headline.subtitle}</p>
 
             <div className="mt-6 rounded-[var(--radius-button)] border-hair surface p-4">
               <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted">
@@ -152,7 +187,7 @@ export function ResultSheet({
               <MixBar segments={segments} />
               {userAnswer && (
                 <p className="mt-4 font-mono text-[12px] text-fg-muted">
-                  당신의 선택:{' '}
+                  내 선택:{' '}
                   <span className="text-fg">{ACTION_LABEL[userAnswer]}</span>
                 </p>
               )}
@@ -166,12 +201,12 @@ export function ResultSheet({
                   onClick={fetchExplanation}
                   className="w-full rounded-[var(--radius-button)] border border-[color:var(--color-accent)]/40 bg-[color:var(--color-accent)]/10 px-4 py-3 font-medium text-[color:var(--color-accent)] active:scale-[0.98]"
                 >
-                  이유를 볼까요 →
+                  해설 보기 →
                 </button>
               )}
               {explaining && (
                 <div className="rounded-[var(--radius-button)] surface border-hair px-4 py-3 text-[13px] text-fg-muted">
-                  AI 코치가 해설 작성 중…
+                  AI 코치가 해설을 작성 중이에요…
                 </div>
               )}
               {error && (
@@ -189,13 +224,28 @@ export function ResultSheet({
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={resetAndNext}
-              className="mt-5 h-14 w-full rounded-[var(--radius-button)] bg-gold-gradient font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98] select-none"
-            >
-              {isLast ? '결과 보기' : '다음 핸드 →'}
-            </button>
+            {/* Action row: 다시 해보기 + 다음 핸드 */}
+            <div className="mt-5 flex gap-2">
+              {onRetry && (
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="h-14 flex-1 rounded-[var(--radius-button)] border-hair surface-raised font-medium active:scale-[0.98]"
+                >
+                  다시 해보기
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onNext}
+                className={cn(
+                  'h-14 rounded-[var(--radius-button)] bg-gold-gradient font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98] select-none',
+                  onRetry ? 'flex-[2]' : 'flex-1',
+                )}
+              >
+                {isLast ? '결과 보기' : '다음 핸드 →'}
+              </button>
+            </div>
           </motion.div>
         </>
       )}

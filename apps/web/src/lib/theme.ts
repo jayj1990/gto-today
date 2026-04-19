@@ -20,7 +20,7 @@ export function resolveTheme(mode: ThemeMode, now: Date = new Date()): 'dark' | 
  */
 export const themeInitScript = `
 (function(){try{
-  var m=localStorage.getItem('${THEME_STORAGE_KEY}')||'auto';
+  var m=localStorage.getItem('${THEME_STORAGE_KEY}')||'tonight';
   var h=new Date().getHours(), t=m;
   if(m==='auto'){ t=(h>=22||h<5)?'tonight':(h>=6&&h<18)?'light':'dark'; }
   document.documentElement.setAttribute('data-theme',t);

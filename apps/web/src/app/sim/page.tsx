@@ -69,6 +69,16 @@ export default function SimPage() {
     await loadNext();
   };
 
+  const handleRetry = () => {
+    // Undo the session stats so retry isn't penalised twice.
+    if (lastGrade === 'sharp') setSharp((v) => Math.max(0, v - 1));
+    else if (lastGrade === 'acceptable') setAcceptable((v) => Math.max(0, v - 1));
+    else if (lastGrade === 'wrong') setWrong((v) => Math.max(0, v - 1));
+    setResultOpen(false);
+    setLastAnswer(null);
+    setLastGrade(null);
+  };
+
   const togglePosition = (p: Position) => {
     setPositions((cur) => {
       if (cur.includes(p)) {
@@ -191,6 +201,7 @@ export default function SimPage() {
           userAnswer={lastAnswer}
           grade={lastGrade}
           onNext={handleNext}
+          onRetry={handleRetry}
         />
       </main>
     </>

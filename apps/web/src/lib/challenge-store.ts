@@ -31,6 +31,8 @@ interface ChallengeState {
   startDay: (dateKey: string, spots: TrainingSpot[]) => void;
   /** Submit an answer for the current spot. */
   submit: (answer: GradedAction, grade: AnswerGrade) => void;
+  /** Remove the last submitted answer so the user can retry the same spot. */
+  popLastAnswer: () => void;
   /** Advance past the current result modal to the next spot. */
   advance: () => void;
   /** Mark today complete and update streak. */
@@ -67,6 +69,10 @@ export const useChallengeStore = create<ChallengeState>()(
         if (!current) return;
         const record: AnswerRecord = { spotId: current.id, answer, grade, at: Date.now() };
         set({ answers: [...answers, record] });
+      },
+
+      popLastAnswer: () => {
+        set((s) => ({ answers: s.answers.slice(0, -1) }));
       },
 
       advance: () => {
