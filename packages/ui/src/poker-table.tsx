@@ -333,41 +333,89 @@ function formatStack(stack: number): string {
 
 /* ═══════════════════════════ ACTION CHIP ═══════════════════════════ */
 
+/**
+ * Real-casino-chip look for betting: radial gradient + inner ring + drop
+ * shadow so the chip reads as a physical object sitting on the felt.
+ * Blind posts use a muted variant so they recede — a player should feel
+ * that SB/BB posts are *ambient* and raises are *events*.
+ */
 function ActionChip({ action }: { action: SeatAction }) {
   if (action.kind === 'fold') return null;
-  const { color, label, textColor } = actionStyle(action);
+  const style = chipStyle(action);
+  const isBlind = action.kind === 'post';
   return (
-    <span
-      className="flex items-center gap-1 rounded-full px-2 py-[2px] font-mono text-[10px] font-semibold shadow-[0_2px_6px_rgba(0,0,0,0.4)]"
-      style={{ background: color, color: textColor }}
-    >
-      <span className="inline-block h-1.5 w-1.5 rounded-full bg-current opacity-80" />
-      {label}
-    </span>
+    <div className="flex items-center gap-1.5">
+      <div
+        className={cn(
+          'flex items-center justify-center rounded-full text-[9px] font-bold font-mono tabular-nums',
+          isBlind ? 'h-4 w-4' : 'h-6 w-6',
+        )}
+        style={{
+          background: style.gradient,
+          color: style.textColor,
+          border: `1px solid ${style.rim}`,
+          boxShadow: isBlind
+            ? '0 1px 3px rgba(0,0,0,0.4)'
+            : '0 2px 6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2)',
+        }}
+      >
+        {isBlind ? '' : '●'}
+      </div>
+      <span
+        className={cn(
+          'font-mono text-[11px] font-semibold tabular-nums',
+          isBlind ? 'text-fg-muted' : 'text-fg',
+        )}
+      >
+        {style.label}
+      </span>
+    </div>
   );
 }
 
-function actionStyle(action: Exclude<SeatAction, { kind: 'fold' }>): {
-  color: string;
+function chipStyle(action: Exclude<SeatAction, { kind: 'fold' }>): {
+  gradient: string;
+  rim: string;
   textColor: string;
   label: string;
 } {
   switch (action.kind) {
     case 'raise':
-      return { color: 'var(--color-raise)', textColor: 'white', label: `${action.bb}BB` };
-    case '3bet':
-      return { color: 'var(--color-warning)', textColor: 'var(--color-noir)', label: `3bet ${action.bb}` };
-    case 'call':
-      return { color: 'var(--color-call)', textColor: 'white', label: `call ${action.bb}` };
     case 'bet':
-      return { color: 'var(--color-raise)', textColor: 'white', label: `${action.bb}BB` };
-    case 'check':
-      return { color: 'var(--color-info)', textColor: 'white', label: 'check' };
-    case 'post':
       return {
-        color: 'var(--color-gold-soft)',
+        gradient: 'radial-gradient(circle at 35% 30%, #E23B56, #C8102E 60%, #7F0A1B)',
+        rim: 'rgba(255,255,255,0.25)',
+        textColor: 'rgba(255,255,255,0.95)',
+        label: `${action.bb} BB`,
+      };
+    case '3bet':
+      return {
+        gradient: 'radial-gradient(circle at 35% 30%, #F0C857, #D4AF37 60%, #8C6F1F)',
+        rim: 'rgba(255,255,255,0.3)',
         textColor: 'var(--color-noir)',
-        label: `${action.bb}BB`,
+        label: `3BET ${action.bb}`,
+      };
+    case 'call':
+      return {
+        gradient: 'radial-gradient(circle at 35% 30%, #2EBE6F, #1F9D55 60%, #0F5D33)',
+        rim: 'rgba(255,255,255,0.25)',
+        textColor: 'rgba(255,255,255,0.95)',
+        label: `${action.bb} BB`,
+      };
+    case 'check':
+      return {
+        gradient: 'radial-gradient(circle at 35% 30%, #6FB2FF, #4A9EFF 60%, #1E6BCC)',
+        rim: 'rgba(255,255,255,0.25)',
+        textColor: 'rgba(255,255,255,0.95)',
+        label: 'CHECK',
+      };
+    case 'post':
+      // Muted grey so blinds recede visually.
+      return {
+        gradient: 'linear-gradient(160deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04))',
+        rim: 'rgba(255,255,255,0.18)',
+        textColor: 'var(--color-fg-muted)',
+        label: `${action.bb} BB`,
       };
   }
 }
