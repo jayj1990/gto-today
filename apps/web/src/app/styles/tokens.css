@@ -1,0 +1,111 @@
+/* ============================================================
+   gto.today — Design Tokens (CSS Custom Properties)
+   ============================================================
+   These drive every component. Tailwind 4's @theme block in
+   globals.css mirrors the subset used by utility classes.
+   Theme swaps work by flipping data-theme on <html>.
+   ============================================================ */
+
+:root {
+  /* Brand — core */
+  --color-felt: #0e3b2e;
+  --color-felt-deep: #082018;
+  --color-felt-night: #051612;
+  --color-gold: #d4af37;
+  --color-gold-soft: #e8cc72;
+  --color-gold-deep: #b8912a;
+  --color-gold-cool: #c9a635;
+
+  /* Neutral */
+  --color-noir: #0a0a0a;
+  --color-charcoal: #1c1c1e;
+  --color-graphite: #2e2e30;
+  --color-ivory: #f4efe6;
+  --color-cream: #ede5d3;
+
+  /* Semantic */
+  --color-raise: #c8102e;
+  --color-call: #1f9d55;
+  --color-fold: #6b6b70;
+  --color-warning: #e6a817;
+  --color-info: #4a9eff;
+
+  /* Card suits (4-color deck default) */
+  --color-suit-spade: var(--color-noir);
+  --color-suit-heart: #d63b3b;
+  --color-suit-diamond: #2b6cb0;
+  --color-suit-club: #1f6f3f;
+
+  /* Gradients */
+  --gradient-felt: linear-gradient(180deg, #0e3b2e 0%, #082018 100%);
+  --gradient-gold: linear-gradient(135deg, #d4af37 0%, #e8cc72 50%, #b8912a 100%);
+  --gradient-today: linear-gradient(90deg, #0e3b2e 0%, #d4af37 100%);
+
+  /* Shadows */
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.25);
+  --shadow-card-hover: 0 8px 32px rgba(0, 0, 0, 0.32);
+  --shadow-panel: 0 12px 40px rgba(0, 0, 0, 0.18);
+  --shadow-focus: 0 0 0 2px var(--color-gold);
+
+  /* Radii */
+  --radius-card: 16px;
+  --radius-chip: 999px;
+  --radius-panel: 20px;
+  --radius-button: 12px;
+  --radius-input: 10px;
+
+  /* Motion */
+  --ease-quart: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-instant: 80ms;
+  --dur-fast: 180ms;
+  --dur-base: 240ms;
+  --dur-decisive: 320ms;
+  --dur-flip: 480ms;
+  --dur-countup: 400ms;
+  --dur-mix-bar: 600ms;
+
+  /* Semantic surface/foreground — dark mode default */
+  --color-bg: var(--color-noir);
+  --color-surface: var(--color-charcoal);
+  --color-surface-raised: var(--color-graphite);
+  --color-fg: var(--color-ivory);
+  --color-fg-muted: color-mix(in oklab, var(--color-ivory) 65%, transparent);
+  --color-border: color-mix(in oklab, var(--color-ivory) 10%, transparent);
+  --color-accent: var(--color-gold);
+}
+
+/* Light mode */
+:root[data-theme='light'] {
+  --color-bg: var(--color-ivory);
+  --color-surface: var(--color-cream);
+  --color-surface-raised: #ffffff;
+  --color-fg: var(--color-noir);
+  --color-fg-muted: color-mix(in oklab, var(--color-noir) 60%, transparent);
+  --color-border: color-mix(in oklab, var(--color-noir) 12%, transparent);
+  --color-accent: var(--color-gold-deep);
+}
+
+/* Tonight mode — local time 22:00–04:59. Deeper felt, cooler gold. */
+:root[data-theme='tonight'] {
+  --color-bg: var(--color-felt-night);
+  --color-surface: var(--color-felt-deep);
+  --color-surface-raised: var(--color-felt);
+  --color-fg: var(--color-cream);
+  --color-fg-muted: color-mix(in oklab, var(--color-cream) 60%, transparent);
+  --color-border: color-mix(in oklab, var(--color-gold) 20%, transparent);
+  --color-accent: var(--color-gold-cool);
+}
+
+/* Motion safety */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 0ms;
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-decisive: 0ms;
+    --dur-flip: 0ms;
+    --dur-countup: 0ms;
+    --dur-mix-bar: 0ms;
+  }
+}

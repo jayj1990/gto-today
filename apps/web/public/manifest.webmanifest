@@ -1,0 +1,23 @@
+{
+  "name": "gto.today",
+  "short_name": "gto.today",
+  "description": "GTO, Today. 매일 한 스팟, 매일 더 나은 판단.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#082018",
+  "theme_color": "#0E3B2E",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    {
+      "src": "/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["education", "games"],
+  "lang": "ko",
+  "dir": "ltr"
+}

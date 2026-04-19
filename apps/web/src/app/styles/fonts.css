@@ -1,0 +1,44 @@
+/* ============================================================
+   Font loading strategy:
+   - Inter Variable: English display + body (self-hosted)
+   - Pretendard Variable: Korean fallback (self-hosted)
+   - JetBrains Mono: numerics, EV, probabilities (self-hosted)
+   - Fraunces Variable: optional serif accent (self-hosted)
+
+   Actual .woff2 files live in apps/web/public/fonts/.
+   Drop them in and these @font-face declarations will pick them up.
+   Until then we fall back to system fonts through the CSS font-stack
+   declared in tokens.
+   ============================================================ */
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter/InterVariable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pretendard Variable';
+  src: url('/fonts/pretendard/PretendardVariable.woff2') format('woff2');
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/jetbrains-mono/JetBrainsMono-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Fraunces';
+  src: url('/fonts/fraunces/Fraunces-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}

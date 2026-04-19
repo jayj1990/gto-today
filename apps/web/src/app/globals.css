@@ -1,0 +1,152 @@
+@import './styles/tokens.css';
+@import './styles/fonts.css';
+@import 'tailwindcss';
+
+/* ============================================================
+   Tailwind 4 @theme — expose our tokens as utility classes.
+   Everything here is read-only for the theme system; runtime
+   swaps happen via the CSS variables in tokens.css.
+   ============================================================ */
+
+@theme {
+  --color-felt: #0e3b2e;
+  --color-felt-deep: #082018;
+  --color-felt-night: #051612;
+  --color-gold: #d4af37;
+  --color-gold-soft: #e8cc72;
+  --color-gold-deep: #b8912a;
+  --color-gold-cool: #c9a635;
+  --color-noir: #0a0a0a;
+  --color-charcoal: #1c1c1e;
+  --color-graphite: #2e2e30;
+  --color-ivory: #f4efe6;
+  --color-cream: #ede5d3;
+  --color-raise: #c8102e;
+  --color-call: #1f9d55;
+  --color-fold: #6b6b70;
+  --color-warning: #e6a817;
+  --color-info: #4a9eff;
+
+  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-body:
+    'Inter', 'Pretendard Variable', 'Pretendard', -apple-system, system-ui, sans-serif;
+  --font-kr: 'Pretendard Variable', 'Pretendard', -apple-system, system-ui, sans-serif;
+  --font-mono:
+    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-serif: 'Fraunces', 'Playfair Display', serif;
+
+  --radius-card: 16px;
+  --radius-chip: 999px;
+  --radius-panel: 20px;
+  --radius-button: 12px;
+  --radius-input: 10px;
+}
+
+/* ============================================================
+   Base layer
+   ============================================================ */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-body);
+    font-feature-settings:
+      'cv11' on,
+      'ss01' on,
+      'ss02' on;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Tabular figures everywhere by default — numbers must align. */
+  body {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Smooth theme swap */
+  :root {
+    transition:
+      background-color var(--dur-base) var(--ease-quart),
+      color var(--dur-base) var(--ease-quart);
+  }
+
+  /* Focus ring — golden, accessible */
+  :where(button, a, input, textarea, select, [tabindex]):focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+    border-radius: var(--radius-button);
+  }
+
+  /* Korean word-break safety */
+  :lang(ko) {
+    word-break: keep-all;
+    line-break: strict;
+  }
+
+  /* Selection */
+  ::selection {
+    background: var(--color-gold);
+    color: var(--color-noir);
+  }
+}
+
+/* ============================================================
+   Utilities: brand-specific helpers
+   ============================================================ */
+@layer utilities {
+  .bg-felt-gradient {
+    background: var(--gradient-felt);
+  }
+  .bg-gold-gradient {
+    background: var(--gradient-gold);
+  }
+  .bg-today-gradient {
+    background: var(--gradient-today);
+  }
+
+  .surface {
+    background: var(--color-surface);
+  }
+  .surface-raised {
+    background: var(--color-surface-raised);
+  }
+
+  .text-fg {
+    color: var(--color-fg);
+  }
+  .text-fg-muted {
+    color: var(--color-fg-muted);
+  }
+
+  .border-hair {
+    border: 1px solid var(--color-border);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  .shadow-panel {
+    box-shadow: var(--shadow-panel);
+  }
+
+  /* Film grain overlay for hero/landing sections */
+  .grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.93 0 0 0 0 0.87 0 0 0 0.06 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+    mix-blend-mode: overlay;
+    opacity: 0.45;
+  }
+}
