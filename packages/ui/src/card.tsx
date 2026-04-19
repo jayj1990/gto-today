@@ -44,10 +44,11 @@ export interface CardViewProps extends Omit<HTMLMotionProps<'div'>, 'children'> 
   interactive?: boolean;
 }
 
-type CardSize = 'sm' | 'md' | 'lg' | 'xl';
+type CardSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 const SIZE: Record<CardSize, string> = {
-  sm: 'h-16 w-12 text-[18px]',
+  xs: 'h-10 w-7 text-[12px]',
+  sm: 'h-14 w-10 text-[16px]',
   md: 'h-24 w-[4.25rem] text-[22px]',
   lg: 'h-32 w-24 text-[30px]',
   xl: 'h-40 w-28 text-[38px]',

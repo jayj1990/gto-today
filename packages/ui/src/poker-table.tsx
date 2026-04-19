@@ -21,19 +21,34 @@ export type SeatAction =
   | { kind: 'raise'; bb: number }
   | { kind: '3bet'; bb: number }
   | { kind: 'check' }
-  | { kind: 'post'; bb: number }; // blind
+  | { kind: 'bet'; bb: number }
+  | { kind: 'post'; bb: number };
+
+/** One seat's live info at the moment we render. */
+export interface SeatState {
+  /** Current stack in BB (after any committed chips for this street). */
+  stack?: number;
+  /** Most recent action on the current street — drives the bet chip. */
+  action?: SeatAction;
+  /** Hole cards to reveal (e.g. villain at showdown). */
+  cards?: readonly [string, string];
+}
 
 export interface PokerTableProps extends HTMLAttributes<HTMLDivElement> {
   format?: Format;
   hero?: Seat;
-  /** Per-seat action history. Keyed by seat. Omitted seats are "yet to act". */
-  actions?: Partial<Record<Seat, SeatAction>>;
-  /** Content (typically two cards) anchored to the right of the hero chip. */
-  heroContent?: ReactNode;
-  /** Content at the center of the table — e.g. "Preflop · Pot 2.5BB". */
+  /** Per-seat runtime state — stack, action, revealed cards. */
+  seats?: Partial<Record<Seat, SeatState>>;
+  /** The seat that is currently to act. Gets a pulsing accent ring. */
+  toAct?: Seat;
+  /** Hero's hole cards, rendered inline to the right of the hero chip. */
+  heroCards?: readonly [string, string];
+  /** Center content (pot / board cards / equity). */
   centerContent?: ReactNode;
-  /** Show D / SB / BB markers under the respective seats. Defaults true. */
+  /** Show D / SB / BB micro markers. Defaults true. */
   showMarkers?: boolean;
+  /** Render a card for a seat. Consumers pass their own <CardView />. */
+  renderCard?: (code: string, size: 'xs' | 'sm') => ReactNode;
 }
 
 const SEATS: Record<Format, Seat[]> = {
@@ -44,23 +59,29 @@ const SEATS: Record<Format, Seat[]> = {
 };
 
 /**
- * GTO-Wizard-inspired overhead poker table.
+ * GTO-Wizard-style overhead table.
  *
- * - Flat ellipse outline (no filled felt) keeps seat labels readable.
- * - Hero seat: gold chip + `heroContent` (hole cards) rendered inline so
- *   the player sees their hand right where it would be at a real table.
- * - Other seats: quiet pill labels. If an action is supplied via `actions`,
- *   a color-coded chip below the seat shows fold / call / raise / post.
- * - Seats still to act (no action entry) glow faintly so the flow reads
- *   left-to-right.
+ * Every seat is a *circular* chip with two stacked lines:
+ *   POSITION  (top, small caps)
+ *   STACK     (bottom, bold monospace)
+ * Border color tells the story:
+ *   • hero  → thick teal/green ring + gold badge
+ *   • to-act → orange ring
+ *   • folded → heavy dim + strike
+ *   • idle   → neutral border
+ *
+ * Hero hole cards dock inline to the right of the hero chip.
+ * Bet chips appear *between* a seat and the pot, on a line toward center.
  */
 export function PokerTable({
   format = '6max',
   hero,
-  actions = {},
-  heroContent,
+  seats: seatStates = {},
+  toAct,
+  heroCards,
   centerContent,
   showMarkers = true,
+  renderCard,
   className,
   style,
   ...rest
@@ -71,18 +92,19 @@ export function PokerTable({
   return (
     <div
       className={cn('relative w-full', className)}
-      style={{ aspectRatio: '16 / 10', minHeight: 240, ...style }}
+      style={{ aspectRatio: '16 / 10', minHeight: 260, ...style }}
       role="img"
-      aria-label={`${format} poker table${hero ? ` — hero on ${hero}` : ''}`}
+      aria-label={`${format} table — hero on ${hero ?? '-'}`}
       {...rest}
     >
+      {/* Table outline */}
       <svg viewBox="0 0 320 200" className="absolute inset-0 h-full w-full" aria-hidden>
         <ellipse
           cx="160"
           cy="100"
           rx="150"
           ry="86"
-          fill="rgba(14, 59, 46, 0.15)"
+          fill="rgba(14, 59, 46, 0.14)"
           stroke="rgba(255, 255, 255, 0.14)"
           strokeWidth="1.2"
         />
@@ -92,51 +114,68 @@ export function PokerTable({
           rx="126"
           ry="66"
           fill="none"
-          stroke="rgba(212, 175, 55, 0.1)"
-          strokeWidth="0.8"
+          stroke="rgba(212, 175, 55, 0.08)"
+          strokeWidth="0.6"
         />
       </svg>
 
+      {/* Center — pot / board / equity */}
       {centerContent && (
-        <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        <div
+          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+          style={{ width: 'auto' }}
+        >
           <div className="pointer-events-auto">{centerContent}</div>
         </div>
       )}
 
+      {/* Seats */}
       {seats.map((seat, i) => {
         const { x, y } = seatPosition(i, count);
+        const state = seatStates[seat] ?? {};
         const isHero = seat === hero;
-        const action = actions[seat];
-        const isFolded = action?.kind === 'fold';
-        const yetToAct = !isHero && !action;
-        const marker =
-          showMarkers && (seat === 'BTN' ? 'D' : seat === 'SB' ? 'SB' : seat === 'BB' ? 'BB' : null);
+        const isFolded = state.action?.kind === 'fold';
+        const isToAct = !isHero && seat === toAct;
+
+        // The bet chip lives between this seat and the center of the table.
+        const betPos = seatToCenter(x, y, 22);
 
         return (
-          <div
-            key={seat}
-            className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ left: `${x}%`, top: `${y}%` }}
-          >
-            {isHero ? (
-              <HeroSeat seat={seat} heroContent={heroContent} />
-            ) : (
-              <VillainSeat seat={seat} action={action} isFolded={isFolded} yetToAct={yetToAct} />
+          <div key={seat}>
+            {/* Bet / action chip */}
+            {state.action && state.action.kind !== 'fold' && (
+              <div
+                className="absolute -translate-x-1/2 -translate-y-1/2"
+                style={{ left: `${betPos.x}%`, top: `${betPos.y}%` }}
+              >
+                <ActionChip action={state.action} />
+              </div>
             )}
 
-            {marker && !isHero && (
-              <span
-                aria-hidden
-                className={cn(
-                  'absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded-full px-1.5 py-[1px] font-mono text-[9px] font-bold',
-                  seat === 'BTN' && 'bg-ivory text-noir',
-                  seat === 'SB' && 'bg-[color:var(--color-gold)]/90 text-noir',
-                  seat === 'BB' && 'bg-[color:var(--color-gold)] text-noir',
-                )}
-              >
-                {marker}
-              </span>
-            )}
+            {/* Seat chip */}
+            <div
+              className="absolute -translate-x-1/2 -translate-y-1/2"
+              style={{ left: `${x}%`, top: `${y}%` }}
+            >
+              {isHero ? (
+                <HeroSeat
+                  seat={seat}
+                  stack={state.stack}
+                  heroCards={heroCards}
+                  renderCard={renderCard}
+                />
+              ) : (
+                <VillainSeat
+                  seat={seat}
+                  stack={state.stack}
+                  isFolded={isFolded}
+                  isToAct={isToAct}
+                  cards={state.cards}
+                  renderCard={renderCard}
+                  showMarker={showMarkers}
+                />
+              )}
+            </div>
           </div>
         );
       })}
@@ -144,70 +183,165 @@ export function PokerTable({
   );
 }
 
-function HeroSeat({ seat, heroContent }: { seat: Seat; heroContent: ReactNode }) {
+/* ═════════════════════════════ HERO ═════════════════════════════ */
+
+function HeroSeat({
+  seat,
+  stack,
+  heroCards,
+  renderCard,
+}: {
+  seat: Seat;
+  stack: number | undefined;
+  heroCards: readonly [string, string] | undefined;
+  renderCard: PokerTableProps['renderCard'];
+}) {
   return (
-    <div className="flex items-center gap-2">
-      <div
-        className="relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gold-gradient font-mono text-[11px] font-bold text-noir"
-        style={{ boxShadow: '0 0 0 3px var(--color-gold), 0 0 18px rgba(212,175,55,0.55)' }}
-      >
-        {seat}
-        <span
-          aria-hidden
-          className="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[color:var(--color-gold)] px-1.5 py-[1px] text-[9px] font-bold text-noir"
-        >
-          나
-        </span>
-      </div>
-      {heroContent}
+    <div className="flex items-center gap-1.5">
+      <PositionChip seat={seat} stack={stack} variant="hero" />
+      {heroCards && renderCard && (
+        <div className="flex shrink-0 items-center gap-0.5">
+          {renderCard(heroCards[0], 'sm')}
+          {renderCard(heroCards[1], 'sm')}
+        </div>
+      )}
     </div>
   );
 }
+
+/* ═══════════════════════════ VILLAIN ═══════════════════════════ */
 
 function VillainSeat({
   seat,
-  action,
+  stack,
   isFolded,
-  yetToAct,
+  isToAct,
+  cards,
+  renderCard,
+  showMarker,
 }: {
   seat: Seat;
-  action: SeatAction | undefined;
+  stack: number | undefined;
   isFolded: boolean;
-  yetToAct: boolean;
+  isToAct: boolean;
+  cards: readonly [string, string] | undefined;
+  renderCard: PokerTableProps['renderCard'];
+  showMarker: boolean;
 }) {
+  const marker =
+    showMarker && (seat === 'BTN' ? 'D' : seat === 'SB' ? 'SB' : seat === 'BB' ? 'BB' : null);
   return (
-    <div className="flex flex-col items-center gap-1">
-      <div
-        className={cn(
-          'relative flex h-8 min-w-[2.5rem] items-center justify-center rounded-full border px-2 font-mono text-[11px] tracking-[0.04em] transition-colors',
-          isFolded
-            ? 'border-[color:var(--color-border)] text-fg-muted/60 opacity-40'
-            : yetToAct
-              ? 'border-[color:var(--color-accent)]/60 text-fg'
-              : 'border-[color:var(--color-border)] text-fg-muted',
-        )}
-      >
-        {seat}
-        {isFolded && (
+    <div className="flex items-center gap-1.5">
+      <div className="relative">
+        <PositionChip
+          seat={seat}
+          stack={stack}
+          variant={isFolded ? 'folded' : isToAct ? 'toAct' : 'idle'}
+        />
+        {marker && (
           <span
             aria-hidden
-            className="absolute inset-x-1 top-1/2 h-[1px] -translate-y-1/2 -rotate-12 bg-[color:var(--color-raise)]"
-          />
+            className={cn(
+              'absolute -top-1 -left-2 flex h-4 w-4 items-center justify-center rounded-full font-mono text-[8px] font-bold',
+              marker === 'D' && 'bg-ivory text-noir',
+              marker === 'SB' && 'bg-[color:var(--color-gold)]/85 text-noir',
+              marker === 'BB' && 'bg-[color:var(--color-gold)] text-noir',
+            )}
+          >
+            {marker === 'D' ? 'D' : marker === 'SB' ? 'S' : 'B'}
+          </span>
         )}
       </div>
-      {action && action.kind !== 'fold' && <ActionChip action={action} />}
+      {/* Villain cards (revealed post-showdown) */}
+      {cards && renderCard && !isFolded && (
+        <div className="flex shrink-0 items-center gap-0.5">
+          {renderCard(cards[0], 'xs')}
+          {renderCard(cards[1], 'xs')}
+        </div>
+      )}
     </div>
   );
 }
 
+/* ═══════════════════════════ POSITION CHIP ═══════════════════════════ */
+
+function PositionChip({
+  seat,
+  stack,
+  variant,
+}: {
+  seat: Seat;
+  stack: number | undefined;
+  variant: 'hero' | 'toAct' | 'folded' | 'idle';
+}) {
+  return (
+    <div
+      className={cn(
+        'relative flex h-[52px] w-[52px] flex-col items-center justify-center rounded-full font-mono',
+        'transition-colors',
+        variant === 'hero' && 'bg-[color:var(--color-charcoal)] text-fg',
+        variant === 'toAct' && 'bg-[color:var(--color-charcoal)] text-fg',
+        variant === 'idle' && 'bg-[color:var(--color-charcoal)]/70 text-fg-muted',
+        variant === 'folded' && 'bg-[color:var(--color-charcoal)]/40 text-fg-muted/60',
+      )}
+      style={{
+        border:
+          variant === 'hero'
+            ? '2.5px solid var(--color-call)'
+            : variant === 'toAct'
+              ? '2px solid var(--color-warning)'
+              : variant === 'folded'
+                ? '1px solid var(--color-border)'
+                : '1px solid var(--color-border)',
+        boxShadow:
+          variant === 'hero'
+            ? '0 0 0 1px rgba(31,157,85,0.35), 0 0 14px rgba(31,157,85,0.25)'
+            : variant === 'toAct'
+              ? '0 0 12px rgba(230,168,23,0.35)'
+              : undefined,
+        opacity: variant === 'folded' ? 0.45 : 1,
+      }}
+    >
+      <span
+        className={cn(
+          'font-mono text-[10px] leading-none tracking-[0.06em]',
+          variant === 'hero' || variant === 'toAct' ? 'text-fg' : 'text-fg-muted',
+        )}
+      >
+        {seat}
+      </span>
+      {stack !== undefined && (
+        <span className="mt-0.5 font-mono text-[13px] font-bold leading-none text-fg">
+          {formatStack(stack)}
+        </span>
+      )}
+      {variant === 'folded' && (
+        <span
+          aria-hidden
+          className="absolute inset-x-2 top-1/2 h-[1.2px] -translate-y-1/2 -rotate-12 bg-[color:var(--color-raise)]"
+        />
+      )}
+    </div>
+  );
+}
+
+function formatStack(stack: number): string {
+  if (stack >= 1000) return `${(stack / 1000).toFixed(1)}K`;
+  if (stack % 1 !== 0) return stack.toFixed(1);
+  return String(stack);
+}
+
+/* ═══════════════════════════ ACTION CHIP ═══════════════════════════ */
+
 function ActionChip({ action }: { action: SeatAction }) {
   if (action.kind === 'fold') return null;
-  const { color, label } = actionStyle(action);
+  const { color, label, textColor } = actionStyle(action);
   return (
     <span
-      className="rounded-full px-1.5 py-[1px] font-mono text-[9px] font-semibold"
-      style={{ background: color, color: 'var(--color-noir)' }}
+      className="flex items-center gap-1 rounded-full px-2 py-[2px] font-mono text-[10px] font-semibold shadow-[0_2px_6px_rgba(0,0,0,0.4)]"
+      style={{ background: color, color: textColor }}
     >
+      <span className="inline-block h-1.5 w-1.5 rounded-full bg-current opacity-80" />
       {label}
     </span>
   );
@@ -215,31 +349,51 @@ function ActionChip({ action }: { action: SeatAction }) {
 
 function actionStyle(action: Exclude<SeatAction, { kind: 'fold' }>): {
   color: string;
+  textColor: string;
   label: string;
 } {
   switch (action.kind) {
     case 'raise':
-      return { color: 'var(--color-raise)', label: `${action.bb}BB` };
+      return { color: 'var(--color-raise)', textColor: 'white', label: `${action.bb}BB` };
     case '3bet':
-      return { color: 'var(--color-warning)', label: `3BET ${action.bb}BB` };
+      return { color: 'var(--color-warning)', textColor: 'var(--color-noir)', label: `3bet ${action.bb}` };
     case 'call':
-      return { color: 'var(--color-call)', label: `${action.bb}BB` };
+      return { color: 'var(--color-call)', textColor: 'white', label: `call ${action.bb}` };
+    case 'bet':
+      return { color: 'var(--color-raise)', textColor: 'white', label: `${action.bb}BB` };
     case 'check':
-      return { color: 'var(--color-info)', label: 'CHECK' };
+      return { color: 'var(--color-info)', textColor: 'white', label: 'check' };
     case 'post':
-      return { color: 'var(--color-gold-soft)', label: `${action.bb}BB` };
+      return {
+        color: 'var(--color-gold-soft)',
+        textColor: 'var(--color-noir)',
+        label: `${action.bb}BB`,
+      };
   }
 }
 
-/** Ellipse placement — start bottom-center (hero), go clockwise. */
+/* ═══════════════════════════ GEOMETRY ═══════════════════════════ */
+
+/** Seat position on the ellipse, starting bottom-center, going clockwise. */
 function seatPosition(index: number, total: number): { x: number; y: number } {
   const offset = Math.PI / 2;
   const angle = offset + (index / total) * Math.PI * 2;
   const cx = 50;
   const cy = 50;
   const rx = 46;
-  const ry = 38;
-  const x = cx + rx * Math.cos(angle);
-  const y = cy + ry * Math.sin(angle);
-  return { x, y };
+  const ry = 40;
+  return {
+    x: cx + rx * Math.cos(angle),
+    y: cy + ry * Math.sin(angle),
+  };
+}
+
+/** Point between a seat and the center, used for the bet chip. */
+function seatToCenter(seatX: number, seatY: number, pullPercent: number): { x: number; y: number } {
+  const cx = 50;
+  const cy = 50;
+  const dx = cx - seatX;
+  const dy = cy - seatY;
+  const t = pullPercent / 100;
+  return { x: seatX + dx * t, y: seatY + dy * t };
 }

@@ -93,34 +93,54 @@ export default function ShowcasePage() {
               <PokerTable
                 format="6max"
                 hero="BTN"
-                actions={{
-                  UTG: { kind: 'fold' },
-                  MP: { kind: 'fold' },
-                  CO: { kind: 'fold' },
-                  SB: { kind: 'post', bb: 0.5 },
-                  BB: { kind: 'post', bb: 1 },
+                toAct="BTN"
+                heroCards={['As', 'Kh']}
+                renderCard={(code, size) => (
+                  <CardView
+                    rank={code.charAt(0)}
+                    suit={code.charAt(1) as 's' | 'h' | 'd' | 'c'}
+                    size={size}
+                    deckScheme="four-color"
+                  />
+                )}
+                seats={{
+                  UTG: { stack: 100, action: { kind: 'fold' } },
+                  MP: { stack: 100, action: { kind: 'fold' } },
+                  CO: { stack: 100, action: { kind: 'fold' } },
+                  BTN: { stack: 100 },
+                  SB: { stack: 99.5, action: { kind: 'post', bb: 0.5 } },
+                  BB: { stack: 99, action: { kind: 'post', bb: 1 } },
                 }}
               />
             </div>
             <div>
-              <p className="mb-2 font-mono text-[11px] text-fg-muted">9-max · CO (RFI)</p>
+              <p className="mb-2 font-mono text-[11px] text-fg-muted">6-max · BB facing raise</p>
               <PokerTable
-                format="9max"
-                hero="CO"
-                actions={{
-                  UTG: { kind: 'fold' },
-                  UTG1: { kind: 'fold' },
-                  MP: { kind: 'fold' },
-                  LJ: { kind: 'fold' },
-                  HJ: { kind: 'fold' },
-                  SB: { kind: 'post', bb: 0.5 },
-                  BB: { kind: 'post', bb: 1 },
+                format="6max"
+                hero="BB"
+                toAct="BB"
+                heroCards={['Qs', 'Qd']}
+                renderCard={(code, size) => (
+                  <CardView
+                    rank={code.charAt(0)}
+                    suit={code.charAt(1) as 's' | 'h' | 'd' | 'c'}
+                    size={size}
+                    deckScheme="four-color"
+                  />
+                )}
+                seats={{
+                  UTG: { stack: 100, action: { kind: 'fold' } },
+                  MP: { stack: 100, action: { kind: 'fold' } },
+                  CO: { stack: 100, action: { kind: 'fold' } },
+                  BTN: { stack: 97.5, action: { kind: 'raise', bb: 2.5 } },
+                  SB: { stack: 99.5, action: { kind: 'post', bb: 0.5 } },
+                  BB: { stack: 99 },
                 }}
               />
             </div>
           </div>
           <p className="mt-3 font-mono text-[11px] text-fg-muted">
-            6-max 기본. 9/10/11-max는 /sim 필터에서 선택 가능.
+            포지션 칩 안에 스택 사이즈 표시. 히어로 초록 링, to-act 앰버 링, 폴드는 대각선 스트라이크.
           </p>
         </Section>
 
