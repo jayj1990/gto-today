@@ -475,15 +475,15 @@ function CardBack() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontFamily: 'var(--font-mono, monospace)',
-        fontSize: 11,
-        fontWeight: 700,
-        color: 'rgba(244,239,230,0.45)',
+        fontFamily: 'var(--font-display, Inter), system-ui, sans-serif',
+        fontSize: 12,
+        fontWeight: 800,
+        color: 'rgba(212, 175, 55, 0.75)',
         flexShrink: 0,
       }}
       aria-hidden
     >
-      W
+      T
     </div>
   );
 }
