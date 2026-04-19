@@ -1,4 +1,4 @@
-import type { CardCode, ComboKey, Position } from '@gto/poker-core';
+import type { CardCode, ComboKey, Position, TableFormat } from '@gto/poker-core';
 import { RANKS, SUITS } from '@gto/poker-core';
 import { allCombos } from './combos';
 import { getPreflopChart, type PreflopStrategyJson } from './preflop';
@@ -8,6 +8,7 @@ export interface TrainingSpot {
   readonly combo: ComboKey;
   readonly hero: readonly [CardCode, CardCode];
   readonly position: Position;
+  readonly format: TableFormat;
   readonly stackBB: number;
   readonly scenario: 'rfi';
   readonly gtoRaise: number;
@@ -15,7 +16,8 @@ export interface TrainingSpot {
   readonly correctAnswer: 'raise' | 'fold' | 'mixed';
 }
 
-const POSITIONS: Position[] = ['UTG', 'MP', 'CO', 'BTN', 'SB'];
+const POSITIONS_9MAX: Position[] = ['UTG', 'UTG1', 'MP', 'LJ', 'HJ', 'CO', 'BTN', 'SB'];
+const POSITIONS_6MAX: Position[] = ['UTG', 'MP', 'CO', 'BTN', 'SB'];
 
 /** Mulberry32 — tiny deterministic PRNG. */
 function seeded(seed: number): () => number {
@@ -103,8 +105,7 @@ function pickCombo(chart: PreflopStrategyJson, rng: () => number): ComboKey {
 export interface GenerateOptions {
   readonly count?: number;
   readonly dateSeed?: string;
-  /** When true, each spot rotates through a new position for variety. */
-  readonly rotatePositions?: boolean;
+  readonly format?: TableFormat;
 }
 
 /**
@@ -115,19 +116,20 @@ export async function generateDailySpots(
   opts: GenerateOptions = {},
 ): Promise<TrainingSpot[]> {
   const count = opts.count ?? 10;
+  const format: TableFormat = opts.format ?? '9max';
   const dateKey = opts.dateSeed ?? new Date().toISOString().slice(0, 10);
   const rng = seeded(seedFromDate(dateKey));
+  const positions = format === '6max' ? POSITIONS_6MAX : POSITIONS_9MAX;
 
-  // Pre-load all position charts up front; they're small and it simplifies the loop.
   const charts = new Map<Position, PreflopStrategyJson>();
-  for (const p of POSITIONS) {
-    const chart = await getPreflopChart('6max', p);
+  for (const p of positions) {
+    const chart = await getPreflopChart(format, p);
     if (chart) charts.set(p, chart);
   }
 
   const out: TrainingSpot[] = [];
   for (let i = 0; i < count; i++) {
-    const position = POSITIONS[i % POSITIONS.length]!; // rotate through positions
+    const position = positions[i % positions.length]!;
     const chart = charts.get(position);
     if (!chart) continue;
     const combo = pickCombo(chart, rng);
@@ -138,6 +140,7 @@ export async function generateDailySpots(
       combo,
       hero,
       position,
+      format,
       stackBB: 100,
       scenario: 'rfi',
       gtoRaise: entry.raise,

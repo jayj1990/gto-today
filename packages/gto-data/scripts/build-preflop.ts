@@ -1,7 +1,7 @@
 #!/usr/bin/env -S node --loader tsx
 /**
  * Build pre-flop GTO JSON from the handcrafted seed ranges.
- * Emits one JSON file per (format × stack × position × scenario) under
+ * Emits one JSON file per (format × stack × scenario × position) under
  * apps/web/public/data/preflop/.
  *
  * Run via `pnpm --filter @gto/gto-data build`.
@@ -10,10 +10,19 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { RFI_BTN, RFI_CO, RFI_MP, RFI_SB, RFI_UTG } from '../src/ranges/rfi-100bb';
+import {
+  RFI9_BTN,
+  RFI9_CO,
+  RFI9_HJ,
+  RFI9_LJ,
+  RFI9_MP,
+  RFI9_SB,
+  RFI9_UTG,
+  RFI9_UTG1,
+} from '../src/ranges/rfi-9max-100bb';
 import { allCombos } from '../src/combos';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-// ../gto-data/scripts → ../../../apps/web/public/data/preflop
 const OUT_DIR = join(__dirname, '..', '..', '..', 'apps', 'web', 'public', 'data', 'preflop');
 
 const SEEDS: Record<string, Record<string, number>> = {
@@ -22,6 +31,15 @@ const SEEDS: Record<string, Record<string, number>> = {
   '6max_100bb_rfi_CO': RFI_CO,
   '6max_100bb_rfi_BTN': RFI_BTN,
   '6max_100bb_rfi_SB': RFI_SB,
+
+  '9max_100bb_rfi_UTG': RFI9_UTG,
+  '9max_100bb_rfi_UTG1': RFI9_UTG1,
+  '9max_100bb_rfi_MP': RFI9_MP,
+  '9max_100bb_rfi_LJ': RFI9_LJ,
+  '9max_100bb_rfi_HJ': RFI9_HJ,
+  '9max_100bb_rfi_CO': RFI9_CO,
+  '9max_100bb_rfi_BTN': RFI9_BTN,
+  '9max_100bb_rfi_SB': RFI9_SB,
 };
 
 async function main() {
@@ -40,9 +58,8 @@ async function main() {
     console.log(`✓ ${key}.json — ${nonZero}/169 combos play`);
   }
 
-  // Manifest so the client knows what's available.
   const manifest = {
-    version: 1,
+    version: 2,
     generated: new Date().toISOString(),
     entries: Object.keys(SEEDS),
   };

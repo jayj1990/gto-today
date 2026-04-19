@@ -1,0 +1,72 @@
+/**
+ * 9-max RFI seed ranges at 100BB.
+ * Tighter earlier positions than 6-max; identical to 6-max from CO onwards.
+ * Derived from community-canonical pro charts (tournament-adjacent).
+ *
+ * Keys must be quoted when they start with a digit.
+ */
+
+type ComboFreq = Record<string, number>;
+
+/* UTG (earliest of 9) — tightest */
+export const RFI9_UTG: ComboFreq = {
+  AA: 1, KK: 1, QQ: 1, JJ: 1, TT: 1, '99': 1, '88': 1, '77': 0.8, '66': 0.4,
+  AKs: 1, AQs: 1, AJs: 1, ATs: 1, A5s: 0.4,
+  KQs: 1, KJs: 1, KTs: 0.8,
+  QJs: 0.8, QTs: 0.4,
+  JTs: 0.5, T9s: 0.2,
+  AKo: 1, AQo: 1, AJo: 0.4,
+};
+
+/* UTG+1 */
+export const RFI9_UTG1: ComboFreq = {
+  AA: 1, KK: 1, QQ: 1, JJ: 1, TT: 1, '99': 1, '88': 1, '77': 1, '66': 0.6, '55': 0.3,
+  AKs: 1, AQs: 1, AJs: 1, ATs: 1, A9s: 0.3, A5s: 0.6, A4s: 0.3,
+  KQs: 1, KJs: 1, KTs: 1,
+  QJs: 1, QTs: 0.7,
+  JTs: 0.8, T9s: 0.4,
+  AKo: 1, AQo: 1, AJo: 0.7, ATo: 0.2,
+  KQo: 0.4,
+};
+
+/* MP (a.k.a. MP1 / middle) */
+export const RFI9_MP: ComboFreq = {
+  AA: 1, KK: 1, QQ: 1, JJ: 1, TT: 1, '99': 1, '88': 1, '77': 1, '66': 0.8, '55': 0.5, '44': 0.3,
+  AKs: 1, AQs: 1, AJs: 1, ATs: 1, A9s: 0.7, A5s: 0.8, A4s: 0.5, A3s: 0.3,
+  KQs: 1, KJs: 1, KTs: 1, K9s: 0.3,
+  QJs: 1, QTs: 1, Q9s: 0.2,
+  JTs: 1, J9s: 0.3,
+  T9s: 0.8, '98s': 0.4,
+  AKo: 1, AQo: 1, AJo: 1, ATo: 0.5,
+  KQo: 0.8, KJo: 0.3,
+};
+
+/* LJ (Lojack) */
+export const RFI9_LJ: ComboFreq = {
+  AA: 1, KK: 1, QQ: 1, JJ: 1, TT: 1, '99': 1, '88': 1, '77': 1, '66': 1, '55': 0.8, '44': 0.5, '33': 0.3, '22': 0.2,
+  AKs: 1, AQs: 1, AJs: 1, ATs: 1, A9s: 1, A8s: 0.6, A7s: 0.4, A5s: 1, A4s: 0.8, A3s: 0.5, A2s: 0.3,
+  KQs: 1, KJs: 1, KTs: 1, K9s: 0.7,
+  QJs: 1, QTs: 1, Q9s: 0.5,
+  JTs: 1, J9s: 0.8,
+  T9s: 1, T8s: 0.3,
+  '98s': 0.7, '87s': 0.4, '76s': 0.2,
+  AKo: 1, AQo: 1, AJo: 1, ATo: 0.8,
+  KQo: 1, KJo: 0.7, KTo: 0.2,
+};
+
+/* HJ (Hijack) */
+export const RFI9_HJ: ComboFreq = {
+  AA: 1, KK: 1, QQ: 1, JJ: 1, TT: 1, '99': 1, '88': 1, '77': 1, '66': 1, '55': 1, '44': 0.8, '33': 0.6, '22': 0.4,
+  AKs: 1, AQs: 1, AJs: 1, ATs: 1, A9s: 1, A8s: 1, A7s: 0.8, A6s: 0.6, A5s: 1, A4s: 1, A3s: 0.8, A2s: 0.6,
+  KQs: 1, KJs: 1, KTs: 1, K9s: 1, K8s: 0.5,
+  QJs: 1, QTs: 1, Q9s: 1, Q8s: 0.4,
+  JTs: 1, J9s: 1, J8s: 0.5,
+  T9s: 1, T8s: 0.7,
+  '98s': 1, '87s': 0.8, '76s': 0.5, '65s': 0.3,
+  AKo: 1, AQo: 1, AJo: 1, ATo: 1, A9o: 0.5,
+  KQo: 1, KJo: 1, KTo: 0.6,
+  QJo: 0.8,
+};
+
+/* CO, BTN, SB — borrow from 6-max where they're already canonical */
+export { RFI_CO as RFI9_CO, RFI_BTN as RFI9_BTN, RFI_SB as RFI9_SB } from './rfi-100bb';

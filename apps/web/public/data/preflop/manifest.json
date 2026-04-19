@@ -1,11 +1,19 @@
 {
-  "version": 1,
-  "generated": "2026-04-19T08:46:12.679Z",
+  "version": 2,
+  "generated": "2026-04-19T08:54:55.940Z",
   "entries": [
     "6max_100bb_rfi_UTG",
     "6max_100bb_rfi_MP",
     "6max_100bb_rfi_CO",
     "6max_100bb_rfi_BTN",
-    "6max_100bb_rfi_SB"
+    "6max_100bb_rfi_SB",
+    "9max_100bb_rfi_UTG",
+    "9max_100bb_rfi_UTG1",
+    "9max_100bb_rfi_MP",
+    "9max_100bb_rfi_LJ",
+    "9max_100bb_rfi_HJ",
+    "9max_100bb_rfi_CO",
+    "9max_100bb_rfi_BTN",
+    "9max_100bb_rfi_SB"
   ]
 }

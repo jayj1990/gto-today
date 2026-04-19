@@ -1,4 +1,4 @@
-import type { Position } from '@gto/poker-core';
+import type { Position, TableFormat } from '@gto/poker-core';
 import { allCombos } from './combos';
 import { classifyAnswer, type TrainingSpot } from './spot-generator';
 import { getPreflopChart } from './preflop';
@@ -11,10 +11,23 @@ import type { CardCode, ComboKey } from '@gto/poker-core';
  * not following a shared daily lineup.
  */
 export interface RandomSpotOptions {
+  readonly format?: TableFormat;
   readonly positions?: readonly Position[];
   readonly difficulty?: 'mixed-only' | 'clear-only' | 'any';
   readonly stackBB?: number;
 }
+
+const POSITIONS_9MAX: readonly Position[] = [
+  'UTG',
+  'UTG1',
+  'MP',
+  'LJ',
+  'HJ',
+  'CO',
+  'BTN',
+  'SB',
+];
+const POSITIONS_6MAX: readonly Position[] = ['UTG', 'MP', 'CO', 'BTN', 'SB'];
 
 function comboCards(combo: ComboKey): readonly [CardCode, CardCode] {
   const r1 = combo[0];
@@ -38,9 +51,11 @@ function comboCards(combo: ComboKey): readonly [CardCode, CardCode] {
 }
 
 export async function generateRandomSpot(opts: RandomSpotOptions = {}): Promise<TrainingSpot | null> {
-  const positions = opts.positions ?? (['UTG', 'MP', 'CO', 'BTN', 'SB'] as const);
+  const format: TableFormat = opts.format ?? '9max';
+  const defaults = format === '6max' ? POSITIONS_6MAX : POSITIONS_9MAX;
+  const positions = opts.positions ?? defaults;
   const position = positions[Math.floor(Math.random() * positions.length)]!;
-  const chart = await getPreflopChart('6max', position);
+  const chart = await getPreflopChart(format, position);
   if (!chart) return null;
 
   const combos = allCombos();
@@ -65,6 +80,7 @@ export async function generateRandomSpot(opts: RandomSpotOptions = {}): Promise<
     combo,
     hero,
     position,
+    format,
     stackBB: opts.stackBB ?? 100,
     scenario: 'rfi',
     gtoRaise: entry.raise,
