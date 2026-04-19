@@ -1,5 +1,4 @@
 import type { HTMLAttributes, ReactNode } from 'react';
-import { cn } from './cn';
 
 export type Seat =
   | 'UTG'
@@ -51,20 +50,21 @@ const SEATS: Record<Format, Seat[]> = {
   '11max': ['UTG', 'UTG1', 'UTG2', 'UTG3', 'MP', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'],
 };
 
-const CHIP_PX = 52;
+const CHIP_PX = 50;
 
 /**
- * Overhead poker table — rebuild round 4.
+ * GTO-Wizard-inspired overhead table — vertical cluster layout.
  *
- * Fixes user feedback:
- *  1. Chip size no longer depends on stack text length (was causing 99.5 chip
- *     to look wider than 99). Chip is a fixed 52×52 box positioned directly
- *     at its ellipse coordinate, content clipped with overflow-hidden.
- *  2. Cards render as a SEPARATE absolutely-positioned element offset
- *     inward from the chip — they can never overlap the chip.
- *  3. Real felt restored — radial green gradient inside an elliptical rail.
- *  4. Center pot block uses a single flex column pinned to 50/50, so the
- *     pot number always lands on the visual center.
+ * For every active seat we render a vertical group:
+ *   [two cards on top] → [chip below]
+ * Hero cards are larger + colorful; villain cards are small face-down "W"
+ * backs. Folded seats skip the cards entirely and render a single chip at
+ * ~35% opacity, so "alive vs dead" is immediately readable.
+ *
+ * The cluster's chip sits exactly at the seat's ellipse coordinate; the
+ * cards float above it via a fixed pixel distance. Because the chip is a
+ * fixed 50×50 disc and cards live in a separately-sized container, stack
+ * text length can never distort the chip.
  */
 export function PokerTable({
   format = '6max',
@@ -86,13 +86,24 @@ export function PokerTable({
 
   return (
     <div
-      className={cn('relative w-full', className)}
-      style={{ aspectRatio: '16 / 10', minHeight: 280, ...style }}
+      className={className}
+      style={{
+        position: 'relative',
+        width: '100%',
+        aspectRatio: '16 / 10',
+        minHeight: 300,
+        ...style,
+      }}
       role="img"
       aria-label={`${format} table — hero on ${hero ?? '-'}`}
       {...rest}
     >
-      <svg viewBox="0 0 320 200" className="absolute inset-0 h-full w-full" aria-hidden>
+      {/* Felt */}
+      <svg
+        viewBox="0 0 320 200"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+        aria-hidden
+      >
         <defs>
           <radialGradient id="pt-felt" cx="50%" cy="50%" r="62%">
             <stop offset="0%" stopColor="#177046" />
@@ -119,31 +130,58 @@ export function PokerTable({
           stroke="rgba(255,255,255,0.06)"
           strokeWidth="1"
         />
-        <ellipse
-          cx="160"
-          cy="100"
-          rx="118"
-          ry="60"
-          fill="none"
-          stroke="rgba(255,255,255,0.035)"
-          strokeWidth="0.6"
-        />
       </svg>
 
-      {/* Center pot block, precisely centered at 50/50 */}
-      <div className="pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-[3px]">
+      {/* Center pot block — precisely centered */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 3,
+          pointerEvents: 'none',
+          textAlign: 'center',
+        }}
+      >
         {effectiveStack !== undefined && (
-          <span className="font-mono text-[10px] font-medium text-ivory/55 tabular-nums">
-            {effectiveStack}bb
+          <span
+            style={{
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: 11,
+              color: 'rgba(244, 239, 230, 0.6)',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {fmt(effectiveStack)}bb
           </span>
         )}
         {pot !== undefined && (
-          <span className="font-mono text-[22px] font-bold leading-none text-ivory tabular-nums">
+          <span
+            style={{
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: 22,
+              fontWeight: 700,
+              color: '#F4EFE6',
+              lineHeight: 1,
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
             {fmt(pot)} bb
           </span>
         )}
         {lastBet !== undefined && (
-          <span className="font-mono text-[11px] font-medium text-ivory/55 tabular-nums">
+          <span
+            style={{
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: 11,
+              color: 'rgba(244, 239, 230, 0.6)',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
             {fmt(lastBet)} bb
           </span>
         )}
@@ -157,35 +195,48 @@ export function PokerTable({
         const isFolded = state.action?.kind === 'fold';
         const isToAct = !isHero && seat === toAct;
 
-        // Cards render on the side of the chip facing the table center.
-        // Using a pixel offset (not a percentage) guarantees the cards clear
-        // the 52px chip regardless of viewport width — previously a 16%
-        // horizontal offset collapsed to ~60px on mobile, causing the
-        // colored card rectangles to sit under the chip so the user only
-        // saw overlapping numbers.
-        const cardsGoLeft = x > 50;
+        const betX = x + inward.x * 20;
+        const betY = y + inward.y * 20;
 
-        const betX = x + inward.x * 22;
-        const betY = y + inward.y * 22;
-
-        const showingHeroCards = isHero && heroCards;
-        const showingVillainCards =
-          !isHero && !isFolded && (state.cards || state.showBacks);
+        const hasVillainCards = !isHero && !isFolded && (state.cards || state.showBacks);
+        const hasHeroCards = isHero && heroCards;
 
         return (
           <div key={seat}>
-            {/* Chip — fixed 52x52, centered exactly on (x, y) */}
+            {/* Vertical cluster: cards above, chip below — anchored at seat */}
             <div
-              className="absolute"
               style={{
+                position: 'absolute',
                 left: `${x}%`,
                 top: `${y}%`,
-                width: CHIP_PX,
-                height: CHIP_PX,
-                marginLeft: -CHIP_PX / 2,
-                marginTop: -CHIP_PX / 2,
+                transform: 'translate(-50%, -50%)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 3,
               }}
             >
+              {/* Cards on top */}
+              {hasHeroCards && renderCard && (
+                <div style={{ display: 'flex', gap: 2 }}>
+                  {renderCard(heroCards![0], 'sm')}
+                  {renderCard(heroCards![1], 'sm')}
+                </div>
+              )}
+              {hasVillainCards && state.cards && renderCard && (
+                <div style={{ display: 'flex', gap: 2 }}>
+                  {renderCard(state.cards[0], 'xs')}
+                  {renderCard(state.cards[1], 'xs')}
+                </div>
+              )}
+              {hasVillainCards && !state.cards && state.showBacks && (
+                <div style={{ display: 'flex', gap: 2 }}>
+                  <CardBack />
+                  <CardBack />
+                </div>
+              )}
+
+              {/* Chip below */}
               <SeatChip
                 seat={seat}
                 stack={state.stack}
@@ -194,44 +245,15 @@ export function PokerTable({
               />
             </div>
 
-            {/* Cards — anchored to the seat point via a 0×0 wrapper, then
-                laid out in pixels so they always clear the chip. */}
-            {(showingHeroCards || showingVillainCards) && (
-              <div
-                className="absolute"
-                style={{ left: `${x}%`, top: `${y}%`, width: 0, height: 0 }}
-              >
-                <div
-                  className="absolute top-1/2 -translate-y-1/2"
-                  style={cardsGoLeft ? { right: '32px' } : { left: '32px' }}
-                >
-                {showingHeroCards && renderCard && (
-                  <div className="flex gap-0.5">
-                    {renderCard(heroCards![0], 'sm')}
-                    {renderCard(heroCards![1], 'sm')}
-                  </div>
-                )}
-                {showingVillainCards && state.cards && renderCard && (
-                  <div className="flex gap-0.5">
-                    {renderCard(state.cards[0], 'xs')}
-                    {renderCard(state.cards[1], 'xs')}
-                  </div>
-                )}
-                {showingVillainCards && !state.cards && state.showBacks && (
-                  <div className="flex gap-0.5">
-                    <CardBack />
-                    <CardBack />
-                  </div>
-                )}
-                </div>
-              </div>
-            )}
-
-            {/* Bet chip between seat and center */}
+            {/* Bet chip on the radial line between seat and center */}
             {state.action && state.action.kind !== 'fold' && (
               <div
-                className="absolute -translate-x-1/2 -translate-y-1/2"
-                style={{ left: `${betX}%`, top: `${betY}%` }}
+                style={{
+                  position: 'absolute',
+                  left: `${betX}%`,
+                  top: `${betY}%`,
+                  transform: 'translate(-50%, -50%)',
+                }}
               >
                 <BetChip action={state.action} />
               </div>
@@ -271,44 +293,90 @@ function SeatChip({
         : 'rgba(244, 239, 230, 0.75)';
 
   return (
-    <div className="relative h-full w-full">
+    <div
+      style={{
+        position: 'relative',
+        width: CHIP_PX,
+        height: CHIP_PX,
+        borderRadius: '50%',
+        background: 'rgb(24, 24, 28)',
+        border: `${ringWidth}px solid ${ringColor}`,
+        boxShadow:
+          variant === 'hero'
+            ? '0 0 0 1px rgba(31,157,85,0.4), 0 4px 14px rgba(0,0,0,0.55), 0 0 20px rgba(31,157,85,0.3)'
+            : variant === 'toAct'
+              ? '0 4px 14px rgba(0,0,0,0.55), 0 0 16px rgba(230,168,23,0.4)'
+              : '0 3px 10px rgba(0,0,0,0.5)',
+        opacity: variant === 'folded' ? 0.35 : 1,
+        overflow: 'visible',
+      }}
+    >
       <div
-        className="flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-full"
         style={{
-          background: 'rgb(24, 24, 28)',
-          border: `${ringWidth}px solid ${ringColor}`,
-          boxShadow:
-            variant === 'hero'
-              ? '0 0 0 1px rgba(31,157,85,0.4), 0 4px 14px rgba(0,0,0,0.55), 0 0 20px rgba(31,157,85,0.3)'
-              : variant === 'toAct'
-                ? '0 4px 14px rgba(0,0,0,0.55), 0 0 16px rgba(230,168,23,0.4)'
-                : '0 3px 10px rgba(0,0,0,0.5)',
-          opacity: variant === 'folded' ? 0.4 : 1,
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          borderRadius: '50%',
         }}
       >
         <span
-          className="whitespace-nowrap font-mono text-[10px] font-bold leading-none tracking-[0.03em]"
-          style={{ color: positionColor }}
+          style={{
+            fontFamily: 'var(--font-mono, monospace)',
+            fontSize: 10,
+            fontWeight: 700,
+            lineHeight: 1,
+            letterSpacing: '0.03em',
+            color: positionColor,
+            whiteSpace: 'nowrap',
+          }}
         >
           {seat}
         </span>
         {stack !== undefined && (
-          <span className="mt-[3px] whitespace-nowrap font-mono text-[12px] font-bold leading-none text-ivory tabular-nums">
+          <span
+            style={{
+              marginTop: 3,
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: 12,
+              fontWeight: 700,
+              lineHeight: 1,
+              color: '#F4EFE6',
+              fontVariantNumeric: 'tabular-nums',
+              whiteSpace: 'nowrap',
+            }}
+          >
             {formatStack(stack)}
           </span>
         )}
       </div>
-      {variant === 'folded' && (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[1.5px] w-[70%] -translate-x-1/2 -translate-y-1/2 -rotate-12 bg-[color:var(--color-raise)]"
-        />
-      )}
       {showDealerBadge && (
         <span
-          title="딜러"
           aria-label="딜러"
-          className="absolute -right-1.5 -bottom-1.5 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-ivory font-mono text-[10px] font-bold text-noir shadow-[0_2px_6px_rgba(0,0,0,0.6)] ring-1 ring-black/20"
+          title="딜러"
+          style={{
+            position: 'absolute',
+            right: -10,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: 18,
+            height: 18,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle at 35% 30%, #FFFFFF, #E7DFCE 70%, #BDB49F)',
+            color: '#0A0A0A',
+            fontFamily: 'var(--font-display, Inter), system-ui, sans-serif',
+            fontWeight: 800,
+            fontSize: 10,
+            lineHeight: 1,
+            boxShadow: '0 2px 5px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.6)',
+            border: '1px solid rgba(0,0,0,0.15)',
+          }}
         >
           D
         </span>
@@ -324,20 +392,27 @@ function BetChip({ action }: { action: SeatAction }) {
   const s = chipStyle(action);
   const isBlind = action.kind === 'post';
   return (
-    <div className="flex items-center gap-1">
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
       <div
-        className={cn('rounded-full', isBlind ? 'h-3 w-3' : 'h-4 w-4')}
         style={{
+          width: isBlind ? 12 : 16,
+          height: isBlind ? 12 : 16,
+          borderRadius: '50%',
           background: s.gradient,
           border: `1px solid ${s.rim}`,
           boxShadow: '0 2px 5px rgba(0,0,0,0.55)',
+          flexShrink: 0,
         }}
       />
       <span
-        className={cn(
-          'whitespace-nowrap font-mono text-[11px] font-semibold tabular-nums',
-          isBlind ? 'text-ivory/60' : 'text-ivory',
-        )}
+        style={{
+          fontFamily: 'var(--font-mono, monospace)',
+          fontSize: 11,
+          fontWeight: 600,
+          color: isBlind ? 'rgba(244,239,230,0.65)' : '#F4EFE6',
+          fontVariantNumeric: 'tabular-nums',
+          whiteSpace: 'nowrap',
+        }}
       >
         {s.label}
       </span>
@@ -377,12 +452,10 @@ function chipStyle(action: Exclude<SeatAction, { kind: 'fold' }>): {
         label: 'chk',
       };
     case 'post':
-      // Display blinds as casino-style small/big chips (SB 1, BB 2) instead
-      // of the academic "0.5 BB / 1 BB" — matches Korean live convention.
       return {
         gradient: 'radial-gradient(circle at 35% 30%, rgba(140,160,200,0.9), rgba(80,100,130,0.9))',
         rim: 'rgba(255,255,255,0.2)',
-        label: `${fmt(action.bb * 2)}`,
+        label: `${fmt(action.bb)}`,
       };
   }
 }
@@ -392,14 +465,26 @@ function chipStyle(action: Exclude<SeatAction, { kind: 'fold' }>): {
 function CardBack() {
   return (
     <div
-      className="h-[32px] w-[22px] rounded-[3px]"
       style={{
-        background: 'linear-gradient(135deg, rgba(60,60,68,0.95), rgba(38,38,46,0.95))',
-        border: '1px solid rgba(255,255,255,0.08)',
+        width: 22,
+        height: 30,
+        borderRadius: 3,
+        background: 'linear-gradient(135deg, #3A3A42 0%, #1E1E24 100%)',
+        border: '1px solid rgba(255,255,255,0.1)',
         boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'var(--font-mono, monospace)',
+        fontSize: 11,
+        fontWeight: 700,
+        color: 'rgba(244,239,230,0.45)',
+        flexShrink: 0,
       }}
       aria-hidden
-    />
+    >
+      W
+    </div>
   );
 }
 
@@ -412,7 +497,7 @@ function seatGeom(
   const offset = Math.PI / 2;
   const angle = offset + (index / total) * Math.PI * 2;
   const rx = 44;
-  const ry = 38;
+  const ry = 36;
   const x = 50 + rx * Math.cos(angle);
   const y = 50 + ry * Math.sin(angle);
   const dx = 50 - x;
