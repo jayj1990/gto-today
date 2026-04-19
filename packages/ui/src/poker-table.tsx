@@ -157,8 +157,14 @@ export function PokerTable({
         const isFolded = state.action?.kind === 'fold';
         const isToAct = !isHero && seat === toAct;
 
-        const cardsX = x + inward.x * 8;
-        const cardsY = y + inward.y * 8;
+        // Cards render on the side of the chip facing the table center.
+        // Using a pixel offset (not a percentage) guarantees the cards clear
+        // the 52px chip regardless of viewport width — previously a 16%
+        // horizontal offset collapsed to ~60px on mobile, causing the
+        // colored card rectangles to sit under the chip so the user only
+        // saw overlapping numbers.
+        const cardsGoLeft = x > 50;
+
         const betX = x + inward.x * 22;
         const betY = y + inward.y * 22;
 
@@ -188,12 +194,17 @@ export function PokerTable({
               />
             </div>
 
-            {/* Cards — separate element offset inward */}
+            {/* Cards — anchored to the seat point via a 0×0 wrapper, then
+                laid out in pixels so they always clear the chip. */}
             {(showingHeroCards || showingVillainCards) && (
               <div
-                className="absolute -translate-x-1/2 -translate-y-1/2"
-                style={{ left: `${cardsX}%`, top: `${cardsY}%` }}
+                className="absolute"
+                style={{ left: `${x}%`, top: `${y}%`, width: 0, height: 0 }}
               >
+                <div
+                  className="absolute top-1/2 -translate-y-1/2"
+                  style={cardsGoLeft ? { right: '32px' } : { left: '32px' }}
+                >
                 {showingHeroCards && renderCard && (
                   <div className="flex gap-0.5">
                     {renderCard(heroCards![0], 'sm')}
@@ -212,6 +223,7 @@ export function PokerTable({
                     <CardBack />
                   </div>
                 )}
+                </div>
               </div>
             )}
 
@@ -365,10 +377,12 @@ function chipStyle(action: Exclude<SeatAction, { kind: 'fold' }>): {
         label: 'chk',
       };
     case 'post':
+      // Display blinds as casino-style small/big chips (SB 1, BB 2) instead
+      // of the academic "0.5 BB / 1 BB" — matches Korean live convention.
       return {
         gradient: 'radial-gradient(circle at 35% 30%, rgba(140,160,200,0.9), rgba(80,100,130,0.9))',
         rim: 'rgba(255,255,255,0.2)',
-        label: `${fmt(action.bb)}`,
+        label: `${fmt(action.bb * 2)}`,
       };
   }
 }

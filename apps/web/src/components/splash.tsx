@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Logo } from '@gto/ui';
 
 const SESSION_KEY = 'gto.splash.seen';
 
 /**
- * Full-screen branded splash, centered with place-items-center so the
- * content lands at the exact middle of the viewport regardless of
- * iOS safe-area or scroll offset.
+ * Full-screen splash. Wordmark is drawn in plain HTML (not the SVG Logo
+ * component) so every line sits on the same horizontal axis — prevents
+ * the off-center rendering we saw when using the Logo whose viewBox
+ * left-aligned its text content.
  */
 export function Splash() {
   const [visible, setVisible] = useState(false);
@@ -28,7 +28,7 @@ export function Splash() {
       } catch {
         /* ignore */
       }
-    }, 1400);
+    }, 1500);
     return () => clearTimeout(t);
   }, []);
 
@@ -41,22 +41,43 @@ export function Splash() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.35 }}
-          className="fixed inset-0 z-50 grid place-items-center bg-felt-gradient"
-          style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+          className="fixed inset-0 z-50 bg-felt-gradient"
           aria-hidden
         >
-          <motion.div
-            initial={{ scale: 0.92, opacity: 0, y: 8 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col items-center gap-3 text-center"
-          >
-            <Logo variant="mark" width={88} height={88} />
-            <Logo variant="full" width={180} className="text-ivory" />
-            <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.28em] text-[color:var(--color-gold)]">
-              GTO · Today
-            </p>
-          </motion.div>
+          <div className="grid h-full w-full place-items-center">
+            <motion.div
+              initial={{ scale: 0.94, opacity: 0, y: 6 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="flex flex-col items-center"
+            >
+              <div
+                aria-hidden
+                className="h-16 w-16 rounded-full"
+                style={{
+                  background:
+                    'radial-gradient(circle at 35% 35%, #E8CC72, #D4AF37 55%, #B8912A)',
+                  boxShadow:
+                    '0 0 0 4px rgba(212,175,55,0.18), 0 0 40px rgba(212,175,55,0.35)',
+                }}
+              />
+              <h1
+                className="mt-6 flex items-baseline gap-1 font-display leading-none tracking-[-0.02em]"
+                style={{ fontSize: 36 }}
+              >
+                <span className="font-bold uppercase text-ivory">GTO</span>
+                <span
+                  aria-hidden
+                  className="inline-block h-[6px] w-[6px] rounded-full bg-[color:var(--color-gold)]"
+                  style={{ transform: 'translateY(-0.35em)' }}
+                />
+                <span className="font-light text-ivory/90">today</span>
+              </h1>
+              <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.32em] text-[color:var(--color-gold)]">
+                매일 · 한 걸음
+              </p>
+            </motion.div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

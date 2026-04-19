@@ -4,7 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CardView, Chip, Logo, cn } from '@gto/ui';
+import { Logo, cn } from '@gto/ui';
+import {
+  DailyTrainingIllustration,
+  GtoMixIllustration,
+  MobilePokerIllustration,
+} from '@/components/onboarding-illustrations';
 import { useAuthStore } from '@/lib/auth-store';
 
 interface Slide {
@@ -99,9 +104,9 @@ export default function OnboardingPage() {
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
             className="flex items-center justify-center"
           >
-            {slide.visual === 'cards' && <CardsVisual />}
-            {slide.visual === 'chips' && <ChipsVisual />}
-            {slide.visual === 'mark' && <MarkVisual />}
+            {slide.visual === 'cards' && <DailyTrainingIllustration />}
+            {slide.visual === 'chips' && <GtoMixIllustration />}
+            {slide.visual === 'mark' && <MobilePokerIllustration />}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -173,46 +178,4 @@ export default function OnboardingPage() {
   );
 }
 
-/* ─────────────── slide visuals ─────────────── */
-
-function CardsVisual() {
-  return (
-    <div className="relative">
-      <div className="flex gap-3">
-        <motion.div
-          initial={{ rotate: -8, y: 6 }}
-          animate={{ rotate: -6, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <CardView rank="A" suit="s" size="xl" deckScheme="four-color" />
-        </motion.div>
-        <motion.div
-          initial={{ rotate: 8, y: 6 }}
-          animate={{ rotate: 6, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
-        >
-          <CardView rank="K" suit="h" size="xl" deckScheme="four-color" />
-        </motion.div>
-      </div>
-    </div>
-  );
-}
-
-function ChipsVisual() {
-  return (
-    <div className="flex items-end gap-4">
-      <Chip value={5} tone="felt" size="lg" />
-      <Chip value={25} tone="raise" size="lg" />
-      <Chip value="GT" tone="gold" size="lg" />
-    </div>
-  );
-}
-
-function MarkVisual() {
-  return (
-    <div className="relative">
-      <div className="absolute inset-0 -z-10 rounded-full bg-[color:var(--color-gold)]/10 blur-3xl" />
-      <Logo variant="mark" width={160} height={160} />
-    </div>
-  );
-}
+/* Slide visuals now live in components/onboarding-illustrations.tsx */
