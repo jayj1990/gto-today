@@ -14,6 +14,7 @@
     "./mix-bar": "./src/mix-bar.tsx",
     "./count-up": "./src/count-up.tsx",
     "./poker-table": "./src/poker-table.tsx",
+    "./range-grid": "./src/range-grid.tsx",
     "./motion": "./src/motion.ts"
   },
   "scripts": {

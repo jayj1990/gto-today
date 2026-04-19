@@ -9,7 +9,37 @@ export type CardCode = Brand<string, 'CardCode'>; // e.g. "As", "Td"
 export type HandCode = Brand<string, 'HandCode'>; // canonical 2-card "AsKd"
 export type ComboKey = Brand<string, 'ComboKey'>; // 169 preflop buckets e.g. "AKs"
 
-export type Position = 'UTG' | 'UTG1' | 'MP' | 'LJ' | 'HJ' | 'CO' | 'BTN' | 'SB' | 'BB';
+export type Position =
+  | 'UTG'
+  | 'UTG1'
+  | 'UTG2'
+  | 'UTG3'
+  | 'MP'
+  | 'LJ'
+  | 'HJ'
+  | 'CO'
+  | 'BTN'
+  | 'SB'
+  | 'BB';
+
+export type TableFormat = '6max' | '9max' | '10max' | '11max';
+
+export const POSITIONS_BY_FORMAT: Record<TableFormat, readonly Position[]> = {
+  '6max': ['UTG', 'MP', 'CO', 'BTN', 'SB', 'BB'],
+  '9max': ['UTG', 'UTG1', 'MP', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'],
+  '10max': ['UTG', 'UTG1', 'UTG2', 'MP', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'],
+  '11max': ['UTG', 'UTG1', 'UTG2', 'UTG3', 'MP', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'],
+};
+
+/**
+ * For 10/11-max we don't have native GTO charts. Map extra early positions
+ * to their closest 9-max equivalent — tightened by the `mapToTighter` flag
+ * at query time. This is the only approved approximation.
+ */
+export const POSITION_FALLBACK: Partial<Record<Position, Position>> = {
+  UTG2: 'UTG1',
+  UTG3: 'UTG1',
+};
 
 export type Street = 'preflop' | 'flop' | 'turn' | 'river';
 

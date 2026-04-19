@@ -10,6 +10,7 @@
     "./cards": "./src/cards.ts",
     "./board": "./src/board.ts",
     "./equity": "./src/equity.ts",
+    "./evaluator": "./src/evaluator.ts",
     "./types": "./src/types.ts"
   },
   "scripts": {
@@ -20,8 +21,11 @@
   },
   "devDependencies": {
     "@gto/config": "workspace:*",
+    "rimraf": "^6.0.1",
     "typescript": "^5.7.3",
-    "vitest": "^2.1.8",
-    "rimraf": "^6.0.1"
+    "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "pokersolver": "^2.1.4"
   }
 }

@@ -8,13 +8,14 @@
   "exports": {
     ".": "./src/index.ts",
     "./preflop": "./src/preflop.ts",
-    "./postflop": "./src/postflop.ts"
+    "./postflop": "./src/postflop.ts",
+    "./combos": "./src/combos.ts"
   },
   "scripts": {
     "lint": "eslint src",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
-    "generate": "node --loader tsx scripts/generate.ts",
+    "build": "tsx scripts/build-preflop.ts",
     "clean": "rimraf dist .turbo generated"
   },
   "devDependencies": {

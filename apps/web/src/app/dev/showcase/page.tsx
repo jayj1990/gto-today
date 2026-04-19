@@ -1,6 +1,7 @@
 import { CardView, Chip, Logo, PokerTable } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
 import { MotionDemo } from '@/components/showcase/motion-demo';
+import { RangeDemo } from '@/components/showcase/range-demo';
 
 export const metadata = { title: 'Showcase' };
 
@@ -86,19 +87,34 @@ export default function ShowcasePage() {
         </Section>
 
         <Section title="05 · Poker table (overhead)">
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <p className="mb-2 font-mono text-[11px] text-fg-muted">6-max · hero on BTN</p>
+              <p className="mb-2 font-mono text-[11px] text-fg-muted">6-max · BTN</p>
               <PokerTable format="6max" hero="BTN" folded={['UTG', 'MP']} />
             </div>
             <div>
-              <p className="mb-2 font-mono text-[11px] text-fg-muted">9-max · hero on CO</p>
+              <p className="mb-2 font-mono text-[11px] text-fg-muted">9-max · CO</p>
               <PokerTable format="9max" hero="CO" folded={['UTG', 'UTG1', 'MP', 'LJ']} />
             </div>
+            <div>
+              <p className="mb-2 font-mono text-[11px] text-fg-muted">10-max · HJ</p>
+              <PokerTable format="10max" hero="HJ" folded={['UTG', 'UTG1', 'UTG2']} />
+            </div>
+            <div>
+              <p className="mb-2 font-mono text-[11px] text-fg-muted">11-max · CO</p>
+              <PokerTable format="11max" hero="CO" folded={['UTG', 'UTG1', 'UTG2', 'UTG3']} />
+            </div>
           </div>
+          <p className="mt-3 font-mono text-[11px] text-fg-muted">
+            한국 토너먼트는 11-max까지 운영됩니다.
+          </p>
         </Section>
 
-        <Section title="06 · Gradients">
+        <Section title="06 · Preflop range (live GTO data)">
+          <RangeDemo />
+        </Section>
+
+        <Section title="07 · Gradients">
           <div className="grid gap-3 sm:grid-cols-3">
             <GradientTile label="felt" className="bg-felt-gradient text-ivory" />
             <GradientTile label="gold" className="bg-gold-gradient text-noir" />
@@ -106,11 +122,11 @@ export default function ShowcasePage() {
           </div>
         </Section>
 
-        <Section title="07 · Motion (live)">
+        <Section title="08 · Motion (live)">
           <MotionDemo />
         </Section>
 
-        <Section title="08 · Typography">
+        <Section title="09 · Typography">
           <div className="space-y-4">
             <p className="font-display text-[56px] font-bold tracking-[-0.02em] leading-[1]">
               Display XL — GTO, Today.

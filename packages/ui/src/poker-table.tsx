@@ -1,8 +1,19 @@
 import type { HTMLAttributes } from 'react';
 import { cn } from './cn';
 
-export type Seat = 'UTG' | 'UTG1' | 'MP' | 'LJ' | 'HJ' | 'CO' | 'BTN' | 'SB' | 'BB';
-export type Format = '6max' | '9max';
+export type Seat =
+  | 'UTG'
+  | 'UTG1'
+  | 'UTG2'
+  | 'UTG3'
+  | 'MP'
+  | 'LJ'
+  | 'HJ'
+  | 'CO'
+  | 'BTN'
+  | 'SB'
+  | 'BB';
+export type Format = '6max' | '9max' | '10max' | '11max';
 
 export interface PokerTableProps extends HTMLAttributes<HTMLDivElement> {
   format?: Format;
@@ -14,8 +25,12 @@ export interface PokerTableProps extends HTMLAttributes<HTMLDivElement> {
   showBlinds?: boolean;
 }
 
-const SEATS_6: Seat[] = ['UTG', 'MP', 'CO', 'BTN', 'SB', 'BB'];
-const SEATS_9: Seat[] = ['UTG', 'UTG1', 'MP', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
+const SEATS: Record<Format, Seat[]> = {
+  '6max': ['UTG', 'MP', 'CO', 'BTN', 'SB', 'BB'],
+  '9max': ['UTG', 'UTG1', 'MP', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'],
+  '10max': ['UTG', 'UTG1', 'UTG2', 'MP', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'],
+  '11max': ['UTG', 'UTG1', 'UTG2', 'UTG3', 'MP', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'],
+};
 
 /**
  * Overhead view of a poker table.
@@ -29,7 +44,7 @@ export function PokerTable({
   className,
   ...rest
 }: PokerTableProps) {
-  const seats = format === '6max' ? SEATS_6 : SEATS_9;
+  const seats = SEATS[format];
   const count = seats.length;
 
   return (
