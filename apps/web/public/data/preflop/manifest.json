@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "generated": "2026-04-19T09:15:46.088Z",
+  "version": 3,
+  "generated": "2026-04-19T09:56:27.296Z",
   "entries": [
     "6max_100bb_rfi_UTG",
     "6max_100bb_rfi_MP",
@@ -14,6 +14,9 @@
     "9max_100bb_rfi_HJ",
     "9max_100bb_rfi_CO",
     "9max_100bb_rfi_BTN",
-    "9max_100bb_rfi_SB"
+    "9max_100bb_rfi_SB",
+    "6max_100bb_bb_vs_UTG",
+    "6max_100bb_bb_vs_CO",
+    "6max_100bb_bb_vs_BTN"
   ]
 }

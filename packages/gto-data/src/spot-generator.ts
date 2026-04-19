@@ -74,12 +74,12 @@ function comboToCards(combo: ComboKey, rng: () => number): readonly [CardCode, C
 
 /**
  * Classify a raise frequency into "primary" decision classes.
- * Exposed so the UI can pick a neutral CTA label consistently.
+ * Only the narrow 50/50 band counts as truly mixed — any clear lean
+ * (e.g. 70/30) has a dominant action and should not be graded as "both OK".
  */
 export function classifyAnswer(raise: number): 'raise' | 'fold' | 'mixed' {
-  if (raise >= 0.75) return 'raise';
-  if (raise <= 0.25) return 'fold';
-  return 'mixed';
+  if (Math.abs(raise - 0.5) <= 0.05) return 'mixed';
+  return raise > 0.5 ? 'raise' : 'fold';
 }
 
 /**
@@ -108,23 +108,30 @@ function mixedness(raise: number): number {
 }
 
 /**
- * Pick a combo skewed toward the hardest (most educational) spots.
- * Universal trivials are excluded entirely; the remaining pool is sampled
- * with weight = 0.15 + mixedness^2 * 2, so a 50/50 spot is ~14× more
- * likely than a 90/10 spot.
+ * Pick an educational combo. Excludes universal trivials (AA, 72o, etc.)
+ * and samples the remaining pool nearly uniformly so the player sees the
+ * full spectrum of ratios — 20/80, 50/50, 80/20 all have comparable odds.
+ *
+ * Previously we weighted 50/50 spots 14× harder, which caused the lineup
+ * to feel monotone ("everything is always mixed"). Flat sampling exposes
+ * the true shape of the range instead.
  */
 function pickCombo(chart: PreflopStrategyJson, rng: () => number): ComboKey {
   const scored: Array<{ combo: ComboKey; weight: number }> = [];
   for (const c of allCombos()) {
     if (UNIVERSAL_RAISES.has(c)) continue;
     const r = chart[c]?.raise ?? 0;
-    // Skip universal-fold combos: raise=0 hands the user will never face IRL anyway.
+    // Skip universal-fold combos: raise=0 hands are free-decision noise.
     if (r === 0) continue;
+    // Also skip near-100% combos that aren't universal but are still trivial
+    // at this position (e.g. AQs UTG is 100% — nothing to learn).
+    if (r >= 0.97) continue;
+    // Flat weight with a tiny mixed-ness nudge so truly fresh 50/50 spots
+    // don't vanish among the many 70/30 ones — 1.3× vs 1.0×.
     const m = mixedness(r);
-    scored.push({ combo: c, weight: 0.15 + m * m * 2 });
+    scored.push({ combo: c, weight: 1 + m * 0.3 });
   }
   if (scored.length === 0) {
-    // Fallback — shouldn't happen with any realistic chart
     const any = allCombos()[0]!;
     return any;
   }
@@ -205,13 +212,21 @@ export async function generateDailySpots(
  */
 export type AnswerGrade = 'sharp' | 'acceptable' | 'wrong';
 
+/**
+ * Grade the user's answer against the GTO mix:
+ *   • True 50/50 band (|raise − 0.5| ≤ 0.05) → either action is "acceptable"
+ *   • Otherwise → picking the higher-frequency action = "sharp",
+ *     picking the lower-frequency action = "wrong"
+ *
+ * Previously anything from 0.25–0.75 collapsed to "acceptable", which made
+ * a clear 70/30 lean feel like a coin flip and produced an endless stream
+ * of Playable verdicts.
+ */
 export function gradeAnswer(spot: TrainingSpot, answer: 'raise' | 'fold'): AnswerGrade {
-  const truth = spot.correctAnswer;
-  if (truth === 'mixed') {
-    // Either action is playable; reward any pick.
-    return 'acceptable';
-  }
-  return answer === truth ? 'sharp' : 'wrong';
+  const r = spot.gtoRaise;
+  if (Math.abs(r - 0.5) <= 0.05) return 'acceptable';
+  const dominant: 'raise' | 'fold' = r > 0.5 ? 'raise' : 'fold';
+  return answer === dominant ? 'sharp' : 'wrong';
 }
 
 // Re-export so consumers don't need to import RANKS from poker-core separately.

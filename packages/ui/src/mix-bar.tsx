@@ -50,8 +50,8 @@ export function MixBar({ segments, labeled = true, className }: MixBarProps) {
               />
             </div>
             {labeled && (
-              <span className="w-12 text-right font-mono text-[13px] font-semibold">
-                {seg.value.toFixed(0)}%
+              <span className="w-14 text-right font-mono text-[13px] font-semibold tabular-nums">
+                {seg.value.toFixed(1)}%
               </span>
             )}
           </li>

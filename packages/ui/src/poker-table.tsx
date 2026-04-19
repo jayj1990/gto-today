@@ -228,8 +228,10 @@ function VillainSeat({
   renderCard: PokerTableProps['renderCard'];
   showMarker: boolean;
 }) {
-  const marker =
-    showMarker && (seat === 'BTN' ? 'D' : seat === 'SB' ? 'SB' : seat === 'BB' ? 'BB' : null);
+  // Only BTN gets a dealer-button marker. SB / BB positions already read
+  // "SB" / "BB" on the chip itself — adding "S" / "B" badges next to them
+  // was redundant and invisible on dark backgrounds.
+  const isDealer = showMarker && seat === 'BTN';
   return (
     <div className="flex items-center gap-1.5">
       <div className="relative">
@@ -238,21 +240,16 @@ function VillainSeat({
           stack={stack}
           variant={isFolded ? 'folded' : isToAct ? 'toAct' : 'idle'}
         />
-        {marker && (
+        {isDealer && (
           <span
-            aria-hidden
-            className={cn(
-              'absolute -top-1 -left-2 flex h-4 w-4 items-center justify-center rounded-full font-mono text-[8px] font-bold',
-              marker === 'D' && 'bg-ivory text-noir',
-              marker === 'SB' && 'bg-[color:var(--color-gold)]/85 text-noir',
-              marker === 'BB' && 'bg-[color:var(--color-gold)] text-noir',
-            )}
+            title="딜러"
+            aria-label="딜러"
+            className="absolute -bottom-1 -right-1 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-ivory font-mono text-[10px] font-bold text-noir shadow-[0_2px_6px_rgba(0,0,0,0.6)] ring-1 ring-black/20"
           >
-            {marker === 'D' ? 'D' : marker === 'SB' ? 'S' : 'B'}
+            D
           </span>
         )}
       </div>
-      {/* Villain cards (revealed post-showdown) */}
       {cards && renderCard && !isFolded && (
         <div className="flex shrink-0 items-center gap-0.5">
           {renderCard(cards[0], 'xs')}
@@ -274,44 +271,50 @@ function PositionChip({
   stack: number | undefined;
   variant: 'hero' | 'toAct' | 'folded' | 'idle';
 }) {
+  // Solid near-black fill (not semi-transparent) so the chip reads as a
+  // distinct object against the dark table background instead of floating
+  // text. In light mode the same classes still flip correctly via CSS vars.
+  const fill = 'rgb(28, 28, 32)';
+  const border =
+    variant === 'hero'
+      ? '2.5px solid var(--color-call)'
+      : variant === 'toAct'
+        ? '2px solid var(--color-warning)'
+        : '1.5px solid rgba(255,255,255,0.22)';
+  const shadow =
+    variant === 'hero'
+      ? '0 0 0 1px rgba(31,157,85,0.4), 0 4px 14px rgba(0,0,0,0.5), 0 0 18px rgba(31,157,85,0.28)'
+      : variant === 'toAct'
+        ? '0 4px 14px rgba(0,0,0,0.5), 0 0 14px rgba(230,168,23,0.4)'
+        : '0 3px 10px rgba(0,0,0,0.45)';
+
   return (
     <div
       className={cn(
         'relative flex h-[52px] w-[52px] flex-col items-center justify-center rounded-full font-mono',
         'transition-colors',
-        variant === 'hero' && 'bg-[color:var(--color-charcoal)] text-fg',
-        variant === 'toAct' && 'bg-[color:var(--color-charcoal)] text-fg',
-        variant === 'idle' && 'bg-[color:var(--color-charcoal)]/70 text-fg-muted',
-        variant === 'folded' && 'bg-[color:var(--color-charcoal)]/40 text-fg-muted/60',
       )}
       style={{
-        border:
-          variant === 'hero'
-            ? '2.5px solid var(--color-call)'
-            : variant === 'toAct'
-              ? '2px solid var(--color-warning)'
-              : variant === 'folded'
-                ? '1px solid var(--color-border)'
-                : '1px solid var(--color-border)',
-        boxShadow:
-          variant === 'hero'
-            ? '0 0 0 1px rgba(31,157,85,0.35), 0 0 14px rgba(31,157,85,0.25)'
-            : variant === 'toAct'
-              ? '0 0 12px rgba(230,168,23,0.35)'
-              : undefined,
-        opacity: variant === 'folded' ? 0.45 : 1,
+        background: fill,
+        border,
+        boxShadow: shadow,
+        opacity: variant === 'folded' ? 0.4 : 1,
       }}
     >
       <span
         className={cn(
-          'font-mono text-[10px] leading-none tracking-[0.06em]',
-          variant === 'hero' || variant === 'toAct' ? 'text-fg' : 'text-fg-muted',
+          'font-mono text-[10px] font-semibold leading-none tracking-[0.06em]',
+          variant === 'hero'
+            ? 'text-[color:var(--color-call)]'
+            : variant === 'toAct'
+              ? 'text-[color:var(--color-warning)]'
+              : 'text-ivory/75',
         )}
       >
         {seat}
       </span>
       {stack !== undefined && (
-        <span className="mt-0.5 font-mono text-[13px] font-bold leading-none text-fg">
+        <span className="mt-0.5 font-mono text-[13px] font-bold leading-none text-ivory">
           {formatStack(stack)}
         </span>
       )}

@@ -92,12 +92,12 @@ export function ResultSheet({
                 segments={[
                   {
                     label: '레이즈',
-                    value: Math.round(spot.gtoRaise * 100),
+                    value: spot.gtoRaise * 100,
                     color: 'var(--color-raise)',
                   },
                   {
                     label: '폴드',
-                    value: Math.round(spot.gtoFold * 100),
+                    value: spot.gtoFold * 100,
                     color: 'var(--color-fold)',
                   },
                 ]}
