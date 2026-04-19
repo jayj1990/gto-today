@@ -15,6 +15,7 @@
     "clean": "rimraf .next .turbo"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.90.0",
     "@gto/gto-data": "workspace:*",
     "@gto/poker-core": "workspace:*",
     "@gto/ui": "workspace:*",

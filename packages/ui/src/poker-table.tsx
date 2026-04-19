@@ -24,31 +24,33 @@ export type SeatAction =
   | { kind: 'bet'; bb: number }
   | { kind: 'post'; bb: number };
 
-/** One seat's live info at the moment we render. */
 export interface SeatState {
-  /** Current stack in BB (after any committed chips for this street). */
   stack?: number;
-  /** Most recent action on the current street — drives the bet chip. */
   action?: SeatAction;
-  /** Hole cards to reveal (e.g. villain at showdown). */
+  /** Reveal villain's cards (showdown). */
   cards?: readonly [string, string];
+  /** If true, show face-down card backs beside the seat (opponent is still in). */
+  showBacks?: boolean;
 }
 
 export interface PokerTableProps extends HTMLAttributes<HTMLDivElement> {
   format?: Format;
   hero?: Seat;
-  /** Per-seat runtime state — stack, action, revealed cards. */
   seats?: Partial<Record<Seat, SeatState>>;
-  /** The seat that is currently to act. Gets a pulsing accent ring. */
+  /** The seat currently to act. Gets a pulsing amber ring. */
   toAct?: Seat;
-  /** Hero's hole cards, rendered inline to the right of the hero chip. */
+  /** Hero's hole cards (rank+suit string pair), rendered big beside hero chip. */
   heroCards?: readonly [string, string];
-  /** Center content (pot / board cards / equity). */
-  centerContent?: ReactNode;
-  /** Show D / SB / BB micro markers. Defaults true. */
+  /** Pot displayed in the big center number. */
+  pot?: number | undefined;
+  /** Effective stack for tooltip/display above pot. */
+  effectiveStack?: number | undefined;
+  /** Last bet amount shown below pot. */
+  lastBet?: number | undefined;
+  /** Consumer-provided card renderer. */
+  renderCard?: (code: string, size: 'xs' | 'sm' | 'md') => ReactNode;
+  /** Show D / SB / BB position markers. Defaults true. */
   showMarkers?: boolean;
-  /** Render a card for a seat. Consumers pass their own <CardView />. */
-  renderCard?: (code: string, size: 'xs' | 'sm') => ReactNode;
 }
 
 const SEATS: Record<Format, Seat[]> = {
@@ -61,17 +63,18 @@ const SEATS: Record<Format, Seat[]> = {
 /**
  * GTO-Wizard-style overhead table.
  *
- * Every seat is a *circular* chip with two stacked lines:
- *   POSITION  (top, small caps)
- *   STACK     (bottom, bold monospace)
- * Border color tells the story:
- *   • hero  → thick teal/green ring + gold badge
- *   • to-act → orange ring
- *   • folded → heavy dim + strike
- *   • idle   → neutral border
+ * Each seat is rendered as a row of three elements, oriented away from the
+ * table center: [card1][card2][chip]  for right-side seats, reversed for
+ * left-side seats, and centered for top/bottom seats. This layout was
+ * designed to mirror exactly what a player sees from above a felt table.
  *
- * Hero hole cards dock inline to the right of the hero chip.
- * Bet chips appear *between* a seat and the pot, on a line toward center.
+ * - Chip = circular disc with POSITION on top, STACK on bottom
+ * - Hero chip gets a 2.5px teal ring
+ * - To-act seat gets a 2px amber ring
+ * - Cards beside chip: big front-face for hero, "W" face-downs for villains
+ *   who still have a hand, nothing for folded
+ * - Bet chip (colored disc + amount) sits between seat and center on the
+ *   imaginary chord-to-center line
  */
 export function PokerTable({
   format = '6max',
@@ -79,9 +82,11 @@ export function PokerTable({
   seats: seatStates = {},
   toAct,
   heroCards,
-  centerContent,
-  showMarkers = true,
+  pot,
+  effectiveStack,
+  lastBet,
   renderCard,
+  showMarkers = true,
   className,
   style,
   ...rest
@@ -92,88 +97,116 @@ export function PokerTable({
   return (
     <div
       className={cn('relative w-full', className)}
-      style={{ aspectRatio: '16 / 10', minHeight: 260, ...style }}
+      style={{ aspectRatio: '16 / 10', minHeight: 280, ...style }}
       role="img"
       aria-label={`${format} table — hero on ${hero ?? '-'}`}
       {...rest}
     >
-      {/* Table outline */}
+      {/* Oval outline — no felt fill; just a thin line defining the rail. */}
       <svg viewBox="0 0 320 200" className="absolute inset-0 h-full w-full" aria-hidden>
         <ellipse
           cx="160"
           cy="100"
-          rx="150"
-          ry="86"
-          fill="rgba(14, 59, 46, 0.14)"
-          stroke="rgba(255, 255, 255, 0.14)"
-          strokeWidth="1.2"
-        />
-        <ellipse
-          cx="160"
-          cy="100"
-          rx="126"
-          ry="66"
+          rx="140"
+          ry="78"
           fill="none"
-          stroke="rgba(212, 175, 55, 0.08)"
-          strokeWidth="0.6"
+          stroke="rgba(255,255,255,0.12)"
+          strokeWidth="1"
         />
       </svg>
 
-      {/* Center — pot / board / equity */}
-      {centerContent && (
-        <div
-          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-          style={{ width: 'auto' }}
-        >
-          <div className="pointer-events-auto">{centerContent}</div>
-        </div>
-      )}
+      {/* Center info block: effective stack / pot / last bet */}
+      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+        {effectiveStack !== undefined && (
+          <p className="font-mono text-[11px] text-fg-muted/70 tabular-nums">
+            {effectiveStack}bb
+          </p>
+        )}
+        {pot !== undefined && (
+          <p className="font-mono text-[22px] font-bold leading-tight text-fg tabular-nums">
+            {formatNumber(pot)} bb
+          </p>
+        )}
+        {lastBet !== undefined && (
+          <p className="font-mono text-[11px] text-fg-muted/70 tabular-nums">
+            {lastBet} bb
+          </p>
+        )}
+      </div>
 
-      {/* Seats */}
       {seats.map((seat, i) => {
-        const { x, y } = seatPosition(i, count);
+        const { x, y, orientation } = seatLayout(i, count);
         const state = seatStates[seat] ?? {};
         const isHero = seat === hero;
         const isFolded = state.action?.kind === 'fold';
         const isToAct = !isHero && seat === toAct;
-
-        // The bet chip lives between this seat and the center of the table.
-        const betPos = seatToCenter(x, y, 22);
+        const betPos = chipPos(x, y, 30);
 
         return (
           <div key={seat}>
-            {/* Bet / action chip */}
+            {/* Betting chip between seat and center */}
             {state.action && state.action.kind !== 'fold' && (
               <div
                 className="absolute -translate-x-1/2 -translate-y-1/2"
                 style={{ left: `${betPos.x}%`, top: `${betPos.y}%` }}
               >
-                <ActionChip action={state.action} />
+                <BetChip action={state.action} />
               </div>
             )}
 
-            {/* Seat chip */}
+            {/* Seat cluster (chip + cards, arranged by side) */}
             <div
-              className="absolute -translate-x-1/2 -translate-y-1/2"
+              className={cn(
+                'absolute -translate-x-1/2 -translate-y-1/2',
+                'flex items-center',
+                orientation === 'row-reverse' && 'flex-row-reverse',
+                orientation === 'col' && 'flex-col',
+              )}
               style={{ left: `${x}%`, top: `${y}%` }}
             >
-              {isHero ? (
-                <HeroSeat
-                  seat={seat}
-                  stack={state.stack}
-                  heroCards={heroCards}
-                  renderCard={renderCard}
-                />
-              ) : (
-                <VillainSeat
-                  seat={seat}
-                  stack={state.stack}
-                  isFolded={isFolded}
-                  isToAct={isToAct}
-                  cards={state.cards}
-                  renderCard={renderCard}
-                  showMarker={showMarkers}
-                />
+              <SeatChip
+                seat={seat}
+                stack={state.stack}
+                variant={isFolded ? 'folded' : isHero ? 'hero' : isToAct ? 'toAct' : 'idle'}
+                showDealerBadge={showMarkers && seat === 'BTN'}
+              />
+
+              {/* Cards beside chip */}
+              {isHero && heroCards && renderCard && (
+                <div
+                  className={cn(
+                    'flex shrink-0 items-center',
+                    orientation === 'col' ? 'mt-1 gap-0.5' : 'gap-0.5',
+                    orientation === 'row' ? 'ml-1.5' : orientation === 'row-reverse' ? 'mr-1.5' : '',
+                  )}
+                >
+                  {renderCard(heroCards[0], 'sm')}
+                  {renderCard(heroCards[1], 'sm')}
+                </div>
+              )}
+              {!isHero && state.cards && renderCard && !isFolded && (
+                <div
+                  className={cn(
+                    'flex shrink-0 items-center',
+                    orientation === 'col' ? 'mt-1 gap-0.5' : 'gap-0.5',
+                    orientation === 'row' ? 'ml-1' : orientation === 'row-reverse' ? 'mr-1' : '',
+                  )}
+                >
+                  {renderCard(state.cards[0], 'xs')}
+                  {renderCard(state.cards[1], 'xs')}
+                </div>
+              )}
+              {!isHero && !state.cards && state.showBacks && !isFolded && (
+                <div
+                  className={cn(
+                    'flex shrink-0 items-center',
+                    orientation === 'col' ? 'mt-1 gap-0.5' : 'gap-0.5',
+                    orientation === 'row' ? 'ml-1' : orientation === 'row-reverse' ? 'mr-1' : '',
+                  )}
+                >
+                  <CardBack />
+                  <CardBack />
+                </div>
               )}
             </div>
           </div>
@@ -183,187 +216,93 @@ export function PokerTable({
   );
 }
 
-/* ═════════════════════════════ HERO ═════════════════════════════ */
+/* ═════════════════════════════ SEAT CHIP ═════════════════════════════ */
 
-function HeroSeat({
-  seat,
-  stack,
-  heroCards,
-  renderCard,
-}: {
-  seat: Seat;
-  stack: number | undefined;
-  heroCards: readonly [string, string] | undefined;
-  renderCard: PokerTableProps['renderCard'];
-}) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <PositionChip seat={seat} stack={stack} variant="hero" />
-      {heroCards && renderCard && (
-        <div className="flex shrink-0 items-center gap-0.5">
-          {renderCard(heroCards[0], 'sm')}
-          {renderCard(heroCards[1], 'sm')}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ═══════════════════════════ VILLAIN ═══════════════════════════ */
-
-function VillainSeat({
-  seat,
-  stack,
-  isFolded,
-  isToAct,
-  cards,
-  renderCard,
-  showMarker,
-}: {
-  seat: Seat;
-  stack: number | undefined;
-  isFolded: boolean;
-  isToAct: boolean;
-  cards: readonly [string, string] | undefined;
-  renderCard: PokerTableProps['renderCard'];
-  showMarker: boolean;
-}) {
-  // Only BTN gets a dealer-button marker. SB / BB positions already read
-  // "SB" / "BB" on the chip itself — adding "S" / "B" badges next to them
-  // was redundant and invisible on dark backgrounds.
-  const isDealer = showMarker && seat === 'BTN';
-  return (
-    <div className="flex items-center gap-1.5">
-      <div className="relative">
-        <PositionChip
-          seat={seat}
-          stack={stack}
-          variant={isFolded ? 'folded' : isToAct ? 'toAct' : 'idle'}
-        />
-        {isDealer && (
-          <span
-            title="딜러"
-            aria-label="딜러"
-            className="absolute -bottom-1 -right-1 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-ivory font-mono text-[10px] font-bold text-noir shadow-[0_2px_6px_rgba(0,0,0,0.6)] ring-1 ring-black/20"
-          >
-            D
-          </span>
-        )}
-      </div>
-      {cards && renderCard && !isFolded && (
-        <div className="flex shrink-0 items-center gap-0.5">
-          {renderCard(cards[0], 'xs')}
-          {renderCard(cards[1], 'xs')}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ═══════════════════════════ POSITION CHIP ═══════════════════════════ */
-
-function PositionChip({
+function SeatChip({
   seat,
   stack,
   variant,
+  showDealerBadge,
 }: {
   seat: Seat;
   stack: number | undefined;
   variant: 'hero' | 'toAct' | 'folded' | 'idle';
+  showDealerBadge: boolean;
 }) {
-  // Solid near-black fill (not semi-transparent) so the chip reads as a
-  // distinct object against the dark table background instead of floating
-  // text. In light mode the same classes still flip correctly via CSS vars.
   const fill = 'rgb(28, 28, 32)';
-  const border =
+  const ringColor =
     variant === 'hero'
-      ? '2.5px solid var(--color-call)'
+      ? 'var(--color-call)'
       : variant === 'toAct'
-        ? '2px solid var(--color-warning)'
-        : '1.5px solid rgba(255,255,255,0.22)';
-  const shadow =
+        ? 'var(--color-warning)'
+        : 'rgba(255,255,255,0.25)';
+  const ringWidth = variant === 'hero' ? '2.5px' : variant === 'toAct' ? '2px' : '1.5px';
+
+  const positionColor =
     variant === 'hero'
-      ? '0 0 0 1px rgba(31,157,85,0.4), 0 4px 14px rgba(0,0,0,0.5), 0 0 18px rgba(31,157,85,0.28)'
+      ? 'text-[color:var(--color-call)]'
       : variant === 'toAct'
-        ? '0 4px 14px rgba(0,0,0,0.5), 0 0 14px rgba(230,168,23,0.4)'
-        : '0 3px 10px rgba(0,0,0,0.45)';
+        ? 'text-[color:var(--color-warning)]'
+        : 'text-ivory/80';
 
   return (
-    <div
-      className={cn(
-        'relative flex h-[52px] w-[52px] flex-col items-center justify-center rounded-full font-mono',
-        'transition-colors',
-      )}
-      style={{
-        background: fill,
-        border,
-        boxShadow: shadow,
-        opacity: variant === 'folded' ? 0.4 : 1,
-      }}
-    >
-      <span
-        className={cn(
-          'font-mono text-[10px] font-semibold leading-none tracking-[0.06em]',
-          variant === 'hero'
-            ? 'text-[color:var(--color-call)]'
-            : variant === 'toAct'
-              ? 'text-[color:var(--color-warning)]'
-              : 'text-ivory/75',
-        )}
+    <div className="relative">
+      <div
+        className="flex h-14 w-14 flex-col items-center justify-center rounded-full shadow-[0_4px_14px_rgba(0,0,0,0.5)]"
+        style={{
+          background: fill,
+          border: `${ringWidth} solid ${ringColor}`,
+          opacity: variant === 'folded' ? 0.35 : 1,
+        }}
       >
-        {seat}
-      </span>
-      {stack !== undefined && (
-        <span className="mt-0.5 font-mono text-[13px] font-bold leading-none text-ivory">
-          {formatStack(stack)}
+        <span
+          className={cn(
+            'font-mono text-[11px] font-bold leading-none tracking-[0.04em]',
+            positionColor,
+          )}
+        >
+          {seat}
         </span>
-      )}
+        {stack !== undefined && (
+          <span className="mt-1 font-mono text-[14px] font-bold leading-none text-ivory tabular-nums">
+            {formatStack(stack)}
+          </span>
+        )}
+      </div>
       {variant === 'folded' && (
         <span
           aria-hidden
-          className="absolute inset-x-2 top-1/2 h-[1.2px] -translate-y-1/2 -rotate-12 bg-[color:var(--color-raise)]"
+          className="pointer-events-none absolute inset-x-2 top-1/2 h-[1.5px] -translate-y-1/2 -rotate-12 bg-[color:var(--color-raise)]"
         />
+      )}
+      {showDealerBadge && (
+        <span
+          title="딜러"
+          aria-label="딜러"
+          className="absolute -right-1.5 -bottom-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-ivory font-mono text-[10px] font-bold text-noir shadow-[0_2px_6px_rgba(0,0,0,0.6)] ring-1 ring-black/20"
+        >
+          D
+        </span>
       )}
     </div>
   );
 }
 
-function formatStack(stack: number): string {
-  if (stack >= 1000) return `${(stack / 1000).toFixed(1)}K`;
-  if (stack % 1 !== 0) return stack.toFixed(1);
-  return String(stack);
-}
+/* ═════════════════════════════ BET CHIP ═════════════════════════════ */
 
-/* ═══════════════════════════ ACTION CHIP ═══════════════════════════ */
-
-/**
- * Real-casino-chip look for betting: radial gradient + inner ring + drop
- * shadow so the chip reads as a physical object sitting on the felt.
- * Blind posts use a muted variant so they recede — a player should feel
- * that SB/BB posts are *ambient* and raises are *events*.
- */
-function ActionChip({ action }: { action: SeatAction }) {
+function BetChip({ action }: { action: SeatAction }) {
   if (action.kind === 'fold') return null;
   const style = chipStyle(action);
   const isBlind = action.kind === 'post';
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1">
       <div
         className={cn(
-          'flex items-center justify-center rounded-full text-[9px] font-bold font-mono tabular-nums',
-          isBlind ? 'h-4 w-4' : 'h-6 w-6',
+          'flex items-center justify-center rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.55)]',
+          isBlind ? 'h-3 w-3' : 'h-4 w-4',
         )}
-        style={{
-          background: style.gradient,
-          color: style.textColor,
-          border: `1px solid ${style.rim}`,
-          boxShadow: isBlind
-            ? '0 1px 3px rgba(0,0,0,0.4)'
-            : '0 2px 6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2)',
-        }}
-      >
-        {isBlind ? '' : '●'}
-      </div>
+        style={{ background: style.gradient, border: `1px solid ${style.rim}` }}
+      />
       <span
         className={cn(
           'font-mono text-[11px] font-semibold tabular-nums',
@@ -379,7 +318,6 @@ function ActionChip({ action }: { action: SeatAction }) {
 function chipStyle(action: Exclude<SeatAction, { kind: 'fold' }>): {
   gradient: string;
   rim: string;
-  textColor: string;
   label: string;
 } {
   switch (action.kind) {
@@ -387,64 +325,111 @@ function chipStyle(action: Exclude<SeatAction, { kind: 'fold' }>): {
     case 'bet':
       return {
         gradient: 'radial-gradient(circle at 35% 30%, #E23B56, #C8102E 60%, #7F0A1B)',
-        rim: 'rgba(255,255,255,0.25)',
-        textColor: 'rgba(255,255,255,0.95)',
-        label: `${action.bb} BB`,
+        rim: 'rgba(255,255,255,0.3)',
+        label: `${action.bb}`,
       };
     case '3bet':
       return {
         gradient: 'radial-gradient(circle at 35% 30%, #F0C857, #D4AF37 60%, #8C6F1F)',
         rim: 'rgba(255,255,255,0.3)',
-        textColor: 'var(--color-noir)',
-        label: `3BET ${action.bb}`,
+        label: `${action.bb}`,
       };
     case 'call':
       return {
         gradient: 'radial-gradient(circle at 35% 30%, #2EBE6F, #1F9D55 60%, #0F5D33)',
-        rim: 'rgba(255,255,255,0.25)',
-        textColor: 'rgba(255,255,255,0.95)',
-        label: `${action.bb} BB`,
+        rim: 'rgba(255,255,255,0.3)',
+        label: `${action.bb}`,
       };
     case 'check':
       return {
         gradient: 'radial-gradient(circle at 35% 30%, #6FB2FF, #4A9EFF 60%, #1E6BCC)',
-        rim: 'rgba(255,255,255,0.25)',
-        textColor: 'rgba(255,255,255,0.95)',
-        label: 'CHECK',
+        rim: 'rgba(255,255,255,0.3)',
+        label: 'chk',
       };
     case 'post':
-      // Muted grey so blinds recede visually.
       return {
-        gradient: 'linear-gradient(160deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04))',
-        rim: 'rgba(255,255,255,0.18)',
-        textColor: 'var(--color-fg-muted)',
-        label: `${action.bb} BB`,
+        gradient: 'radial-gradient(circle at 35% 30%, rgba(120,140,180,0.9), rgba(70,90,120,0.9))',
+        rim: 'rgba(255,255,255,0.2)',
+        label: `${action.bb}`,
       };
   }
 }
 
-/* ═══════════════════════════ GEOMETRY ═══════════════════════════ */
+/* ═════════════════════════════ CARD BACK ═════════════════════════════ */
 
-/** Seat position on the ellipse, starting bottom-center, going clockwise. */
-function seatPosition(index: number, total: number): { x: number; y: number } {
-  const offset = Math.PI / 2;
-  const angle = offset + (index / total) * Math.PI * 2;
-  const cx = 50;
-  const cy = 50;
-  const rx = 46;
-  const ry = 40;
-  return {
-    x: cx + rx * Math.cos(angle),
-    y: cy + ry * Math.sin(angle),
-  };
+function CardBack() {
+  return (
+    <div
+      className="h-[28px] w-[20px] rounded-[3px] shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
+      style={{
+        background:
+          'linear-gradient(135deg, rgba(60,60,68,0.9) 0%, rgba(40,40,48,0.9) 100%)',
+        border: '1px solid rgba(255,255,255,0.1)',
+      }}
+      aria-hidden
+    >
+      <div className="flex h-full items-center justify-center">
+        <span className="font-mono text-[9px] text-ivory/40">W</span>
+      </div>
+    </div>
+  );
 }
 
-/** Point between a seat and the center, used for the bet chip. */
-function seatToCenter(seatX: number, seatY: number, pullPercent: number): { x: number; y: number } {
+/* ═════════════════════════════ GEOMETRY ═════════════════════════════ */
+
+/**
+ * Given a seat index and a total seat count, return its position on the
+ * ellipse and the best flex orientation for the chip + cards cluster.
+ *
+ * The cluster orientation is picked so cards point *away* from the center
+ * of the table (matching GTO Wizard), keeping them readable and not
+ * overlapping the pot.
+ */
+function seatLayout(
+  index: number,
+  total: number,
+): { x: number; y: number; orientation: 'row' | 'row-reverse' | 'col' } {
+  const offset = Math.PI / 2; // start at bottom-center
+  const angle = offset + (index / total) * Math.PI * 2;
+  const rx = 44;
+  const ry = 38;
+  const x = 50 + rx * Math.cos(angle);
+  const y = 50 + ry * Math.sin(angle);
+
+  // Orientation: which side the cards sit on, so they extend outward from
+  // the table, not across it.
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  let orientation: 'row' | 'row-reverse' | 'col';
+  if (Math.abs(sin) > 0.7) {
+    orientation = 'col'; // top or bottom seats → stack vertically
+  } else if (cos > 0) {
+    orientation = 'row'; // right side of table → cards on left of chip? wait — we want them outside
+    // cos > 0 means seat is to the right of center; chip should be OUTSIDE (right), cards closer to center
+    // Actually GTO Wizard puts cards BESIDE chip, same row; we just keep consistent flow
+    orientation = 'row-reverse'; // cards to the right (outside), chip closer to center on right-side seats... actually simpler: left side of screen
+  } else {
+    orientation = 'row';
+  }
+  return { x, y, orientation };
+}
+
+function chipPos(seatX: number, seatY: number, pullPercent: number): { x: number; y: number } {
   const cx = 50;
   const cy = 50;
   const dx = cx - seatX;
   const dy = cy - seatY;
   const t = pullPercent / 100;
   return { x: seatX + dx * t, y: seatY + dy * t };
+}
+
+function formatStack(stack: number): string {
+  if (stack >= 1000) return `${(stack / 1000).toFixed(1)}K`;
+  if (stack % 1 !== 0) return stack.toFixed(1);
+  return String(stack);
+}
+
+function formatNumber(n: number): string {
+  if (n % 1 === 0) return String(n);
+  return n.toFixed(1);
 }

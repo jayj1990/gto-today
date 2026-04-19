@@ -1,144 +1,70 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import {
-  generateDailySpots,
-  gradeAnswer,
-  type AnswerGrade,
-  type GradedAction,
-  type TrainingSpot,
-} from '@gto/gto-data';
+import Link from 'next/link';
 import { SiteHeader } from '@/components/site-header';
-import { ProgressDots } from '@/components/today/progress-dots';
-import { HandCard } from '@/components/today/hand-card';
-import { ActionBar } from '@/components/today/action-bar';
-import { ResultSheet } from '@/components/today/result-sheet';
-import { DailyComplete } from '@/components/today/daily-complete';
-import { useChallengeStore } from '@/lib/challenge-store';
-import { isoDateKR } from '@/lib/date';
+import { formatTodayKR } from '@/lib/date';
 
-const TOTAL = 10;
+export const revalidate = 3600;
 
-export default function TodayPage() {
-  const [spots, setSpots] = useState<TrainingSpot[] | null>(null);
-  const [resultOpen, setResultOpen] = useState(false);
-  const [lastGrade, setLastGrade] = useState<AnswerGrade | null>(null);
-  const [lastAnswer, setLastAnswer] = useState<GradedAction | null>(null);
-
-  const cursor = useChallengeStore((s) => s.cursor);
-  const answers = useChallengeStore((s) => s.answers);
-  const currentStreak = useChallengeStore((s) => s.currentStreak);
-  const bestStreak = useChallengeStore((s) => s.bestStreak);
-  const dateKey = useChallengeStore((s) => s.dateKey);
-  const startDay = useChallengeStore((s) => s.startDay);
-  const submit = useChallengeStore((s) => s.submit);
-  const advance = useChallengeStore((s) => s.advance);
-  const completeDay = useChallengeStore((s) => s.completeDay);
-
-  useEffect(() => {
-    let cancelled = false;
-    const today = isoDateKR();
-    generateDailySpots({ count: TOTAL, dateSeed: today }).then((s) => {
-      if (cancelled) return;
-      setSpots(s);
-      startDay(today, s);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [startDay]);
-
-  useEffect(() => {
-    if (spots && cursor >= TOTAL && dateKey) {
-      completeDay();
-    }
-  }, [cursor, spots, dateKey, completeDay]);
-
-  const current = spots?.[cursor] ?? null;
-  const isComplete = spots !== null && cursor >= TOTAL;
-
-  const handleAnswer = (action: GradedAction) => {
-    if (!current) return;
-    const grade = gradeAnswer(current, action);
-    submit(action, grade);
-    setLastAnswer(action);
-    setLastGrade(grade);
-    setResultOpen(true);
-  };
-
-  const handleNext = () => {
-    setResultOpen(false);
-    advance();
-  };
-
+/**
+ * /today entry — intro + "시작" button.
+ *
+ * The active play loop lives at /today/play. The intro screen gives the
+ * user a moment to breathe before committing to 10 hands and shows the
+ * format / scenario summary up-front instead of surprising them.
+ */
+export default function TodayIntroPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+32px)] pt-6">
-        {!spots && <Loading />}
+      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+32px)] pt-8">
+        <p className="font-mono text-[12px] uppercase tracking-[0.24em] text-[color:var(--color-accent)]">
+          오늘 · {formatTodayKR()}
+        </p>
+        <h1 className="mt-3 font-display text-[36px] font-bold leading-[1.1] tracking-[-0.02em]">
+          오늘의 훈련
+        </h1>
+        <p className="mt-3 text-body text-fg-muted">
+          매일 새로 생성되는 10핸드. 세계 모든 gto.today 사용자가 오늘 같은 핸드를 풉니다.
+        </p>
 
-        {spots && !isComplete && current && (
-          <>
-            <header className="mb-6">
-              <div className="flex items-center justify-between">
-                <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
-                  오늘 · Day {currentStreak + 1}
-                </p>
-                <p className="font-mono text-[13px] font-semibold">
-                  {cursor + 1} / {TOTAL}
-                </p>
-              </div>
-              <ProgressDots total={TOTAL} done={cursor} className="mt-3" />
-            </header>
+        <dl className="mt-8 grid grid-cols-3 gap-3">
+          <Summary label="포맷" value="6맥스" />
+          <Summary label="스택" value="100BB" />
+          <Summary label="시나리오" value="RFI · BB 디펜스" />
+        </dl>
 
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={current.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.2 }}
-              >
-                <HandCard spot={current} />
-              </motion.div>
-            </AnimatePresence>
+        <div className="mt-8 rounded-[var(--radius-panel)] border-hair surface p-5">
+          <h2 className="font-display text-[18px] font-semibold">오늘 연습할 것</h2>
+          <ul className="mt-3 space-y-2 text-[14px] text-fg-muted">
+            <li>• 각 포지션의 오픈 레이즈 결정 (RFI)</li>
+            <li>• BB 포지션의 디펜스 — 콜 / 3벳 / 폴드</li>
+            <li>• 50/50 믹스부터 20/80 엣지 스팟까지 골고루</li>
+          </ul>
+        </div>
 
-            <ActionBar
-              disabled={resultOpen}
-              actions={current.availableActions}
-              callSize={current.openSize}
-              raiseSize={current.scenario === 'vs_open' ? 9 : 2.5}
-              onAnswer={handleAnswer}
-            />
-          </>
-        )}
+        <Link
+          href="/today/play"
+          style={{ touchAction: 'manipulation' }}
+          className="mt-10 inline-flex h-14 items-center justify-center rounded-[var(--radius-button)] bg-gold-gradient font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+        >
+          훈련 시작 →
+        </Link>
 
-        {isComplete && (
-          <DailyComplete
-            answers={answers}
-            currentStreak={currentStreak}
-            bestStreak={bestStreak}
-          />
-        )}
-
-        <ResultSheet
-          open={resultOpen}
-          spot={current}
-          userAnswer={lastAnswer}
-          grade={lastGrade}
-          onNext={handleNext}
-          isLast={spots !== null && cursor === TOTAL - 1}
-        />
+        <Link
+          href="/sim"
+          className="mt-3 text-center text-[13px] text-fg-muted underline-offset-4 hover:underline"
+        >
+          자유 시뮬레이션으로 이동
+        </Link>
       </main>
     </>
   );
 }
 
-function Loading() {
+function Summary({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-1 items-center justify-center">
-      <p className="font-mono text-[13px] text-fg-muted">오늘의 핸드 불러오는 중…</p>
+    <div className="rounded-[var(--radius-button)] border-hair surface p-3 text-center">
+      <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-fg-muted">{label}</dt>
+      <dd className="mt-1 font-mono text-[14px] font-semibold text-fg">{value}</dd>
     </div>
   );
 }

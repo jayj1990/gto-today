@@ -95,6 +95,8 @@ export default function ShowcasePage() {
                 hero="BTN"
                 toAct="BTN"
                 heroCards={['As', 'Kh']}
+                pot={1.5}
+                effectiveStack={100}
                 renderCard={(code, size) => (
                   <CardView
                     rank={code.charAt(0)}
@@ -108,8 +110,8 @@ export default function ShowcasePage() {
                   MP: { stack: 100, action: { kind: 'fold' } },
                   CO: { stack: 100, action: { kind: 'fold' } },
                   BTN: { stack: 100 },
-                  SB: { stack: 99.5, action: { kind: 'post', bb: 0.5 } },
-                  BB: { stack: 99, action: { kind: 'post', bb: 1 } },
+                  SB: { stack: 99.5, action: { kind: 'post', bb: 0.5 }, showBacks: true },
+                  BB: { stack: 99, action: { kind: 'post', bb: 1 }, showBacks: true },
                 }}
               />
             </div>
@@ -120,6 +122,9 @@ export default function ShowcasePage() {
                 hero="BB"
                 toAct="BB"
                 heroCards={['Qs', 'Qd']}
+                pot={4}
+                effectiveStack={100}
+                lastBet={2.5}
                 renderCard={(code, size) => (
                   <CardView
                     rank={code.charAt(0)}
@@ -132,16 +137,13 @@ export default function ShowcasePage() {
                   UTG: { stack: 100, action: { kind: 'fold' } },
                   MP: { stack: 100, action: { kind: 'fold' } },
                   CO: { stack: 100, action: { kind: 'fold' } },
-                  BTN: { stack: 97.5, action: { kind: 'raise', bb: 2.5 } },
-                  SB: { stack: 99.5, action: { kind: 'post', bb: 0.5 } },
+                  BTN: { stack: 97.5, action: { kind: 'raise', bb: 2.5 }, showBacks: true },
+                  SB: { stack: 99.5, action: { kind: 'post', bb: 0.5 }, showBacks: true },
                   BB: { stack: 99 },
                 }}
               />
             </div>
           </div>
-          <p className="mt-3 font-mono text-[11px] text-fg-muted">
-            포지션 칩 안에 스택 사이즈 표시. 히어로 초록 링, to-act 앰버 링, 폴드는 대각선 스트라이크.
-          </p>
         </Section>
 
         <Section title="06 · Preflop range (live GTO data)">
