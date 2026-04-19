@@ -13,7 +13,7 @@ export type { CardViewProps, CardFace, DeckScheme } from './card';
 export type { ChipProps, ChipTone } from './chip';
 export type { MixBarProps, MixBarSegment } from './mix-bar';
 export type { CountUpProps } from './count-up';
-export type { PokerTableProps, Seat, Format } from './poker-table';
+export type { PokerTableProps, Seat, Format, SeatAction } from './poker-table';
 export type { RangeGridProps } from './range-grid';
 export type { TouchButtonProps } from './touch-button';
 

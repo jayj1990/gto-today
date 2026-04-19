@@ -51,7 +51,7 @@ function comboCards(combo: ComboKey): readonly [CardCode, CardCode] {
 }
 
 export async function generateRandomSpot(opts: RandomSpotOptions = {}): Promise<TrainingSpot | null> {
-  const format: TableFormat = opts.format ?? '9max';
+  const format: TableFormat = opts.format ?? '6max';
   const defaults = format === '6max' ? POSITIONS_6MAX : POSITIONS_9MAX;
   const positions = opts.positions ?? defaults;
   const position = positions[Math.floor(Math.random() * positions.length)]!;

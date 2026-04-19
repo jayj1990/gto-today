@@ -87,26 +87,40 @@ export default function ShowcasePage() {
         </Section>
 
         <Section title="05 · Poker table (overhead)">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 sm:grid-cols-2">
             <div>
-              <p className="mb-2 font-mono text-[11px] text-fg-muted">6-max · BTN</p>
-              <PokerTable format="6max" hero="BTN" folded={['UTG', 'MP']} />
+              <p className="mb-2 font-mono text-[11px] text-fg-muted">6-max · BTN (RFI)</p>
+              <PokerTable
+                format="6max"
+                hero="BTN"
+                actions={{
+                  UTG: { kind: 'fold' },
+                  MP: { kind: 'fold' },
+                  CO: { kind: 'fold' },
+                  SB: { kind: 'post', bb: 0.5 },
+                  BB: { kind: 'post', bb: 1 },
+                }}
+              />
             </div>
             <div>
-              <p className="mb-2 font-mono text-[11px] text-fg-muted">9-max · CO</p>
-              <PokerTable format="9max" hero="CO" folded={['UTG', 'UTG1', 'MP', 'LJ']} />
-            </div>
-            <div>
-              <p className="mb-2 font-mono text-[11px] text-fg-muted">10-max · HJ</p>
-              <PokerTable format="10max" hero="HJ" folded={['UTG', 'UTG1', 'UTG2']} />
-            </div>
-            <div>
-              <p className="mb-2 font-mono text-[11px] text-fg-muted">11-max · CO</p>
-              <PokerTable format="11max" hero="CO" folded={['UTG', 'UTG1', 'UTG2', 'UTG3']} />
+              <p className="mb-2 font-mono text-[11px] text-fg-muted">9-max · CO (RFI)</p>
+              <PokerTable
+                format="9max"
+                hero="CO"
+                actions={{
+                  UTG: { kind: 'fold' },
+                  UTG1: { kind: 'fold' },
+                  MP: { kind: 'fold' },
+                  LJ: { kind: 'fold' },
+                  HJ: { kind: 'fold' },
+                  SB: { kind: 'post', bb: 0.5 },
+                  BB: { kind: 'post', bb: 1 },
+                }}
+              />
             </div>
           </div>
           <p className="mt-3 font-mono text-[11px] text-fg-muted">
-            한국 토너먼트에서는 11맥스 테이블까지 사용됩니다.
+            6-max 기본. 9/10/11-max는 /sim 필터에서 선택 가능.
           </p>
         </Section>
 

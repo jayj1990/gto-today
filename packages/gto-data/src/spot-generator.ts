@@ -162,7 +162,7 @@ export async function generateDailySpots(
   opts: GenerateOptions = {},
 ): Promise<TrainingSpot[]> {
   const count = opts.count ?? 10;
-  const format: TableFormat = opts.format ?? '9max';
+  const format: TableFormat = opts.format ?? '6max';
   const dateKey = opts.dateSeed ?? new Date().toISOString().slice(0, 10);
   const rng = seeded(seedFromDate(dateKey));
   const positions = format === '6max' ? POSITIONS_6MAX : POSITIONS_9MAX;
