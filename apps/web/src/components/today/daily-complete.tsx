@@ -90,7 +90,7 @@ export function DailyComplete({ answers, currentStreak, bestStreak, className }:
         </Link>
       </div>
 
-      <p className="mt-8 text-[13px] text-fg-muted">내일 또 한 걸음. 오늘이 기다립니다.</p>
+      <p className="mt-8 text-[13px] text-fg-muted">내일 또 한 걸음.</p>
     </motion.div>
   );
 }

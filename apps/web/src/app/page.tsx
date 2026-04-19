@@ -113,7 +113,7 @@ export default function HomePage() {
         <footer className="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-6 text-[13px] text-fg-muted">
           <div className="flex items-center gap-2">
             <Logo variant="short" className="text-[16px]" />
-            <span>· 오늘이 기다립니다.</span>
+            <span>· 매일 한 걸음.</span>
           </div>
           <div className="flex gap-5">
             <Link href="/about">About</Link>
