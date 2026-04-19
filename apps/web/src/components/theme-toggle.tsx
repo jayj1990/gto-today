@@ -51,8 +51,9 @@ export function ThemeToggle() {
             aria-label={`${label} theme`}
             type="button"
             onClick={() => applyMode(value)}
+            style={{ touchAction: 'manipulation' }}
             className={cn(
-              'flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[13px] transition-colors',
+              'flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[13px] transition-colors select-none active:scale-[0.96]',
               active
                 ? 'bg-[var(--color-accent)] text-noir font-semibold'
                 : 'text-fg-muted hover:text-fg',

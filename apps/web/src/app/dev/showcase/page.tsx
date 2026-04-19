@@ -9,7 +9,7 @@ export default function ShowcasePage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto max-w-5xl px-4 pb-24 pt-10">
+      <main className="mx-auto max-w-5xl safe-pad-x pb-[calc(env(safe-area-inset-bottom)+96px)] pt-10">
         <header className="mb-10">
           <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
             /dev/showcase

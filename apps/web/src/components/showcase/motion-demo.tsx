@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CardView, Chip, CountUp, MixBar } from '@gto/ui';
 import {
@@ -21,6 +21,14 @@ export function MotionDemo() {
   const [evTarget, setEvTarget] = useState(2.14);
   const [mixPct, setMixPct] = useState({ bet: 68, check: 32 });
   const [tossKey, setTossKey] = useState(0);
+  // Swallow double-fires when two fingers tap at the same time.
+  const flipLockRef = useRef(0);
+  const handleFlip = () => {
+    const now = performance.now();
+    if (now - flipLockRef.current < 240) return;
+    flipLockRef.current = now;
+    setFlipped((f) => !f);
+  };
 
   return (
     <div className="space-y-8">
@@ -50,7 +58,8 @@ export function MotionDemo() {
           </motion.div>
           <button
             onClick={() => setDealKey((k) => k + 1)}
-            className="rounded-[var(--radius-button)] border-hair px-4 py-2 text-[13px] font-semibold hover:surface-raised"
+            style={{ touchAction: 'manipulation' }}
+            className="select-none rounded-[var(--radius-button)] border-hair px-4 py-2 text-[13px] font-semibold active:scale-[0.97]"
           >
             Deal again
           </button>
@@ -67,7 +76,8 @@ export function MotionDemo() {
             flippable
             face={flipped ? 'up' : 'down'}
             interactive
-            onClick={() => setFlipped((f) => !f)}
+            style={{ touchAction: 'manipulation' }}
+            onClick={handleFlip}
           />
           <p className="text-[13px] text-fg-muted">
             클릭해서 뒤집어 보세요.
@@ -88,7 +98,8 @@ export function MotionDemo() {
               <button
                 key={v}
                 onClick={() => setEvTarget(v)}
-                className="rounded-[var(--radius-button)] border-hair px-3 py-1.5 text-[13px] hover:surface-raised"
+                style={{ touchAction: 'manipulation' }}
+                className="select-none rounded-[var(--radius-button)] border-hair px-3 py-1.5 text-[13px] active:scale-[0.97]"
               >
                 {v > 0 ? '+' : ''}
                 {v}
@@ -110,19 +121,22 @@ export function MotionDemo() {
           <div className="flex gap-2">
             <button
               onClick={() => setMixPct({ bet: 68, check: 32 })}
-              className="rounded-[var(--radius-button)] border-hair px-3 py-1.5 text-[13px] hover:surface-raised"
+              style={{ touchAction: 'manipulation' }}
+                className="select-none rounded-[var(--radius-button)] border-hair px-3 py-1.5 text-[13px] active:scale-[0.97]"
             >
               BTN vs BB (68/32)
             </button>
             <button
               onClick={() => setMixPct({ bet: 22, check: 78 })}
-              className="rounded-[var(--radius-button)] border-hair px-3 py-1.5 text-[13px] hover:surface-raised"
+              style={{ touchAction: 'manipulation' }}
+                className="select-none rounded-[var(--radius-button)] border-hair px-3 py-1.5 text-[13px] active:scale-[0.97]"
             >
               OOP wet (22/78)
             </button>
             <button
               onClick={() => setMixPct({ bet: 100, check: 0 })}
-              className="rounded-[var(--radius-button)] border-hair px-3 py-1.5 text-[13px] hover:surface-raised"
+              style={{ touchAction: 'manipulation' }}
+                className="select-none rounded-[var(--radius-button)] border-hair px-3 py-1.5 text-[13px] active:scale-[0.97]"
             >
               All-in (100/0)
             </button>
@@ -155,9 +169,10 @@ export function MotionDemo() {
           </div>
           <button
             onClick={() => setTossKey((k) => k + 1)}
-            className="rounded-[var(--radius-button)] bg-gold-gradient px-4 py-2 text-[13px] font-semibold text-noir"
+            style={{ touchAction: 'manipulation' }}
+            className="select-none rounded-[var(--radius-button)] bg-gold-gradient px-4 py-2 text-[13px] font-semibold text-noir active:scale-[0.97]"
           >
-            Sharp. ✨
+            Sharp.
           </button>
         </div>
       </Section>

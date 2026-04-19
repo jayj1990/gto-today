@@ -15,6 +15,7 @@
     "./count-up": "./src/count-up.tsx",
     "./poker-table": "./src/poker-table.tsx",
     "./range-grid": "./src/range-grid.tsx",
+    "./touch-button": "./src/touch-button.tsx",
     "./motion": "./src/motion.ts"
   },
   "scripts": {

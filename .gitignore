@@ -53,3 +53,5 @@ next-env.d.ts
 packages/gto-data/dist/
 packages/gto-data/generated/
 apps/web/public/data/*.json.gz
+
+.vercel

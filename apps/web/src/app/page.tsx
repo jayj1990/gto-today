@@ -27,7 +27,7 @@ export default function HomePage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto max-w-5xl px-4 pb-24">
+      <main className="mx-auto max-w-5xl safe-pad-x pb-[calc(env(safe-area-inset-bottom)+96px)]">
         <section className="relative overflow-hidden rounded-[var(--radius-panel)] mt-8 border-hair bg-felt-gradient grain">
           <div className="relative z-10 px-6 py-16 sm:px-12 sm:py-24">
             <p className="font-mono text-[13px] uppercase tracking-[0.24em] text-gold">
@@ -44,13 +44,15 @@ export default function HomePage() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href="/today"
-                className="inline-flex h-14 items-center rounded-[var(--radius-button)] bg-gold-gradient px-6 font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] transition-transform duration-[var(--dur-fast)] ease-[var(--ease-quart)] active:scale-[0.98]"
+                style={{ touchAction: 'manipulation' }}
+                className="inline-flex h-14 items-center rounded-[var(--radius-button)] bg-gold-gradient px-6 font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] transition-transform duration-[var(--dur-fast)] ease-[var(--ease-quart)] active:scale-[0.98] select-none"
               >
                 오늘의 스팟 풀기 →
               </Link>
               <Link
                 href="/assist"
-                className="inline-flex h-14 items-center rounded-[var(--radius-button)] border-hair px-6 font-semibold text-ivory backdrop-blur-sm transition-colors hover:bg-white/5"
+                style={{ touchAction: 'manipulation' }}
+                className="inline-flex h-14 items-center rounded-[var(--radius-button)] border-hair px-6 font-semibold text-ivory backdrop-blur-sm transition-colors active:scale-[0.98] select-none"
               >
                 실전 모드 열기
               </Link>

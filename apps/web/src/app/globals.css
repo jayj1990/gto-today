@@ -50,6 +50,17 @@
   *::before,
   *::after {
     box-sizing: border-box;
+    /* Kill the iOS/Android tap-highlight flash. We replace it with
+       Framer Motion's whileTap scale — much more tactile. */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    /* Prevent text-size auto-inflation on landscape-rotation (iOS). */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Stop iOS bounce at document edges; inner scrollers still bounce. */
+    overscroll-behavior-y: none;
   }
 
   html,
@@ -68,6 +79,54 @@
     text-rendering: optimizeLegibility;
   }
 
+  body {
+    /* Strip the 300ms tap delay across the entire tree and opt into
+       the browser's double-tap-zoom + scroll behavior only. */
+    touch-action: manipulation;
+    /* Allow pinch-to-zoom to work naturally (viewport user-scalable=1).
+       We don't lock it — accessibility. */
+    min-height: 100dvh;
+  }
+
+  /* Interactive elements: buttons, links, role=button, aria-pressed.
+     - touch-action: manipulation — no double-tap zoom, keeps tap fast
+     - user-select: none — long-press selects text otherwise (ugly)
+     - -webkit-touch-callout: none — suppresses the iOS context menu
+     All three are safe because they apply only to controls, not prose. */
+  button,
+  a[role='button'],
+  [role='button'],
+  [role='radio'],
+  [role='tab'],
+  summary,
+  label[for],
+  input[type='button'],
+  input[type='submit'] {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Scrollable containers — allow only the expected axis to scroll and
+     keep overscroll from propagating to the body. */
+  [data-scroll='y'] {
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  [data-scroll='x'] {
+    touch-action: pan-x;
+    overscroll-behavior-x: contain;
+  }
+
+  /* The poker table + cards should reject text selection on drag so
+     tapping 10 times doesn't highlight random glyphs. */
+  [role='img'] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
   /* Tabular figures everywhere by default — numbers must align. */
   body {
     font-variant-numeric: tabular-nums;
@@ -80,11 +139,19 @@
       color var(--dur-base) var(--ease-quart);
   }
 
-  /* Focus ring — golden, accessible */
+  /* Focus ring — golden, accessible.
+     Only triggers on keyboard / assistive focus, not touch. */
   :where(button, a, input, textarea, select, [tabindex]):focus-visible {
     outline: none;
     box-shadow: var(--shadow-focus);
     border-radius: var(--radius-button);
+  }
+
+  /* Touch-only devices: lose hover-specific styles to avoid sticky-hover. */
+  @media (hover: none) and (pointer: coarse) {
+    *:hover {
+      transition: none !important;
+    }
   }
 
   /* Korean word-break safety */
@@ -97,6 +164,31 @@
   ::selection {
     background: var(--color-gold);
     color: var(--color-noir);
+  }
+}
+
+/* ============================================================
+   Safe-area utilities (iOS notch / Android gesture nav)
+   ============================================================
+   Use with:
+     <div className="safe-top">  →  padding-top = env(safe-area-inset-top)
+     <div className="safe-bottom">
+     <header className="safe-pad-x">  →  horizontal padding
+     <footer className="safe-sticky-bottom">  →  sticky bar honoring the inset
+   ============================================================ */
+@layer utilities {
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-pad-x {
+    padding-left: max(env(safe-area-inset-left), 16px);
+    padding-right: max(env(safe-area-inset-right), 16px);
+  }
+  .safe-sticky-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
   }
 }
 

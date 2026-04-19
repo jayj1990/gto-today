@@ -59,11 +59,12 @@ export function RangeDemo() {
               key={p.id}
               type="button"
               onClick={() => setPosition(p.id)}
+              style={{ touchAction: 'manipulation' }}
               className={
-                'rounded-full border-hair px-3 py-1.5 text-[13px] font-mono transition-colors ' +
+                'select-none rounded-full border-hair px-3 py-1.5 text-[13px] font-mono transition-colors active:scale-[0.96] ' +
                 (active
                   ? 'bg-[color:var(--color-accent)] text-noir font-semibold'
-                  : 'hover:surface-raised text-fg-muted')
+                  : 'text-fg-muted')
               }
             >
               {p.label}

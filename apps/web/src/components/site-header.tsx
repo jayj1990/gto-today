@@ -4,8 +4,8 @@ import { ThemeToggle } from './theme-toggle';
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-20 border-b border-hair backdrop-blur-md bg-[color:var(--color-bg)]/70">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+    <header className="safe-top sticky top-0 z-20 border-b border-hair backdrop-blur-md bg-[color:var(--color-bg)]/70">
+      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between safe-pad-x">
         <Link href="/" aria-label="gto.today home" className="flex items-center">
           <Logo variant="full" className="text-[20px]" />
         </Link>

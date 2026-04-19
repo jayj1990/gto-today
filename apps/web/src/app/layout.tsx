@@ -38,13 +38,24 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'gto.today',
+    startupImage: ['/icon-apple.png'],
+  },
+  formatDetection: {
+    // iOS: stop auto-linking phone numbers / emails / dates inside card text
+    telephone: false,
+    email: false,
+    address: false,
   },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  minimumScale: 1,
+  // Accessibility: allow pinch-to-zoom. Some sites lock this for UX
+  // reasons but we value readability more.
   maximumScale: 5,
+  userScalable: true,
   viewportFit: 'cover',
   themeColor: [
     { media: '(prefers-color-scheme: dark)', color: '#0E3B2E' },
