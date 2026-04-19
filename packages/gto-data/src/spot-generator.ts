@@ -2,6 +2,13 @@ import type { CardCode, ComboKey, Position, TableFormat } from '@gto/poker-core'
 import { RANKS, SUITS } from '@gto/poker-core';
 import { allCombos } from './combos';
 import { getPreflopChart, type PreflopStrategyJson } from './preflop';
+import {
+  getBbDefenseChart,
+  SUPPORTED_OPENERS,
+  type BbDefenseStrategyJson,
+} from './bb-defense';
+
+export type AvailableAction = 'fold' | 'check' | 'call' | 'raise';
 
 export interface TrainingSpot {
   readonly id: string;
@@ -10,10 +17,17 @@ export interface TrainingSpot {
   readonly position: Position;
   readonly format: TableFormat;
   readonly stackBB: number;
-  readonly scenario: 'rfi';
+  readonly scenario: 'rfi' | 'vs_open';
+  /** For vs_open scenarios: who opened, and to what size. */
+  readonly opener?: Position;
+  readonly openSize?: number;
   readonly gtoRaise: number;
   readonly gtoFold: number;
-  readonly correctAnswer: 'raise' | 'fold' | 'mixed';
+  /** For vs_open scenarios: call frequency (raise here = 3-bet). */
+  readonly gtoCall?: number;
+  readonly correctAnswer: 'raise' | 'call' | 'fold' | 'mixed';
+  /** Which action buttons the UI should offer the user. */
+  readonly availableActions: readonly AvailableAction[];
 }
 
 const POSITIONS_9MAX: Position[] = ['UTG', 'UTG1', 'MP', 'LJ', 'HJ', 'CO', 'BTN', 'SB'];
@@ -161,9 +175,56 @@ export interface GenerateOptions {
   readonly format?: TableFormat;
 }
 
+/** Classify a 3-way BB-defense mix into a dominant action. */
+function classifyDefense(mix: { call: number; raise: number; fold: number }): TrainingSpot['correctAnswer'] {
+  const max = Math.max(mix.call, mix.raise, mix.fold);
+  const ties = [mix.call, mix.raise, mix.fold].filter((v) => Math.abs(v - max) <= 0.05).length;
+  if (ties > 1) return 'mixed';
+  if (max === mix.raise) return 'raise';
+  if (max === mix.call) return 'call';
+  return 'fold';
+}
+
+function pickBbCombo(chart: BbDefenseStrategyJson, rng: () => number): ComboKey {
+  const pool: Array<{ combo: ComboKey; weight: number }> = [];
+  for (const c of allCombos()) {
+    const entry = chart[c];
+    if (!entry || entry.fold >= 0.97) continue;
+    // Slight preference for combos with non-trivial decisions.
+    const interesting = 1 - Math.max(entry.call, entry.raise, entry.fold);
+    pool.push({ combo: c, weight: 1 + interesting * 0.5 });
+  }
+  if (pool.length === 0) return allCombos()[0]!;
+  const total = pool.reduce((a, b) => a + b.weight, 0);
+  let roll = rng() * total;
+  for (const item of pool) {
+    roll -= item.weight;
+    if (roll <= 0) return item.combo;
+  }
+  return pool[pool.length - 1]!.combo;
+}
+
+const OPENER_SIZE: Record<Position, number> = {
+  UTG: 2.5,
+  UTG1: 2.5,
+  UTG2: 2.5,
+  UTG3: 2.5,
+  MP: 2.5,
+  LJ: 2.5,
+  HJ: 2.5,
+  CO: 2.5,
+  BTN: 2.5,
+  SB: 3,
+  BB: 0,
+};
+
 /**
- * Generate today's challenge lineup.
- * Deterministic: the same date on any device produces the same 10 spots.
+ * Generate today's challenge lineup with a mix of scenarios.
+ *
+ * Distribution (default): 60% RFI + 40% BB-vs-open defense so the user
+ * gets 콜 / 3벳 buttons as well as fold / raise.
+ *
+ * Deterministic: same date on any device → same 10 spots.
  */
 export async function generateDailySpots(
   opts: GenerateOptions = {},
@@ -174,32 +235,68 @@ export async function generateDailySpots(
   const rng = seeded(seedFromDate(dateKey));
   const positions = format === '6max' ? POSITIONS_6MAX : POSITIONS_9MAX;
 
-  const charts = new Map<Position, PreflopStrategyJson>();
+  // Pre-load RFI charts per position.
+  const rfiCharts = new Map<Position, PreflopStrategyJson>();
   for (const p of positions) {
     const chart = await getPreflopChart(format, p);
-    if (chart) charts.set(p, chart);
+    if (chart) rfiCharts.set(p, chart);
+  }
+
+  // Pre-load BB-defense charts per supported opener.
+  const bbCharts = new Map<Position, BbDefenseStrategyJson>();
+  for (const opener of SUPPORTED_OPENERS) {
+    const chart = await getBbDefenseChart(opener, format);
+    if (chart) bbCharts.set(opener, chart);
   }
 
   const out: TrainingSpot[] = [];
   for (let i = 0; i < count; i++) {
-    const position = positions[i % positions.length]!;
-    const chart = charts.get(position);
-    if (!chart) continue;
-    const combo = pickCombo(chart, rng);
-    const entry = chart[combo] ?? { raise: 0, fold: 1 };
-    const hero = comboToCards(combo, rng);
-    out.push({
-      id: `${dateKey}-${i}-${combo}-${position}`,
-      combo,
-      hero,
-      position,
-      format,
-      stackBB: 100,
-      scenario: 'rfi',
-      gtoRaise: entry.raise,
-      gtoFold: entry.fold,
-      correctAnswer: classifyAnswer(entry.raise),
-    });
+    const useBbDefense = bbCharts.size > 0 && rng() < 0.4;
+
+    if (useBbDefense) {
+      const openers = Array.from(bbCharts.keys());
+      const opener = openers[Math.floor(rng() * openers.length)]!;
+      const chart = bbCharts.get(opener)!;
+      const combo = pickBbCombo(chart, rng);
+      const entry = chart[combo] ?? { call: 0, raise: 0, fold: 1 };
+      const hero = comboToCards(combo, rng);
+      out.push({
+        id: `${dateKey}-${i}-${combo}-BB-vs-${opener}`,
+        combo,
+        hero,
+        position: 'BB',
+        format,
+        stackBB: 100,
+        scenario: 'vs_open',
+        opener,
+        openSize: OPENER_SIZE[opener],
+        gtoRaise: entry.raise,
+        gtoFold: entry.fold,
+        gtoCall: entry.call,
+        correctAnswer: classifyDefense(entry),
+        availableActions: ['fold', 'call', 'raise'],
+      });
+    } else {
+      const position = positions[i % positions.length]!;
+      const chart = rfiCharts.get(position);
+      if (!chart) continue;
+      const combo = pickCombo(chart, rng);
+      const entry = chart[combo] ?? { raise: 0, fold: 1 };
+      const hero = comboToCards(combo, rng);
+      out.push({
+        id: `${dateKey}-${i}-${combo}-${position}`,
+        combo,
+        hero,
+        position,
+        format,
+        stackBB: 100,
+        scenario: 'rfi',
+        gtoRaise: entry.raise,
+        gtoFold: entry.fold,
+        correctAnswer: classifyAnswer(entry.raise),
+        availableActions: ['fold', 'raise'],
+      });
+    }
   }
   return out;
 }
@@ -211,18 +308,37 @@ export async function generateDailySpots(
  * - wrong: picked the clearly wrong action
  */
 export type AnswerGrade = 'sharp' | 'acceptable' | 'wrong';
+export type GradedAction = 'fold' | 'call' | 'raise' | 'check';
 
 /**
- * Grade the user's answer against the GTO mix:
- *   • True 50/50 band (|raise − 0.5| ≤ 0.05) → either action is "acceptable"
- *   • Otherwise → picking the higher-frequency action = "sharp",
- *     picking the lower-frequency action = "wrong"
+ * Grade the user's action against the spot's GTO mix.
  *
- * Previously anything from 0.25–0.75 collapsed to "acceptable", which made
- * a clear 70/30 lean feel like a coin flip and produced an endless stream
- * of Playable verdicts.
+ * RFI (2-way fold/raise):
+ *   • |raise − 0.5| ≤ 0.05 → true 50/50 → either action = 'acceptable'
+ *   • Otherwise → picking the higher-frequency action = 'sharp', the other = 'wrong'
+ *
+ * vs_open (3-way fold/call/raise):
+ *   • The action with the highest frequency is the dominant answer
+ *   • If picked → 'sharp' (or 'acceptable' when there's a close tie)
+ *   • Otherwise → 'wrong'
  */
-export function gradeAnswer(spot: TrainingSpot, answer: 'raise' | 'fold'): AnswerGrade {
+export function gradeAnswer(spot: TrainingSpot, answer: GradedAction): AnswerGrade {
+  if (spot.scenario === 'vs_open') {
+    const mix = {
+      fold: spot.gtoFold,
+      call: spot.gtoCall ?? 0,
+      raise: spot.gtoRaise,
+    };
+    const chosen = mix[answer as 'fold' | 'call' | 'raise'] ?? 0;
+    const max = Math.max(mix.fold, mix.call, mix.raise);
+    // Close ties (within 5%) are all acceptable answers.
+    if (Math.abs(chosen - max) <= 0.05) {
+      return chosen === max && chosen > 0.55 ? 'sharp' : 'acceptable';
+    }
+    return 'wrong';
+  }
+
+  // RFI (2-way)
   const r = spot.gtoRaise;
   if (Math.abs(r - 0.5) <= 0.05) return 'acceptable';
   const dominant: 'raise' | 'fold' = r > 0.5 ? 'raise' : 'fold';

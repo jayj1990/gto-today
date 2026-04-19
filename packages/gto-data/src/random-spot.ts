@@ -2,6 +2,7 @@ import type { Position, TableFormat } from '@gto/poker-core';
 import { allCombos } from './combos';
 import { classifyAnswer, type TrainingSpot } from './spot-generator';
 import { getPreflopChart } from './preflop';
+import { getBbDefenseChart, SUPPORTED_OPENERS } from './bb-defense';
 import { SUITS } from '@gto/poker-core';
 import type { CardCode, ComboKey } from '@gto/poker-core';
 
@@ -50,10 +51,62 @@ function comboCards(combo: ComboKey): readonly [CardCode, CardCode] {
   return [`${r1}${s1}` as CardCode, `${r2}${s2}` as CardCode];
 }
 
+const OPENER_SIZE: Record<string, number> = {
+  UTG: 2.5, UTG1: 2.5, UTG2: 2.5, UTG3: 2.5,
+  MP: 2.5, LJ: 2.5, HJ: 2.5, CO: 2.5, BTN: 2.5,
+  SB: 3, BB: 0,
+};
+
+function classifyDefense(mix: { call: number; raise: number; fold: number }): TrainingSpot['correctAnswer'] {
+  const max = Math.max(mix.call, mix.raise, mix.fold);
+  const ties = [mix.call, mix.raise, mix.fold].filter((v) => Math.abs(v - max) <= 0.05).length;
+  if (ties > 1) return 'mixed';
+  if (max === mix.raise) return 'raise';
+  if (max === mix.call) return 'call';
+  return 'fold';
+}
+
+function comboCardsRand(combo: ComboKey): readonly [CardCode, CardCode] {
+  return comboCards(combo);
+}
+
 export async function generateRandomSpot(opts: RandomSpotOptions = {}): Promise<TrainingSpot | null> {
   const format: TableFormat = opts.format ?? '6max';
   const defaults = format === '6max' ? POSITIONS_6MAX : POSITIONS_9MAX;
   const positions = opts.positions ?? defaults;
+
+  // 40% chance of BB-vs-open scenario so the user sees call/3bet options.
+  const wantBbDefense = Math.random() < 0.4;
+  if (wantBbDefense) {
+    const opener = SUPPORTED_OPENERS[Math.floor(Math.random() * SUPPORTED_OPENERS.length)]!;
+    const bbChart = await getBbDefenseChart(opener, format);
+    if (bbChart) {
+      const pool = allCombos().filter((c) => (bbChart[c]?.fold ?? 1) < 0.97);
+      if (pool.length > 0) {
+        const combo = pool[Math.floor(Math.random() * pool.length)]!;
+        const entry = bbChart[combo] ?? { call: 0, raise: 0, fold: 1 };
+        const hero = comboCardsRand(combo);
+        return {
+          id: `sim-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          combo,
+          hero,
+          position: 'BB',
+          format,
+          stackBB: opts.stackBB ?? 100,
+          scenario: 'vs_open',
+          opener,
+          openSize: OPENER_SIZE[opener] ?? 2.5,
+          gtoRaise: entry.raise,
+          gtoFold: entry.fold,
+          gtoCall: entry.call,
+          correctAnswer: classifyDefense(entry),
+          availableActions: ['fold', 'call', 'raise'],
+        };
+      }
+    }
+  }
+
+  // RFI fallback
   const position = positions[Math.floor(Math.random() * positions.length)]!;
   const chart = await getPreflopChart(format, position);
   if (!chart) return null;
@@ -93,5 +146,6 @@ export async function generateRandomSpot(opts: RandomSpotOptions = {}): Promise<
     gtoRaise: entry.raise,
     gtoFold: entry.fold,
     correctAnswer: classifyAnswer(entry.raise),
+    availableActions: ['fold', 'raise'],
   };
 }

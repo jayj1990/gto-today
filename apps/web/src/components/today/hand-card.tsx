@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { CardView, PokerTable, cn, type SeatAction, type SeatState } from '@gto/ui';
+import { CardView, PokerTable, cn, type SeatState } from '@gto/ui';
 import type { TrainingSpot } from '@gto/gto-data';
 import type { Format, Seat } from '@gto/ui';
 import { POSITIONS_BY_FORMAT } from '@gto/poker-core';
@@ -12,53 +12,78 @@ export interface HandCardProps {
 }
 
 /**
- * Build per-seat state for an RFI scenario:
- *   • SB posts 0.5BB, BB posts 1BB
- *   • Every seat before hero has folded
- *   • Starting stack = 100BB for everyone (standard cash game)
- *
- * The table then renders each seat's chip with its live stack + most-recent
- * action chip in the GTO Wizard style.
+ * Build the table state for a given TrainingSpot scenario.
+ *  • RFI: blinds posted, pre-hero seats folded, hero about to act.
+ *  • vs_open: blinds posted, opener has raised, everyone between opener
+ *    and hero has folded, hero (on BB) about to act.
  */
-function buildRfiSeats(
-  hero: Seat,
-  format: Format,
-  heroStack: number,
-): Partial<Record<Seat, SeatState>> {
-  const order = POSITIONS_BY_FORMAT[format];
+function buildSeats(spot: TrainingSpot): {
+  seats: Partial<Record<Seat, SeatState>>;
+  foldedSeats: Seat[];
+  pot: number;
+} {
+  const order = POSITIONS_BY_FORMAT[spot.format as Format];
   const out: Partial<Record<Seat, SeatState>> = {};
-  const heroIdx = order.indexOf(hero);
+  const stack = spot.stackBB;
 
-  for (let i = 0; i < order.length; i++) {
-    const seat = order[i] as Seat;
-    const state: SeatState = { stack: heroStack };
-
-    if (seat === 'SB') state.action = { kind: 'post', bb: 0.5 };
-    else if (seat === 'BB') state.action = { kind: 'post', bb: 1 };
-    else if (i < heroIdx) state.action = { kind: 'fold' };
-    // Hero seat + seats after hero: no action entry (yet to act / is acting).
-
-    // Adjust stack for committed blinds.
-    if (state.action?.kind === 'post') {
-      state.stack = heroStack - state.action.bb;
-    }
-
-    out[seat] = state;
+  for (const seat of order) {
+    out[seat as Seat] = { stack };
   }
 
-  return out;
+  // Blinds always posted
+  out['SB'] = { stack: stack - 0.5, action: { kind: 'post', bb: 0.5 } };
+  out['BB'] = { stack: stack - 1, action: { kind: 'post', bb: 1 } };
+
+  const foldedSeats: Seat[] = [];
+  let pot = 1.5;
+
+  if (spot.scenario === 'vs_open' && spot.opener) {
+    const openSize = spot.openSize ?? 2.5;
+    const openerIdx = order.indexOf(spot.opener);
+    const heroIdx = order.indexOf(spot.position);
+
+    // Seats before opener fold
+    for (let i = 0; i < openerIdx; i++) {
+      const seat = order[i] as Seat;
+      if (seat === 'SB' || seat === 'BB') continue;
+      out[seat] = { stack, action: { kind: 'fold' } };
+      foldedSeats.push(seat);
+    }
+    // Opener raises
+    const openerSeat = spot.opener as Seat;
+    out[openerSeat] = {
+      stack: stack - openSize,
+      action: { kind: 'raise', bb: openSize },
+    };
+    pot = 1.5 + openSize;
+    // Seats between opener and hero fold
+    for (let i = openerIdx + 1; i < heroIdx; i++) {
+      const seat = order[i] as Seat;
+      if (seat === 'SB' || seat === 'BB') continue;
+      out[seat] = { stack, action: { kind: 'fold' } };
+      foldedSeats.push(seat);
+    }
+    // Hero seat (BB) keeps posted blind action context
+  } else {
+    // RFI — seats before hero fold
+    const heroIdx = order.indexOf(spot.position);
+    for (let i = 0; i < heroIdx; i++) {
+      const seat = order[i] as Seat;
+      if (seat === 'SB' || seat === 'BB') continue;
+      out[seat] = { stack, action: { kind: 'fold' } };
+      foldedSeats.push(seat);
+    }
+  }
+
+  return { seats: out, foldedSeats, pot };
 }
 
 export function HandCard({ spot, className }: HandCardProps) {
   const [c1, c2] = spot.hero;
   const hero = spot.position as Seat;
   const format = spot.format as Format;
-  const seats = buildRfiSeats(hero, format, spot.stackBB);
+  const { seats, foldedSeats, pot } = buildSeats(spot);
   const formatLabel = format === '6max' ? '6맥스' : format === '9max' ? '9맥스' : format;
-
-  const foldedSeats = (Object.entries(seats) as [Seat, SeatState][])
-    .filter(([, s]) => s.action?.kind === 'fold')
-    .map(([seat]) => seat);
 
   return (
     <motion.div
@@ -79,7 +104,9 @@ export function HandCard({ spot, className }: HandCardProps) {
         <div className="flex items-center gap-1.5">
           <Pill>{spot.position}</Pill>
           <Pill>{spot.stackBB}BB</Pill>
-          <Pill tone="accent">RFI</Pill>
+          <Pill tone="accent">
+            {spot.scenario === 'vs_open' ? `vs ${spot.opener}` : 'RFI'}
+          </Pill>
         </div>
       </div>
 
@@ -99,11 +126,11 @@ export function HandCard({ spot, className }: HandCardProps) {
             );
           }}
           centerContent={
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-0.5">
               <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-fg-muted">
                 Preflop
               </p>
-              <p className="font-mono text-[17px] font-bold text-fg">1.5 bb</p>
+              <p className="font-mono text-[17px] font-bold text-fg">{pot} bb</p>
               <p className="font-mono text-[10px] tracking-[0.1em] text-[color:var(--color-accent)]">
                 {spot.combo}
               </p>
@@ -114,7 +141,12 @@ export function HandCard({ spot, className }: HandCardProps) {
 
       {/* Pre-action summary */}
       <p className="mt-4 text-center text-[13px] text-fg-muted">
-        {foldedSeats.length === 0 ? (
+        {spot.scenario === 'vs_open' ? (
+          <>
+            <span className="text-fg/80">{spot.opener}</span> 오픈 {spot.openSize}BB —
+            BB 디펜스 차례.
+          </>
+        ) : foldedSeats.length === 0 ? (
           <>히어로가 먼저 액션합니다.</>
         ) : (
           <>

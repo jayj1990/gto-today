@@ -2,11 +2,11 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { AnswerGrade, TrainingSpot } from '@gto/gto-data';
+import type { AnswerGrade, GradedAction, TrainingSpot } from '@gto/gto-data';
 
 export interface AnswerRecord {
   readonly spotId: string;
-  readonly answer: 'raise' | 'fold';
+  readonly answer: GradedAction;
   readonly grade: AnswerGrade;
   readonly at: number; // epoch ms
 }
@@ -30,7 +30,7 @@ interface ChallengeState {
   /** Start (or resume) a day — no-op if already started for `dateKey`. */
   startDay: (dateKey: string, spots: TrainingSpot[]) => void;
   /** Submit an answer for the current spot. */
-  submit: (answer: 'raise' | 'fold', grade: AnswerGrade) => void;
+  submit: (answer: GradedAction, grade: AnswerGrade) => void;
   /** Advance past the current result modal to the next spot. */
   advance: () => void;
   /** Mark today complete and update streak. */

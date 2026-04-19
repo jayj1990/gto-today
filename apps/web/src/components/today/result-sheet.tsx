@@ -1,14 +1,14 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { MixBar, cn } from '@gto/ui';
+import { MixBar, cn, type MixBarSegment } from '@gto/ui';
 import { sheetUp } from '@gto/ui/motion';
-import type { AnswerGrade, TrainingSpot } from '@gto/gto-data';
+import type { AnswerGrade, GradedAction, TrainingSpot } from '@gto/gto-data';
 
 export interface ResultSheetProps {
   open: boolean;
   spot: TrainingSpot | null;
-  userAnswer: 'raise' | 'fold' | null;
+  userAnswer: GradedAction | null;
   grade: AnswerGrade | null;
   onNext: () => void;
   isLast?: boolean;
@@ -23,13 +23,20 @@ const HEADLINE: Record<AnswerGrade, { title: string; tone: string; subtitle: str
   acceptable: {
     title: 'Playable.',
     tone: 'text-[color:var(--color-info)]',
-    subtitle: '믹스 전략 스팟이라 둘 다 열려 있습니다.',
+    subtitle: '믹스 스팟에서 선택 가능한 액션입니다.',
   },
   wrong: {
     title: '이유를 볼까요.',
     tone: 'text-[color:var(--color-raise)]',
-    subtitle: '다른 선택이 더 낫습니다.',
+    subtitle: '다른 선택이 더 나았어요.',
   },
+};
+
+const ACTION_LABEL: Record<GradedAction, string> = {
+  fold: '폴드',
+  check: '체크',
+  call: '콜',
+  raise: '레이즈',
 };
 
 export function ResultSheet({
@@ -40,6 +47,20 @@ export function ResultSheet({
   onNext,
   isLast = false,
 }: ResultSheetProps) {
+  const segments: MixBarSegment[] =
+    spot?.scenario === 'vs_open'
+      ? [
+          { label: '레이즈', value: spot.gtoRaise * 100, color: 'var(--color-raise)' },
+          { label: '콜', value: (spot.gtoCall ?? 0) * 100, color: 'var(--color-call)' },
+          { label: '폴드', value: spot.gtoFold * 100, color: 'var(--color-fold)' },
+        ]
+      : spot
+        ? [
+            { label: '레이즈', value: spot.gtoRaise * 100, color: 'var(--color-raise)' },
+            { label: '폴드', value: spot.gtoFold * 100, color: 'var(--color-fold)' },
+          ]
+        : [];
+
   return (
     <AnimatePresence>
       {open && spot && grade && (
@@ -68,10 +89,15 @@ export function ResultSheet({
               'safe-sticky-bottom px-6 pt-6 shadow-[var(--shadow-panel)]',
             )}
           >
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[color:var(--color-border)]" aria-hidden />
+            <div
+              className="mx-auto mb-4 h-1 w-10 rounded-full bg-[color:var(--color-border)]"
+              aria-hidden
+            />
 
             <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-fg-muted">
-              {spot.position} · {spot.combo}
+              {spot.scenario === 'vs_open'
+                ? `BB vs ${spot.opener} · ${spot.combo}`
+                : `${spot.position} · ${spot.combo}`}
             </p>
             <h2
               id="result-title"
@@ -88,23 +114,11 @@ export function ResultSheet({
               <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted">
                 GTO 믹스
               </p>
-              <MixBar
-                segments={[
-                  {
-                    label: '레이즈',
-                    value: spot.gtoRaise * 100,
-                    color: 'var(--color-raise)',
-                  },
-                  {
-                    label: '폴드',
-                    value: spot.gtoFold * 100,
-                    color: 'var(--color-fold)',
-                  },
-                ]}
-              />
+              <MixBar segments={segments} />
               {userAnswer && (
                 <p className="mt-4 font-mono text-[12px] text-fg-muted">
-                  당신의 선택: <span className="text-fg">{userAnswer === 'raise' ? '레이즈' : '폴드'}</span>
+                  당신의 선택:{' '}
+                  <span className="text-fg">{ACTION_LABEL[userAnswer]}</span>
                 </p>
               )}
             </div>

@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { generateDailySpots, gradeAnswer, type AnswerGrade, type TrainingSpot } from '@gto/gto-data';
+import {
+  generateDailySpots,
+  gradeAnswer,
+  type AnswerGrade,
+  type GradedAction,
+  type TrainingSpot,
+} from '@gto/gto-data';
 import { SiteHeader } from '@/components/site-header';
 import { ProgressDots } from '@/components/today/progress-dots';
 import { HandCard } from '@/components/today/hand-card';
@@ -18,7 +24,7 @@ export default function TodayPage() {
   const [spots, setSpots] = useState<TrainingSpot[] | null>(null);
   const [resultOpen, setResultOpen] = useState(false);
   const [lastGrade, setLastGrade] = useState<AnswerGrade | null>(null);
-  const [lastAnswer, setLastAnswer] = useState<'raise' | 'fold' | null>(null);
+  const [lastAnswer, setLastAnswer] = useState<GradedAction | null>(null);
 
   const cursor = useChallengeStore((s) => s.cursor);
   const answers = useChallengeStore((s) => s.answers);
@@ -30,7 +36,6 @@ export default function TodayPage() {
   const advance = useChallengeStore((s) => s.advance);
   const completeDay = useChallengeStore((s) => s.completeDay);
 
-  // Load today's lineup once.
   useEffect(() => {
     let cancelled = false;
     const today = isoDateKR();
@@ -44,7 +49,6 @@ export default function TodayPage() {
     };
   }, [startDay]);
 
-  // When we reach the end, commit the streak.
   useEffect(() => {
     if (spots && cursor >= TOTAL && dateKey) {
       completeDay();
@@ -54,11 +58,11 @@ export default function TodayPage() {
   const current = spots?.[cursor] ?? null;
   const isComplete = spots !== null && cursor >= TOTAL;
 
-  const handleAnswer = (answer: 'raise' | 'fold') => {
+  const handleAnswer = (action: GradedAction) => {
     if (!current) return;
-    const grade = gradeAnswer(current, answer);
-    submit(answer, grade);
-    setLastAnswer(answer);
+    const grade = gradeAnswer(current, action);
+    submit(action, grade);
+    setLastAnswer(action);
     setLastGrade(grade);
     setResultOpen(true);
   };
@@ -71,7 +75,7 @@ export default function TodayPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+96px)] pt-6">
+      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+32px)] pt-6">
         {!spots && <Loading />}
 
         {spots && !isComplete && current && (
@@ -100,7 +104,13 @@ export default function TodayPage() {
               </motion.div>
             </AnimatePresence>
 
-            <ActionBar disabled={resultOpen} onAnswer={handleAnswer} />
+            <ActionBar
+              disabled={resultOpen}
+              actions={current.availableActions}
+              callSize={current.openSize}
+              raiseSize={current.scenario === 'vs_open' ? 9 : 2.5}
+              onAnswer={handleAnswer}
+            />
           </>
         )}
 
