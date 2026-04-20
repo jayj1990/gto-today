@@ -57,16 +57,16 @@ const SIZE: Record<
 };
 
 /**
- * SVG paths drawn inside an 18×24 viewBox. Every path spans the FULL
- * vertical extent (y ≈ 0.5 → 23.5) so when the SVG is rendered at
- * height = cardHeight, all four suits are identical height — no more
- * Unicode-glyph drift where the heart rendered at 1.3× the diamond.
+ * SVG paths drawn inside a 24×24 SQUARE viewBox. Keeping the viewBox
+ * square means the natural 1:1 suit aspect is preserved — no horizontal
+ * squishing. All four paths span y ≈ 1 → 23 so rendered height is
+ * identical across suits.
  */
 const SUIT_PATH: Record<Suit, string> = {
-  s: 'M9 0.5 C 9 5 1.5 8 1.5 13 C 1.5 16 3.5 18.2 6 18.2 C 7.2 18.2 8 17.7 8.5 17 L 7 23.5 L 11 23.5 L 9.5 17 C 10 17.7 10.8 18.2 12 18.2 C 14.5 18.2 16.5 16 16.5 13 C 16.5 8 9 5 9 0.5 Z',
-  h: 'M9 23.5 C 9 23.5 0.5 15.5 0.5 7.5 C 0.5 3.8 3 1.5 5.8 1.5 C 7.5 1.5 8.5 2.5 9 3.5 C 9.5 2.5 10.5 1.5 12.2 1.5 C 15 1.5 17.5 3.8 17.5 7.5 C 17.5 15.5 9 23.5 9 23.5 Z',
-  d: 'M9 0.5 L 17 12 L 9 23.5 L 1 12 Z',
-  c: 'M9 0.5 C 7 0.5 5.3 2.2 5.3 4.3 C 5.3 5.5 5.9 6.5 6.8 7 C 4.8 7.2 3.2 8.9 3.2 11 C 3.2 13.1 4.8 14.8 6.8 14.8 C 7.4 14.8 8 14.6 8.5 14.3 L 7 23.5 L 11 23.5 L 9.5 14.3 C 10 14.6 10.6 14.8 11.2 14.8 C 13.2 14.8 14.8 13.1 14.8 11 C 14.8 8.9 13.2 7.2 11.2 7 C 12.1 6.5 12.7 5.5 12.7 4.3 C 12.7 2.2 11 0.5 9 0.5 Z',
+  s: 'M12 1 C 12 5 2 9 2 14 C 2 17 4.5 19.5 7.5 19.5 C 8.9 19.5 9.8 19 10.3 18.3 L 9 23 L 15 23 L 13.7 18.3 C 14.2 19 15.1 19.5 16.5 19.5 C 19.5 19.5 22 17 22 14 C 22 9 12 5 12 1 Z',
+  h: 'M12 23 C 12 23 2 14.5 2 7.5 C 2 4.3 4.3 2 7.5 2 C 9.5 2 11 3 12 4.5 C 13 3 14.5 2 16.5 2 C 19.7 2 22 4.3 22 7.5 C 22 14.5 12 23 12 23 Z',
+  d: 'M12 1 L 22 12 L 12 23 L 2 12 Z',
+  c: 'M12 1 C 9.5 1 7.5 3 7.5 5.5 C 7.5 7 8.2 8.3 9.3 9 C 7 9.1 5 11 5 13.5 C 5 16 7 18 9.5 18 C 10.3 18 11 17.7 11.6 17.3 L 10 23 L 14 23 L 12.4 17.3 C 13 17.7 13.7 18 14.5 18 C 17 18 19 16 19 13.5 C 19 11 17 9.1 14.7 9 C 15.8 8.3 16.5 7 16.5 5.5 C 16.5 3 14.5 1 12 1 Z',
 };
 
 function suitBackground(suit: Suit, scheme: DeckScheme): { bg: string; rim: string } {
@@ -161,13 +161,16 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
 
   const { bg, rim } = suitBackground(suit, deckScheme);
   const path = SUIT_PATH[suit];
-  // SVG intrinsic aspect is viewBox width/height = 18/24 = 0.75. Render
-  // height == card height so every suit is exactly the card's height.
+  // Square viewBox (24×24) → square SVG to preserve natural 1:1 suit
+  // aspect. Since a square SVG at card-height is wider than the card,
+  // the overhang is absorbed on the right as bleed (and a tiny amount
+  // on the left) — no horizontal squish.
   const svgH = sz.h;
-  const svgW = svgH * (18 / 24);
-  // Bleed: 12% of card width hangs past the right edge, identical for all
-  // four suits since the viewBox is identical.
-  const bleed = sz.w * 0.12;
+  const svgW = sz.h;
+  // Push SVG to the right so ~90% of the width-overhang (svgW - cardW)
+  // bleeds past the card right edge, leaving only ~10% clipped on left.
+  const overhang = svgW - sz.w;
+  const bleed = overhang * 0.9;
 
   return (
     <div
@@ -191,12 +194,12 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
         aria-hidden
         width={svgW}
         height={svgH}
-        viewBox="0 0 18 24"
+        viewBox="0 0 24 24"
         style={{
           position: 'absolute',
           top: 0,
           right: -bleed,
-          color: 'rgba(255,255,255,0.55)',
+          color: 'rgba(255,255,255,0.42)',
           pointerEvents: 'none',
         }}
       >
