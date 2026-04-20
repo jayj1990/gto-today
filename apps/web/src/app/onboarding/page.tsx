@@ -81,9 +81,21 @@ export default function OnboardingPage() {
         paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)',
       }}
     >
-      {/* Header: logo + skip */}
+      {/* Header: back button (left) + skip (right). Logo drops to keep
+          the focus on the slide content once the user has stepped in. */}
       <header className="flex items-center justify-between">
-        <Logo variant="full" width={108} />
+        {index > 0 ? (
+          <button
+            type="button"
+            onClick={() => setIndex((i) => Math.max(0, i - 1))}
+            className="flex h-10 w-10 items-center justify-center rounded-full border-hair surface-raised text-fg active:scale-[0.95]"
+            aria-label="이전"
+          >
+            ←
+          </button>
+        ) : (
+          <Logo variant="full" width={108} />
+        )}
         <button
           type="button"
           onClick={skip}
@@ -144,29 +156,15 @@ export default function OnboardingPage() {
         ))}
       </ul>
 
-      {/* CTA */}
-      <div className="mt-6 flex items-center justify-between gap-3">
-        {index > 0 ? (
-          <button
-            type="button"
-            onClick={() => setIndex((i) => Math.max(0, i - 1))}
-            className="h-12 w-12 rounded-full border-hair surface-raised text-fg-muted active:scale-[0.96]"
-            aria-label="이전"
-          >
-            ←
-          </button>
-        ) : (
-          <div className="w-12" />
-        )}
-        <button
-          type="button"
-          onClick={goNext}
-          style={{ touchAction: 'manipulation' }}
-          className="h-14 flex-1 rounded-[var(--radius-button)] bg-gold-gradient font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
-        >
-          {last ? '시작하기' : '다음'}
-        </button>
-      </div>
+      {/* CTA — full-width primary. Back button moved to the header. */}
+      <button
+        type="button"
+        onClick={goNext}
+        style={{ touchAction: 'manipulation' }}
+        className="mt-6 h-14 w-full rounded-[var(--radius-button)] bg-gold-gradient text-center font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+      >
+        {last ? '시작하기' : '다음'}
+      </button>
 
       <p className="mt-4 text-center text-[12px] text-fg-muted">
         이미 계정이 있나요?{' '}

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import './globals.css';
 import { themeInitScript } from '@/lib/theme';
+import { SessionSync } from '@/components/session-sync';
 
 export const metadata: Metadata = {
   title: {
@@ -71,7 +72,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {themeInitScript}
         </Script>
       </head>
-      <body className="min-h-dvh antialiased">{children}</body>
+      <body className="min-h-dvh antialiased">
+        <SessionSync>{children}</SessionSync>
+      </body>
     </html>
   );
 }

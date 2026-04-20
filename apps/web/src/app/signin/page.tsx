@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
+import { signIn as nextAuthSignIn } from 'next-auth/react';
 import { Logo, cn } from '@gto/ui';
 import { useAuthStore } from '@/lib/auth-store';
 
@@ -24,6 +25,14 @@ export default function SignInPage() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
+  // Real Google OAuth — Auth.js v5 handles the redirect + callback, and
+  // SessionSync mirrors the resulting session into zustand for us.
+  const handleGoogle = () => {
+    void nextAuthSignIn('google', { callbackUrl: '/' });
+  };
+
+  // Legacy mock sign-in path used by email + guest; will be removed once
+  // we add email magic link provider.
   const done = (method: 'google' | 'apple' | 'email' | 'guest', name: string, userEmail?: string) => {
     signIn({
       method,
@@ -80,7 +89,7 @@ export default function SignInPage() {
       <div className="mt-10 space-y-3">
         <button
           type="button"
-          onClick={() => done('google', 'Google 사용자')}
+          onClick={handleGoogle}
           style={{ touchAction: 'manipulation' }}
           className="flex h-14 w-full items-center justify-center gap-3 rounded-[var(--radius-button)] border-hair bg-ivory font-semibold text-noir shadow-[var(--shadow-card)] active:scale-[0.98]"
         >
