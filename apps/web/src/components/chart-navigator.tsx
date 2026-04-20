@@ -123,22 +123,31 @@ export function ChartNavigator({
                 </div>
 
                 {node.legal.length > 0 ? (
-                  <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  <div
+                    className="mt-3 grid gap-1.5"
+                    style={{
+                      gridTemplateColumns: `repeat(${node.legal.length}, minmax(0, 1fr))`,
+                    }}
+                  >
                     {node.legal.map((act) => {
                       const color = actionColour(act);
+                      const compact = node.legal.length >= 3;
                       return (
                         <button
                           key={act}
                           type="button"
                           onClick={() => handleAction(act)}
-                          className="h-12 rounded-[var(--radius-button)] border font-mono text-[13px] font-semibold active:scale-[0.98]"
+                          className={cn(
+                            'rounded-[var(--radius-button)] border font-mono font-semibold whitespace-nowrap active:scale-[0.98]',
+                            compact ? 'h-11 text-[11px] px-1' : 'h-12 text-[13px] px-2',
+                          )}
                           style={{
                             background: `${color}22`,
                             borderColor: `${color}66`,
                             color,
                           }}
                         >
-                          {prettyAction(act)}
+                          {prettyAction(act, compact)}
                         </button>
                       );
                     })}
@@ -397,11 +406,11 @@ function actionColour(a: string): string {
   return '#888';
 }
 
-function prettyAction(a: string): string {
+function prettyAction(a: string, compact = false): string {
   if (a === 'FOLD') return '폴드';
   if (a === 'Call') return '콜';
   if (a === 'AllIn') return '올인';
-  if (a.endsWith('bb')) return `레이즈 ${a}`;
+  if (a.endsWith('bb')) return compact ? a : `레이즈 ${a}`;
   return a;
 }
 

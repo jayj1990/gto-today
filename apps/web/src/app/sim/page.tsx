@@ -148,29 +148,35 @@ export default function SimPage() {
 
         {item?.kind === 'postflop' && (
           <div
-            className={cn(
-              'safe-bottom mt-5 grid gap-2',
-              item.spot.availableActions.length === 2 ? 'grid-cols-2' : 'grid-cols-3',
-            )}
+            className="safe-bottom mt-5 grid gap-2"
+            style={{
+              gridTemplateColumns: `repeat(${item.spot.availableActions.length}, minmax(0, 1fr))`,
+            }}
           >
-            {item.spot.availableActions.map((a) => (
-              <button
-                key={a}
-                type="button"
-                disabled={resultOpen || loading}
-                onClick={() => handlePostflopAnswer(a)}
-                className="h-14 select-none rounded-[var(--radius-button)] text-[14px] font-semibold transition-colors disabled:opacity-40 active:scale-[0.98]"
-                style={{
-                  background: POSTFLOP_ACTION_COLOR[a],
-                  color:
-                    a.startsWith('bet') || a.startsWith('raise')
-                      ? 'var(--color-noir)'
-                      : 'var(--color-ivory)',
-                }}
-              >
-                {POSTFLOP_ACTION_LABEL[a]}
-              </button>
-            ))}
+            {item.spot.availableActions.map((a) => {
+              const compact = item.spot.availableActions.length >= 3;
+              return (
+                <button
+                  key={a}
+                  type="button"
+                  disabled={resultOpen || loading}
+                  onClick={() => handlePostflopAnswer(a)}
+                  className={cn(
+                    'select-none rounded-[var(--radius-button)] font-semibold whitespace-nowrap px-1 transition-colors disabled:opacity-40 active:scale-[0.98]',
+                    compact ? 'h-12 text-[12px]' : 'h-14 text-[14px]',
+                  )}
+                  style={{
+                    background: POSTFLOP_ACTION_COLOR[a],
+                    color:
+                      a.startsWith('bet') || a.startsWith('raise')
+                        ? 'var(--color-noir)'
+                        : 'var(--color-ivory)',
+                  }}
+                >
+                  {POSTFLOP_ACTION_LABEL[a]}
+                </button>
+              );
+            })}
           </div>
         )}
 

@@ -68,29 +68,35 @@ export default function TodayPostflopPage() {
             </AnimatePresence>
 
             <div
-              className={cn(
-                'mt-4 grid gap-2',
-                spot.availableActions.length === 2 ? 'grid-cols-2' : 'grid-cols-3',
-              )}
+              className="mt-4 grid gap-2"
+              style={{
+                gridTemplateColumns: `repeat(${spot.availableActions.length}, minmax(0, 1fr))`,
+              }}
             >
-              {spot.availableActions.map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => handleAnswer(a)}
-                  disabled={resultOpen}
-                  className="h-14 rounded-[var(--radius-button)] font-semibold active:scale-[0.98] disabled:opacity-50"
-                  style={{
-                    background: POSTFLOP_ACTION_COLOR[a],
-                    color:
-                      a.startsWith('bet') || a.startsWith('raise')
-                        ? 'var(--color-noir)'
-                        : 'var(--color-ivory)',
-                  }}
-                >
-                  {POSTFLOP_ACTION_LABEL[a]}
-                </button>
-              ))}
+              {spot.availableActions.map((a) => {
+                const compact = spot.availableActions.length >= 3;
+                return (
+                  <button
+                    key={a}
+                    type="button"
+                    onClick={() => handleAnswer(a)}
+                    disabled={resultOpen}
+                    className={cn(
+                      'rounded-[var(--radius-button)] font-semibold whitespace-nowrap px-1 active:scale-[0.98] disabled:opacity-50',
+                      compact ? 'h-12 text-[12px]' : 'h-14 text-[14px]',
+                    )}
+                    style={{
+                      background: POSTFLOP_ACTION_COLOR[a],
+                      color:
+                        a.startsWith('bet') || a.startsWith('raise')
+                          ? 'var(--color-noir)'
+                          : 'var(--color-ivory)',
+                    }}
+                  >
+                    {POSTFLOP_ACTION_LABEL[a]}
+                  </button>
+                );
+              })}
             </div>
           </>
         )}

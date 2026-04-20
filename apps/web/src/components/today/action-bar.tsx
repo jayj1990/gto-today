@@ -59,22 +59,23 @@ export function ActionBar({
   className,
 }: ActionBarProps) {
   const count = actions.length;
+  const compact = count >= 3;
   return (
     <div
-      className={cn(
-        'safe-bottom mt-5',
-        count === 2 ? 'grid grid-cols-2 gap-3' : 'grid grid-cols-3 gap-2',
-        className,
-      )}
+      className={cn('safe-bottom mt-5 grid gap-2', className)}
+      style={{ gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}
     >
       {actions.map((kind) => {
         const size = kind === 'call' ? callSize : kind === 'raise' ? raiseSize : undefined;
+        // On 3+ button rows, drop the word label and show just the
+        // size so every button stays on the same line on a 360px
+        // mobile viewport.
         const label =
-          kind === 'call' && size !== undefined
-            ? `${LABELS[kind]} ${size}BB`
-            : kind === 'raise' && size !== undefined
-              ? `${LABELS[kind]} ${size}BB`
-              : LABELS[kind];
+          size !== undefined
+            ? compact
+              ? `${size}BB`
+              : `${LABELS[kind]} ${size}BB`
+            : LABELS[kind];
         return (
           <motion.button
             key={kind}
@@ -83,7 +84,8 @@ export function ActionBar({
             whileTap={pressScale}
             onClick={() => onAnswer(kind)}
             className={cn(
-              'h-14 select-none rounded-[var(--radius-button)] text-[14px] transition-colors disabled:opacity-40',
+              'select-none rounded-[var(--radius-button)] whitespace-nowrap px-1 transition-colors disabled:opacity-40',
+              compact ? 'h-12 text-[12px]' : 'h-14 text-[14px]',
               TONE[kind].cls,
             )}
           >
