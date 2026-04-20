@@ -7,6 +7,7 @@ import {
   SUPPORTED_OPENERS,
   type BbDefenseStrategyJson,
 } from './bb-defense';
+import { listPostflopSpots, type PostflopSpot } from './postflop';
 
 export type AvailableAction = 'fold' | 'check' | 'call' | 'raise';
 
@@ -347,3 +348,48 @@ export function gradeAnswer(spot: TrainingSpot, answer: GradedAction): AnswerGra
 
 // Re-export so consumers don't need to import RANKS from poker-core separately.
 export { RANKS };
+
+/**
+ * Daily training lineup — mix of preflop + postflop. Preflop spots come
+ * from `generateDailySpots`; postflop spots are drawn from the five
+ * handcrafted seeds in ranges/postflop-seeds.ts.
+ *
+ * Deterministic per-date: same date = same 10 items on every device.
+ *
+ * DailyItem is a discriminated union so consumers can branch on
+ * `kind === 'preflop' | 'postflop'` to pick the right renderer.
+ */
+export type DailyItem =
+  | { readonly kind: 'preflop'; readonly spot: TrainingSpot }
+  | { readonly kind: 'postflop'; readonly spot: PostflopSpot };
+
+export async function generateDailyItems(
+  opts: GenerateOptions & { preflopCount?: number; postflopCount?: number } = {},
+): Promise<DailyItem[]> {
+  const preflopCount = opts.preflopCount ?? 6;
+  const postflopCount = opts.postflopCount ?? 4;
+  const dateKey = opts.dateSeed ?? new Date().toISOString().slice(0, 10);
+  const rng = seeded(seedFromDate(dateKey));
+
+  // Preflop half — reuse existing generator.
+  const preflop = await generateDailySpots({ ...opts, count: preflopCount });
+  const items: DailyItem[] = preflop.map((s) => ({ kind: 'preflop', spot: s }));
+
+  // Postflop half — shuffle the 5 seeds deterministically, take first N
+  // (repeat if postflopCount > 5).
+  const pool = listPostflopSpots();
+  const shuffled = [...pool].sort(() => rng() - 0.5);
+  for (let i = 0; i < postflopCount; i++) {
+    const spot = shuffled[i % shuffled.length]!;
+    items.push({ kind: 'postflop', spot });
+  }
+
+  // Interleave: spread postflop spots across the lineup instead of
+  // all at the end. Deterministic Fisher-Yates with the date-seeded rng.
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [items[i], items[j]] = [items[j]!, items[i]!];
+  }
+
+  return items;
+}
