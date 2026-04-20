@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",
+    "@auth/prisma-adapter": "^2.11.2",
     "@gto/gto-data": "workspace:*",
     "@gto/poker-core": "workspace:*",
     "@gto/ui": "workspace:*",
@@ -23,6 +24,7 @@
     "framer-motion": "^11.16.0",
     "lucide-react": "^0.471.0",
     "next": "^15.1.4",
+    "next-auth": "5.0.0-beta.31",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^2.6.0",
