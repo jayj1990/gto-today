@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="gto.today">
+  <defs>
+    <linearGradient id="dot-felt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0E3B2E"/>
+      <stop offset="100%" stop-color="#051612"/>
+    </linearGradient>
+    <radialGradient id="dot-gold" cx="38%" cy="34%" r="65%">
+      <stop offset="0%" stop-color="#FFE99B"/>
+      <stop offset="50%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#8C6F1F"/>
+    </radialGradient>
+    <filter id="dot-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="url(#dot-felt)"/>
+
+  <!-- Radial glow halo -->
+  <circle cx="256" cy="238" r="108" fill="rgba(212,175,55,0.45)" filter="url(#dot-glow)"/>
+
+  <!-- Hero gold dot -->
+  <circle cx="256" cy="238" r="68" fill="url(#dot-gold)"/>
+  <circle cx="256" cy="238" r="68" fill="none" stroke="rgba(140,111,31,0.6)" stroke-width="2"/>
+
+  <!-- Wordmark baseline -->
+  <text x="256" y="382"
+        text-anchor="middle"
+        font-family="'Inter','Helvetica Neue',Arial,sans-serif"
+        font-weight="900"
+        font-size="68"
+        letter-spacing="-3"
+        fill="#F4EFE6">GTO</text>
+  <text x="256" y="436"
+        text-anchor="middle"
+        font-family="'Inter','Helvetica Neue',Arial,sans-serif"
+        font-weight="300"
+        font-size="36"
+        letter-spacing="0"
+        fill="rgba(244,239,230,0.75)">today</text>
+</svg>

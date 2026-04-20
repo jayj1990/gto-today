@@ -27,31 +27,33 @@ export interface CardViewProps extends Omit<HTMLAttributes<HTMLDivElement>, 'chi
   face?: CardFace;
   deckScheme?: DeckScheme;
   size?: CardSize;
-  /** Present in the type so existing callers don't have to drop the prop. No-op now. */
   flippable?: boolean;
   dealVariant?: boolean;
   interactive?: boolean;
 }
 
 /**
- * CardView — plain div with inline styles, no Tailwind JIT dependency.
+ * CardView — plain div with inline styles.
  *
- * Earlier revisions relied on arbitrary Tailwind classes like `h-[54px]`.
- * When those classes failed to compile (or clashed with transform from
- * framer-motion ancestors), the card collapsed to its text content only,
- * so users saw the rank glyph floating on top of the seat chip. Every
- * dimension, color, font and shadow is now expressed as inline style so
- * rendering is deterministic under any styling pipeline.
+ * New layering: at every size we paint a LARGE suit glyph as the card's
+ * watermark, then the rank rides on top. This fixes mobile readability
+ * where the previous corner-only suit was too small to read at a glance.
+ *
+ * Visual stack (front to back):
+ *   rank (big, white, drop shadow)
+ *   small corner suit (md+ only)
+ *   big watermark suit  (≈70% of card height, semi-transparent white)
+ *   tinted background   (suit-specific color)
  */
 const SIZE: Record<
   CardSize,
-  { w: number; h: number; radius: number; rank: number; suit: number }
+  { w: number; h: number; radius: number; rank: number; suit: number; cornerSuit: number }
 > = {
-  xs: { w: 30, h: 42, radius: 5, rank: 20, suit: 8 },
-  sm: { w: 42, h: 60, radius: 6, rank: 28, suit: 10 },
-  md: { w: 68, h: 96, radius: 10, rank: 44, suit: 14 },
-  lg: { w: 96, h: 134, radius: 12, rank: 60, suit: 16 },
-  xl: { w: 114, h: 160, radius: 14, rank: 74, suit: 18 },
+  xs: { w: 30, h: 42, radius: 5, rank: 20, suit: 36, cornerSuit: 0 },
+  sm: { w: 42, h: 60, radius: 6, rank: 28, suit: 52, cornerSuit: 0 },
+  md: { w: 68, h: 96, radius: 10, rank: 40, suit: 80, cornerSuit: 14 },
+  lg: { w: 96, h: 134, radius: 12, rank: 56, suit: 112, cornerSuit: 16 },
+  xl: { w: 114, h: 160, radius: 14, rank: 70, suit: 132, cornerSuit: 18 },
 };
 
 const SUIT_GLYPH: Record<Suit, string> = { s: '\u2660', h: '\u2665', d: '\u2666', c: '\u2663' };
@@ -59,15 +61,15 @@ const SUIT_GLYPH: Record<Suit, string> = { s: '\u2660', h: '\u2665', d: '\u2666'
 function suitBackground(suit: Suit, scheme: DeckScheme): { bg: string; rim: string } {
   if (scheme === 'four-color') {
     const map: Record<Suit, { bg: string; rim: string }> = {
-      s: { bg: '#1F1F24', rim: 'rgba(255,255,255,0.18)' },
-      h: { bg: '#9B2A3E', rim: 'rgba(255,255,255,0.2)' },
-      d: { bg: '#2B5F8F', rim: 'rgba(255,255,255,0.2)' },
-      c: { bg: '#266E4A', rim: 'rgba(255,255,255,0.2)' },
+      s: { bg: '#1F1F24', rim: 'rgba(255,255,255,0.22)' },
+      h: { bg: '#9B2A3E', rim: 'rgba(255,255,255,0.25)' },
+      d: { bg: '#2B5F8F', rim: 'rgba(255,255,255,0.25)' },
+      c: { bg: '#266E4A', rim: 'rgba(255,255,255,0.25)' },
     };
     return map[suit];
   }
-  const red = { bg: '#9B2A3E', rim: 'rgba(255,255,255,0.2)' };
-  const dark = { bg: '#1F1F24', rim: 'rgba(255,255,255,0.18)' };
+  const red = { bg: '#9B2A3E', rim: 'rgba(255,255,255,0.25)' };
+  const dark = { bg: '#1F1F24', rim: 'rgba(255,255,255,0.2)' };
   return suit === 'h' || suit === 'd' ? red : dark;
 }
 
@@ -100,7 +102,6 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
     overflow: 'hidden',
   };
 
-  // Face-down card
   if (face === 'down') {
     return (
       <div
@@ -134,7 +135,6 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
     );
   }
 
-  // Placeholder when rank/suit not provided
   if (!rank || !suit) {
     return (
       <div
@@ -165,22 +165,44 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
       }}
       {...rest}
     >
-      {/* Top-left suit glyph */}
+      {/* Big watermark suit behind everything */}
       <div
         aria-hidden
         style={{
           position: 'absolute',
-          top: 2,
-          left: 3,
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'system-ui, "Segoe UI Symbol", sans-serif',
           fontSize: sz.suit,
           lineHeight: 1,
-          color: 'rgba(255,255,255,0.85)',
-          fontFamily: 'system-ui, sans-serif',
+          color: 'rgba(255,255,255,0.22)',
+          pointerEvents: 'none',
         }}
       >
         {glyph}
       </div>
-      {/* Big centered rank */}
+
+      {/* Small corner suit (md+ only — xs/sm rely on the watermark alone) */}
+      {sz.cornerSuit > 0 && (
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            top: 4,
+            left: 4,
+            fontSize: sz.cornerSuit,
+            lineHeight: 1,
+            color: 'rgba(255,255,255,0.92)',
+            fontFamily: 'system-ui, "Segoe UI Symbol", sans-serif',
+          }}
+        >
+          {glyph}
+        </div>
+      )}
+
+      {/* Big rank — always on top, highest contrast */}
       <div
         style={{
           position: 'absolute',
@@ -189,11 +211,12 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
           alignItems: 'center',
           justifyContent: 'center',
           fontFamily: 'var(--font-display, Inter), system-ui, sans-serif',
-          fontWeight: 800,
+          fontWeight: 900,
           fontSize: sz.rank,
           lineHeight: 1,
           letterSpacing: '-0.02em',
           color: '#FFFFFF',
+          textShadow: '0 2px 6px rgba(0,0,0,0.55)',
         }}
       >
         {rank}

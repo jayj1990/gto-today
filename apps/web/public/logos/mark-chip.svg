@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="gto.today">
+  <defs>
+    <radialGradient id="chip-felt" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#1A7A4F"/>
+      <stop offset="55%" stop-color="#0E3B2E"/>
+      <stop offset="100%" stop-color="#051612"/>
+    </radialGradient>
+    <radialGradient id="chip-gold" cx="42%" cy="38%" r="60%">
+      <stop offset="0%" stop-color="#FFE99B"/>
+      <stop offset="35%" stop-color="#E8CC72"/>
+      <stop offset="70%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#8C6F1F"/>
+    </radialGradient>
+    <linearGradient id="chip-rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255,232,150,0.45)"/>
+      <stop offset="100%" stop-color="rgba(140,111,31,0.2)"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded tile background -->
+  <rect width="512" height="512" rx="112" fill="url(#chip-felt)"/>
+  <rect x="2" y="2" width="508" height="508" rx="110" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="2"/>
+
+  <!-- Outer gold ring (poker chip rim) -->
+  <circle cx="256" cy="256" r="166" fill="none" stroke="url(#chip-rim)" stroke-width="2"/>
+  <circle cx="256" cy="256" r="152" fill="none" stroke="rgba(212,175,55,0.35)" stroke-width="1"/>
+
+  <!-- 6 chip dashes around the rim (top/bottom + NE/NW/SE/SW) -->
+  <g fill="#D4AF37" opacity="0.8">
+    <rect x="252" y="82" width="8" height="24" rx="2"/>
+    <rect x="252" y="406" width="8" height="24" rx="2"/>
+    <rect x="82" y="252" width="24" height="8" rx="2" transform="rotate(0 94 256)"/>
+    <rect x="406" y="252" width="24" height="8" rx="2"/>
+    <g transform="rotate(45 256 256)">
+      <rect x="252" y="82" width="8" height="24" rx="2"/>
+      <rect x="252" y="406" width="8" height="24" rx="2"/>
+    </g>
+  </g>
+
+  <!-- Central gold coin -->
+  <circle cx="256" cy="256" r="118" fill="url(#chip-gold)"/>
+  <circle cx="256" cy="256" r="118" fill="none" stroke="rgba(140,111,31,0.55)" stroke-width="2"/>
+  <!-- Inner relief ring -->
+  <circle cx="256" cy="256" r="98" fill="none" stroke="rgba(255,232,150,0.45)" stroke-width="1.5"/>
+
+  <!-- "GT" monogram centered on coin -->
+  <g transform="translate(256 256)">
+    <text text-anchor="middle" dominant-baseline="central"
+          font-family="'Inter','Helvetica Neue',Arial,sans-serif"
+          font-weight="900"
+          font-size="108"
+          letter-spacing="-4"
+          fill="#3A2A05">GT</text>
+  </g>
+
+  <!-- Horizon line beneath coin -->
+  <rect x="168" y="404" width="176" height="4" rx="2" fill="rgba(212,175,55,0.55)"/>
+</svg>
