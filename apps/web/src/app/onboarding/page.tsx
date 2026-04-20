@@ -5,38 +5,37 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Logo, cn } from '@gto/ui';
-import {
-  DailyTrainingIllustration,
-  GtoMixIllustration,
-  MobilePokerIllustration,
-} from '@/components/onboarding-illustrations';
 import { useAuthStore } from '@/lib/auth-store';
 
 interface Slide {
   eyebrow: string;
   title: string;
   body: string;
-  visual: 'cards' | 'chips' | 'mark';
+  image: string;
+  alt: string;
 }
 
 const SLIDES: Slide[] = [
   {
-    eyebrow: '매일의 훈련',
-    title: '하루 10핸드,\n더 나은 판단.',
-    body: '매일 새로운 10핸드로 꾸준히 실력을 키우세요. 전 세계 사용자가 오늘 같은 핸드를 돌려요.',
-    visual: 'cards',
+    eyebrow: 'Daily Challenge',
+    title: '하루 10핸드,\n그걸로 충분합니다.',
+    body: '매일 새 핸드가 공개됩니다. 전 세계 사용자가 오늘 같은 문제를 풀어요.',
+    image: '/ai-assets/onboarding-v2/daily-training.png',
+    alt: '카드 두 장과 골드 칩이 놓인 포커 테이블 위로 흐르는 골드 리본',
   },
   {
-    eyebrow: 'GTO 기반',
-    title: '이론이 아닌\n습관으로.',
-    body: '포지션·스택·상황별 GTO 믹스가 바로 나오고, AI가 왜 그런지까지 쉽게 설명해요.',
-    visual: 'chips',
+    eyebrow: 'GTO Solutions',
+    title: '감이 아니라,\n솔버의 답.',
+    body: '포지션·스택·액션별 최적 믹스가 즉시. AI가 이유까지 한국어로 설명합니다.',
+    image: '/ai-assets/onboarding-v2/gto-mix.png',
+    alt: '레이즈·콜·폴드 세 결정을 시각화한 빨강·초록·파랑 리본',
   },
   {
-    eyebrow: '모바일 우선',
-    title: '내 상황에\n맞춰서.',
-    body: '포지션과 핸드만 고르면 GTO 답이 즉시. 실전 중에도 가볍게 꺼내 보세요.',
-    visual: 'mark',
+    eyebrow: 'Live Assist',
+    title: '실전에서도\n1초 안에.',
+    body: '포지션과 핸드만 고르면 GTO 답이 나옵니다. 홈게임 중에도 조용히.',
+    image: '/ai-assets/onboarding-v2/mobile-assist.png',
+    alt: '스마트폰에서 뻗어나오는 골드 가이던스 라인',
   },
 ];
 
@@ -105,20 +104,31 @@ export default function OnboardingPage() {
         </button>
       </header>
 
-      {/* Visual area */}
+      {/* Visual area — DALL·E HD onboarding illustrations */}
       <div className="flex flex-1 items-center justify-center py-6">
         <AnimatePresence mode="wait">
           <motion.div
-            key={slide.visual + index}
+            key={slide.image}
             initial={{ opacity: 0, y: 16, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -12, scale: 0.97 }}
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
             className="flex items-center justify-center"
           >
-            {slide.visual === 'cards' && <DailyTrainingIllustration />}
-            {slide.visual === 'chips' && <GtoMixIllustration />}
-            {slide.visual === 'mark' && <MobilePokerIllustration />}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={slide.image}
+              alt={slide.alt}
+              width={320}
+              height={320}
+              style={{
+                width: 'min(72vw, 320px)',
+                height: 'auto',
+                aspectRatio: '1 / 1',
+                objectFit: 'contain',
+                filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.4))',
+              }}
+            />
           </motion.div>
         </AnimatePresence>
       </div>

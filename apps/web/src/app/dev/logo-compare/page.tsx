@@ -5,7 +5,8 @@ export const metadata = { title: '로고 비교 — G1 vs G3' };
 
 type Candidate = {
   key: 'g1' | 'g3';
-  src: string;
+  srcBg: string;
+  srcTransparent: string;
   title: string;
   blurb: string;
 };
@@ -13,15 +14,17 @@ type Candidate = {
 const CANDIDATES: Candidate[] = [
   {
     key: 'g1',
-    src: '/logos/mark-g1.png',
+    srcBg: '/logos/mark-g1.png',
+    srcTransparent: '/logos/mark-g1-transparent.png',
     title: 'G1 · Bold Serif',
-    blurb: '중앙 GTO TODAY 뚜렷 / 외곽 다이아몬드 림 / 골드 하이라이트 강함 / 상단에 약한 쓰레기 텍스트',
+    blurb: '중앙 GTO TODAY 뚜렷 / 외곽 다이아몬드 림 / 골드 하이라이트 강함',
   },
   {
     key: 'g3',
-    src: '/logos/mark-g3.png',
+    srcBg: '/logos/mark-g3.png',
+    srcTransparent: '/logos/mark-g3-transparent.png',
     title: 'G3 · Stacked Serif (현재 적용)',
-    blurb: '동심원 그루브 + 중앙 GTO/TODAY / 아이보리 림 4방향 / 차분한 다크 그린 / 현재 앱 전체 적용 중',
+    blurb: '동심원 그루브 + 중앙 GTO/TODAY / 아이보리 림 4방향 / 차분한 다크 그린',
   },
 ];
 
@@ -63,7 +66,7 @@ export default function LogoComparePage() {
             • 지금은 G3이 스플래시 · 헤더 · 앱 아이콘 전부 메인으로 적용되어 있어요.
           </li>
           <li>
-            • "둘 다 별로 — 다시" 도 가능: 프롬프트 다른 방향으로 재생성 ($0.32 / 4장).
+            • 둘 다 별로면 &ldquo;다시&rdquo; 말씀만 주세요 — 다른 방향 프롬프트로 재생성 ($0.32 / 4장).
           </li>
           <li>
             • 작은 사이즈(36px 헤더)에서의 가독성이 가장 중요 — 실제 결정 기준으로 쓰시길.
@@ -80,15 +83,17 @@ function CandidateColumn({ candidate }: { candidate: Candidate }) {
       <div className="rounded-[var(--radius-panel)] border-hair surface p-5">
         <h2 className="font-display text-[22px] font-bold">{candidate.title}</h2>
         <p className="mt-1.5 text-[12px] text-fg-muted">{candidate.blurb}</p>
-        <p className="mt-2 font-mono text-[10px] text-fg-muted">{candidate.src}</p>
+        <p className="mt-2 font-mono text-[10px] text-fg-muted">
+          투명: {candidate.srcTransparent} · 배경: {candidate.srcBg}
+        </p>
       </div>
 
       {/* ── Header mock ─────────────────────────────────────────────── */}
-      <Mock label="헤더 (36px, 다크 배경)">
+      <Mock label="헤더 (36px, 투명 배경 · 다크 헤더 배경에 합성)">
         <div className="flex h-14 w-full items-center border-b border-hair px-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={candidate.src}
+            src={candidate.srcTransparent}
             alt=""
             width={36}
             height={36}
@@ -106,7 +111,7 @@ function CandidateColumn({ candidate }: { candidate: Candidate }) {
       </Mock>
 
       {/* ── Splash mock ─────────────────────────────────────────────── */}
-      <Mock label="스플래시 (140px, 다크 그라디언트)">
+      <Mock label="스플래시 (140px, 투명 배경 · 다크 그라디언트 위)">
         <div
           className="flex aspect-[3/4] w-full flex-col items-center justify-center"
           style={{
@@ -116,7 +121,7 @@ function CandidateColumn({ candidate }: { candidate: Candidate }) {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={candidate.src}
+            src={candidate.srcTransparent}
             alt=""
             width={140}
             height={140}
@@ -145,14 +150,14 @@ function CandidateColumn({ candidate }: { candidate: Candidate }) {
         </div>
       </Mock>
 
-      {/* ── App icon sizes mock ─────────────────────────────────────── */}
-      <Mock label="앱 아이콘 (홈스크린 · 런처 · 파비콘)">
+      {/* ── App icon sizes mock — uses the WITH-BACKGROUND version ───── */}
+      <Mock label="앱 아이콘 (180·96·48·24px, 배경 유지 버전)">
         <div className="flex items-end justify-around gap-4 p-6" style={{ background: '#08120E' }}>
           {[180, 96, 48, 24].map((size) => (
             <div key={size} className="flex flex-col items-center gap-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={candidate.src}
+                src={candidate.srcBg}
                 alt=""
                 width={size}
                 height={size}

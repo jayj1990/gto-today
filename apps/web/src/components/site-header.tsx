@@ -17,7 +17,7 @@ export function SiteHeader() {
           style={{ touchAction: 'manipulation' }}
         >
           <Image
-            src="/logos/mark-g3.png"
+            src="/logos/mark-g3-transparent.png"
             alt=""
             width={36}
             height={36}

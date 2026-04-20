@@ -54,7 +54,7 @@ export function Splash() {
               {/* G3 chip logo — the canonical brand mark */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/logos/mark-g3.png"
+                src="/logos/mark-g3-transparent.png"
                 alt=""
                 width={140}
                 height={140}
