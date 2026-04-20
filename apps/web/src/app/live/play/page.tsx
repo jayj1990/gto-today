@@ -1,170 +1,92 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import {
-  getBbDefenseStrategy,
-  getPreflopStrategy,
+  getBbDefenseChart,
+  getPreflopChart,
   SUPPORTED_OPENERS,
-  type TrainingSpot,
+  type BbDefenseStrategyJson,
+  type PreflopStrategyJson,
 } from '@gto/gto-data';
-import type { ComboKey, Position } from '@gto/poker-core';
-import { CardView, cn } from '@gto/ui';
+import type { Position } from '@gto/poker-core';
+import { RangeGrid, cn, type ComboMix } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
-import { HandCard } from '@/components/today/hand-card';
-import { useLiveStore } from '@/lib/live-store';
-
-const RANKS: readonly string[] = [
-  'A',
-  'K',
-  'Q',
-  'J',
-  'T',
-  '9',
-  '8',
-  '7',
-  '6',
-  '5',
-  '4',
-  '3',
-  '2',
-];
-const SUITS: readonly { code: 's' | 'h' | 'd' | 'c'; label: string; color: string }[] = [
-  { code: 's', label: '♠', color: '#F4EFE6' },
-  { code: 'h', label: '♥', color: '#D63B3B' },
-  { code: 'd', label: '♦', color: '#4A9EFF' },
-  { code: 'c', label: '♣', color: '#2EBE6F' },
-];
-
-const POSITIONS_6MAX: Position[] = ['UTG', 'MP', 'CO', 'BTN', 'SB', 'BB'];
+import {
+  openLabel,
+  resolveOpenSize,
+  resolveStackBB,
+  stackLabel,
+  useLiveStore,
+} from '@/lib/live-store';
 
 type Scenario = 'rfi' | 'vs_open';
 
-function comboKeyFor(c1: string, c2: string): ComboKey | null {
-  if (!c1 || !c2 || c1 === c2) return null;
-  const r1 = c1.charAt(0);
-  const s1 = c1.charAt(1);
-  const r2 = c2.charAt(0);
-  const s2 = c2.charAt(1);
-  const rankIdx = (r: string) => RANKS.indexOf(r);
-  const [hiR, loR] = rankIdx(r1) <= rankIdx(r2) ? [r1, r2] : [r2, r1];
-  if (r1 === r2) return `${hiR}${loR}` as ComboKey;
-  const suffix = s1 === s2 ? 's' : 'o';
-  return `${hiR}${loR}${suffix}` as ComboKey;
-}
+const RFI_POSITIONS: Position[] = ['UTG', 'MP', 'CO', 'BTN', 'SB'];
 
 /**
- * Live-mode play screen.
+ * Live-mode chart view.
  *
- * Minimal but FUNCTIONAL: pick scenario, position, and your two hole cards
- * → we look up the GTO mix and render the result using the same HandCard
- * + ResultSheet pieces the training flow uses. No randomized lineup, no
- * session scoring — this is a solver query, not a quiz.
+ * User picks a scenario + the relevant position(s), the page loads the
+ * matching 13x13 chart and renders it with the new GTO-Wizard-style
+ * RangeGrid. Tapping a cell surfaces the specific combo's mix below.
  *
- * Phase 5+ will expand this with postflop streets and proper 3bet/4bet
- * scenarios. Right now we support the two scenarios we have data for:
- * RFI (any position) and BB vs open (UTG / CO / BTN).
+ * Data scope for this release:
+ *   RFI         — hero opens from UTG / MP / CO / BTN / SB
+ *   BB defense  — hero on BB facing a single open from UTG / CO / BTN
+ *
+ * Scenarios we don't have solver output for (vs 3-bet, vs squeeze, etc.)
+ * are hidden so the UI never promises data we can't deliver.
  */
 export default function LivePlayPage() {
   const config = useLiveStore((s) => s.config);
   const [scenario, setScenario] = useState<Scenario>('rfi');
   const [position, setPosition] = useState<Position>('BTN');
   const [opener, setOpener] = useState<Position>('BTN');
-  const [card1, setCard1] = useState<string>('');
-  const [card2, setCard2] = useState<string>('');
-  const [spot, setSpot] = useState<TrainingSpot | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [mixes, setMixes] = useState<Record<string, ComboMix>>({});
+  const [loading, setLoading] = useState(false);
+  const [highlight, setHighlight] = useState<string | null>(null);
 
-  const combo = useMemo(() => comboKeyFor(card1, card2), [card1, card2]);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setHighlight(null);
 
-  const canSubmit = Boolean(combo);
+    const task =
+      scenario === 'rfi'
+        ? getPreflopChart('6max', position).then((chart) => rfiToMixes(chart))
+        : getBbDefenseChart(opener, '6max').then((chart) => bbToMixes(chart));
 
-  const lookup = async () => {
-    if (!combo) return;
-    setBusy(true);
-    setError(null);
-    try {
-      if (scenario === 'vs_open') {
-        const strat = await getBbDefenseStrategy({
-          combo,
-          opener,
-          format: '6max',
-        });
-        if (!strat) {
-          setError('해당 시나리오 데이터를 찾을 수 없어요.');
-          setSpot(null);
-          return;
-        }
-        setSpot({
-          id: `live-${Date.now()}`,
-          combo,
-          hero: [card1 as never, card2 as never],
-          position: 'BB',
-          format: '6max',
-          stackBB: config.stackBB,
-          scenario: 'vs_open',
-          opener,
-          openSize: config.openSize,
-          gtoRaise: strat.raise,
-          gtoFold: strat.fold,
-          gtoCall: strat.call,
-          correctAnswer: 'mixed',
-          availableActions: ['fold', 'call', 'raise'],
-        });
-      } else {
-        const strat = await getPreflopStrategy({
-          combo,
-          position,
-          format: '6max',
-        });
-        if (!strat) {
-          setError('해당 시나리오 데이터를 찾을 수 없어요.');
-          setSpot(null);
-          return;
-        }
-        setSpot({
-          id: `live-${Date.now()}`,
-          combo,
-          hero: [card1 as never, card2 as never],
-          position,
-          format: '6max',
-          stackBB: config.stackBB,
-          scenario: 'rfi',
-          gtoRaise: strat.raise,
-          gtoFold: strat.fold,
-          correctAnswer: 'mixed',
-          availableActions: ['fold', 'raise'],
-        });
+    task.then((next) => {
+      if (!cancelled) {
+        setMixes(next);
+        setLoading(false);
       }
-    } finally {
-      setBusy(false);
-    }
-  };
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [scenario, position, opener]);
 
-  const reset = () => {
-    setSpot(null);
-    setCard1('');
-    setCard2('');
-    setError(null);
-  };
+  const focusedMix = highlight ? mixes[highlight] : null;
+  const openBB = resolveOpenSize(config.openSize);
+  const stackBB = resolveStackBB(config.stackBB);
 
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+32px)] pt-6">
-        <header className="flex items-start justify-between">
+      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-2xl flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+32px)] pt-6">
+        <header className="flex items-start justify-between gap-3">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--color-accent)]">
               실전 모드
             </p>
             <h1 className="mt-2 font-display text-[26px] font-bold tracking-[-0.015em]">
-              핸드 조회
+              GTO 차트
             </h1>
             <p className="mt-1 text-[13px] text-fg-muted">
               {config.gameType === 'cash' ? '캐시' : '토너먼트'} · {config.format} ·{' '}
-              {config.stackBB}BB
+              {stackLabel(config.stackBB)} · {openLabel(config.openSize)}
             </p>
           </div>
           <Link
@@ -175,87 +97,117 @@ export default function LivePlayPage() {
           </Link>
         </header>
 
-        {!spot && (
-          <section className="mt-6 space-y-5">
-            <FieldSet label="시나리오">
-              <ChipRow>
-                <Chip active={scenario === 'rfi'} onClick={() => setScenario('rfi')}>
-                  RFI (내가 오픈)
+        {/* Scenario picker */}
+        <section className="mt-6 space-y-4">
+          <FieldRow label="시나리오">
+            <Chip active={scenario === 'rfi'} onClick={() => setScenario('rfi')}>
+              RFI (내가 먼저)
+            </Chip>
+            <Chip active={scenario === 'vs_open'} onClick={() => setScenario('vs_open')}>
+              BB 디펜스
+            </Chip>
+          </FieldRow>
+
+          {scenario === 'rfi' ? (
+            <FieldRow label="내 포지션">
+              {RFI_POSITIONS.map((p) => (
+                <Chip key={p} active={position === p} onClick={() => setPosition(p)}>
+                  {p}
                 </Chip>
-                <Chip active={scenario === 'vs_open'} onClick={() => setScenario('vs_open')}>
-                  BB 디펜스
+              ))}
+            </FieldRow>
+          ) : (
+            <FieldRow label="오픈 포지션">
+              {SUPPORTED_OPENERS.map((p) => (
+                <Chip key={p} active={opener === p} onClick={() => setOpener(p)}>
+                  {p}
                 </Chip>
-              </ChipRow>
-            </FieldSet>
+              ))}
+            </FieldRow>
+          )}
+        </section>
 
-            {scenario === 'rfi' ? (
-              <FieldSet label="내 포지션">
-                <ChipRow>
-                  {POSITIONS_6MAX.filter((p) => p !== 'BB').map((p) => (
-                    <Chip key={p} active={position === p} onClick={() => setPosition(p)}>
-                      {p}
-                    </Chip>
-                  ))}
-                </ChipRow>
-              </FieldSet>
-            ) : (
-              <FieldSet label="오픈한 포지션">
-                <ChipRow>
-                  {SUPPORTED_OPENERS.map((p) => (
-                    <Chip key={p} active={opener === p} onClick={() => setOpener(p)}>
-                      {p}
-                    </Chip>
-                  ))}
-                </ChipRow>
-                <p className="mt-2 text-[11px] text-fg-muted">
-                  현재 BB 디펜스 데이터는 UTG/CO/BTN 오픈 시나리오만 제공돼요.
-                </p>
-              </FieldSet>
-            )}
+        {/* Context summary (mimics GTO Wizard's detail-action top bar) */}
+        <section className="mt-5 rounded-[var(--radius-button)] border-hair surface px-4 py-3 text-[12px] text-fg-muted">
+          {scenario === 'rfi' ? (
+            <p>
+              <span className="font-mono text-[color:var(--color-accent)]">
+                {position}
+              </span>
+              {' 기준 RFI 차트 — 앞 포지션 모두 폴드'}
+              <span className="text-fg/50">
+                {' / 스택 '}
+                {stackBB}
+                BB / 오픈 {openBB}x
+              </span>
+            </p>
+          ) : (
+            <p>
+              <span className="font-mono text-[color:var(--color-accent)]">BB</span>
+              {' 디펜스 — '}
+              <span className="font-mono text-fg">
+                {opener}
+              </span>
+              {' 오픈 '}
+              {openBB}BB에 대한 대응
+            </p>
+          )}
+        </section>
 
-            <FieldSet label="내 카드">
-              <div className="flex gap-3">
-                <CardPicker slot={1} value={card1} blocked={card2} onChange={setCard1} />
-                <CardPicker slot={2} value={card2} blocked={card1} onChange={setCard2} />
-              </div>
-              {combo && (
-                <p className="mt-2 font-mono text-[12px] text-[color:var(--color-accent)]">
-                  콤보: {combo}
-                </p>
+        {/* 13x13 chart */}
+        <section className="mt-5">
+          {loading ? (
+            <div className="flex h-60 items-center justify-center rounded-[var(--radius-panel)] border-hair surface">
+              <p className="font-mono text-[12px] text-fg-muted">불러오는 중…</p>
+            </div>
+          ) : (
+            <div className="w-full overflow-x-auto">
+              <RangeGrid
+                mixes={mixes}
+                highlight={highlight ?? undefined}
+                onCellClick={(combo) => setHighlight(combo)}
+                className="mx-auto w-full"
+              />
+            </div>
+          )}
+
+          <Legend scenario={scenario} />
+        </section>
+
+        {/* Focused combo detail */}
+        {focusedMix && (
+          <section className="mt-5 rounded-[var(--radius-panel)] border-hair surface p-5">
+            <div className="flex items-baseline justify-between">
+              <h2 className="font-display text-[22px] font-bold tracking-[-0.02em]">
+                {highlight}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setHighlight(null)}
+                className="font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted"
+              >
+                닫기
+              </button>
+            </div>
+            <ul className="mt-4 grid gap-y-2" style={{ gridTemplateColumns: '60px 1fr 56px' }}>
+              <DetailRow
+                label="레이즈"
+                value={focusedMix.raise * 100}
+                color="var(--color-raise)"
+              />
+              {scenario === 'vs_open' && (
+                <DetailRow
+                  label="콜"
+                  value={(focusedMix.call ?? 0) * 100}
+                  color="var(--color-call)"
+                />
               )}
-            </FieldSet>
-
-            {error && (
-              <div className="rounded-[var(--radius-button)] border border-[color:var(--color-raise)]/40 bg-[color:var(--color-raise)]/10 px-4 py-3 text-[13px] text-[color:var(--color-raise)]">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={lookup}
-              disabled={!canSubmit || busy}
-              className={cn(
-                'h-14 w-full rounded-[var(--radius-button)] font-semibold transition-colors active:scale-[0.98] disabled:opacity-40',
-                'bg-gold-gradient text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)]',
-              )}
-            >
-              {busy ? '조회 중…' : 'GTO 답 보기 →'}
-            </button>
-          </section>
-        )}
-
-        {spot && (
-          <section className="mt-6 space-y-5">
-            <HandCard spot={spot} />
-            <ResultBlock spot={spot} />
-            <button
-              type="button"
-              onClick={reset}
-              className="h-12 w-full rounded-[var(--radius-button)] border-hair surface-raised font-medium active:scale-[0.98]"
-            >
-              다른 핸드 조회
-            </button>
+              <DetailRow
+                label="폴드"
+                value={focusedMix.fold * 100}
+                color="var(--color-fold)"
+              />
+            </ul>
           </section>
         )}
       </main>
@@ -263,49 +215,62 @@ export default function LivePlayPage() {
   );
 }
 
-/* ─────── Result display (inline, not modal) ─────── */
+/* ─────── Helpers ─────── */
 
-function ResultBlock({ spot }: { spot: TrainingSpot }) {
-  const raise = spot.gtoRaise * 100;
-  const call = (spot.gtoCall ?? 0) * 100;
-  const fold = spot.gtoFold * 100;
+function rfiToMixes(chart: PreflopStrategyJson | null): Record<string, ComboMix> {
+  const out: Record<string, ComboMix> = {};
+  if (!chart) return out;
+  for (const [combo, entry] of Object.entries(chart)) {
+    out[combo] = { raise: entry.raise, fold: entry.fold };
+  }
+  return out;
+}
 
+function bbToMixes(chart: BbDefenseStrategyJson | null): Record<string, ComboMix> {
+  const out: Record<string, ComboMix> = {};
+  if (!chart) return out;
+  for (const [combo, entry] of Object.entries(chart)) {
+    out[combo] = { raise: entry.raise, call: entry.call, fold: entry.fold };
+  }
+  return out;
+}
+
+function Legend({ scenario }: { scenario: Scenario }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="rounded-[var(--radius-panel)] border-hair surface p-5"
-    >
-      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted">
-        GTO 믹스
-      </p>
-      <ul
-        className="mt-3 grid gap-y-2"
-        style={{ gridTemplateColumns: '64px 1fr 56px' }}
-      >
-        <Row label="레이즈" value={raise} color="var(--color-raise)" />
-        {spot.scenario === 'vs_open' && (
-          <Row label="콜" value={call} color="var(--color-call)" />
-        )}
-        <Row label="폴드" value={fold} color="var(--color-fold)" />
-      </ul>
-    </motion.div>
+    <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] text-fg-muted">
+      <LegendDot color="#C8102E" label="레이즈" />
+      {scenario === 'vs_open' && <LegendDot color="#1F9D55" label="콜" />}
+      <LegendDot color="#2B5F8F" label="폴드" />
+    </div>
   );
 }
 
-function Row({ label, value, color }: { label: string; value: number; color: string }) {
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="inline-block h-2 w-2 rounded-sm" style={{ background: color }} />
+      {label}
+    </span>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color: string;
+}) {
   return (
     <li className="contents">
       <span className="flex items-center font-mono text-[13px] text-fg-muted">{label}</span>
       <div className="flex items-center">
         <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-[color:var(--color-border)]">
-          <motion.div
-            initial={{ clipPath: 'inset(0 100% 0 0)' }}
-            animate={{ clipPath: `inset(0 ${Math.max(0, 100 - value)}% 0 0)` }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 rounded-full"
-            style={{ background: color }}
+          <div
+            className="absolute inset-y-0 left-0 rounded-full"
+            style={{ width: `${Math.max(0, Math.min(100, value))}%`, background: color }}
           />
         </div>
       </div>
@@ -316,141 +281,15 @@ function Row({ label, value, color }: { label: string; value: number; color: str
   );
 }
 
-/* ─────── Card picker ─────── */
-
-function CardPicker({
-  value,
-  blocked,
-  onChange,
-}: {
-  slot: number;
-  value: string;
-  blocked: string;
-  onChange: (v: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const rank = value.charAt(0);
-  const suit = (value.charAt(1) || 's') as 's' | 'h' | 'd' | 'c';
+function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex-1">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className={cn(
-          'flex h-[88px] w-full items-center justify-center rounded-[var(--radius-button)] transition-colors active:scale-[0.98]',
-          value
-            ? ''
-            : 'border-hair surface-raised border-dashed',
-        )}
-      >
-        {value ? (
-          <CardView rank={rank} suit={suit} size="md" deckScheme="four-color" />
-        ) : (
-          <span className="font-mono text-[13px] text-fg-muted">카드 선택</span>
-        )}
-      </button>
-      {open && (
-        <div className="mt-3 rounded-[var(--radius-button)] border-hair surface p-3">
-          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-fg-muted">
-            랭크 · 수트
-          </p>
-          <div className="grid grid-cols-7 gap-1">
-            {RANKS.map((r) => (
-              <RankButton
-                key={r}
-                rank={r}
-                current={rank}
-                onPick={(nr) => {
-                  const newVal = `${nr}${suit}`;
-                  if (newVal === blocked) return;
-                  onChange(newVal);
-                }}
-              />
-            ))}
-          </div>
-          <div className="mt-2 grid grid-cols-4 gap-2">
-            {SUITS.map((s) => (
-              <button
-                key={s.code}
-                type="button"
-                onClick={() => {
-                  const r = rank || 'A';
-                  const newVal = `${r}${s.code}`;
-                  if (newVal === blocked) return;
-                  onChange(newVal);
-                }}
-                className={cn(
-                  'flex h-10 items-center justify-center rounded-[var(--radius-button)] text-[18px]',
-                  suit === s.code
-                    ? 'border border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/10'
-                    : 'border-hair surface-raised',
-                )}
-                style={{ color: s.color }}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="mt-3 h-9 w-full rounded-[var(--radius-button)] border-hair text-[12px]"
-          >
-            닫기
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function RankButton({
-  rank,
-  current,
-  onPick,
-}: {
-  rank: string;
-  current: string;
-  onPick: (r: string) => void;
-}) {
-  const active = rank === current;
-  return (
-    <button
-      type="button"
-      onClick={() => onPick(rank)}
-      className={cn(
-        'flex h-9 items-center justify-center rounded-[var(--radius-button)] font-mono text-[13px] font-semibold active:scale-[0.96]',
-        active
-          ? 'border border-[color:var(--color-accent)] bg-[color:var(--color-accent)] text-noir'
-          : 'border-hair surface-raised text-fg',
-      )}
-    >
-      {rank}
-    </button>
-  );
-}
-
-/* ─────── Layout atoms (shared with live setup) ─────── */
-
-function FieldSet({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section>
+    <div>
       <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted">
         {label}
       </p>
-      {children}
-    </section>
+      <div className="flex flex-wrap gap-1.5">{children}</div>
+    </div>
   );
-}
-
-function ChipRow({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-wrap gap-1.5">{children}</div>;
 }
 
 function Chip({

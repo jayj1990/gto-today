@@ -98,7 +98,7 @@ export default function SimPage() {
             자유 시뮬레이션
           </p>
           <h1 className="mt-2 font-display text-[28px] font-bold tracking-[-0.015em]">
-            끝없는 핸드 연습
+            무한 GTO 훈련
           </h1>
 
           <dl className="mt-4 grid grid-cols-4 gap-2 text-center">

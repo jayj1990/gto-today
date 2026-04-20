@@ -89,7 +89,7 @@ export function HomeGate() {
           href="/live"
           eyebrow="Live Assist"
           title="실전 모드"
-          description="캐시·토너먼트 설정을 잡고 실전 옆에서."
+          description="내 상황에 GTO 적용해보기."
           variant="secondary"
           delay={0.06}
         />

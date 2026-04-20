@@ -5,13 +5,20 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
-import { useLiveStore, type GameType } from '@/lib/live-store';
+import {
+  openLabel,
+  stackLabel,
+  useLiveStore,
+  type GameType,
+  type OpenSetting,
+  type StackSetting,
+} from '@/lib/live-store';
 import type { TableFormat } from '@gto/poker-core';
 
 type Step = 'game' | 'table' | 'details' | 'review';
 
 const STEP_TITLES: Record<Step, string> = {
-  game: '어떤 게임인가요',
+  game: '어떤 게임이에요?',
   table: '테이블 설정',
   details: '세부 설정',
   review: '확인',
@@ -20,10 +27,9 @@ const STEP_TITLES: Record<Step, string> = {
 const STEP_ORDER: Step[] = ['game', 'table', 'details', 'review'];
 
 /**
- * Live-mode setup wizard — 4-step progressive disclosure instead of one
- * intimidating form. Each step captures the minimum decision; the "세부
- * 설정" screen swaps its body based on Cash vs MTT so we never show
- * irrelevant fields (no ICM slider for cash, no rake slider for MTT).
+ * 4-step setup wizard. Details step swaps its body depending on cash vs MTT
+ * so users only see the fields relevant to their game — no irrelevant ICM
+ * slider for cash, no rake slider for MTT.
  */
 export default function LiveSetupPage() {
   const [step, setStep] = useState<Step>('game');
@@ -51,7 +57,7 @@ export default function LiveSetupPage() {
           <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--color-accent)]">
             실전 모드 · {stepIdx + 1} / {STEP_ORDER.length}
           </p>
-          <h1 className="mt-2 font-display text-[32px] font-bold tracking-[-0.02em]">
+          <h1 className="mt-2 font-display text-[30px] font-bold tracking-[-0.02em]">
             {STEP_TITLES[step]}
           </h1>
           <ul className="mt-4 flex gap-1.5">
@@ -88,6 +94,7 @@ export default function LiveSetupPage() {
 
           {step === 'table' && (
             <TableStep
+              gameType={config.gameType}
               format={config.format}
               stackBB={config.stackBB}
               openSize={config.openSize}
@@ -108,8 +115,7 @@ export default function LiveSetupPage() {
 
           {step === 'details' && config.gameType === 'mtt' && (
             <MttDetailStep
-              anteBB={config.mtt.anteBB}
-              icmAwareness={config.mtt.icmAwareness}
+              format={config.mtt.format}
               bubbleFactor={config.mtt.bubbleFactor}
               onChange={setMtt}
             />
@@ -118,7 +124,6 @@ export default function LiveSetupPage() {
           {step === 'review' && <ReviewStep />}
         </motion.div>
 
-        {/* Navigation */}
         <div className="mt-8 flex gap-3">
           {stepIdx > 0 && (
             <button
@@ -161,8 +166,8 @@ function GameStep({
   onChange: (v: GameType) => void;
 }) {
   const options: { key: GameType; title: string; desc: string }[] = [
-    { key: 'cash', title: '캐시 게임', desc: '홈게임·온라인 캐시. 스택 깊고 ICM 없음.' },
-    { key: 'mtt', title: '토너먼트', desc: 'MTT·SnG. 앤티·ICM 반영 가능.' },
+    { key: 'cash', title: '캐시 게임', desc: '홈게임·온라인 캐시. 스택이 깊고 ICM 없음.' },
+    { key: 'mtt', title: '토너먼트', desc: 'MTT·SnG. 앤티·ICM 자동 반영.' },
   ];
   return (
     <ul className="grid gap-3">
@@ -188,6 +193,7 @@ function GameStep({
 }
 
 function TableStep({
+  gameType,
   format,
   stackBB,
   openSize,
@@ -195,16 +201,26 @@ function TableStep({
   onStack,
   onOpenSize,
 }: {
+  gameType: GameType;
   format: TableFormat;
-  stackBB: number;
-  openSize: number;
+  stackBB: StackSetting;
+  openSize: OpenSetting;
   onFormat: (v: TableFormat) => void;
-  onStack: (v: number) => void;
-  onOpenSize: (v: number) => void;
+  onStack: (v: StackSetting) => void;
+  onOpenSize: (v: OpenSetting) => void;
 }) {
   const formats: TableFormat[] = ['6max', '9max', '10max', '11max'];
-  const stacks = [25, 50, 75, 100, 150, 200];
-  const sizes = [2, 2.25, 2.5, 3];
+
+  // Cash stacks: include Any + deep-stack options up to 300BB for home games.
+  // MTT stacks: include shorter depths since MTTs routinely play 10-40 BB.
+  const stackOptions: StackSetting[] =
+    gameType === 'cash'
+      ? ['any', 50, 75, 100, 150, 200, 300]
+      : [100, 75, 50, 40, 30, 25, 20, 15, 10];
+
+  // Open sizes: Any / GTO + common specifics.
+  const openOptions: OpenSetting[] = ['any', 'gto', 2, 2.25, 2.5, 3];
+
   return (
     <div className="space-y-6">
       <FieldSet label="테이블 크기">
@@ -216,20 +232,33 @@ function TableStep({
           ))}
         </ChipRow>
       </FieldSet>
-      <FieldSet label="스택 (BB)">
+
+      <FieldSet label="스택 (BB)" hint={gameType === 'cash' ? '딥스택도 Any로 커버' : '토너먼트는 얕은 스택도 자주 등장'}>
         <ChipRow>
-          {stacks.map((s) => (
-            <Chip key={s} active={stackBB === s} onClick={() => onStack(s)}>
-              {s}BB
+          {stackOptions.map((s) => (
+            <Chip
+              key={String(s)}
+              active={stackBB === s}
+              onClick={() => onStack(s)}
+            >
+              {stackLabel(s)}
             </Chip>
           ))}
         </ChipRow>
       </FieldSet>
-      <FieldSet label="오픈 사이즈 (BB)">
+
+      <FieldSet
+        label="오픈 사이즈"
+        hint="GTO = 솔버 기본값, Any = 크기 상관없이 조회"
+      >
         <ChipRow>
-          {sizes.map((s) => (
-            <Chip key={s} active={openSize === s} onClick={() => onOpenSize(s)}>
-              {s}x
+          {openOptions.map((o) => (
+            <Chip
+              key={String(o)}
+              active={openSize === o}
+              onClick={() => onOpenSize(o)}
+            >
+              {openLabel(o)}
             </Chip>
           ))}
         </ChipRow>
@@ -260,7 +289,7 @@ function CashDetailStep({
           ))}
         </ChipRow>
       </FieldSet>
-      <FieldSet label="레이크 캡 (BB)" hint="팟이 아무리 커도 이 한도까지만 레이크">
+      <FieldSet label="레이크 캡 (BB)" hint="팟이 커져도 이 한도까지만 레이크">
         <ChipRow>
           {[0, 2, 3, 5].map((c) => (
             <Chip key={c} active={rakeCapBB === c} onClick={() => onChange({ rakeCapBB: c })}>
@@ -287,39 +316,31 @@ function CashDetailStep({
 }
 
 function MttDetailStep({
-  anteBB,
-  icmAwareness,
+  format,
   bubbleFactor,
   onChange,
 }: {
-  anteBB: number;
-  icmAwareness: boolean;
+  format: 'chipEV' | 'ICM';
   bubbleFactor: number;
-  onChange: (u: Partial<{ anteBB: number; icmAwareness: boolean; bubbleFactor: number }>) => void;
+  onChange: (u: Partial<{ format: 'chipEV' | 'ICM'; bubbleFactor: number }>) => void;
 }) {
   return (
     <div className="space-y-6">
-      <FieldSet label="앤티 구조" hint="BB 앤티는 매 핸드 BB 자리가 전원분 앤티 대납">
+      <FieldSet
+        label="솔루션 타입"
+        hint="Chip EV: 칩 가치만 최대화. ICM: 생존 가치 반영(버블·파이널 테이블)"
+      >
         <ChipRow>
-          {[0, 0.125, 0.25, 0.5].map((a) => (
-            <Chip key={a} active={anteBB === a} onClick={() => onChange({ anteBB: a })}>
-              {a === 0 ? '없음' : `${a}BB`}
-            </Chip>
-          ))}
-        </ChipRow>
-      </FieldSet>
-      <FieldSet label="ICM 인식" hint="버블·파이널 테이블에서 생존 가치 반영">
-        <ChipRow>
-          <Chip active={!icmAwareness} onClick={() => onChange({ icmAwareness: false })}>
-            Chip EV (꺼짐)
+          <Chip active={format === 'chipEV'} onClick={() => onChange({ format: 'chipEV' })}>
+            Chip EV
           </Chip>
-          <Chip active={icmAwareness} onClick={() => onChange({ icmAwareness: true })}>
-            ICM 인식
+          <Chip active={format === 'ICM'} onClick={() => onChange({ format: 'ICM' })}>
+            ICM
           </Chip>
         </ChipRow>
       </FieldSet>
-      {icmAwareness && (
-        <FieldSet label="버블 강도" hint="1.0 = 평상, 숫자 커질수록 더 타이트">
+      {format === 'ICM' && (
+        <FieldSet label="버블 강도" hint="1.0 = 평상, 숫자 커질수록 더 타이트하게">
           <ChipRow>
             {[1, 1.15, 1.3, 1.5].map((b) => (
               <Chip
@@ -333,6 +354,9 @@ function MttDetailStep({
           </ChipRow>
         </FieldSet>
       )}
+      <div className="rounded-[var(--radius-button)] border border-[color:var(--color-info)]/40 bg-[color:var(--color-info)]/10 p-3 text-[12px] text-[color:var(--color-info)]">
+        토너먼트 솔루션에는 1BB 앤티가 기본 반영되어 있어요. 별도 앤티 설정은 필요 없어요.
+      </div>
     </div>
   );
 }
@@ -348,8 +372,8 @@ function ReviewStep() {
           label="테이블"
           value={config.format === '6max' ? '6맥스' : `${config.format.replace('max', '')}맥스`}
         />
-        <Review label="스택" value={`${config.stackBB}BB`} />
-        <Review label="오픈 사이즈" value={`${config.openSize}x`} />
+        <Review label="스택" value={stackLabel(config.stackBB)} />
+        <Review label="오픈 사이즈" value={openLabel(config.openSize)} />
         {config.gameType === 'cash' ? (
           <>
             <Review label="레이크" value={`${(config.cash.rakePct * 100).toFixed(1)}%`} />
@@ -370,21 +394,11 @@ function ReviewStep() {
           </>
         ) : (
           <>
-            <Review
-              label="앤티"
-              value={config.mtt.anteBB === 0 ? '없음' : `${config.mtt.anteBB}BB`}
-            />
-            <Review
-              label="ICM"
-              value={config.mtt.icmAwareness ? `×${config.mtt.bubbleFactor.toFixed(2)}` : 'Chip EV'}
-            />
+            <Review label="솔루션" value={config.mtt.format === 'ICM' ? `ICM ×${config.mtt.bubbleFactor.toFixed(2)}` : 'Chip EV'} />
+            <Review label="앤티" value="1BB (자동)" />
           </>
         )}
       </dl>
-      <p className="mt-6 rounded-[var(--radius-button)] border border-[color:var(--color-warning)]/40 bg-[color:var(--color-warning)]/10 p-3 text-[12px] text-[color:var(--color-warning)]">
-        ⚠ 실전 플레이 화면은 다음 버전에서 활성화됩니다. 지금은 설정이 저장되고 /today, /sim
-        훈련에 반영됩니다.
-      </p>
     </div>
   );
 }

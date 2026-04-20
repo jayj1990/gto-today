@@ -14,7 +14,7 @@ export type { ChipProps, ChipTone } from './chip';
 export type { MixBarProps, MixBarSegment } from './mix-bar';
 export type { CountUpProps } from './count-up';
 export type { PokerTableProps, Seat, Format, SeatAction, SeatState } from './poker-table';
-export type { RangeGridProps } from './range-grid';
+export type { RangeGridProps, ComboMix } from './range-grid';
 export type { TouchButtonProps } from './touch-button';
 
 // Motion primitives for consumers who want to compose their own animations.

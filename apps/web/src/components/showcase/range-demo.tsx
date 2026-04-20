@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { RangeGrid } from '@gto/ui';
+import { RangeGrid, type ComboMix } from '@gto/ui';
 import { getPreflopChart } from '@gto/gto-data';
 import type { Position } from '@gto/poker-core';
 
@@ -20,7 +20,7 @@ const POSITIONS: { id: Position; label: string; openPct: string }[] = [
  */
 export function RangeDemo() {
   const [position, setPosition] = useState<Position>('BTN');
-  const [freqs, setFreqs] = useState<Record<string, number>>({});
+  const [mixes, setMixes] = useState<Record<string, ComboMix>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,14 +30,14 @@ export function RangeDemo() {
       .then((chart) => {
         if (cancelled) return;
         if (!chart) {
-          setFreqs({});
+          setMixes({});
           return;
         }
-        const out: Record<string, number> = {};
+        const out: Record<string, ComboMix> = {};
         for (const [k, v] of Object.entries(chart)) {
-          out[k] = v.raise;
+          out[k] = { raise: v.raise, fold: v.fold };
         }
-        setFreqs(out);
+        setMixes(out);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -47,7 +47,7 @@ export function RangeDemo() {
     };
   }, [position]);
 
-  const playedCount = Object.values(freqs).filter((f) => f > 0).length;
+  const playedCount = Object.values(mixes).filter((m) => m.raise > 0).length;
 
   return (
     <div className="space-y-5">
@@ -75,7 +75,7 @@ export function RangeDemo() {
       </div>
 
       <div className="flex items-start gap-6">
-        <RangeGrid frequencies={freqs} highlight="AA" />
+        <RangeGrid mixes={mixes} highlight="AA" />
         <dl className="space-y-3 text-[13px]">
           <div>
             <dt className="font-mono text-[11px] uppercase tracking-[0.16em] text-fg-muted">

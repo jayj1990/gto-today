@@ -3,12 +3,23 @@
 import { useMemo } from 'react';
 import { cn } from './cn';
 
+export interface ComboMix {
+  /** Raise frequency 0..1. */
+  raise: number;
+  /** Call frequency 0..1 (vs-open scenarios only). */
+  call?: number;
+  /** Fold frequency 0..1. */
+  fold: number;
+}
+
 export interface RangeGridProps {
-  /** Map of combo key → raise frequency 0..1. Missing = 0. */
-  frequencies: Record<string, number>;
-  /** Highlight a specific combo (hero's hand). */
-  highlight?: string;
-  /** Show combo labels inside cells. Defaults true; disable for mini grids. */
+  /** Map of combo key → mix frequencies. Missing = 100% fold. */
+  mixes: Record<string, ComboMix>;
+  /** Highlight a specific combo (e.g. the user's hand). */
+  highlight?: string | undefined;
+  /** Optional click handler — passes the combo key. */
+  onCellClick?: ((combo: string) => void) | undefined;
+  /** Show combo label inside cells. Default true on desktop, auto-hide below. */
   labels?: boolean;
   className?: string;
 }
@@ -16,85 +27,99 @@ export interface RangeGridProps {
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'] as const;
 
 /**
- * The canonical 13×13 poker combo grid.
- * Diagonal = pairs, upper triangle = suited, lower triangle = offsuit.
- * Cell color encodes raise frequency via a gold → felt gradient.
+ * The canonical 13×13 preflop grid — GTO Wizard style.
+ *
+ * Color coding follows the industry convention:
+ *   red    → raise
+ *   green  → call
+ *   blue   → fold
+ * Mixed cells show a horizontal stack of all three colors, widths
+ * proportional to each action's frequency.
  */
 export function RangeGrid({
-  frequencies,
+  mixes,
   highlight,
+  onCellClick,
   labels = true,
   className,
 }: RangeGridProps) {
-  const cells = useMemo(() => buildCells(frequencies), [frequencies]);
+  const cells = useMemo(() => buildCells(mixes), [mixes]);
 
   return (
     <div
-      className={cn(
-        'inline-grid gap-[2px] rounded-[var(--radius-panel)] p-2',
-        'bg-[color:var(--color-border)]',
-        className,
-      )}
-      style={{ gridTemplateColumns: 'repeat(13, minmax(0, 1fr))' }}
+      className={cn('inline-grid gap-[2px] rounded-[10px] p-1.5', className)}
+      style={{
+        gridTemplateColumns: 'repeat(13, minmax(0, 1fr))',
+        background: 'rgba(0,0,0,0.4)',
+      }}
       role="grid"
       aria-label="Preflop range grid"
     >
-      {cells.map(({ combo, freq }) => {
-        const isActive = freq > 0;
+      {cells.map(({ combo, mix }) => {
         const isHighlight = combo === highlight;
+        const pct = (n: number) => Math.max(0, Math.min(100, n * 100));
+        const r = pct(mix.raise);
+        const c = pct(mix.call ?? 0);
+        const f = pct(mix.fold);
+        const clickable = Boolean(onCellClick);
+
         return (
-          <div
+          <button
             key={combo}
+            type="button"
             role="gridcell"
-            aria-label={`${combo} — ${Math.round(freq * 100)}% raise`}
+            aria-label={`${combo} — raise ${r.toFixed(0)}%, call ${c.toFixed(0)}%, fold ${f.toFixed(0)}%`}
+            onClick={onCellClick ? () => onCellClick(combo) : undefined}
             className={cn(
-              'relative aspect-square min-w-5 select-none',
-              'flex items-center justify-center',
-              'font-mono text-[10px] leading-none',
-              isHighlight && 'ring-2 ring-[color:var(--color-accent)] ring-offset-1',
+              'relative aspect-square select-none overflow-hidden rounded-[3px]',
+              'font-mono leading-none',
+              clickable ? 'cursor-pointer active:scale-[0.94]' : 'cursor-default',
+              isHighlight && 'ring-2 ring-[color:var(--color-accent)]',
             )}
-            style={{
-              background: bgForFreq(freq),
-              color: freq > 0.5 ? 'var(--color-noir)' : 'var(--color-fg-muted)',
-            }}
+            style={{ fontSize: 9, padding: 0 }}
           >
-            {labels && isActive && <span>{combo}</span>}
-            {!labels && isActive && (
+            {/* Stacked background bars */}
+            <div className="absolute inset-0 flex">
+              <div style={{ width: `${r}%`, background: '#C8102E' }} />
+              <div style={{ width: `${c}%`, background: '#1F9D55' }} />
+              <div style={{ width: `${f}%`, background: '#2B5F8F' }} />
+            </div>
+            {/* Label */}
+            {labels && (
               <span
-                className="absolute inset-0"
+                className="absolute inset-0 flex items-center justify-center font-bold"
                 style={{
-                  background: `var(--color-accent)`,
-                  opacity: freq,
+                  color: '#FFFFFF',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.7)',
+                  letterSpacing: '-0.02em',
                 }}
-              />
+              >
+                {combo}
+              </span>
             )}
-          </div>
+          </button>
         );
       })}
     </div>
   );
 }
 
-function buildCells(freq: Record<string, number>): Array<{ combo: string; freq: number }> {
-  const out: Array<{ combo: string; freq: number }> = [];
-  for (let r = 0; r < 13; r++) {
-    for (let c = 0; c < 13; c++) {
-      const hi = RANKS[r];
-      const lo = RANKS[c];
+/* Build every cell in the 13×13 grid (pairs on the diagonal, suited
+   upper triangle, offsuit lower triangle). */
+function buildCells(mixes: Record<string, ComboMix>): Array<{ combo: string; mix: ComboMix }> {
+  const out: Array<{ combo: string; mix: ComboMix }> = [];
+  for (let row = 0; row < 13; row++) {
+    for (let col = 0; col < 13; col++) {
+      const hi = RANKS[row];
+      const lo = RANKS[col];
       if (!hi || !lo) continue;
       let combo: string;
-      if (r === c) combo = `${hi}${lo}`;
-      else if (r < c) combo = `${hi}${lo}s`;
+      if (row === col) combo = `${hi}${lo}`;
+      else if (row < col) combo = `${hi}${lo}s`;
       else combo = `${lo}${hi}o`;
-      out.push({ combo, freq: freq[combo] ?? 0 });
+      const mix = mixes[combo] ?? { raise: 0, fold: 1 };
+      out.push({ combo, mix });
     }
   }
   return out;
-}
-
-function bgForFreq(freq: number): string {
-  if (freq <= 0) return 'var(--color-graphite)';
-  // Linear ramp from fold-gray → gold. Saturates at 1.
-  const alpha = Math.min(1, Math.max(0, freq));
-  return `color-mix(in oklab, var(--color-accent) ${alpha * 100}%, var(--color-graphite))`;
 }
