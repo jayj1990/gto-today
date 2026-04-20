@@ -174,7 +174,7 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
         style={{
           position: 'absolute',
           top: '50%',
-          right: -sz.suit * 0.35,
+          right: -sz.suit * 0.20,
           transform: 'translateY(-50%)',
           fontFamily: 'system-ui, "Segoe UI Symbol", sans-serif',
           fontSize: sz.suit,
