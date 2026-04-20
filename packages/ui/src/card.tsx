@@ -161,15 +161,14 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
 
   const { bg, rim } = suitBackground(suit, deckScheme);
   const maskUrl = SUIT_MASK[suit];
-  // Square mask, 1:1 aspect preserved. Tweaks:
-  //   • 88% of card height (6% breathing room top + bottom)
-  //   • Visual centre sits at 70% of card width, so the left ~30% is
-  //     free space for the rank and the right side bleeds past the
-  //     card edge.
-  const verticalMargin = sz.h * 0.06;
-  const maskH = sz.h - verticalMargin * 2;
+  // Masks are pre-trimmed to their bbox then padded to a square so
+  // every suit touches TOP + BOTTOM of the canvas. Rendered at full
+  // card height → glyph fills top-to-bottom. Centre x = 78% of card
+  // width → ~30% of the mask bleeds past the right edge, leaving the
+  // left half clear for the rank.
+  const maskH = sz.h;
   const maskW = maskH;
-  const centerX = sz.w * 0.70;
+  const centerX = sz.w * 0.78;
   const maskLeft = centerX - maskW / 2;
   const rightCss = sz.w - (maskLeft + maskW);
 
@@ -195,7 +194,7 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
         aria-hidden
         style={{
           position: 'absolute',
-          top: verticalMargin,
+          top: 0,
           right: rightCss,
           width: maskW,
           height: maskH,

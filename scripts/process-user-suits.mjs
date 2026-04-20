@@ -82,13 +82,55 @@ async function main() {
       }
     }
 
-    await sharp(out, {
-      raw: { width: info.width, height: info.height, channels: 4 },
+    // 3. Find the tight bbox of non-transparent pixels so we can trim
+    //    each suit to its actual shape. Guarantees identical vertical
+    //    extent across all four masks regardless of the original grid
+    //    layout quirks.
+    let minX = info.width;
+    let minY = info.height;
+    let maxX = -1;
+    let maxY = -1;
+    for (let y = 0; y < info.height; y++) {
+      for (let x = 0; x < info.width; x++) {
+        const alpha = out[(y * info.width + x) * 4 + 3];
+        if (alpha > 8) {
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+    const bboxW = maxX - minX + 1;
+    const bboxH = maxY - minY + 1;
+
+    // 4. Pad the bbox to a square (taller dimension wins) so aspect is
+    //    preserved and we don't deform any suit. The bbox is centered
+    //    horizontally inside the square.
+    const side = Math.max(bboxW, bboxH);
+    const padX = Math.floor((side - bboxW) / 2);
+    const padY = Math.floor((side - bboxH) / 2);
+    const square = Buffer.alloc(side * side * 4);
+    for (let y = 0; y < bboxH; y++) {
+      for (let x = 0; x < bboxW; x++) {
+        const src = ((minY + y) * info.width + (minX + x)) * 4;
+        const dst = ((y + padY) * side + (x + padX)) * 4;
+        square[dst] = out[src];
+        square[dst + 1] = out[src + 1];
+        square[dst + 2] = out[src + 2];
+        square[dst + 3] = out[src + 3];
+      }
+    }
+
+    await sharp(square, {
+      raw: { width: side, height: side, channels: 4 },
     })
       .png({ compressionLevel: 9 })
       .toFile(outPath);
 
-    console.log(`✓ ${q.id}.png  ${info.width}×${info.height}`);
+    console.log(
+      `✓ ${q.id}.png  bbox ${bboxW}×${bboxH} → square ${side}×${side}`,
+    );
   }
 
   console.log('\nDone. Alpha-only suit masks ready.');
