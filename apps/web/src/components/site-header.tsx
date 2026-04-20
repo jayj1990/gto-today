@@ -1,8 +1,10 @@
 import Link from 'next/link';
+import Image from 'next/image';
+import { Logo } from '@gto/ui';
 
 /**
- * Sticky top header with a clickable wordmark that routes to home.
- * Theme toggle removed — the app is pinned to the Tonight palette.
+ * Sticky top header — G3 chip icon (left) + "GTO · today" SVG wordmark,
+ * both wrapped in a single link back to home. Theme pinned to Tonight.
  */
 export function SiteHeader() {
   return (
@@ -11,26 +13,23 @@ export function SiteHeader() {
         <Link
           href="/"
           aria-label="gto.today 홈"
-          className="flex items-center gap-1 active:scale-[0.97]"
+          className="flex items-center gap-2.5 active:scale-[0.97]"
           style={{ touchAction: 'manipulation' }}
         >
-          <span
-            className="font-display font-bold uppercase text-fg"
-            style={{ fontSize: 18, letterSpacing: '-0.02em', lineHeight: 1 }}
-          >
-            GTO
-          </span>
-          <span
-            aria-hidden
-            className="rounded-full bg-[color:var(--color-gold)]"
-            style={{ width: 4, height: 4, transform: 'translateY(-5px)' }}
+          <Image
+            src="/logos/mark-g3.png"
+            alt=""
+            width={36}
+            height={36}
+            priority
+            style={{
+              width: 36,
+              height: 36,
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))',
+            }}
           />
-          <span
-            className="font-display font-light text-fg/85"
-            style={{ fontSize: 18, letterSpacing: '-0.01em', lineHeight: 1 }}
-          >
-            today
-          </span>
+          <Logo variant="full" width={92} aria-hidden />
         </Link>
       </div>
     </header>

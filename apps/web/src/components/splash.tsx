@@ -51,14 +51,18 @@ export function Splash() {
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               className="flex flex-col items-center"
             >
-              <div
-                aria-hidden
-                className="h-16 w-16 rounded-full"
+              {/* G3 chip logo — the canonical brand mark */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logos/mark-g3.png"
+                alt=""
+                width={140}
+                height={140}
                 style={{
-                  background:
-                    'radial-gradient(circle at 35% 35%, #E8CC72, #D4AF37 55%, #B8912A)',
-                  boxShadow:
-                    '0 0 0 4px rgba(212,175,55,0.18), 0 0 40px rgba(212,175,55,0.35)',
+                  width: 140,
+                  height: 140,
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0 4px 18px rgba(212,175,55,0.35))',
                 }}
               />
               <h1

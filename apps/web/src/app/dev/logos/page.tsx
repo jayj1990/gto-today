@@ -111,6 +111,63 @@ const AI_MARKS_V2: Mark[] = [
   },
 ];
 
+// G section: D3 poker-chip concept with GTO TODAY text on the face.
+const CHIP_WORDMARK: Mark[] = [
+  {
+    key: 'cw-bold',
+    src: '/ai-assets/chip-wordmark/v1-bold-gto.png',
+    title: 'G1 · Chip · bold serif GTO',
+    desc: '포커칩 중앙 gold disc + 굵은 serif GTO + 작은 TODAY. 전통적.',
+  },
+  {
+    key: 'cw-sans',
+    src: '/ai-assets/chip-wordmark/v2-clean-sans.png',
+    title: 'G2 · Chip · clean sans + divider',
+    desc: 'GTO sans-serif + 얇은 골드 라인 + TODAY. 모던·브랜드마크.',
+  },
+  {
+    key: 'cw-stacked',
+    src: '/ai-assets/chip-wordmark/v3-stacked-serif.png',
+    title: 'G3 · Chip · stacked serif',
+    desc: 'GTO (위) / TODAY (아래) 세로 스택 serif. 클래식 코인 느낌.',
+  },
+  {
+    key: 'cw-flat',
+    src: '/ai-assets/chip-wordmark/v4-minimal-flat.png',
+    title: 'G4 · Chip · minimal flat',
+    desc: '플랫 일러스트, 3D 섀도우 최소. 작은 사이즈에서도 읽기 편함.',
+  },
+];
+
+// F section: E6 medallion concept refined with explicit letter-O
+// disambiguation + TODAY legibility improvements.
+const WORDMARK_V2: Mark[] = [
+  {
+    key: 'wm2-side',
+    src: '/ai-assets/wordmark-v2/medallion-letters-side.png',
+    title: 'F1 · Medallion · letters side-by-side',
+    desc: 'G T O 세 글자 나란히 + TODAY 직선 베이스라인. 세리프 + 아트데코 프레임.',
+  },
+  {
+    key: 'wm2-mono',
+    src: '/ai-assets/wordmark-v2/medallion-monogram-tight.png',
+    title: 'F2 · Medallion · monogram',
+    desc: 'GTO 모노그램 (글자 살짝 겹침) + TODAY 직선. 모던 산세리프.',
+  },
+  {
+    key: 'wm2-flat',
+    src: '/ai-assets/wordmark-v2/medallion-flat-minimal.png',
+    title: 'F3 · Medallion · flat minimal',
+    desc: '장식 최소 + 얇은 골드 링 + GTO / TODAY 분리. 깨끗한 플랫.',
+  },
+  {
+    key: 'wm2-emboss',
+    src: '/ai-assets/wordmark-v2/medallion-embossed.png',
+    title: 'F4 · Medallion · embossed gold',
+    desc: '3D 엠보스 골드 릴리프 + 중앙 골드 바 분리. 럭셔리 극대화.',
+  },
+];
+
 // Wordmark lockups (symbol + "GTO TODAY" text included).
 // DALL·E 3 renders text unreliably — expect 2-3 out of 6 legible.
 const WORDMARK_LOCKUPS: Mark[] = [
@@ -205,6 +262,20 @@ export default function LogosPage() {
           title="AI 워드마크 락업 — 'GTO TODAY' 텍스트 포함 (DALL·E 3 HD)"
           subtitle="스플래시 / 헤더 / 명함용. DALL·E는 텍스트 렌더링이 불안정 — 2-3개만 쓸만할 것."
           marks={WORDMARK_LOCKUPS}
+        />
+
+        <Family
+          badge="F"
+          title="AI 메달리온 v2 — E6 컨셉 리파인"
+          subtitle="E6 기반. 'O' vs 'D' 구분 강화 + 'TODAY' 가독성 개선. 4가지 변형."
+          marks={WORDMARK_V2}
+        />
+
+        <Family
+          badge="G"
+          title="AI 포커칩 + 텍스트 락업 (D3 컨셉 + 워드마크)"
+          subtitle="D3 심볼 베이스 + 중앙 GTO TODAY 텍스트. 앱 아이콘·스플래시·헤더 전부 커버하는 올인원 후보."
+          marks={CHIP_WORDMARK}
         />
 
         <section className="mt-12 rounded-[var(--radius-panel)] border-hair surface p-6">

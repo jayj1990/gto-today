@@ -9,9 +9,9 @@ import sharp from 'sharp';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, '..', 'public');
 
-// Source: the 1024×1024 HD chip-stack logo Jay picked. Kept as
-// /public/logos/mark-chip-stack.png so it's also serve-able directly.
-const SOURCE = join(publicDir, 'logos', 'mark-chip-stack.png');
+// Source: the 1024×1024 HD G3 chip-wordmark logo Jay picked. Kept as
+// /public/logos/mark-g3.png so it's also serve-able directly.
+const SOURCE = join(publicDir, 'logos', 'mark-g3.png');
 
 const jobs = [
   { out: 'icon-192.png', size: 192, pad: 0 },
