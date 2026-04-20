@@ -34,13 +34,16 @@ export function MixBar({
   className,
   highlightColor = 'var(--color-gold)',
 }: MixBarProps) {
-  // CSS grid guarantees every row's track starts at the same x position,
-  // regardless of how wide each Korean label happens to render.
+  // CSS grid guarantees every row starts at the same x position. We
+  // lock the middle track with minmax(0, 1fr) so a long label never
+  // pushes the bar column narrower on one row, and every bar track is
+  // identical height so rows align perfectly — dominant emphasis comes
+  // from weight + star + glow, not taller bars.
   return (
     <ul
       className={cn('grid gap-y-2', className)}
       style={{
-        gridTemplateColumns: labeled ? '64px 1fr 56px' : '1fr',
+        gridTemplateColumns: labeled ? '64px minmax(0, 1fr) 56px' : 'minmax(0, 1fr)',
       }}
     >
       {segments.map((seg, i) => {
@@ -52,7 +55,7 @@ export function MixBar({
               <span
                 className={cn(
                   'flex items-center font-mono',
-                  dom ? 'text-[14px] font-bold text-fg' : 'text-[13px] text-fg-muted',
+                  dom ? 'text-[13px] font-bold text-fg' : 'text-[13px] text-fg-muted',
                 )}
               >
                 {dom && (
@@ -65,10 +68,8 @@ export function MixBar({
             )}
             <div className="flex items-center">
               <div
-                className={cn(
-                  'relative w-full overflow-hidden rounded-full bg-[color:var(--color-border)]',
-                  dom ? 'h-4' : 'h-2.5',
-                )}
+                className="relative h-3 w-full overflow-hidden rounded-full bg-[color:var(--color-border)]"
+                style={dom ? { boxShadow: `0 0 0 1.5px ${color}` } : undefined}
               >
                 <motion.div
                   initial={{ clipPath: 'inset(0 100% 0 0)' }}
@@ -79,10 +80,7 @@ export function MixBar({
                     delay: i * 0.06,
                   }}
                   className="absolute inset-0 rounded-full"
-                  style={{
-                    background: color,
-                    boxShadow: dom ? `0 0 10px ${color}55` : undefined,
-                  }}
+                  style={{ background: color }}
                 />
               </div>
             </div>
@@ -90,7 +88,7 @@ export function MixBar({
               <span
                 className={cn(
                   'flex items-center justify-end font-mono tabular-nums',
-                  dom ? 'text-[14px] font-bold text-fg' : 'text-[13px] font-semibold',
+                  dom ? 'text-[13px] font-bold text-fg' : 'text-[13px] font-semibold',
                 )}
               >
                 {seg.value.toFixed(1)}%

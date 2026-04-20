@@ -162,17 +162,14 @@ export function PostflopResult({
                     {POSTFLOP_ACTION_LABEL[action]}
                   </span>
                   <div
-                    className={cn(
-                      'relative flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]',
-                      isTop ? 'h-4' : 'h-2.5',
-                    )}
+                    className="relative h-3 flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]"
+                    style={isTop ? { boxShadow: `0 0 0 1.5px ${color}` } : undefined}
                   >
                     <div
                       className="h-full rounded-full"
                       style={{
                         width: `${(freq ?? 0) * 100}%`,
                         background: color,
-                        boxShadow: isTop ? `0 0 10px ${color}55` : undefined,
                       }}
                     />
                   </div>

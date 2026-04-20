@@ -21,24 +21,21 @@ export default function LivePlayPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-3xl flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+32px)] pt-6">
-        <header className="mb-5 flex items-start justify-between gap-3">
+      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-3xl flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3">
+        <header className="mb-3 flex items-baseline justify-between gap-3">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--color-accent)]">
+            <h1 className="font-display text-[20px] font-bold tracking-[-0.015em]">
               실전 모드
-            </p>
-            <h1 className="mt-2 font-display text-[26px] font-bold tracking-[-0.015em]">
-              GTO 차트
             </h1>
-            <p className="mt-1 text-[13px] text-fg-muted">
-              {typeLabel} · 6맥스 · 100BB · 2.5x 오픈
+            <p className="mt-0.5 text-[11px] text-fg-muted">
+              {typeLabel} · 6맥스 · 100BB · 2.5x
             </p>
           </div>
           <Link
             href="/live"
             className="font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted"
           >
-            설정 수정
+            설정
           </Link>
         </header>
 

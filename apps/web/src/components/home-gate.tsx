@@ -122,7 +122,7 @@ export function HomeGate() {
         </button>
       </header>
 
-      <div className="mt-10 grid gap-4">
+      <div className="mt-6 grid gap-3">
         <PrimaryCard
           href="/today"
           eyebrow="Daily Challenge"
@@ -177,7 +177,7 @@ function PrimaryCard({
         href={href}
         style={{ touchAction: 'manipulation' }}
         className={cn(
-          'block rounded-[var(--radius-panel)] p-6 transition-transform active:scale-[0.98]',
+          'block rounded-[var(--radius-panel)] p-5 transition-transform active:scale-[0.98]',
           variant === 'primary'
             ? 'bg-gold-gradient text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)]'
             : 'border-hair surface hover:bg-[color:var(--color-surface-raised)]',
@@ -191,12 +191,12 @@ function PrimaryCard({
         >
           {eyebrow}
         </p>
-        <h2 className="mt-3 font-display text-[28px] font-bold leading-tight tracking-[-0.015em]">
+        <h2 className="mt-2 font-display text-[22px] font-bold leading-tight tracking-[-0.015em]">
           {title}
         </h2>
         <p
           className={cn(
-            'mt-2 text-[14px]',
+            'mt-1 text-[13px]',
             variant === 'primary' ? 'text-noir/75' : 'text-fg-muted',
           )}
         >
