@@ -65,7 +65,7 @@ export default function SignInPage() {
 
       <section className="mt-12">
         <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[color:var(--color-accent)]">
-          Sign in
+          로그인
         </p>
         <h1 className="mt-3 font-display text-[34px] font-bold leading-[1.1] tracking-[-0.02em]">
           로그인하고
