@@ -484,6 +484,9 @@ function chipStyle(action: Exclude<SeatAction, { kind: 'fold' }>): {
 /* ══════════════════════════ CARD BACK ══════════════════════════ */
 
 function CardBack() {
+  // G3 chip watermark at ~35% opacity replaces the old 'T' letter.
+  // Using the transparent variant so the chip silhouette blends with
+  // the dark gradient felt without a rectangular PNG edge.
   return (
     <div
       style={{
@@ -493,18 +496,29 @@ function CardBack() {
         background: 'linear-gradient(135deg, #3A3A42 0%, #1E1E24 100%)',
         border: '1px solid rgba(255,255,255,0.1)',
         boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'var(--font-display, Inter), system-ui, sans-serif',
-        fontSize: 12,
-        fontWeight: 800,
-        color: 'rgba(212, 175, 55, 0.75)',
+        position: 'relative',
+        overflow: 'hidden',
         flexShrink: 0,
       }}
       aria-hidden
     >
-      T
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/logos/mark-g3-transparent.png"
+        alt=""
+        width={16}
+        height={16}
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 16,
+          height: 16,
+          opacity: 0.35,
+          pointerEvents: 'none',
+        }}
+      />
     </div>
   );
 }
