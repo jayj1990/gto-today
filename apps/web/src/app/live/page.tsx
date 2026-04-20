@@ -1,50 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
-import {
-  openLabel,
-  stackLabel,
-  useLiveStore,
-  type GameType,
-  type OpenSetting,
-  type StackSetting,
-} from '@/lib/live-store';
-import type { TableFormat } from '@gto/poker-core';
-
-type Step = 'game' | 'table' | 'details' | 'review';
-
-const STEP_TITLES: Record<Step, string> = {
-  game: '어떤 게임이에요?',
-  table: '테이블 설정',
-  details: '세부 설정',
-  review: '확인',
-};
-
-const STEP_ORDER: Step[] = ['game', 'table', 'details', 'review'];
+import { useLiveStore, type GameType } from '@/lib/live-store';
 
 /**
- * 4-step setup wizard. Details step swaps its body depending on cash vs MTT
- * so users only see the fields relevant to their game — no irrelevant ICM
- * slider for cash, no rake slider for MTT.
+ * 실전 모드 setup. Scope is constrained to what TexasSolver 0.2
+ * bundles for us, so every field below is locked except the game
+ * type (cash vs MTT — we map both to the same data today since the
+ * underlying ranges are identical at 6max 100BB).
  */
 export default function LiveSetupPage() {
-  const [step, setStep] = useState<Step>('game');
   const config = useLiveStore((s) => s.config);
-  const { setGameType, setFormat, setStackBB, setOpenSize, setCash, setMtt } = useLiveStore();
-
-  const stepIdx = STEP_ORDER.indexOf(step);
-  const next = () => {
-    const nextStep = STEP_ORDER[stepIdx + 1];
-    if (nextStep) setStep(nextStep);
-  };
-  const prev = () => {
-    const prevStep = STEP_ORDER[stepIdx - 1];
-    if (prevStep) setStep(prevStep);
-  };
+  const setGameType = useLiveStore((s) => s.setGameType);
 
   return (
     <>
@@ -55,413 +25,110 @@ export default function LiveSetupPage() {
             ← 홈으로
           </Link>
           <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--color-accent)]">
-            실전 모드 · {stepIdx + 1} / {STEP_ORDER.length}
+            실전 모드 · 설정
           </p>
           <h1 className="mt-2 font-display text-[30px] font-bold tracking-[-0.02em]">
-            {STEP_TITLES[step]}
+            솔버 데이터 선택
           </h1>
-          <ul className="mt-4 flex gap-1.5">
-            {STEP_ORDER.map((s, i) => (
-              <li
-                key={s}
-                className={cn(
-                  'h-1 flex-1 rounded-full',
-                  i <= stepIdx
-                    ? 'bg-[color:var(--color-accent)]'
-                    : 'bg-[color:var(--color-border)]',
-                )}
-              />
-            ))}
-          </ul>
+          <p className="mt-3 text-[13px] text-fg-muted">
+            TexasSolver 0.2가 제공하는 범위로 고정. 추가 스택·오픈 사이즈·앤티 지원은 향후 솔버 데이터 확장되면 열립니다.
+          </p>
         </header>
 
-        <motion.div
-          key={step}
-          initial={{ opacity: 0, y: 12 }}
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-          className="mt-8 flex-1"
+          transition={{ duration: 0.24 }}
+          className="mt-6 space-y-6"
         >
-          {step === 'game' && (
-            <GameStep
-              value={config.gameType}
-              onChange={(v) => {
-                setGameType(v);
-                next();
-              }}
-            />
-          )}
+          <FieldSet label="게임 종류">
+            <div className="grid grid-cols-2 gap-3">
+              {(['cash', 'mtt'] as GameType[]).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setGameType(k)}
+                  className={cn(
+                    'rounded-[var(--radius-panel)] border p-4 text-left transition-colors active:scale-[0.99]',
+                    config.gameType === k
+                      ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/10'
+                      : 'border-hair surface hover:bg-[color:var(--color-surface-raised)]',
+                  )}
+                >
+                  <p className="font-display text-[18px] font-bold">
+                    {k === 'cash' ? '캐시 게임' : '토너먼트'}
+                  </p>
+                  <p className="mt-1 text-[12px] text-fg-muted">
+                    {k === 'cash' ? 'NL200 · 500 rake' : 'MTT 100BB 기준'}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </FieldSet>
 
-          {step === 'table' && (
-            <TableStep
-              gameType={config.gameType}
-              format={config.format}
-              stackBB={config.stackBB}
-              openSize={config.openSize}
-              onFormat={setFormat}
-              onStack={setStackBB}
-              onOpenSize={setOpenSize}
-            />
-          )}
+          <InfoRow label="테이블" value="6맥스 (솔버 범위)" locked />
+          <InfoRow label="스택" value="100BB" locked />
+          <InfoRow label="오픈 사이즈" value="2.5x (SB 3x)" locked />
+          <InfoRow
+            label="데이터 출처"
+            value="TexasSolver 0.2"
+            valueClass="text-[color:var(--color-call)]"
+          />
+        </motion.section>
 
-          {step === 'details' && config.gameType === 'cash' && (
-            <CashDetailStep
-              rakePct={config.cash.rakePct}
-              rakeCapBB={config.cash.rakeCapBB}
-              ante={config.cash.ante}
-              onChange={setCash}
-            />
-          )}
+        <Link
+          href="/live/play"
+          className="mt-10 inline-flex h-14 items-center justify-center rounded-[var(--radius-button)] bg-gold-gradient text-center font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+          style={{ touchAction: 'manipulation' }}
+        >
+          실전 시작 →
+        </Link>
 
-          {step === 'details' && config.gameType === 'mtt' && (
-            <MttDetailStep
-              format={config.mtt.format}
-              bubbleFactor={config.mtt.bubbleFactor}
-              onChange={setMtt}
-            />
-          )}
-
-          {step === 'review' && <ReviewStep />}
-        </motion.div>
-
-        <div className="mt-8 flex gap-3">
-          {stepIdx > 0 && (
-            <button
-              type="button"
-              onClick={prev}
-              className="h-12 flex-1 rounded-[var(--radius-button)] border-hair surface-raised font-medium active:scale-[0.98]"
-            >
-              이전
-            </button>
-          )}
-          {step === 'review' ? (
-            <Link
-              href="/live/play"
-              className="flex h-12 flex-[2] items-center justify-center rounded-[var(--radius-button)] bg-gold-gradient font-semibold text-noir shadow-[var(--shadow-card)] active:scale-[0.98]"
-            >
-              실전 시작 →
-            </Link>
-          ) : step !== 'game' ? (
-            <button
-              type="button"
-              onClick={next}
-              className="h-12 flex-[2] rounded-[var(--radius-button)] bg-gold-gradient font-semibold text-noir shadow-[var(--shadow-card)] active:scale-[0.98]"
-            >
-              다음
-            </button>
-          ) : null}
+        <div className="mt-4 rounded-[var(--radius-button)] border border-[color:var(--color-info)]/40 bg-[color:var(--color-info)]/10 px-4 py-3 text-[12px] text-[color:var(--color-info)]">
+          향후 확장 예정: 다양한 스택 뎁스 (50BB / 200BB), 추가 오픈 사이즈 (2.25x / 3x), ICM 버블 모드. TexasSolver로 솔빙 후 추가됩니다.
         </div>
       </main>
     </>
   );
 }
 
-/* ─── STEPS ─────────────────────────────────────────────────────────── */
-
-function GameStep({
-  value,
-  onChange,
-}: {
-  value: GameType;
-  onChange: (v: GameType) => void;
-}) {
-  const options: { key: GameType; title: string; desc: string }[] = [
-    { key: 'cash', title: '캐시 게임', desc: '홈게임·온라인 캐시. 스택이 깊고 ICM 없음.' },
-    { key: 'mtt', title: '토너먼트', desc: 'MTT·SnG. 앤티·ICM 자동 반영.' },
-  ];
-  return (
-    <ul className="grid gap-3">
-      {options.map((opt) => (
-        <li key={opt.key}>
-          <button
-            type="button"
-            onClick={() => onChange(opt.key)}
-            className={cn(
-              'w-full rounded-[var(--radius-panel)] border p-5 text-left transition-colors active:scale-[0.99]',
-              value === opt.key
-                ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/10'
-                : 'border-hair surface hover:bg-[color:var(--color-surface-raised)]',
-            )}
-          >
-            <p className="font-display text-[20px] font-bold">{opt.title}</p>
-            <p className="mt-1 text-[13px] text-fg-muted">{opt.desc}</p>
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function TableStep({
-  gameType,
-  format,
-  stackBB,
-  openSize,
-  onFormat,
-  onStack,
-  onOpenSize,
-}: {
-  gameType: GameType;
-  format: TableFormat;
-  stackBB: StackSetting;
-  openSize: OpenSetting;
-  onFormat: (v: TableFormat) => void;
-  onStack: (v: StackSetting) => void;
-  onOpenSize: (v: OpenSetting) => void;
-}) {
-  const formats: TableFormat[] = ['6max', '9max', '10max', '11max'];
-
-  // Cash stacks: include Any + deep-stack options up to 300BB for home games.
-  // MTT stacks: include shorter depths since MTTs routinely play 10-40 BB.
-  const stackOptions: StackSetting[] =
-    gameType === 'cash'
-      ? ['any', 50, 75, 100, 150, 200, 300]
-      : [100, 75, 50, 40, 30, 25, 20, 15, 10];
-
-  // Open sizes: Any / GTO + common specifics.
-  const openOptions: OpenSetting[] = ['any', 'gto', 2, 2.25, 2.5, 3];
-
-  return (
-    <div className="space-y-6">
-      <FieldSet label="테이블 크기">
-        <ChipRow>
-          {formats.map((f) => (
-            <Chip key={f} active={format === f} onClick={() => onFormat(f)}>
-              {f === '6max' ? '6맥스' : f === '9max' ? '9맥스' : f === '10max' ? '10맥스' : '11맥스'}
-            </Chip>
-          ))}
-        </ChipRow>
-      </FieldSet>
-
-      <FieldSet label="스택 (BB)" hint={gameType === 'cash' ? '딥스택도 Any로 커버' : '토너먼트는 얕은 스택도 자주 등장'}>
-        <ChipRow>
-          {stackOptions.map((s) => (
-            <Chip
-              key={String(s)}
-              active={stackBB === s}
-              onClick={() => onStack(s)}
-            >
-              {stackLabel(s)}
-            </Chip>
-          ))}
-        </ChipRow>
-      </FieldSet>
-
-      <FieldSet
-        label="오픈 사이즈"
-        hint="GTO = 솔버 기본값, Any = 크기 상관없이 조회"
-      >
-        <ChipRow>
-          {openOptions.map((o) => (
-            <Chip
-              key={String(o)}
-              active={openSize === o}
-              onClick={() => onOpenSize(o)}
-            >
-              {openLabel(o)}
-            </Chip>
-          ))}
-        </ChipRow>
-      </FieldSet>
-    </div>
-  );
-}
-
-function CashDetailStep({
-  rakePct,
-  rakeCapBB,
-  ante,
-  onChange,
-}: {
-  rakePct: number;
-  rakeCapBB: number;
-  ante: 'none' | 'bb-ante' | 'straddle';
-  onChange: (u: Partial<{ rakePct: number; rakeCapBB: number; ante: 'none' | 'bb-ante' | 'straddle' }>) => void;
-}) {
-  return (
-    <div className="space-y-6">
-      <FieldSet label="레이크 비율" hint="일반 온라인 5%, 라이브 홈게임 2~3%">
-        <ChipRow>
-          {[0, 0.025, 0.05, 0.075].map((p) => (
-            <Chip key={p} active={Math.abs(rakePct - p) < 0.001} onClick={() => onChange({ rakePct: p })}>
-              {p === 0 ? '무레이크' : `${(p * 100).toFixed(1)}%`}
-            </Chip>
-          ))}
-        </ChipRow>
-      </FieldSet>
-      <FieldSet label="레이크 캡 (BB)" hint="팟이 커져도 이 한도까지만 레이크">
-        <ChipRow>
-          {[0, 2, 3, 5].map((c) => (
-            <Chip key={c} active={rakeCapBB === c} onClick={() => onChange({ rakeCapBB: c })}>
-              {c === 0 ? '없음' : `${c}BB`}
-            </Chip>
-          ))}
-        </ChipRow>
-      </FieldSet>
-      <FieldSet label="블라인드 구조">
-        <ChipRow>
-          <Chip active={ante === 'none'} onClick={() => onChange({ ante: 'none' })}>
-            일반 (SB/BB)
-          </Chip>
-          <Chip active={ante === 'bb-ante'} onClick={() => onChange({ ante: 'bb-ante' })}>
-            BB 앤티
-          </Chip>
-          <Chip active={ante === 'straddle'} onClick={() => onChange({ ante: 'straddle' })}>
-            스트래들
-          </Chip>
-        </ChipRow>
-      </FieldSet>
-    </div>
-  );
-}
-
-function MttDetailStep({
-  format,
-  bubbleFactor,
-  onChange,
-}: {
-  format: 'chipEV' | 'ICM';
-  bubbleFactor: number;
-  onChange: (u: Partial<{ format: 'chipEV' | 'ICM'; bubbleFactor: number }>) => void;
-}) {
-  return (
-    <div className="space-y-6">
-      <FieldSet
-        label="솔루션 타입"
-        hint="Chip EV: 칩 가치만 최대화. ICM: 생존 가치 반영(버블·파이널 테이블)"
-      >
-        <ChipRow>
-          <Chip active={format === 'chipEV'} onClick={() => onChange({ format: 'chipEV' })}>
-            Chip EV
-          </Chip>
-          <Chip active={format === 'ICM'} onClick={() => onChange({ format: 'ICM' })}>
-            ICM
-          </Chip>
-        </ChipRow>
-      </FieldSet>
-      {format === 'ICM' && (
-        <FieldSet label="버블 강도" hint="1.0 = 평상, 숫자 커질수록 더 타이트하게">
-          <ChipRow>
-            {[1, 1.15, 1.3, 1.5].map((b) => (
-              <Chip
-                key={b}
-                active={Math.abs(bubbleFactor - b) < 0.001}
-                onClick={() => onChange({ bubbleFactor: b })}
-              >
-                {b === 1 ? '평상' : `×${b.toFixed(2)}`}
-              </Chip>
-            ))}
-          </ChipRow>
-        </FieldSet>
-      )}
-      <div className="rounded-[var(--radius-button)] border border-[color:var(--color-info)]/40 bg-[color:var(--color-info)]/10 p-3 text-[12px] text-[color:var(--color-info)]">
-        토너먼트 솔루션에는 1BB 앤티가 기본 반영되어 있어요. 별도 앤티 설정은 필요 없어요.
-      </div>
-    </div>
-  );
-}
-
-function ReviewStep() {
-  const config = useLiveStore((s) => s.config);
-  const gameLabel = config.gameType === 'cash' ? '캐시 게임' : '토너먼트';
-  return (
-    <div className="rounded-[var(--radius-panel)] border-hair surface p-5">
-      <dl className="grid grid-cols-2 gap-4 text-[14px]">
-        <Review label="게임 종류" value={gameLabel} />
-        <Review
-          label="테이블"
-          value={config.format === '6max' ? '6맥스' : `${config.format.replace('max', '')}맥스`}
-        />
-        <Review label="스택" value={stackLabel(config.stackBB)} />
-        <Review label="오픈 사이즈" value={openLabel(config.openSize)} />
-        {config.gameType === 'cash' ? (
-          <>
-            <Review label="레이크" value={`${(config.cash.rakePct * 100).toFixed(1)}%`} />
-            <Review
-              label="레이크 캡"
-              value={config.cash.rakeCapBB === 0 ? '없음' : `${config.cash.rakeCapBB}BB`}
-            />
-            <Review
-              label="블라인드"
-              value={
-                config.cash.ante === 'none'
-                  ? '일반'
-                  : config.cash.ante === 'bb-ante'
-                    ? 'BB 앤티'
-                    : '스트래들'
-              }
-            />
-          </>
-        ) : (
-          <>
-            <Review label="솔루션" value={config.mtt.format === 'ICM' ? `ICM ×${config.mtt.bubbleFactor.toFixed(2)}` : 'Chip EV'} />
-            <Review label="앤티" value="1BB (자동)" />
-          </>
-        )}
-      </dl>
-    </div>
-  );
-}
-
-/* ─── ATOMS ─────────────────────────────────────────────────────────── */
-
-function FieldSet({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
+function FieldSet({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <section>
       <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted">
         {label}
       </p>
       {children}
-      {hint && <p className="mt-2 text-[12px] text-fg-muted/80">{hint}</p>}
     </section>
   );
 }
 
-function ChipRow({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-wrap gap-1.5">{children}</div>;
-}
-
-function Chip({
-  active,
-  onClick,
-  children,
+function InfoRow({
+  label,
+  value,
+  locked = false,
+  valueClass,
 }: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
+  label: string;
+  value: string;
+  locked?: boolean;
+  valueClass?: string;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{ touchAction: 'manipulation' }}
-      className={cn(
-        'select-none rounded-full border px-3 py-1.5 font-mono text-[12px] tracking-[0.04em] active:scale-[0.96]',
-        active
-          ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)] text-noir font-semibold'
-          : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-raised)] text-fg-muted',
+    <div className="flex items-center justify-between rounded-[var(--radius-button)] border-hair surface px-4 py-3">
+      <div>
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-fg-muted">
+          {label}
+        </p>
+        <p className={cn('mt-0.5 font-mono text-[14px] font-semibold', valueClass ?? 'text-fg')}>
+          {value}
+        </p>
+      </div>
+      {locked && (
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-fg-muted/70">
+          고정
+        </span>
       )}
-    >
-      {children}
-    </button>
-  );
-}
-
-function Review({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-fg-muted">
-        {label}
-      </dt>
-      <dd className="mt-0.5 font-mono text-[14px] font-semibold text-fg">{value}</dd>
     </div>
   );
 }
