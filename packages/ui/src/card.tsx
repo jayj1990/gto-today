@@ -35,25 +35,26 @@ export interface CardViewProps extends Omit<HTMLAttributes<HTMLDivElement>, 'chi
 /**
  * CardView — plain div with inline styles.
  *
- * New layering: at every size we paint a LARGE suit glyph as the card's
- * watermark, then the rank rides on top. This fixes mobile readability
- * where the previous corner-only suit was too small to read at a glance.
+ * Layout (per Jay's spec, mirrors the ref screenshot suit.png):
+ *   • Rank sits on the LEFT, vertically centered, clear and readable
+ *   • Suit dominates the RIGHT side — glyph height ≈ card height so it
+ *     bleeds past the card edge, creating a bold full-bleed visual
+ *   • Suit glyph is opaque-ish white (55%) so it reads as a filled shape
+ *     not a faint watermark
  *
- * Visual stack (front to back):
- *   rank (big, white, drop shadow)
- *   small corner suit (md+ only)
- *   big watermark suit  (≈70% of card height, semi-transparent white)
- *   tinted background   (suit-specific color)
+ * This replaces the previous "tiny corner suit + subtle center watermark"
+ * layout that was hard to parse on small mobile cards.
  */
 const SIZE: Record<
   CardSize,
-  { w: number; h: number; radius: number; rank: number; suit: number; cornerSuit: number }
+  { w: number; h: number; radius: number; rank: number; suit: number }
 > = {
-  xs: { w: 30, h: 42, radius: 5, rank: 20, suit: 36, cornerSuit: 0 },
-  sm: { w: 42, h: 60, radius: 6, rank: 28, suit: 52, cornerSuit: 0 },
-  md: { w: 68, h: 96, radius: 10, rank: 40, suit: 80, cornerSuit: 14 },
-  lg: { w: 96, h: 134, radius: 12, rank: 56, suit: 112, cornerSuit: 16 },
-  xl: { w: 114, h: 160, radius: 14, rank: 70, suit: 132, cornerSuit: 18 },
+  //      w    h    radius  rank  suit (≈ 1.05× h so it bleeds)
+  xs: { w: 30, h: 42, radius: 5, rank: 20, suit: 44 },
+  sm: { w: 42, h: 60, radius: 6, rank: 28, suit: 64 },
+  md: { w: 68, h: 96, radius: 10, rank: 44, suit: 104 },
+  lg: { w: 96, h: 134, radius: 12, rank: 60, suit: 146 },
+  xl: { w: 114, h: 160, radius: 14, rank: 74, suit: 174 },
 };
 
 const SUIT_GLYPH: Record<Suit, string> = { s: '\u2660', h: '\u2665', d: '\u2666', c: '\u2663' };
@@ -165,51 +166,32 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
       }}
       {...rest}
     >
-      {/* Big watermark suit behind everything */}
+      {/* Huge right-side suit glyph — bleeds past the card edge so the
+          suit reads as a bold color-block shape, not a subtle watermark. */}
       <div
         aria-hidden
         style={{
           position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          top: '50%',
+          right: -sz.suit * 0.18,
+          transform: 'translateY(-50%)',
           fontFamily: 'system-ui, "Segoe UI Symbol", sans-serif',
           fontSize: sz.suit,
           lineHeight: 1,
-          color: 'rgba(255,255,255,0.22)',
+          color: 'rgba(255,255,255,0.55)',
           pointerEvents: 'none',
         }}
       >
         {glyph}
       </div>
 
-      {/* Small corner suit (md+ only — xs/sm rely on the watermark alone) */}
-      {sz.cornerSuit > 0 && (
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            top: 4,
-            left: 4,
-            fontSize: sz.cornerSuit,
-            lineHeight: 1,
-            color: 'rgba(255,255,255,0.92)',
-            fontFamily: 'system-ui, "Segoe UI Symbol", sans-serif',
-          }}
-        >
-          {glyph}
-        </div>
-      )}
-
-      {/* Big rank — always on top, highest contrast */}
+      {/* Rank — pinned to the LEFT, vertically centered, always in front */}
       <div
         style={{
           position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          top: '50%',
+          left: sz.w * 0.12,
+          transform: 'translateY(-50%)',
           fontFamily: 'var(--font-display, Inter), system-ui, sans-serif',
           fontWeight: 900,
           fontSize: sz.rank,
