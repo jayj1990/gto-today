@@ -57,22 +57,16 @@ const SIZE: Record<
 };
 
 /**
- * Flat silhouette suit paths, derived from the DALL·E v3 spade
- * (cleanest result from five prompt iterations). Same line thickness
- * and visual mass across all four so they read as one family —
- * minimalist iOS-emoji-style shapes designed to sit behind a rank at
- * low opacity as a watermark.
+ * Jay-supplied suit glyphs as alpha-only PNG masks. Processed from
+ * ~/Desktop/GTO-Today Image/symbols.png via scripts/process-user-suits.mjs.
+ * Using them as CSS mask-image lets us recolour per card via
+ * background-color + keep a single consistent silhouette family.
  */
-const SUIT_PATH: Record<Suit, string> = {
-  // Spade — DALL·E v3 outline traced. Pointed top, full hips, short stem.
-  s: 'M12 1.5 C 12 5.5 2.5 8.5 2.5 13.5 C 2.5 16.5 4.7 18.8 7.5 18.8 C 9.2 18.8 10.5 18.2 11.2 17.2 L 10 22.5 L 14 22.5 L 12.8 17.2 C 13.5 18.2 14.8 18.8 16.5 18.8 C 19.3 18.8 21.5 16.5 21.5 13.5 C 21.5 8.5 12 5.5 12 1.5 Z',
-  // Heart — two equal lobes, same stroke mass as spade.
-  h: 'M12 22 C 4 16 2 12.5 2 8.5 C 2 5.4 4.2 3 7.2 3 C 9.1 3 10.8 4 12 6 C 13.2 4 14.9 3 16.8 3 C 19.8 3 22 5.4 22 8.5 C 22 12.5 20 16 12 22 Z',
-  // Diamond — clean rhombus, same visual weight.
-  d: 'M12 1.5 L 21.5 12 L 12 22.5 L 2.5 12 Z',
-  // Club — three equal circles (r=3.6) + trapezoidal stem matching the
-  // spade's stem proportions so the pair reads as siblings.
-  c: 'M12 1.5 C 9.8 1.5 8 3.3 8 5.5 C 8 6.9 8.7 8.1 9.8 8.8 C 7.4 8.8 5.5 10.7 5.5 13.1 C 5.5 15.5 7.4 17.4 9.8 17.4 C 10.6 17.4 11.3 17.2 11.9 16.8 L 10 22.5 L 14 22.5 L 12.1 16.8 C 12.7 17.2 13.4 17.4 14.2 17.4 C 16.6 17.4 18.5 15.5 18.5 13.1 C 18.5 10.7 16.6 8.8 14.2 8.8 C 15.3 8.1 16 6.9 16 5.5 C 16 3.3 14.2 1.5 12 1.5 Z',
+const SUIT_MASK: Record<Suit, string> = {
+  s: '/ai-assets/suits-user/spade.png',
+  h: '/ai-assets/suits-user/heart.png',
+  d: '/ai-assets/suits-user/diamond.png',
+  c: '/ai-assets/suits-user/club.png',
 };
 
 function suitBackground(suit: Suit, scheme: DeckScheme): { bg: string; rim: string } {
@@ -166,18 +160,18 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
   }
 
   const { bg, rim } = suitBackground(suit, deckScheme);
-  const path = SUIT_PATH[suit];
-  // Square SVG, 1:1 aspect preserved. Tweaks from v1:
+  const maskUrl = SUIT_MASK[suit];
+  // Square mask, 1:1 aspect preserved. Tweaks:
   //   • 88% of card height (6% breathing room top + bottom)
-  //   • Suit visual centre sits at 70% of card width from the left,
-  //     so the left ~30% is free space for the rank to breathe and
-  //     the right side bleeds past the card edge.
+  //   • Visual centre sits at 70% of card width, so the left ~30% is
+  //     free space for the rank and the right side bleeds past the
+  //     card edge.
   const verticalMargin = sz.h * 0.06;
-  const svgH = sz.h - verticalMargin * 2;
-  const svgW = svgH;
-  const suitCenterX = sz.w * 0.70;
-  const svgLeft = suitCenterX - svgW / 2;
-  const rightCss = sz.w - (svgLeft + svgW);
+  const maskH = sz.h - verticalMargin * 2;
+  const maskW = maskH;
+  const centerX = sz.w * 0.70;
+  const maskLeft = centerX - maskW / 2;
+  const rightCss = sz.w - (maskLeft + maskW);
 
   return (
     <div
@@ -197,47 +191,26 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
           top/bottom line up with card edges and the right-side bleed is
           identical for all four suits. `overflow:hidden` on the card
           clips the overshoot. */}
-      <svg
+      <div
         aria-hidden
-        width={svgW}
-        height={svgH}
-        viewBox="0 0 24 24"
         style={{
           position: 'absolute',
           top: verticalMargin,
           right: rightCss,
-          color: 'rgba(255,255,255,0.48)',
+          width: maskW,
+          height: maskH,
           pointerEvents: 'none',
+          backgroundColor: 'rgba(255,255,255,0.48)',
+          WebkitMaskImage: `url(${maskUrl})`,
+          maskImage: `url(${maskUrl})`,
+          WebkitMaskSize: 'contain',
+          maskSize: 'contain',
+          WebkitMaskRepeat: 'no-repeat',
+          maskRepeat: 'no-repeat',
+          WebkitMaskPosition: 'center',
+          maskPosition: 'center',
         }}
-      >
-        <defs>
-          {/* Engraving: thin darker-gold concentric arcs clipped to the
-              suit silhouette. Gives the v1 ornate-spade "radiating line"
-              texture inside any shape without needing per-suit art. */}
-          <clipPath id={`suit-clip-${suit}`}>
-            <path d={path} />
-          </clipPath>
-        </defs>
-
-        {/* Base silhouette — flat fill */}
-        <path d={path} fill="currentColor" />
-
-        {/* Engraving stripes clipped to the silhouette */}
-        <g clipPath={`url(#suit-clip-${suit})`} opacity="0.55">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <ellipse
-              key={i}
-              cx="12"
-              cy="12"
-              rx={2 + i * 1.2}
-              ry={3 + i * 1.5}
-              fill="none"
-              stroke="rgba(0,0,0,0.35)"
-              strokeWidth="0.28"
-            />
-          ))}
-        </g>
-      </svg>
+      />
 
       {/* Rank — centered on the card, always in front of the suit */}
       <div

@@ -95,7 +95,7 @@ const AI_MARKS_V2: Mark[] = [
     key: 'v2-crown',
     src: '/ai-assets/logo-v2/crown-chip.png',
     title: 'D4 · Crown Chip (AI v2)',
-    desc: '왕관 + 칩 조합. "GTO의 왕관" 서사. 유니크하고 포지셔닝 강함.',
+    desc: '왕관 + 칩 조합. ‘GTO의 왕관’ 서사. 유니크하고 포지셔닝 강함.',
   },
   {
     key: 'v2-ace',
