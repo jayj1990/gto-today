@@ -49,12 +49,12 @@ const SIZE: Record<
   CardSize,
   { w: number; h: number; radius: number; rank: number; suit: number }
 > = {
-  //      w    h    radius  rank  suit (≈ 1.05× h so it bleeds)
-  xs: { w: 30, h: 42, radius: 5, rank: 20, suit: 44 },
-  sm: { w: 42, h: 60, radius: 6, rank: 28, suit: 64 },
-  md: { w: 68, h: 96, radius: 10, rank: 44, suit: 104 },
-  lg: { w: 96, h: 134, radius: 12, rank: 60, suit: 146 },
-  xl: { w: 114, h: 160, radius: 14, rank: 74, suit: 174 },
+  //      w    h    radius  rank  suit (≈ 1.45× h so glyph fills top-to-bottom)
+  xs: { w: 30, h: 42, radius: 5, rank: 20, suit: 60 },
+  sm: { w: 42, h: 60, radius: 6, rank: 28, suit: 86 },
+  md: { w: 68, h: 96, radius: 10, rank: 44, suit: 138 },
+  lg: { w: 96, h: 134, radius: 12, rank: 60, suit: 194 },
+  xl: { w: 114, h: 160, radius: 14, rank: 74, suit: 232 },
 };
 
 const SUIT_GLYPH: Record<Suit, string> = { s: '\u2660', h: '\u2665', d: '\u2666', c: '\u2663' };
@@ -166,14 +166,15 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
       }}
       {...rest}
     >
-      {/* Huge right-side suit glyph — bleeds past the card edge so the
-          suit reads as a bold color-block shape, not a subtle watermark. */}
+      {/* Huge right-side suit glyph — fills top-to-bottom and the right
+          ~35% of the glyph bleeds past the card edge for a bold full-bleed
+          shape. `overflow:hidden` on the card clips the overshoot. */}
       <div
         aria-hidden
         style={{
           position: 'absolute',
           top: '50%',
-          right: -sz.suit * 0.18,
+          right: -sz.suit * 0.35,
           transform: 'translateY(-50%)',
           fontFamily: 'system-ui, "Segoe UI Symbol", sans-serif',
           fontSize: sz.suit,
