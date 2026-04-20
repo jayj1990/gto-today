@@ -132,7 +132,10 @@ export function ChartNavigator({
                 ) : (
                   <div className="rounded-[var(--radius-panel)] border-hair surface p-6 text-center">
                     <p className="font-mono text-[12px] text-fg-muted">
-                      이 노드의 차트 데이터가 없어요.
+                      이 스팟은 솔버가 아직 수렴하지 못해 제공되지 않아요.
+                    </p>
+                    <p className="mt-2 text-[11px] text-fg-muted">
+                      뒤로 돌아가서 다른 라인을 탐색해보세요.
                     </p>
                   </div>
                 )}

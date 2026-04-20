@@ -257,6 +257,7 @@ async function extractQbRanges(qbRoot: string) {
 
   // Flat { key: { action: { combo: freq } } } — no wrapper object.
   const decisions: Record<string, Record<string, Record<string, number>>> = {};
+  let dropped = 0;
   for (const [prefix, { files: group }] of groups) {
     const actions: Record<string, Record<string, number>> = {};
     for (const { path, lastToken } of group) {
@@ -264,15 +265,30 @@ async function extractQbRanges(qbRoot: string) {
       if (!range) continue;
       actions[lastToken] = range;
     }
-    if (Object.keys(actions).length > 0) {
-      // Later files may overwrite earlier ones if the same decision
-      // appears both in the position's top folder and inside its
-      // vs_3bet/vs_4bet subfolder. Last one wins (deeper files are
-      // typically the duplicate copies — TexasSolver ships both).
-      decisions[prefix] = { ...(decisions[prefix] ?? {}), ...actions };
+    if (Object.keys(actions).length === 0) continue;
+    if (!isSaneNode(actions)) {
+      dropped++;
+      continue;
     }
+    decisions[prefix] = { ...(decisions[prefix] ?? {}), ...actions };
   }
+  if (dropped > 0) console.log(`  (dropped ${dropped} unconverged nodes)`);
   return decisions;
+}
+
+/** Reject solver nodes whose output is visibly unconverged — deep
+ *  vs_5bet branches sometimes ship with AA folding or KK folding at
+ *  rates that are never correct GTO. We only accept a node where the
+ *  top-of-range hands behave sanely (AA never folds more than 5%, KK
+ *  never folds more than 25%). */
+function isSaneNode(actions: Record<string, Record<string, number>>): boolean {
+  const foldBranch = actions['FOLD'];
+  if (!foldBranch) return true;
+  const aaFold = foldBranch['AA'] ?? 0;
+  const kkFold = foldBranch['KK'] ?? 0;
+  if (aaFold > 0.05) return false;
+  if (kkFold > 0.25) return false;
+  return true;
 }
 
 async function main() {
