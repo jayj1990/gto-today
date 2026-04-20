@@ -398,7 +398,7 @@ function SeatChip({
             width: 26,
             height: 26,
             borderRadius: '50%',
-            backgroundImage: "url('/ai-assets/chip-set-v4/dealer-transparent.png')",
+            backgroundImage: "url('/ai-assets/markers/dealer-button.png')",
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             boxShadow: '0 2px 5px rgba(0,0,0,0.6)',
@@ -406,10 +406,11 @@ function SeatChip({
             alignItems: 'center',
             justifyContent: 'center',
             fontFamily: 'var(--font-display, Inter), system-ui, sans-serif',
-            fontWeight: 800,
-            fontSize: 12,
+            fontWeight: 900,
+            fontSize: 13,
             color: '#1A1A1F',
-            textShadow: '0 0 3px rgba(244,239,230,0.8)',
+            textShadow: '0 0 4px rgba(244,239,230,0.9)',
+            letterSpacing: '-0.02em',
           }}
         >
           D
@@ -421,25 +422,24 @@ function SeatChip({
 
 /* ══════════════════════════ BET CHIP ══════════════════════════ */
 
-// Map action → chip colour from the DALL·E chip-set-v4 palette. Keeps
-// the visual meaning of the action (fold=red, call=green, etc.) but
-// swaps the flat radial-gradient for a consistent rendered chip.
+// Chip colour maps to DENOMINATION like a real casino — not to the
+// action kind. Every value bucket gets a distinct chip so 0.5 (SB),
+// 1 (BB), and 2.5 (open) all look different even though they're all
+// "bet-in-the-pot" actions.
+//
+// Buckets (BB):  ≤0.5 / ≤1 / ≤3 / ≤6 / ≤15 / ≤50 / >50
 function chipSrcFor(action: Exclude<SeatAction, { kind: 'fold' }>): string {
-  switch (action.kind) {
-    case 'post':
-      return action.bb <= 0.5
-        ? '/ai-assets/chip-set-v4/green-transparent.png'
-        : '/ai-assets/chip-set-v4/red-transparent.png';
-    case 'raise':
-    case 'bet':
-      return '/ai-assets/chip-set-v4/red-transparent.png';
-    case '3bet':
-      return '/ai-assets/chip-set-v4/gold-transparent.png';
-    case 'call':
-      return '/ai-assets/chip-set-v4/emerald-transparent.png';
-    case 'check':
-      return '/ai-assets/chip-set-v4/grey-transparent.png';
+  if (action.kind === 'check') {
+    return '/ai-assets/chip-set-v4/grey-transparent.png';
   }
+  const bb = action.bb;
+  if (bb <= 0.5) return '/ai-assets/chip-set-v4/green-transparent.png';   // SB
+  if (bb <= 1) return '/ai-assets/chip-set-v4/red-transparent.png';       // BB
+  if (bb <= 3) return '/ai-assets/chip-set-v4/blue-transparent.png';      // std open 2-2.5-3
+  if (bb <= 6) return '/ai-assets/chip-set-v4/emerald-transparent.png';   // small raise / call of raise
+  if (bb <= 15) return '/ai-assets/chip-set-v4/gold-transparent.png';     // 3-bet (9-12 BB)
+  if (bb <= 50) return '/ai-assets/chip-set-v4/purple-transparent.png';   // 4-bet / big postflop
+  return '/ai-assets/chip-set-v4/black-transparent.png';                   // all-in territory
 }
 
 function BetChip({ action }: { action: SeatAction }) {
