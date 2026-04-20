@@ -132,7 +132,7 @@ export function HomeGate() {
           href="/today"
           eyebrow="Daily Challenge"
           title="오늘의 훈련"
-          description="매일 무료로 제공되는 GTO 훈련."
+          description="매일 새로 공개되는 10핸드. 무료."
           variant="primary"
           delay={0}
         />
@@ -140,7 +140,7 @@ export function HomeGate() {
           href="/live"
           eyebrow="Live Assist"
           title="실전 모드"
-          description="내 상황에 GTO 적용해보기."
+          description="내 상황에 맞는 GTO 차트를 즉시."
           variant="secondary"
           delay={0.06}
         />
@@ -151,7 +151,7 @@ export function HomeGate() {
           href="/sim"
           className="flex items-center justify-between rounded-[var(--radius-button)] border-hair surface px-4 py-3 text-[13px] transition-colors hover:bg-[color:var(--color-surface-raised)]"
         >
-          <span>자유 시뮬레이션 — 시간 날 때 혼자 연습</span>
+          <span>자유 시뮬레이션 — 혼자서, 무한 반복</span>
           <span aria-hidden className="text-fg-muted">
             →
           </span>
