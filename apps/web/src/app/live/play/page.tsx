@@ -22,7 +22,8 @@ import {
 
 type Scenario = 'rfi' | 'vs_open';
 
-const RFI_POSITIONS: Position[] = ['UTG', 'MP', 'CO', 'BTN', 'SB'];
+const RFI_POSITIONS_6MAX: Position[] = ['UTG', 'MP', 'CO', 'BTN', 'SB'];
+const RFI_POSITIONS_9MAX: Position[] = ['UTG', 'UTG1', 'MP', 'LJ', 'HJ', 'CO', 'BTN', 'SB'];
 
 /**
  * Live-mode chart view.
@@ -48,6 +49,14 @@ export default function LivePlayPage() {
   const [error, setError] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<string | null>(null);
 
+  // Keep `position` valid when the user swaps between 6max and 9max. 9max
+  // positions (LJ/HJ/UTG1) don't exist in 6max; reset to BTN in that case.
+  useEffect(() => {
+    const is9max = config.format === '9max' || config.format === '10max' || config.format === '11max';
+    const valid = is9max ? RFI_POSITIONS_9MAX : RFI_POSITIONS_6MAX;
+    if (!valid.includes(position)) setPosition('BTN');
+  }, [config.format, position]);
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -55,9 +64,11 @@ export default function LivePlayPage() {
     setHighlight(null);
     setMixes({});
 
+    // RFI charts exist for 6max and 9max (10/11max fall back to 9max inside
+    // the data loader). BB defense is 6max-only today.
     const task =
       scenario === 'rfi'
-        ? getPreflopChart('6max', position).then((chart) => ({
+        ? getPreflopChart(config.format, position).then((chart) => ({
             mixes: rfiToMixes(chart),
             found: chart !== null,
           }))
@@ -85,7 +96,7 @@ export default function LivePlayPage() {
     return () => {
       cancelled = true;
     };
-  }, [scenario, position, opener]);
+  }, [scenario, position, opener, config.format]);
 
   const focusedMix = highlight ? mixes[highlight] : null;
   const openBB = resolveOpenSize(config.openSize);
@@ -129,7 +140,10 @@ export default function LivePlayPage() {
 
           {scenario === 'rfi' ? (
             <FieldRow label="내 포지션">
-              {RFI_POSITIONS.map((p) => (
+              {(config.format === '9max' || config.format === '10max' || config.format === '11max'
+                ? RFI_POSITIONS_9MAX
+                : RFI_POSITIONS_6MAX
+              ).map((p) => (
                 <Chip key={p} active={position === p} onClick={() => setPosition(p)}>
                   {p}
                 </Chip>
@@ -146,12 +160,13 @@ export default function LivePlayPage() {
           )}
         </section>
 
-        {/* Data-scope disclosure — prevents users from thinking stack /
-            rake / open size settings are filtering the chart (they aren't
-            yet). We ship one canonical 6-max 100BB dataset today; broader
-            coverage is queued behind the TexasSolver pipeline. */}
+        {/* Data-scope disclosure — tell the user exactly what's driving the
+            chart right now. Format is live (6max/9max charts exist, 10/11max
+            falls back to 9max). Stack / rake / open size are stored in
+            settings but don't filter the chart yet — those land when the
+            TexasSolver pipeline fills in the buckets. */}
         <section className="mt-4 rounded-[var(--radius-button)] border border-[color:var(--color-warning)]/40 bg-[color:var(--color-warning)]/10 px-4 py-3 text-[12px] text-[color:var(--color-warning)]">
-          현재 차트는 <span className="font-semibold">6맥스 · 100BB</span> 기준 한 세트예요. 스택·레이크·오픈 사이즈 설정은 저장되지만 지금은 차트에 반영되지 않아요. 다양한 스택 깊이 차트는 다음 업데이트에서 공개됩니다.
+          차트는 <span className="font-semibold">{config.format} · 100BB</span> 기준이에요. 스택·레이크·오픈 사이즈는 저장만 되고 아직 차트에 반영되지 않아요. 스택별·오픈 사이즈별 차트는 다음 업데이트에서 공개됩니다.
         </section>
 
         {/* Context summary (mimics GTO Wizard's detail-action top bar) */}
