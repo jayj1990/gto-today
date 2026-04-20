@@ -127,31 +127,27 @@ export function HomeGate() {
           href="/today"
           eyebrow="Daily Challenge"
           title="오늘의 훈련"
-          description="매일 새로 공개되는 10핸드. 무료."
+          description="매일 새로 공개되는 10핸드. 하루 5분."
           variant="primary"
           delay={0}
+        />
+        <PrimaryCard
+          href="/sim"
+          eyebrow="Infinite Drills"
+          title="무한 GTO 훈련"
+          description="끊김 없이 랜덤 스팟. 감을 빠르게 끌어올려요."
+          variant="secondary"
+          delay={0.06}
         />
         <PrimaryCard
           href="/live"
           eyebrow="Live Assist"
           title="실전 모드"
-          description="내 상황에 맞는 GTO 차트를 즉시."
+          description="상황별 GTO 차트를 즉시 조회."
           variant="secondary"
-          delay={0.06}
+          delay={0.12}
         />
       </div>
-
-      <footer className="mt-auto pt-10">
-        <Link
-          href="/sim"
-          className="flex items-center justify-between rounded-[var(--radius-button)] border-hair surface px-4 py-3 text-[13px] transition-colors hover:bg-[color:var(--color-surface-raised)]"
-        >
-          <span>자유 시뮬레이션 — 혼자서, 무한 반복</span>
-          <span aria-hidden className="text-fg-muted">
-            →
-          </span>
-        </Link>
-      </footer>
     </main>
   );
 }
