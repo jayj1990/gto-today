@@ -18,22 +18,22 @@ interface Slide {
 const SLIDES: Slide[] = [
   {
     eyebrow: 'Daily Challenge',
-    title: '하루 10핸드,\n그걸로 충분합니다.',
-    body: '매일 새 핸드가 공개됩니다. 전 세계 사용자가 오늘 같은 문제를 풀어요.',
+    title: '매일 10핸드',
+    body: '오늘의 10핸드가 공개됐어요. 전 세계 사용자가 같은 문제를 함께 풉니다.',
     image: '/ai-assets/onboarding-v2/daily-training.png',
     alt: '카드 두 장과 골드 칩이 놓인 포커 테이블 위로 흐르는 골드 리본',
   },
   {
     eyebrow: 'GTO Solutions',
-    title: '감이 아니라,\n솔버의 답.',
-    body: '포지션·스택·액션별 최적 믹스가 즉시. AI가 이유까지 한국어로 설명합니다.',
+    title: 'GTO 솔루션',
+    body: '포지션·스택별 최적 전략을 즉시 확인. AI가 왜 그 답인지 한국어로 알려줘요.',
     image: '/ai-assets/onboarding-v2/gto-mix.png',
     alt: '레이즈·콜·폴드 세 결정을 시각화한 빨강·초록·파랑 리본',
   },
   {
     eyebrow: 'Live Assist',
-    title: '실전에서도\n1초 안에.',
-    body: '포지션과 핸드만 고르면 GTO 답이 나옵니다. 홈게임 중에도 조용히.',
+    title: '실전 어시스트',
+    body: '홈게임 중에도 슬쩍 열어보세요. 핸드 하나만 고르면 곧바로 GTO 답.',
     image: '/ai-assets/onboarding-v2/mobile-assist.png',
     alt: '스마트폰에서 뻗어나오는 골드 가이던스 라인',
   },
@@ -125,6 +125,8 @@ export default function OnboardingPage() {
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
             className="flex items-center justify-center"
           >
+            {/* Radial mask fades the four edges so the DALL·E square crops
+                merge smoothly into the felt-green page background. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={slide.image}
@@ -136,7 +138,10 @@ export default function OnboardingPage() {
                 height: 'auto',
                 aspectRatio: '1 / 1',
                 objectFit: 'contain',
-                filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.4))',
+                WebkitMaskImage:
+                  'radial-gradient(ellipse at center, black 45%, transparent 92%)',
+                maskImage:
+                  'radial-gradient(ellipse at center, black 45%, transparent 92%)',
               }}
             />
           </motion.div>

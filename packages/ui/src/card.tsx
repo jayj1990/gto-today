@@ -57,16 +57,20 @@ const SIZE: Record<
 };
 
 /**
- * SVG paths drawn inside a 24×24 SQUARE viewBox. Keeping the viewBox
- * square means the natural 1:1 suit aspect is preserved — no horizontal
- * squishing. All four paths span y ≈ 1 → 23 so rendered height is
- * identical across suits.
+ * Refined SVG suit paths in a 24×24 square viewBox. Compared to v1 these
+ * have softer S-curves, tapered stems, and evenly-proportioned lobes so
+ * every suit reads as a proper "elegant" playing-card glyph. All four
+ * occupy roughly the same visual bounding box (y 2–23, x 2–22).
  */
 const SUIT_PATH: Record<Suit, string> = {
-  s: 'M12 1 C 12 5 2 9 2 14 C 2 17 4.5 19.5 7.5 19.5 C 8.9 19.5 9.8 19 10.3 18.3 L 9 23 L 15 23 L 13.7 18.3 C 14.2 19 15.1 19.5 16.5 19.5 C 19.5 19.5 22 17 22 14 C 22 9 12 5 12 1 Z',
-  h: 'M12 23 C 12 23 2 14.5 2 7.5 C 2 4.3 4.3 2 7.5 2 C 9.5 2 11 3 12 4.5 C 13 3 14.5 2 16.5 2 C 19.7 2 22 4.3 22 7.5 C 22 14.5 12 23 12 23 Z',
-  d: 'M12 1 L 22 12 L 12 23 L 2 12 Z',
-  c: 'M12 0.5 C14.1 0.5 15.8 2.2 15.8 4.3 C15.8 6.4 14.1 8.1 12 8.1 C9.9 8.1 8.2 6.4 8.2 4.3 C8.2 2.2 9.9 0.5 12 0.5 Z M5.7 11.2 C7.8 11.2 9.5 12.9 9.5 15 C9.5 17.1 7.8 18.8 5.7 18.8 C3.6 18.8 1.9 17.1 1.9 15 C1.9 12.9 3.6 11.2 5.7 11.2 Z M18.3 11.2 C20.4 11.2 22.1 12.9 22.1 15 C22.1 17.1 20.4 18.8 18.3 18.8 C16.2 18.8 14.5 17.1 14.5 15 C14.5 12.9 16.2 11.2 18.3 11.2 Z M9.5 17 L14.5 17 L16 23 L8 23 Z',
+  // Spade — sharp apex, full hips, slim tapered stem
+  s: 'M12 2 C 12 6.5 3 9 3 13.5 C 3 16.5 5 18.8 7.8 18.8 C 9.3 18.8 10.5 18.2 11.2 17.4 L 10 23 L 14 23 L 12.8 17.4 C 13.5 18.2 14.7 18.8 16.2 18.8 C 19 18.8 21 16.5 21 13.5 C 21 9 12 6.5 12 2 Z',
+  // Heart — gently rounded lobes, pointed tip
+  h: 'M12 22 C 4.5 16.5 2 12.5 2 8.5 C 2 5.5 4 3 7 3 C 8.8 3 10.8 4 12 6.5 C 13.2 4 15.2 3 17 3 C 20 3 22 5.5 22 8.5 C 22 12.5 19.5 16.5 12 22 Z',
+  // Diamond — clean rhombus, slightly elongated
+  d: 'M12 2 L 21 12 L 12 22 L 3 12 Z',
+  // Club — three equal r=3.5 lobes arranged in a triangle + trapezoidal stem
+  c: 'M12 2 C 9.8 2 8 3.8 8 6 C 8 7.3 8.6 8.4 9.5 9 C 7.3 9.1 5.5 10.9 5.5 13.1 C 5.5 15.3 7.3 17.1 9.5 17.1 C 10.3 17.1 11 16.9 11.6 16.5 L 10 23 L 14 23 L 12.4 16.5 C 13 16.9 13.7 17.1 14.5 17.1 C 16.7 17.1 18.5 15.3 18.5 13.1 C 18.5 10.9 16.7 9.1 14.5 9 C 15.4 8.4 16 7.3 16 6 C 16 3.8 14.2 2 12 2 Z',
 };
 
 function suitBackground(suit: Suit, scheme: DeckScheme): { bg: string; rim: string } {
@@ -161,16 +165,17 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
 
   const { bg, rim } = suitBackground(suit, deckScheme);
   const path = SUIT_PATH[suit];
-  // Square viewBox (24×24) → square SVG to preserve natural 1:1 suit
-  // aspect. Since a square SVG at card-height is wider than the card,
-  // the overhang is absorbed on the right as bleed (and a tiny amount
-  // on the left) — no horizontal squish.
-  const svgH = sz.h;
-  const svgW = sz.h;
-  // Push SVG to the right so ~90% of the width-overhang (svgW - cardW)
-  // bleeds past the card right edge, leaving only ~10% clipped on left.
-  const overhang = svgW - sz.w;
-  const bleed = overhang * 0.9;
+  // Square SVG, 1:1 aspect preserved. Tweaks from v1:
+  //   • 88% of card height (6% breathing room top + bottom)
+  //   • Suit visual centre sits at 70% of card width from the left,
+  //     so the left ~30% is free space for the rank to breathe and
+  //     the right side bleeds past the card edge.
+  const verticalMargin = sz.h * 0.06;
+  const svgH = sz.h - verticalMargin * 2;
+  const svgW = svgH;
+  const suitCenterX = sz.w * 0.70;
+  const svgLeft = suitCenterX - svgW / 2;
+  const rightCss = sz.w - (svgLeft + svgW);
 
   return (
     <div
@@ -197,9 +202,9 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
         viewBox="0 0 24 24"
         style={{
           position: 'absolute',
-          top: 0,
-          right: -bleed,
-          color: 'rgba(255,255,255,0.42)',
+          top: verticalMargin,
+          right: rightCss,
+          color: 'rgba(255,255,255,0.48)',
           pointerEvents: 'none',
         }}
       >

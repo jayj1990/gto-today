@@ -24,20 +24,26 @@ export function HomeGate() {
   const signedIn = useAuthStore((s) => s.signedIn);
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
-  const { data: nextAuthSession } = useSession();
+  const { data: nextAuthSession, status: sessionStatus } = useSession();
   const avatarUrl = nextAuthSession?.user?.image ?? null;
+  // NextAuth is the source of truth — use it directly to avoid the
+  // race where SessionSync hasn't mirrored the session into zustand
+  // yet on the first render after an OAuth redirect.
+  const sessionResolved = sessionStatus !== 'loading';
+  const authed = signedIn || sessionStatus === 'authenticated';
 
   useEffect(() => {
+    if (!sessionResolved) return;
     if (!onboarded) {
       router.replace('/onboarding');
       return;
     }
-    if (!signedIn) {
+    if (!authed) {
       router.replace('/signin');
     }
-  }, [onboarded, signedIn, router]);
+  }, [onboarded, authed, sessionResolved, router]);
 
-  if (!onboarded || !signedIn) {
+  if (!sessionResolved || !onboarded || !authed) {
     return (
       <main className="flex min-h-dvh items-center justify-center">
         <p className="font-mono text-[12px] text-fg-muted">불러오는 중…</p>

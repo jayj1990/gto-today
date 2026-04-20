@@ -354,32 +354,26 @@ function SeatChip({
         )}
       </div>
       {showDealerBadge && (
-        <span
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src="/ai-assets/markers/dealer-button.png"
+          alt=""
           aria-label="딜러"
           title="딜러"
+          width={22}
+          height={22}
           style={{
             position: 'absolute',
-            right: -10,
+            right: -12,
             top: '50%',
             transform: 'translateY(-50%)',
-            width: 18,
-            height: 18,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            width: 22,
+            height: 22,
             borderRadius: '50%',
-            background: 'radial-gradient(circle at 35% 30%, #FFFFFF, #E7DFCE 70%, #BDB49F)',
-            color: '#0A0A0A',
-            fontFamily: 'var(--font-display, Inter), system-ui, sans-serif',
-            fontWeight: 800,
-            fontSize: 10,
-            lineHeight: 1,
-            boxShadow: '0 2px 5px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.6)',
-            border: '1px solid rgba(0,0,0,0.15)',
+            objectFit: 'cover',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.6)',
           }}
-        >
-          D
-        </span>
+        />
       )}
     </div>
   );
