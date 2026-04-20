@@ -96,18 +96,19 @@ export default function SimPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+32px)] pt-6">
-        <header className="mb-5">
-          <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
-            자유 시뮬레이션
-          </p>
-          <h1 className="mt-2 font-display text-[28px] font-bold tracking-[-0.015em]">
-            무한 GTO 훈련
-          </h1>
-          <dl className="mt-4 grid grid-cols-4 gap-2 text-center">
-            <Stat label="누적" value={String(total)} />
-            <Stat label="정확도" value={`${Math.round(accuracy)}%`} tone="accent" />
+      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3">
+        <header className="mb-3">
+          <div className="flex items-baseline justify-between">
+            <h1 className="font-display text-[20px] font-bold tracking-[-0.015em]">
+              무한 GTO 훈련
+            </h1>
+            <p className="font-mono text-[11px] text-fg-muted">
+              {total} · 정확도 {Math.round(accuracy)}%
+            </p>
+          </div>
+          <dl className="mt-2 grid grid-cols-3 gap-2 text-center">
             <Stat label="정답" value={String(sharp)} tone="gold" />
+            <Stat label="차선" value={String(acceptable)} tone="accent" />
             <Stat label="오답" value={String(wrong)} tone="raise" />
           </dl>
         </header>
