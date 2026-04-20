@@ -26,12 +26,15 @@ const LABELS: Record<ActionKind, string> = {
   raise: '레이즈',
 };
 
+// Jay's spec: fold=red (stop/danger), check=neutral, call=green (match),
+// raise=gold (premium). Every action gets the same outline + translucent
+// fill + colored text pattern so the set reads as a coherent family.
 const TONE: Record<ActionKind, { cls: string }> = {
   fold: {
-    cls: 'border-hair surface-raised text-fg',
+    cls: 'border border-[color:var(--color-raise)]/60 bg-[color:var(--color-raise)]/15 text-[color:var(--color-raise)] font-semibold',
   },
   check: {
-    cls: 'border border-[color:var(--color-info)]/60 bg-[color:var(--color-info)]/10 text-[color:var(--color-info)] hover:bg-[color:var(--color-info)]/15',
+    cls: 'border-hair surface-raised text-fg font-semibold',
   },
   call: {
     cls: 'border border-[color:var(--color-call)]/60 bg-[color:var(--color-call)]/15 text-[color:var(--color-call)] font-semibold',

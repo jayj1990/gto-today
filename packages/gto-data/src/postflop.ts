@@ -128,16 +128,19 @@ export const POSTFLOP_ACTION_LABEL: Record<PostflopAction, string> = {
   raise_big: '레이즈 (빅)',
 };
 
-/** Color token for each action — used by mix bars & action buttons. */
+/** Color token for each action — used by mix bars & action buttons.
+ *  Scheme: fold=red (stop), check=neutral, call=green (match),
+ *  raise/bet=gold (premium aggression). Aligns with the preflop
+ *  ActionBar family. */
 export const POSTFLOP_ACTION_COLOR: Record<PostflopAction, string> = {
-  check: 'var(--color-info)',
-  bet33: 'var(--color-raise)',
-  bet50: 'var(--color-raise)',
-  bet75: 'var(--color-raise)',
-  bet_pot: 'var(--color-raise)',
-  bet_overbet: 'var(--color-raise)',
+  check: 'var(--color-fg-muted)',
+  bet33: 'var(--color-gold)',
+  bet50: 'var(--color-gold)',
+  bet75: 'var(--color-gold)',
+  bet_pot: 'var(--color-gold)',
+  bet_overbet: 'var(--color-gold)',
   call: 'var(--color-call)',
-  fold: 'var(--color-fold)',
-  raise_small: 'var(--color-raise)',
-  raise_big: 'var(--color-raise)',
+  fold: 'var(--color-raise)',
+  raise_small: 'var(--color-gold)',
+  raise_big: 'var(--color-gold)',
 };
