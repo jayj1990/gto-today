@@ -4,7 +4,11 @@
 // (streaks, solved history) will land in later phases.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // Generate engines for the local OS AND the Linux runtime Vercel
+  // uses. Without rhel-openssl-3.0.x, production functions throw
+  // 'Query engine not found' at first DB call.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
