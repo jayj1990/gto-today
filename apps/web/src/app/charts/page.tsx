@@ -222,20 +222,18 @@ function cn(...parts: (string | false | undefined)[]) {
 
 /** Walk the qb_decisions lookup and return the current node. */
 function resolveNode(decisions: DecisionsJson, path: string[]): NodeData | null {
-  // Current actor = next position after the last one who acted.
-  // Derive by counting action tokens already spent.
   const actor = nextActor(path);
   if (!actor) return null;
 
-  // Key into qb_decisions is everything typed so far, underscore-
-  // joined, plus the CURRENT actor (since the node describes that
-  // actor's mix). e.g. "UTG_2.5bb_BTN" means UTG raised 2.5bb and
-  // now BTN decides.
-  const key = [...path, actor].join('_');
+  // TexasSolver's qb_ranges treats folds as implicit — the file tree
+  // only tracks RAISES / CALLS / 3-BETS etc. Strip out every '_FOLD'
+  // segment before building the lookup key.
+  const activeTokens = path.filter((t) => !t.endsWith('_FOLD'));
+  const keyParts = [...activeTokens, actor];
+  const key = keyParts.join('_');
+
   const raw = decisions[key];
   if (!raw) {
-    // Outside the solved subtree (e.g. path we didn't solve). Return
-    // an empty actor so the user sees the empty-state message.
     return { actor, pathTokens: path, actions: {}, legal: [] };
   }
 
