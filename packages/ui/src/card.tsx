@@ -210,7 +210,33 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
           pointerEvents: 'none',
         }}
       >
+        <defs>
+          {/* Engraving: thin darker-gold concentric arcs clipped to the
+              suit silhouette. Gives the v1 ornate-spade "radiating line"
+              texture inside any shape without needing per-suit art. */}
+          <clipPath id={`suit-clip-${suit}`}>
+            <path d={path} />
+          </clipPath>
+        </defs>
+
+        {/* Base silhouette — flat fill */}
         <path d={path} fill="currentColor" />
+
+        {/* Engraving stripes clipped to the silhouette */}
+        <g clipPath={`url(#suit-clip-${suit})`} opacity="0.55">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <ellipse
+              key={i}
+              cx="12"
+              cy="12"
+              rx={2 + i * 1.2}
+              ry={3 + i * 1.5}
+              fill="none"
+              stroke="rgba(0,0,0,0.35)"
+              strokeWidth="0.28"
+            />
+          ))}
+        </g>
       </svg>
 
       {/* Rank — centered on the card, always in front of the suit */}
