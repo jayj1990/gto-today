@@ -225,12 +225,14 @@ export function PokerTable({
         const isFolded = state.action?.kind === 'fold';
         const isToAct = !isHero && seat === toAct;
 
-        // Seat chips are ~6-7% of table width in radius — a bet chip at
-        // a 4pp offset overlaps the seat circle. Bump to 10pp so the
-        // bet chip clears the seat's outer ring but still reads as
-        // "that player's bet" rather than drifting onto the board.
-        const betX = x + inward.x * 10;
-        const betY = y + inward.y * 10;
+        // Each seat renders a vertical cluster of cards + chip that
+        // spans roughly ±10pp in the inward direction from the seat
+        // centre. A bet chip sitting at 10-16pp offset still kissed
+        // the card edge on the seat side nearest the board. Push to
+        // 20pp so the bet chip clears both the seat circle AND the
+        // villain's card backs while still reading as 'that player's'.
+        const betX = x + inward.x * 20;
+        const betY = y + inward.y * 20;
 
         const hasVillainCards = !isHero && !isFolded && (state.cards || state.showBacks);
         const hasHeroCards = isHero && heroCards;
