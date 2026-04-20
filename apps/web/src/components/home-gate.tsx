@@ -135,7 +135,7 @@ export function HomeGate() {
           href="/sim"
           eyebrow="Infinite Drills"
           title="무한 GTO 훈련"
-          description="끊김 없이 랜덤 스팟. 감을 빠르게 끌어올려요."
+          description="10핸드 끝났어요? 계속 풀어봐요."
           variant="secondary"
           delay={0.06}
         />
