@@ -47,17 +47,27 @@ export interface CardViewProps extends Omit<HTMLAttributes<HTMLDivElement>, 'chi
  */
 const SIZE: Record<
   CardSize,
-  { w: number; h: number; radius: number; rank: number; suit: number }
+  { w: number; h: number; radius: number; rank: number }
 > = {
-  //      w    h    radius  rank  suit (≈ 1.45× h so glyph fills top-to-bottom)
-  xs: { w: 30, h: 42, radius: 5, rank: 20, suit: 60 },
-  sm: { w: 42, h: 60, radius: 6, rank: 28, suit: 86 },
-  md: { w: 68, h: 96, radius: 10, rank: 44, suit: 138 },
-  lg: { w: 96, h: 134, radius: 12, rank: 60, suit: 194 },
-  xl: { w: 114, h: 160, radius: 14, rank: 74, suit: 232 },
+  xs: { w: 30, h: 42, radius: 5, rank: 20 },
+  sm: { w: 42, h: 60, radius: 6, rank: 28 },
+  md: { w: 68, h: 96, radius: 10, rank: 44 },
+  lg: { w: 96, h: 134, radius: 12, rank: 60 },
+  xl: { w: 114, h: 160, radius: 14, rank: 74 },
 };
 
-const SUIT_GLYPH: Record<Suit, string> = { s: '\u2660', h: '\u2665', d: '\u2666', c: '\u2663' };
+/**
+ * SVG paths drawn inside an 18×24 viewBox. Every path spans the FULL
+ * vertical extent (y ≈ 0.5 → 23.5) so when the SVG is rendered at
+ * height = cardHeight, all four suits are identical height — no more
+ * Unicode-glyph drift where the heart rendered at 1.3× the diamond.
+ */
+const SUIT_PATH: Record<Suit, string> = {
+  s: 'M9 0.5 C 9 5 1.5 8 1.5 13 C 1.5 16 3.5 18.2 6 18.2 C 7.2 18.2 8 17.7 8.5 17 L 7 23.5 L 11 23.5 L 9.5 17 C 10 17.7 10.8 18.2 12 18.2 C 14.5 18.2 16.5 16 16.5 13 C 16.5 8 9 5 9 0.5 Z',
+  h: 'M9 23.5 C 9 23.5 0.5 15.5 0.5 7.5 C 0.5 3.8 3 1.5 5.8 1.5 C 7.5 1.5 8.5 2.5 9 3.5 C 9.5 2.5 10.5 1.5 12.2 1.5 C 15 1.5 17.5 3.8 17.5 7.5 C 17.5 15.5 9 23.5 9 23.5 Z',
+  d: 'M9 0.5 L 17 12 L 9 23.5 L 1 12 Z',
+  c: 'M9 0.5 C 7 0.5 5.3 2.2 5.3 4.3 C 5.3 5.5 5.9 6.5 6.8 7 C 4.8 7.2 3.2 8.9 3.2 11 C 3.2 13.1 4.8 14.8 6.8 14.8 C 7.4 14.8 8 14.6 8.5 14.3 L 7 23.5 L 11 23.5 L 9.5 14.3 C 10 14.6 10.6 14.8 11.2 14.8 C 13.2 14.8 14.8 13.1 14.8 11 C 14.8 8.9 13.2 7.2 11.2 7 C 12.1 6.5 12.7 5.5 12.7 4.3 C 12.7 2.2 11 0.5 9 0.5 Z',
+};
 
 function suitBackground(suit: Suit, scheme: DeckScheme): { bg: string; rim: string } {
   if (scheme === 'four-color') {
@@ -150,7 +160,14 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
   }
 
   const { bg, rim } = suitBackground(suit, deckScheme);
-  const glyph = SUIT_GLYPH[suit];
+  const path = SUIT_PATH[suit];
+  // SVG intrinsic aspect is viewBox width/height = 18/24 = 0.75. Render
+  // height == card height so every suit is exactly the card's height.
+  const svgH = sz.h;
+  const svgW = svgH * (18 / 24);
+  // Bleed: 12% of card width hangs past the right edge, identical for all
+  // four suits since the viewBox is identical.
+  const bleed = sz.w * 0.12;
 
   return (
     <div
@@ -166,25 +183,25 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
       }}
       {...rest}
     >
-      {/* Huge right-side suit glyph — fills top-to-bottom and the right
-          ~35% of the glyph bleeds past the card edge for a bold full-bleed
-          shape. `overflow:hidden` on the card clips the overshoot. */}
-      <div
+      {/* Right-side suit glyph — SVG path inside an 18×24 viewBox ensures
+          top/bottom line up with card edges and the right-side bleed is
+          identical for all four suits. `overflow:hidden` on the card
+          clips the overshoot. */}
+      <svg
         aria-hidden
+        width={svgW}
+        height={svgH}
+        viewBox="0 0 18 24"
         style={{
           position: 'absolute',
-          top: '50%',
-          right: -sz.suit * 0.20,
-          transform: 'translateY(-50%)',
-          fontFamily: 'system-ui, "Segoe UI Symbol", sans-serif',
-          fontSize: sz.suit,
-          lineHeight: 1,
+          top: 0,
+          right: -bleed,
           color: 'rgba(255,255,255,0.55)',
           pointerEvents: 'none',
         }}
       >
-        {glyph}
-      </div>
+        <path d={path} fill="currentColor" />
+      </svg>
 
       {/* Rank — centered on the card, always in front of the suit */}
       <div
