@@ -37,9 +37,14 @@ function buildSeats(spot: TrainingSpot): {
     const openerIdx = order.indexOf(spot.opener);
     const heroIdx = order.indexOf(spot.position);
 
+    // Everyone before the opener folds (they're behind the action).
+    // BB stays as hero (handled below). SB folds unless they're the
+    // opener or the hero — showing SB as still alive with a 0.5 post
+    // when the pot is already 2.5 to go is misleading; SB couldn't
+    // be "alive" without having matched the raise.
     for (let i = 0; i < openerIdx; i++) {
       const seat = order[i] as Seat;
-      if (seat === 'SB' || seat === 'BB') continue;
+      if (seat === 'BB') continue;
       out[seat] = { stack, action: { kind: 'fold' }, showBacks: false };
       foldedSeats.push(seat);
     }
@@ -51,13 +56,15 @@ function buildSeats(spot: TrainingSpot): {
     };
     pot = 1.5 + openSize;
     lastBet = openSize;
+    // Everyone between opener and hero also folded (didn't 3-bet, didn't call).
     for (let i = openerIdx + 1; i < heroIdx; i++) {
       const seat = order[i] as Seat;
-      if (seat === 'SB' || seat === 'BB') continue;
+      if (seat === 'BB') continue;
       out[seat] = { stack, action: { kind: 'fold' }, showBacks: false };
       foldedSeats.push(seat);
     }
   } else {
+    // RFI — every seat before hero folded.
     const heroIdx = order.indexOf(spot.position);
     for (let i = 0; i < heroIdx; i++) {
       const seat = order[i] as Seat;
