@@ -485,20 +485,20 @@ function chipStyle(action: Exclude<SeatAction, { kind: 'fold' }>): {
 /* ══════════════════════════ CARD BACK ══════════════════════════ */
 
 function CardBack() {
-  // DALL·E-designed card back (double-border pattern) — green felt with
-  // thin gold inner + outer frame and corner fleurs. Rendered as the
-  // whole back of the card so the frame aligns with the card edge.
+  // Burgundy DALL·E card back — green version blended into the green
+  // felt, so we recoloured to wine red for sharp contrast. Size bumped
+  // from 22×30 → 28×38 so the frame reads at a glance.
   return (
     <div
       style={{
-        width: 22,
-        height: 30,
-        borderRadius: 3,
-        backgroundImage: "url('/ai-assets/card-back/double-border.png')",
+        width: 28,
+        height: 38,
+        borderRadius: 4,
+        backgroundImage: "url('/ai-assets/card-back/double-border-red.png')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.6)',
         flexShrink: 0,
       }}
       aria-hidden
