@@ -106,6 +106,7 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
     display: 'inline-block',
     width: sz.w,
     height: sz.h,
+    boxSizing: 'border-box',
     borderRadius: sz.radius,
     userSelect: 'none',
     flexShrink: 0,
@@ -212,25 +213,36 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
         }}
       />
 
-      {/* Rank — centered on the card, always in front of the suit */}
-      <div
+      {/* Rank — SVG text for pixel-perfect centering. `dominantBaseline`
+          + `textAnchor: middle` puts the glyph's geometric centre exactly
+          at the viewBox centre, avoiding the small top/bottom asymmetry
+          that flex-centered HTML text has due to font-metric ascender
+          padding. */}
+      <svg
+        viewBox={`0 0 ${sz.w} ${sz.h}`}
+        width={sz.w}
+        height={sz.h}
         style={{
           position: 'absolute',
           inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: 'var(--font-display, Inter), system-ui, sans-serif',
-          fontWeight: 900,
-          fontSize: sz.rank,
-          lineHeight: 1,
-          letterSpacing: '-0.02em',
-          color: '#FFFFFF',
-          textShadow: '0 2px 6px rgba(0,0,0,0.55)',
+          pointerEvents: 'none',
         }}
       >
-        {rank}
-      </div>
+        <text
+          x={sz.w / 2}
+          y={sz.h / 2}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontFamily="var(--font-display, Inter), system-ui, sans-serif"
+          fontWeight={900}
+          fontSize={sz.rank}
+          letterSpacing="-0.02em"
+          fill="#FFFFFF"
+          style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.55))' }}
+        >
+          {rank}
+        </text>
+      </svg>
     </div>
   );
 });
