@@ -34,11 +34,13 @@ function particleSubject(word: string): string {
   return (last - 0xac00) % 28 === 0 ? '가' : '이';
 }
 
+// Unified action palette — matches ActionBar buttons so the mix-bar
+// segments map visually to the button the user pressed.
 const ACTION_COLOR: Record<GradedAction, string> = {
-  fold: 'var(--color-fold)',
-  check: 'var(--color-info)',
-  call: 'var(--color-call)',
-  raise: 'var(--color-raise)',
+  fold: 'var(--color-raise)', // red
+  check: 'var(--color-fg-muted)', // neutral
+  call: 'var(--color-call)', // green
+  raise: 'var(--color-gold)', // gold
 };
 
 /** Pick the single highest-frequency GTO action for a spot. */
@@ -76,14 +78,14 @@ export function ResultSheet({
   const segments: MixBarSegment[] =
     spot?.scenario === 'vs_open'
       ? [
-          { label: '레이즈', value: spot.gtoRaise * 100, color: 'var(--color-raise)' },
+          { label: '레이즈', value: spot.gtoRaise * 100, color: 'var(--color-gold)' },
           { label: '콜', value: (spot.gtoCall ?? 0) * 100, color: 'var(--color-call)' },
-          { label: '폴드', value: spot.gtoFold * 100, color: 'var(--color-fold)' },
+          { label: '폴드', value: spot.gtoFold * 100, color: 'var(--color-raise)' },
         ]
       : spot
         ? [
-            { label: '레이즈', value: spot.gtoRaise * 100, color: 'var(--color-raise)' },
-            { label: '폴드', value: spot.gtoFold * 100, color: 'var(--color-fold)' },
+            { label: '레이즈', value: spot.gtoRaise * 100, color: 'var(--color-gold)' },
+            { label: '폴드', value: spot.gtoFold * 100, color: 'var(--color-raise)' },
           ]
         : [];
 

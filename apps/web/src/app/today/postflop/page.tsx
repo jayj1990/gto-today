@@ -10,8 +10,9 @@ import {
   type PostflopAction,
   type PostflopSpot,
 } from '@gto/gto-data';
-import { CardView, cn } from '@gto/ui';
+import { cn } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
+import { PostflopHand } from '@/components/today/postflop-hand';
 
 const STREET_LABEL = { flop: '플랍', turn: '턴', river: '리버' } as const;
 const POT_LABEL = { srp: 'SRP', '3bp': '3-bet 팟', '4bp': '4-bet 팟', limped: '림프' } as const;
@@ -64,57 +65,10 @@ export default function TodayPostflopPage() {
               <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--color-accent)]">
                 포스트플랍 훈련 · {cursor + 1} / {spots.length}
               </p>
-              <h1 className="mt-2 font-display text-[26px] font-bold tracking-[-0.015em]">
-                {STREET_LABEL[spot.street]} · {POT_LABEL[spot.context.potType]}
-              </h1>
-              <p className="mt-1 text-[13px] text-fg-muted">
-                {spot.context.preflopSummary} · SPR {spot.context.spr.toFixed(1)} · 팟{' '}
-                {spot.context.potBB}BB
-              </p>
             </header>
 
             <AnimatePresence mode="wait">
-              <motion.section
-                key={spot.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.24 }}
-                className="rounded-[var(--radius-panel)] border-hair surface p-5"
-              >
-                <div className="flex items-center gap-4">
-                  <div>
-                    <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-fg-muted">
-                      보드
-                    </p>
-                    <div className="flex gap-1.5">
-                      {spot.board.map((code, i) => {
-                        const r = code.charAt(0);
-                        const s = code.charAt(1) as 's' | 'h' | 'd' | 'c';
-                        return <CardView key={i} rank={r} suit={s} size="sm" />;
-                      })}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-fg-muted">
-                      내 핸드 ({spot.context.heroPos})
-                    </p>
-                    <div className="flex gap-1.5">
-                      {spot.hero.map((code, i) => {
-                        const r = code.charAt(0);
-                        const s = code.charAt(1) as 's' | 'h' | 'd' | 'c';
-                        return <CardView key={i} rank={r} suit={s} size="sm" />;
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                <p className="mt-4 rounded-[var(--radius-button)] border-hair surface-raised px-3 py-2 text-[12px] text-fg-muted">
-                  {spot.facingBetBB > 0
-                    ? `빌런 ${spot.facingBetBB.toFixed(1)}BB 벳 → 당신 차례`
-                    : '체크가 돌아왔어요 → 당신 차례'}
-                </p>
-              </motion.section>
+              <PostflopHand key={spot.id} spot={spot} />
             </AnimatePresence>
 
             {/* Action bar */}
