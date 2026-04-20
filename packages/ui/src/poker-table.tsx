@@ -98,7 +98,8 @@ export function PokerTable({
       aria-label={`${format} table — hero on ${hero ?? '-'}`}
       {...rest}
     >
-      {/* Felt */}
+      {/* Felt — SVG ellipse with radial gradient. Reverted from the
+          DALL·E top-down table image which didn't read well on mobile. */}
       <svg
         viewBox="0 0 320 200"
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
