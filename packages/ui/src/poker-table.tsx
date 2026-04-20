@@ -139,31 +139,9 @@ export function PokerTable({
         />
       </svg>
 
-      {/* Effective stack — just above the board */}
-      {effectiveStack !== undefined && (
-        <div
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '38%',
-            transform: 'translate(-50%, -50%)',
-            pointerEvents: 'none',
-          }}
-        >
-          <span
-            style={{
-              fontFamily: 'var(--font-mono, monospace)',
-              fontSize: 10,
-              letterSpacing: '0.1em',
-              color: 'rgba(244, 239, 230, 0.55)',
-              fontVariantNumeric: 'tabular-nums',
-              textTransform: 'uppercase',
-            }}
-          >
-            stack {fmt(effectiveStack)}bb
-          </span>
-        </div>
-      )}
+      {/* Effective-stack readout intentionally omitted from the table —
+          it's already shown next to the hero seat chip. Leaving it here
+          duplicated with the hero info. */}
 
       {/* Community board — 5 slots, fills from left. Dead centre. */}
       <div
@@ -247,11 +225,12 @@ export function PokerTable({
         const isFolded = state.action?.kind === 'fold';
         const isToAct = !isHero && seat === toAct;
 
-        // Bet chip sits very close to the seat — just 4 percentage-points
-        // toward the centre. On the portrait table, 8 still looked too
-        // board-side. This keeps the chip visually owned by its player.
-        const betX = x + inward.x * 4;
-        const betY = y + inward.y * 4;
+        // Seat chips are ~6-7% of table width in radius — a bet chip at
+        // a 4pp offset overlaps the seat circle. Bump to 10pp so the
+        // bet chip clears the seat's outer ring but still reads as
+        // "that player's bet" rather than drifting onto the board.
+        const betX = x + inward.x * 10;
+        const betY = y + inward.y * 10;
 
         const hasVillainCards = !isHero && !isFolded && (state.cards || state.showBacks);
         const hasHeroCards = isHero && heroCards;

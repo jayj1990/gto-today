@@ -27,6 +27,14 @@ const STREET_LABEL: Record<PostflopSpot['street'], string> = {
   river: '리버',
 };
 
+// 이/가 selector based on whether the word's last Hangul syllable has
+// a jongseong (final consonant).
+function particleSubject(word: string): string {
+  const last = word.charCodeAt(word.length - 1);
+  if (last < 0xac00 || last > 0xd7a3) return '가';
+  return (last - 0xac00) % 28 === 0 ? '가' : '이';
+}
+
 /**
  * Bottom-sheet result for postflop drills. Mirrors the preflop
  * ResultSheet UX:
@@ -55,12 +63,22 @@ export function PostflopResult({
 
   const grade = gradePostflopAction(spot, userAnswer);
   const total = Object.values(spot.mix).reduce((s, v) => s + (v ?? 0), 0);
+
+  // Figure out the single highest-frequency GTO action — that's the
+  // answer we treat as "correct" when grading is wrong.
+  const sortedMix = (Object.entries(spot.mix) as [PostflopAction, number][])
+    .sort(([, a], [, b]) => (b ?? 0) - (a ?? 0));
+  const topAction = sortedMix[0]?.[0];
+  const topLabel = topAction ? POSTFLOP_ACTION_LABEL[topAction] : '';
+
   const gradeLabel =
     grade === 'sharp'
       ? '정확해요'
       : grade === 'acceptable'
         ? '괜찮아요'
-        : '다른 선택이 더 유리했어요';
+        : topAction
+          ? `${topLabel}${particleSubject(topLabel)} 더 유리했어요`
+          : '다른 선택이 더 유리했어요';
   const gradeColor =
     grade === 'sharp'
       ? 'var(--color-call)'
@@ -117,12 +135,22 @@ export function PostflopResult({
             GTO 믹스 (합계 {Math.round(total * 100)}%)
           </p>
           <div className="space-y-2">
-            {(Object.entries(spot.mix) as [PostflopAction, number][])
-              .sort(([, a], [, b]) => (b ?? 0) - (a ?? 0))
-              .map(([action, freq]) => (
+            {sortedMix.map(([action, freq], idx) => {
+              const isTop = idx === 0 && (freq ?? 0) > 0;
+              return (
                 <div key={action} className="flex items-center gap-3">
-                  <span className="w-24 font-mono text-[12px] text-fg-muted">
+                  <span
+                    className={cn(
+                      'w-24 font-mono text-[12px]',
+                      isTop ? 'font-semibold text-fg' : 'text-fg-muted',
+                    )}
+                  >
                     {POSTFLOP_ACTION_LABEL[action]}
+                    {isTop && (
+                      <span className="ml-1 text-[10px] font-mono text-[color:var(--color-gold)]">
+                        ★
+                      </span>
+                    )}
                   </span>
                   <div className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]">
                     <div
@@ -133,11 +161,17 @@ export function PostflopResult({
                       }}
                     />
                   </div>
-                  <span className="w-12 text-right font-mono text-[12px] font-semibold tabular-nums">
+                  <span
+                    className={cn(
+                      'w-12 text-right font-mono text-[12px] tabular-nums',
+                      isTop ? 'font-bold text-fg' : 'font-semibold text-fg-muted',
+                    )}
+                  >
                     {((freq ?? 0) * 100).toFixed(1)}%
                   </span>
                 </div>
-              ))}
+              );
+            })}
           </div>
         </div>
 
