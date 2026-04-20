@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession, signOut as nextAuthSignOut } from 'next-auth/react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Logo, cn } from '@gto/ui';
@@ -23,6 +24,8 @@ export function HomeGate() {
   const signedIn = useAuthStore((s) => s.signedIn);
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
+  const { data: nextAuthSession } = useSession();
+  const avatarUrl = nextAuthSession?.user?.image ?? null;
 
   useEffect(() => {
     if (!onboarded) {
@@ -71,12 +74,45 @@ export function HomeGate() {
           type="button"
           onClick={() => {
             signOut();
-            router.replace('/signin');
+            void nextAuthSignOut({ callbackUrl: '/signin' });
           }}
-          className="font-mono text-[11px] uppercase tracking-[0.2em] text-fg-muted"
+          className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-fg-muted active:scale-[0.96]"
           aria-label="로그아웃"
         >
-          {user?.name ?? '게스트'}
+          <span className="hidden sm:inline">{user?.name ?? '게스트'}</span>
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatarUrl}
+              alt=""
+              width={28}
+              height={28}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                border: '1.5px solid rgba(212,175,55,0.6)',
+              }}
+            />
+          ) : (
+            <span
+              aria-hidden
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                background: 'var(--color-surface-raised)',
+                border: '1.5px solid var(--color-border)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 12,
+                color: 'var(--color-fg-muted)',
+              }}
+            >
+              {(user?.name ?? '게')[0]}
+            </span>
+          )}
         </button>
       </header>
 
