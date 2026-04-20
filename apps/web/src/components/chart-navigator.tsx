@@ -390,10 +390,10 @@ function actionSortKey(a: string, b: string): number {
 }
 
 function actionColour(a: string): string {
-  if (a === 'FOLD') return 'rgba(136,136,140,0.9)';
+  if (a === 'FOLD') return '#2B5F8F';
   if (a === 'Call') return '#1F9D55';
   if (a === 'AllIn') return '#D4AF37';
-  if (a.endsWith('bb')) return '#D4AF37';
+  if (a.endsWith('bb')) return '#C8102E';
   return '#888';
 }
 
