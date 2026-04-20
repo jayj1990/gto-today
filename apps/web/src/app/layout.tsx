@@ -15,14 +15,14 @@ export const metadata: Metadata = {
     type: 'website',
     siteName: 'gto.today',
     title: 'gto.today — GTO, Today.',
-    description: 'One spot. Every day. Better judgment.',
+    description: '매일 한 핸드, 더 나은 판단. 포커 GTO 가이드와 일일 훈련, AI 해설.',
     url: 'https://gto.today',
     locale: 'ko_KR',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'gto.today',
-    description: 'GTO, Today.',
+    description: '매일 한 핸드, 더 나은 판단.',
   },
   icons: {
     icon: [
