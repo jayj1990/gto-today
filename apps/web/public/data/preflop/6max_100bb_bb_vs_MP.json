@@ -39,6 +39,21 @@
     "raise": 0.148,
     "fold": 2.7755575615628914e-17
   },
+  "AA": {
+    "call": 0,
+    "raise": 1,
+    "fold": 0
+  },
+  "AKs": {
+    "call": 0,
+    "raise": 1,
+    "fold": 0
+  },
+  "AQs": {
+    "call": 0,
+    "raise": 1,
+    "fold": 0
+  },
   "AJs": {
     "call": 0.404,
     "raise": 0.596,
@@ -89,9 +104,24 @@
     "raise": 0.044,
     "fold": 4.163336342344337e-17
   },
+  "AKo": {
+    "call": 0,
+    "raise": 1,
+    "fold": 0
+  },
+  "KK": {
+    "call": 0,
+    "raise": 1,
+    "fold": 0
+  },
   "KQs": {
     "call": 0.146,
     "raise": 0.854,
+    "fold": 0
+  },
+  "KJs": {
+    "call": 0,
+    "raise": 1,
     "fold": 0
   },
   "KTs": {
@@ -149,6 +179,16 @@
     "raise": 0.09,
     "fold": 0
   },
+  "QQ": {
+    "call": 0,
+    "raise": 1,
+    "fold": 0
+  },
+  "QJs": {
+    "call": 0,
+    "raise": 1,
+    "fold": 0
+  },
   "QTs": {
     "call": 0.25,
     "raise": 0.75,
@@ -183,6 +223,16 @@
     "call": 0.276,
     "raise": 0,
     "fold": 0.724
+  },
+  "Q3s": {
+    "call": 0,
+    "raise": 0,
+    "fold": 1
+  },
+  "Q2s": {
+    "call": 0,
+    "raise": 0,
+    "fold": 1
   },
   "AJo": {
     "call": 1,
@@ -223,6 +273,31 @@
     "call": 0.518,
     "raise": 0,
     "fold": 0.482
+  },
+  "J6s": {
+    "call": 0,
+    "raise": 0,
+    "fold": 1
+  },
+  "J5s": {
+    "call": 0,
+    "raise": 0,
+    "fold": 1
+  },
+  "J4s": {
+    "call": 0,
+    "raise": 0,
+    "fold": 1
+  },
+  "J3s": {
+    "call": 0,
+    "raise": 0,
+    "fold": 1
+  },
+  "J2s": {
+    "call": 0,
+    "raise": 0,
+    "fold": 1
   },
   "ATo": {
     "call": 0.94,
@@ -269,10 +344,45 @@
     "raise": 0,
     "fold": 0.972
   },
+  "T5s": {
+    "call": 0,
+    "raise": 0,
+    "fold": 1
+  },
+  "T4s": {
+    "call": 0,
+    "raise": 0,
+    "fold": 1
+  },
+  "T3s": {
+    "call": 0,
+    "raise": 0,
+    "fold": 1
+  },
+  "T2s": {
+    "call": 0,
+    "raise": 0,
+    "fold": 1
+  },
   "A9o": {
     "call": 0.328,
     "raise": 0,
     "fold": 0.6719999999999999
+  },
+  "K9o": {
+    "call": 0,
+    "raise": 0,
+    "fold": 1
+  },
+  "Q9o": {
+    "call": 0,
+    "raise": 0,
+    "fold": 1
+  },
+  "J9o": {
+    "call": 0,
+    "raise": 0,
+    "fold": 1
   },
   "T9o": {
     "call": 0.068,
@@ -298,196 +408,6 @@
     "call": 0.154,
     "raise": 0,
     "fold": 0.846
-  },
-  "87s": {
-    "call": 0.704,
-    "raise": 0.296,
-    "fold": 5.551115123125783e-17
-  },
-  "86s": {
-    "call": 0.916,
-    "raise": 0.084,
-    "fold": 0
-  },
-  "85s": {
-    "call": 1,
-    "raise": 0,
-    "fold": 0
-  },
-  "76s": {
-    "call": 0.69,
-    "raise": 0.31,
-    "fold": 5.551115123125783e-17
-  },
-  "75s": {
-    "call": 0.824,
-    "raise": 0.176,
-    "fold": 5.551115123125783e-17
-  },
-  "74s": {
-    "call": 0.674,
-    "raise": 0,
-    "fold": 0.32599999999999996
-  },
-  "65s": {
-    "call": 0.622,
-    "raise": 0.378,
-    "fold": 0
-  },
-  "64s": {
-    "call": 0.784,
-    "raise": 0.216,
-    "fold": 0
-  },
-  "63s": {
-    "call": 0.604,
-    "raise": 0,
-    "fold": 0.396
-  },
-  "A5o": {
-    "call": 0.044,
-    "raise": 0,
-    "fold": 0.956
-  },
-  "54s": {
-    "call": 0.668,
-    "raise": 0.332,
-    "fold": 0
-  },
-  "53s": {
-    "call": 0.824,
-    "raise": 0.176,
-    "fold": 5.551115123125783e-17
-  },
-  "52s": {
-    "call": 0.524,
-    "raise": 0,
-    "fold": 0.476
-  },
-  "43s": {
-    "call": 0.87,
-    "raise": 0.13,
-    "fold": 0
-  },
-  "42s": {
-    "call": 0.466,
-    "raise": 0,
-    "fold": 0.534
-  },
-  "32s": {
-    "call": 0.102,
-    "raise": 0,
-    "fold": 0.898
-  },
-  "AA": {
-    "call": 0,
-    "raise": 1,
-    "fold": 0
-  },
-  "AKs": {
-    "call": 0,
-    "raise": 1,
-    "fold": 0
-  },
-  "AQs": {
-    "call": 0,
-    "raise": 1,
-    "fold": 0
-  },
-  "AKo": {
-    "call": 0,
-    "raise": 1,
-    "fold": 0
-  },
-  "KK": {
-    "call": 0,
-    "raise": 1,
-    "fold": 0
-  },
-  "KJs": {
-    "call": 0,
-    "raise": 1,
-    "fold": 0
-  },
-  "QQ": {
-    "call": 0,
-    "raise": 1,
-    "fold": 0
-  },
-  "QJs": {
-    "call": 0,
-    "raise": 1,
-    "fold": 0
-  },
-  "Q3s": {
-    "call": 0,
-    "raise": 0,
-    "fold": 1
-  },
-  "Q2s": {
-    "call": 0,
-    "raise": 0,
-    "fold": 1
-  },
-  "J6s": {
-    "call": 0,
-    "raise": 0,
-    "fold": 1
-  },
-  "J5s": {
-    "call": 0,
-    "raise": 0,
-    "fold": 1
-  },
-  "J4s": {
-    "call": 0,
-    "raise": 0,
-    "fold": 1
-  },
-  "J3s": {
-    "call": 0,
-    "raise": 0,
-    "fold": 1
-  },
-  "J2s": {
-    "call": 0,
-    "raise": 0,
-    "fold": 1
-  },
-  "T5s": {
-    "call": 0,
-    "raise": 0,
-    "fold": 1
-  },
-  "T4s": {
-    "call": 0,
-    "raise": 0,
-    "fold": 1
-  },
-  "T3s": {
-    "call": 0,
-    "raise": 0,
-    "fold": 1
-  },
-  "T2s": {
-    "call": 0,
-    "raise": 0,
-    "fold": 1
-  },
-  "K9o": {
-    "call": 0,
-    "raise": 0,
-    "fold": 1
-  },
-  "Q9o": {
-    "call": 0,
-    "raise": 0,
-    "fold": 1
-  },
-  "J9o": {
-    "call": 0,
-    "raise": 0,
-    "fold": 1
   },
   "94s": {
     "call": 0,
@@ -533,6 +453,21 @@
     "call": 0,
     "raise": 0,
     "fold": 1
+  },
+  "87s": {
+    "call": 0.704,
+    "raise": 0.296,
+    "fold": 5.551115123125783e-17
+  },
+  "86s": {
+    "call": 0.916,
+    "raise": 0.084,
+    "fold": 0
+  },
+  "85s": {
+    "call": 1,
+    "raise": 0,
+    "fold": 0
   },
   "84s": {
     "call": 0,
@@ -584,6 +519,21 @@
     "raise": 0,
     "fold": 1
   },
+  "76s": {
+    "call": 0.69,
+    "raise": 0.31,
+    "fold": 5.551115123125783e-17
+  },
+  "75s": {
+    "call": 0.824,
+    "raise": 0.176,
+    "fold": 5.551115123125783e-17
+  },
+  "74s": {
+    "call": 0.674,
+    "raise": 0,
+    "fold": 0.32599999999999996
+  },
   "73s": {
     "call": 0,
     "raise": 0,
@@ -634,10 +584,30 @@
     "raise": 0,
     "fold": 1
   },
+  "65s": {
+    "call": 0.622,
+    "raise": 0.378,
+    "fold": 0
+  },
+  "64s": {
+    "call": 0.784,
+    "raise": 0.216,
+    "fold": 0
+  },
+  "63s": {
+    "call": 0.604,
+    "raise": 0,
+    "fold": 0.396
+  },
   "62s": {
     "call": 0,
     "raise": 0,
     "fold": 1
+  },
+  "A5o": {
+    "call": 0.044,
+    "raise": 0,
+    "fold": 0.956
   },
   "K5o": {
     "call": 0,
@@ -678,6 +648,21 @@
     "call": 0,
     "raise": 0,
     "fold": 1
+  },
+  "54s": {
+    "call": 0.668,
+    "raise": 0.332,
+    "fold": 0
+  },
+  "53s": {
+    "call": 0.824,
+    "raise": 0.176,
+    "fold": 5.551115123125783e-17
+  },
+  "52s": {
+    "call": 0.524,
+    "raise": 0,
+    "fold": 0.476
   },
   "A4o": {
     "call": 0,
@@ -728,6 +713,16 @@
     "call": 0,
     "raise": 0,
     "fold": 1
+  },
+  "43s": {
+    "call": 0.87,
+    "raise": 0.13,
+    "fold": 0
+  },
+  "42s": {
+    "call": 0.466,
+    "raise": 0,
+    "fold": 0.534
   },
   "A3o": {
     "call": 0,
@@ -783,6 +778,11 @@
     "call": 0,
     "raise": 0,
     "fold": 1
+  },
+  "32s": {
+    "call": 0.102,
+    "raise": 0,
+    "fold": 0.898
   },
   "A2o": {
     "call": 0,

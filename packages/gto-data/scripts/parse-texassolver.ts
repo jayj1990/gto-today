@@ -86,9 +86,49 @@ async function findThreeBetSizeDir(bbDir: string): Promise<string | null> {
   return null;
 }
 
+/** Find the 3-bet size dir for a given defender (subdirectory whose
+ *  name ends with 'bb'). */
+async function findDefenderThreeBetDir(defenderDir: string): Promise<string | null> {
+  const entries = await readdir(defenderDir, { withFileTypes: true });
+  for (const e of entries) {
+    if (e.isDirectory() && e.name.endsWith('bb')) {
+      return join(defenderDir, e.name);
+    }
+  }
+  return null;
+}
+
+/** Extract a full defence mix for a single (opener, defender) pair. */
+async function extractDefence(
+  sizeDir: string,
+  opener: string,
+  defender: string,
+): Promise<Record<string, { call: number; raise: number; fold: number }> | null> {
+  const defenderDir = join(sizeDir, defender);
+  if (!existsSync(defenderDir)) return null;
+
+  const callRange =
+    (await parseRangeFile(join(defenderDir, 'Call', `${defender}_range.txt`))) ?? {};
+  const threeBetDir = await findDefenderThreeBetDir(defenderDir);
+  let raiseRange: Record<string, number> = {};
+  if (threeBetDir) {
+    const callBack = join(threeBetDir, opener, 'Call', `${defender}_range.txt`);
+    raiseRange = (await parseRangeFile(callBack)) ?? {};
+  }
+
+  const mix: Record<string, { call: number; raise: number; fold: number }> = {};
+  for (const combo of allCombos()) {
+    const call = Math.min(1, callRange[combo] ?? 0);
+    const raise = Math.min(1, raiseRange[combo] ?? 0);
+    const fold = Math.max(0, 1 - call - raise);
+    mix[combo] = { call, raise, fold };
+  }
+  return mix;
+}
+
 /** For a given opener, produce:
- *     rfiChart    — raise freq per combo (keys: combo, values: 0-1)
- *     bbMixChart  — full BB defence mix per combo
+ *     rfiChart      — opener's raise freq per combo
+ *     defenceCharts — mix per combo for every defender (BB, SB, BTN, …)
  */
 async function extractOpener(opener: string) {
   const openerDir = join(SOURCE, opener);
@@ -97,42 +137,19 @@ async function extractOpener(opener: string) {
   if (sizeDirs.length === 0) throw new Error(`no open size for ${opener}`);
   const sizeDir = join(openerDir, sizeDirs[0].name);
 
-  // --- RFI range: opener's own raising frequencies ---
   const rfi = await findOpenerRange(sizeDir, opener);
 
-  // --- BB defence mix (only meaningful if BB is in this tree) ---
-  const bbDir = join(sizeDir, 'BB');
-  let bbMix: Record<string, { call: number; raise: number; fold: number }> | null = null;
-  if (existsSync(bbDir)) {
-    const callRange = (await parseRangeFile(join(bbDir, 'Call', 'BB_range.txt'))) ?? {};
-    const threeBetDir = await findThreeBetSizeDir(bbDir);
-    // BB's 3-bet range sits inside any leaf of threeBetDir/<opener>/... —
-    // BB_range.txt is invariant across those leaves so we take the first.
-    let raiseRange: Record<string, number> = {};
-    if (threeBetDir) {
-      // BB's 3-bet range sits at {threeBetDir}/{opener}/Call/BB_range.txt
-      // — i.e. the node where opener just called BB's 3-bet. BB's range
-      // doesn't change based on opener's post-3-bet decision, so this
-      // Call branch has the pure 3-bet range. Deeper branches (4-bet
-      // etc.) filter BB further and give smaller numbers.
-      const callBack = join(threeBetDir, opener, 'Call', 'BB_range.txt');
-      raiseRange = (await parseRangeFile(callBack)) ?? {};
-    }
-
-    const combos = new Set<string>([...Object.keys(callRange), ...Object.keys(raiseRange)]);
-    // Include all 169 combos for completeness (folded ones = fold:1)
-    for (const c of allCombos()) combos.add(c);
-
-    bbMix = {};
-    for (const combo of combos) {
-      const call = Math.min(1, callRange[combo] ?? 0);
-      const raise = Math.min(1, raiseRange[combo] ?? 0);
-      const fold = Math.max(0, 1 - call - raise);
-      bbMix[combo] = { call, raise, fold };
-    }
+  // Every subdirectory of sizeDir that isn't a range file is a
+  // defender (BB / SB / BTN / CO / MP depending on opener).
+  const defenceCharts: Record<string, Record<string, { call: number; raise: number; fold: number }>> = {};
+  const entries = await readdir(sizeDir, { withFileTypes: true });
+  for (const e of entries) {
+    if (!e.isDirectory()) continue;
+    const chart = await extractDefence(sizeDir, opener, e.name);
+    if (chart) defenceCharts[e.name] = chart;
   }
 
-  return { rfi, bbMix };
+  return { rfi, defenceCharts };
 }
 
 /** Produce every 169 preflop combo key in the canonical form. */
@@ -178,9 +195,8 @@ async function main() {
 
   let wrote = 0;
   for (const pos of POSITIONS) {
-    const { rfi, bbMix } = await extractOpener(pos);
+    const { rfi, defenceCharts } = await extractOpener(pos);
 
-    // RFI JSON — raise freq per combo (missing = 0 fold).
     const rfiOut: Record<string, PreflopCombo> = {};
     for (const combo of allCombos()) {
       const raise = Math.min(1, rfi[combo] ?? 0);
@@ -191,13 +207,14 @@ async function main() {
     console.log(`  ✓ RFI ${pos}  → ${rfiPath}`);
     wrote++;
 
-    // BB defence JSON (only if opener has a BB branch, which is all
-    // except when BB IS the opener — not applicable in 6max).
-    if (bbMix) {
-      const bbPath = join(OUT_DIR, `6max_100bb_bb_vs_${pos}.json`);
-      const bbOut: Record<string, BbCombo> = bbMix;
-      await writeJson(bbPath, bbOut);
-      console.log(`  ✓ BB vs ${pos} → ${bbPath}`);
+    // One defence chart per (defender_vs_opener) pair. Everyone in
+    // between the opener and the BB gets a chart, including SB, BTN,
+    // CO, MP depending on the opener's seat.
+    for (const [defender, mix] of Object.entries(defenceCharts)) {
+      const low = defender.toLowerCase();
+      const path = join(OUT_DIR, `6max_100bb_${low}_vs_${pos}.json`);
+      await writeJson(path, mix);
+      console.log(`  ✓ ${defender} vs ${pos} → ${path}`);
       wrote++;
     }
   }
