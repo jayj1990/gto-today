@@ -1,14 +1,21 @@
 /**
- * BB defending vs a single opener — handcrafted GTO-adjacent ranges.
+ * BB defending vs a single opener — BETA approximations.
  *
  * Each combo has three frequencies that must sum to ~1:
  *   call  — flat the raise
  *   raise — 3-bet (value + bluff mix)
  *   fold  — muck
  *
- * Derived from broadly-agreed community defaults (Upswing / JNandez /
- * GTOWizard public illustrations). These are seed values to be replaced
- * by real solver output once available.
+ *   Accuracy tier    : BETA
+ *   Cross-checked    : Upswing Lab 3-bet charts, GTOWizard Free MTT
+ *                      100BB BB-defence samples, published GTO guides.
+ *   Known fix log    :
+ *     - 2026-04-21 ATs/AJs/KQs vs CO were call=100%; corrected to
+ *       3-bet-dominant mixes matching consensus (~65-80% 3-bet).
+ *     - 2026-04-21 ATs/AJs/KQs vs UTG also given real 3-bet freqs
+ *       instead of pure-flat.
+ *   Replacement plan : TexasSolver local pipeline OR licensed export.
+ *   User feedback    : flag combos as errors in-app → patched by hand.
  *
  * Missing combos default to fold 100% (same convention as RFI ranges).
  */

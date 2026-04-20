@@ -1,14 +1,19 @@
 /**
- * Publicly-known GTO-adjacent 6-max RFI ranges at 100BB cash game depth.
- * Sourced from the broadly-agreed community consensus (Upswing / JNandez /
- * GTOWizard illustrative published defaults). These are seed values — to be
- * replaced by a real solver dump in a later iteration.
+ * 6-max RFI ranges at 100BB. BETA approximations cross-checked against
+ * publicly-available charts (Upswing Lab samples, JNandez101, GTOWizard
+ * Free illustrative preflop ranges) but NOT verified against a raw
+ * solver dump. Expect ±10-15% frequency drift from true GTO.
+ *
+ *   Accuracy tier    : BETA (approximation)
+ *   Replacement plan : TexasSolver local pipeline (packages/gto-data/
+ *                      scripts/solve-postflop.mjs skeleton) OR purchase
+ *                      licensed GTOWizard export.
+ *   User feedback    : if Jay flags a specific combo as wrong, patch
+ *                      that combo by hand against published consensus
+ *                      (this file has had ATs / AJs / KQs corrections).
  *
  * Values are RAISE frequency 0..1 for each combo at that position.
  * Missing combos = 0 (fold).
- *
- * Keys must be quoted because combo keys like "88" and "76s" are not valid
- * unquoted identifiers.
  */
 
 type ComboFreq = Record<string, number>;

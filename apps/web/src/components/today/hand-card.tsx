@@ -110,6 +110,11 @@ export function HandCard({ spot, className }: HandCardProps) {
           </Pill>
         </div>
       </div>
+      {/* Data-accuracy disclaimer — our ranges are public-chart seeds,
+          not raw solver output. Replace once TexasSolver pipeline lands. */}
+      <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-warning)]">
+        β GTO 근사 — 솔버 완전 통합 전
+      </p>
 
       <div className="mt-4">
         <PokerTable
