@@ -146,8 +146,16 @@ export default function LivePlayPage() {
           )}
         </section>
 
+        {/* Data-scope disclosure — prevents users from thinking stack /
+            rake / open size settings are filtering the chart (they aren't
+            yet). We ship one canonical 6-max 100BB dataset today; broader
+            coverage is queued behind the TexasSolver pipeline. */}
+        <section className="mt-4 rounded-[var(--radius-button)] border border-[color:var(--color-warning)]/40 bg-[color:var(--color-warning)]/10 px-4 py-3 text-[12px] text-[color:var(--color-warning)]">
+          현재 차트는 <span className="font-semibold">6맥스 · 100BB</span> 기준 한 세트예요. 스택·레이크·오픈 사이즈 설정은 저장되지만 지금은 차트에 반영되지 않아요. 다양한 스택 깊이 차트는 다음 업데이트에서 공개됩니다.
+        </section>
+
         {/* Context summary (mimics GTO Wizard's detail-action top bar) */}
-        <section className="mt-5 rounded-[var(--radius-button)] border-hair surface px-4 py-3 text-[12px] text-fg-muted">
+        <section className="mt-4 rounded-[var(--radius-button)] border-hair surface px-4 py-3 text-[12px] text-fg-muted">
           {scenario === 'rfi' ? (
             <p>
               <span className="font-mono text-[color:var(--color-accent)]">
