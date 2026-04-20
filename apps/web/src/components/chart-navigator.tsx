@@ -15,6 +15,10 @@ interface NodeData {
   legal: string[];
   /** True when every non-BB seat has folded — BB wins the pot uncontested. */
   bbWins?: boolean;
+  /** True when someone already jammed — remaining actors only call or fold. */
+  postAllIn?: boolean;
+  /** True when everyone has responded to the AllIn; hand is at showdown. */
+  showdown?: boolean;
 }
 
 export interface ChartNavigatorProps {
@@ -65,9 +69,10 @@ export function ChartNavigator({
   }, [node]);
 
   const handleAction = (action: string) => setPath((p) => [...p, `${node?.actor}_${action}`]);
-  const handlePop = (idx: number) => setPath((p) => p.slice(0, idx));
   const handleBack = () => setPath((p) => p.slice(0, -1));
   const handleRestart = () => setPath([]);
+
+  const seatState = useMemo(() => buildSeatState(path, node?.actor), [path, node?.actor]);
 
   return (
     <div className={className}>
@@ -81,40 +86,20 @@ export function ChartNavigator({
 
       {node && (
         <>
-          <section className="mb-4 overflow-x-auto">
-            <div className="flex flex-wrap gap-1.5">
-              <BreadcrumbChip label="시작" active={path.length === 0} onClick={() => setPath([])} />
-              {path.map((tok, i) => (
-                <BreadcrumbChip
-                  key={i}
-                  label={prettyToken(tok)}
-                  active={i === path.length - 1}
-                  onClick={() => handlePop(i + 1)}
-                />
-              ))}
-            </div>
-          </section>
+          <SeatRibbon state={seatState} />
 
-          <section className="mb-4 rounded-[var(--radius-button)] border-hair surface px-4 py-3">
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted">
-              현재 액션
-            </p>
-            <p className="mt-1 font-display text-[22px] font-bold">
-              <span className="text-[color:var(--color-accent)]">{node.actor}</span>{' '}
-              <span className="text-fg-muted text-[16px] font-normal">차례</span>
-            </p>
-          </section>
-
-          {node.bbWins ? (
+          {node.bbWins || node.showdown ? (
             <section className="rounded-[var(--radius-panel)] border border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 p-8 text-center">
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-gold)]">
                 결과
               </p>
               <h2 className="mt-2 font-display text-[30px] font-bold text-[color:var(--color-gold)]">
-                BB 승리
+                {node.bbWins ? 'BB 승리' : '쇼다운'}
               </h2>
               <p className="mt-3 text-[13px] text-fg-muted">
-                모두 폴드 → BB가 블라인드를 가져갑니다. 핸드가 끝났어요.
+                {node.bbWins
+                  ? '모두 폴드 → BB가 블라인드를 가져갑니다. 핸드가 끝났어요.'
+                  : '모두 액션 완료 → 보드 오픈. 프리플랍 결정 끝.'}
               </p>
               <button
                 type="button"
@@ -126,48 +111,82 @@ export function ChartNavigator({
             </section>
           ) : (
             <>
-              <section className="mb-3">
-                {Object.keys(mixes).length > 0 ? (
-                  <RangeGrid mixes={mixes} className="w-full" />
-                ) : (
-                  <div className="rounded-[var(--radius-panel)] border-hair surface p-6 text-center">
-                    <p className="font-mono text-[12px] text-fg-muted">
-                      이 스팟은 솔버가 아직 수렴하지 못해 제공되지 않아요.
-                    </p>
-                    <p className="mt-2 text-[11px] text-fg-muted">
-                      뒤로 돌아가서 다른 라인을 탐색해보세요.
-                    </p>
+              <section className="mb-4 rounded-[var(--radius-panel)] border border-[color:var(--color-accent)]/40 bg-[color:var(--color-accent)]/5 p-4">
+                <div className="flex items-baseline gap-2">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]">
+                    지금 차례
+                  </span>
+                  <span className="font-display text-[22px] font-bold text-[color:var(--color-accent)]">
+                    {node.actor}
+                  </span>
+                  <span className="text-[12px] text-fg-muted">이/가 액션을 선택합니다</span>
+                </div>
+
+                {node.legal.length > 0 ? (
+                  <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {node.legal.map((act) => {
+                      const color = actionColour(act);
+                      return (
+                        <button
+                          key={act}
+                          type="button"
+                          onClick={() => handleAction(act)}
+                          className="h-12 rounded-[var(--radius-button)] border font-mono text-[13px] font-semibold active:scale-[0.98]"
+                          style={{
+                            background: `${color}22`,
+                            borderColor: `${color}66`,
+                            color,
+                          }}
+                        >
+                          {prettyAction(act)}
+                        </button>
+                      );
+                    })}
                   </div>
+                ) : (
+                  <p className="mt-3 text-[12px] text-fg-muted">
+                    이 스팟은 선택지가 없어요.
+                  </p>
                 )}
               </section>
 
-              <section className="mb-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] text-fg-muted">
-                <LegendDot color="#C8102E" label="레이즈" />
-                <LegendDot color="#1F9D55" label="콜" />
-                <LegendDot color="#2B5F8F" label="폴드" />
-              </section>
-
-              {node.legal.length > 0 && (
-                <section className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {node.legal.map((act) => {
-                    const color = actionColour(act);
-                    return (
-                      <button
-                        key={act}
-                        type="button"
-                        onClick={() => handleAction(act)}
-                        className="h-12 rounded-[var(--radius-button)] border font-mono text-[13px] font-semibold active:scale-[0.98]"
-                        style={{
-                          background: `${color}22`,
-                          borderColor: `${color}66`,
-                          color,
-                        }}
-                      >
-                        {prettyAction(act)}
-                      </button>
-                    );
-                  })}
+              {node.postAllIn ? (
+                <section className="mb-4 rounded-[var(--radius-panel)] border border-[color:var(--color-gold)]/30 bg-[color:var(--color-gold)]/5 p-5 text-center">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-gold)]">
+                    올인 상황
+                  </p>
+                  <p className="mt-2 text-[13px] text-fg">
+                    이미 누군가 올인을 선언했어요. 남은 액션은{' '}
+                    <span className="font-semibold text-[color:var(--color-call)]">콜</span> 또는{' '}
+                    <span className="font-semibold text-fg-muted">폴드</span>뿐.
+                  </p>
+                  <p className="mt-2 text-[12px] text-fg-muted">
+                    핸드 강도 vs 팟 오즈로 판단하세요. 프리미엄은 콜, 마진 핸드는 폴드가 기본.
+                  </p>
                 </section>
+              ) : (
+                <>
+                  <section className="mb-3">
+                    {Object.keys(mixes).length > 0 ? (
+                      <RangeGrid mixes={mixes} className="w-full" />
+                    ) : (
+                      <div className="rounded-[var(--radius-panel)] border-hair surface p-6 text-center">
+                        <p className="font-mono text-[12px] text-fg-muted">
+                          이 스팟은 솔버가 아직 수렴하지 못해 제공되지 않아요.
+                        </p>
+                        <p className="mt-2 text-[11px] text-fg-muted">
+                          뒤로 돌아가서 다른 라인을 탐색해보세요.
+                        </p>
+                      </div>
+                    )}
+                  </section>
+
+                  <section className="mb-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] text-fg-muted">
+                    <LegendDot color="#C8102E" label="레이즈" />
+                    <LegendDot color="#1F9D55" label="콜" />
+                    <LegendDot color="#2B5F8F" label="폴드" />
+                  </section>
+                </>
               )}
             </>
           )}
@@ -209,28 +228,56 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   );
 }
 
-function BreadcrumbChip({
-  label,
-  active,
-  onClick,
-}: {
+type SeatStatus = 'waiting' | 'active' | 'folded' | 'acted';
+
+interface SeatRow {
+  pos: string;
+  status: SeatStatus;
   label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
+}
+
+function buildSeatState(path: string[], activeActor: string | undefined): SeatRow[] {
+  const latestAction = new Map<string, string>();
+  for (const tok of path) {
+    const us = tok.indexOf('_');
+    if (us < 0) continue;
+    latestAction.set(tok.slice(0, us), tok.slice(us + 1));
+  }
+  return POSITIONS_6MAX.map((pos) => {
+    const act = latestAction.get(pos);
+    if (activeActor === pos) return { pos, status: 'active', label: '차례' };
+    if (!act) return { pos, status: 'waiting', label: '대기' };
+    if (act === 'FOLD') return { pos, status: 'folded', label: '폴드' };
+    return { pos, status: 'acted', label: prettyAction(act) };
+  });
+}
+
+function SeatRibbon({ state }: { state: SeatRow[] }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'rounded-full border px-3 py-1 font-mono text-[11px]',
-        active
-          ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/15 text-[color:var(--color-accent)]'
-          : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-raised)] text-fg-muted',
-      )}
-    >
-      {label}
-    </button>
+    <section aria-label="포지션별 액션" className="mb-4 overflow-x-auto">
+      <ul className="flex gap-1.5 min-w-max">
+        {state.map((row) => (
+          <li key={row.pos}>
+            <div
+              className={cn(
+                'flex min-w-[70px] flex-col items-center rounded-[var(--radius-button)] border px-2.5 py-1.5 font-mono text-[11px] transition-colors',
+                row.status === 'active' &&
+                  'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/15 text-[color:var(--color-accent)]',
+                row.status === 'waiting' &&
+                  'border-[color:var(--color-border)] bg-[color:var(--color-surface-raised)] text-fg-muted opacity-60',
+                row.status === 'folded' &&
+                  'border-[color:var(--color-border)] bg-[color:var(--color-surface-raised)] text-fg-muted line-through opacity-70',
+                row.status === 'acted' &&
+                  'border-[color:var(--color-gold)]/50 bg-[color:var(--color-gold)]/10 text-[color:var(--color-gold)]',
+              )}
+            >
+              <span className="font-display text-[13px] font-bold leading-none">{row.pos}</span>
+              <span className="mt-1 leading-none">{row.label}</span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -255,8 +302,21 @@ function resolveNode(decisions: DecisionsJson, path: string[]): NodeData | null 
   const activeTokens = path.filter((t) => !t.endsWith('_FOLD'));
   const key = [...activeTokens, actor].join('_');
   const raw = decisions[key];
-  if (!raw) return { actor, actions: {}, legal: [] };
-  return { actor, actions: raw, legal: Object.keys(raw).sort(actionSortKey) };
+  if (raw) return { actor, actions: raw, legal: Object.keys(raw).sort(actionSortKey) };
+
+  // Fallback: once someone's already all-in preflop, every remaining
+  // actor's choice reduces to call-the-jam or fold — no more raising.
+  // The deep-solver data for these spots is unreliable (see isSaneNode
+  // in the parser), so we synthesise the two-button decision here and
+  // stop after everyone has responded to the jam.
+  const allInIdx = path.findIndex((t) => t.slice(t.indexOf('_') + 1) === 'AllIn');
+  if (allInIdx >= 0) {
+    const jammer = path[allInIdx]!.slice(0, path[allInIdx]!.indexOf('_'));
+    if (actor === jammer) return { actor, actions: {}, legal: [], showdown: true };
+    return { actor, actions: {}, legal: ['Call', 'FOLD'], postAllIn: true };
+  }
+
+  return { actor, actions: {}, legal: [] };
 }
 
 function nextActor(path: string[]): string | null {
@@ -343,12 +403,6 @@ function prettyAction(a: string): string {
   if (a === 'AllIn') return '올인';
   if (a.endsWith('bb')) return `레이즈 ${a}`;
   return a;
-}
-
-function prettyToken(tok: string): string {
-  const [pos, ...rest] = tok.split('_');
-  const act = rest.join('_');
-  return `${pos} ${prettyAction(act)}`;
 }
 
 function cn(...parts: (string | false | undefined)[]) {
