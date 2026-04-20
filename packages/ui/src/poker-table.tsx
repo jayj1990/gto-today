@@ -247,8 +247,11 @@ export function PokerTable({
         const isFolded = state.action?.kind === 'fold';
         const isToAct = !isHero && seat === toAct;
 
-        const betX = x + inward.x * 20;
-        const betY = y + inward.y * 20;
+        // Bet chip sits just slightly towards the centre from the seat
+        // (was * 20 which shoved it almost onto the board on the new
+        // portrait table). Keeps the chip visually owned by its player.
+        const betX = x + inward.x * 8;
+        const betY = y + inward.y * 8;
 
         const hasVillainCards = !isHero && !isFolded && (state.cards || state.showBacks);
         const hasHeroCards = isHero && heroCards;
