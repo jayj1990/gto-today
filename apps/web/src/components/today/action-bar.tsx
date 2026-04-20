@@ -62,14 +62,11 @@ export function ActionBar({
   const compact = count >= 3;
   return (
     <div
-      className={cn('safe-bottom mt-5 grid gap-2', className)}
+      className={cn('safe-bottom mt-3 grid gap-2', className)}
       style={{ gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}
     >
       {actions.map((kind) => {
         const size = kind === 'call' ? callSize : kind === 'raise' ? raiseSize : undefined;
-        // On 3+ button rows, drop the word label and show just the
-        // size so every button stays on the same line on a 360px
-        // mobile viewport.
         const label =
           size !== undefined
             ? compact
@@ -85,7 +82,7 @@ export function ActionBar({
             onClick={() => onAnswer(kind)}
             className={cn(
               'select-none rounded-[var(--radius-button)] whitespace-nowrap px-1 transition-colors disabled:opacity-40',
-              compact ? 'h-12 text-[12px]' : 'h-14 text-[14px]',
+              compact ? 'h-11 text-[12px]' : 'h-12 text-[14px]',
               TONE[kind].cls,
             )}
           >

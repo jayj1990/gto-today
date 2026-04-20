@@ -1,5 +1,6 @@
 import type { CardCode, Position } from '@gto/poker-core';
 import { POSTFLOP_SEEDS } from './ranges/postflop-seeds';
+import { SOLVER_SPOTS } from './ranges/solver-spots';
 
 /**
  * Postflop action space. Bet/raise sizes are expressed as a fraction of
@@ -87,14 +88,18 @@ export interface PostflopSpot {
   readonly teachingNote: string;
 }
 
-/** Returns a cloned, deterministic list of all seeded postflop spots. */
+/** Returns a cloned, deterministic list of all postflop spots. Solver-
+ *  generated spots take priority when available; the handcrafted seeds
+ *  act as a bootstrap fallback until the overnight batch completes. */
 export function listPostflopSpots(): PostflopSpot[] {
-  return POSTFLOP_SEEDS.map((s) => ({ ...s, board: [...s.board] }));
+  const pool = SOLVER_SPOTS.length > 0 ? SOLVER_SPOTS : POSTFLOP_SEEDS;
+  return pool.map((s) => ({ ...s, board: [...s.board] }));
 }
 
 /** Look up a single seed spot by id. Returns null if not found. */
 export function getPostflopSpot(id: string): PostflopSpot | null {
-  const found = POSTFLOP_SEEDS.find((s) => s.id === id);
+  const pool = SOLVER_SPOTS.length > 0 ? SOLVER_SPOTS : POSTFLOP_SEEDS;
+  const found = pool.find((s) => s.id === id);
   return found ? { ...found, board: [...found.board] } : null;
 }
 

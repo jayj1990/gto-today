@@ -117,16 +117,16 @@ export default function TodayPlayPage() {
 
         {items && !isComplete && current && (
           <>
-            <header className="mb-6">
+            <header className="mb-3">
               <div className="flex items-center justify-between">
-                <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
-                  오늘 · Day {currentStreak + 1}
+                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
+                  Day {currentStreak + 1}
                 </p>
-                <p className="font-mono text-[13px] font-semibold">
+                <p className="font-mono text-[12px] font-semibold">
                   {cursor + 1} / {TOTAL}
                 </p>
               </div>
-              <ProgressDots total={TOTAL} done={cursor} className="mt-3" />
+              <ProgressDots total={TOTAL} done={cursor} className="mt-2" />
             </header>
 
             <AnimatePresence mode="wait">
