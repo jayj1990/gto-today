@@ -45,24 +45,43 @@ export default function LivePlayPage() {
   const [opener, setOpener] = useState<Position>('BTN');
   const [mixes, setMixes] = useState<Record<string, ComboMix>>({});
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setError(null);
     setHighlight(null);
+    setMixes({});
 
     const task =
       scenario === 'rfi'
-        ? getPreflopChart('6max', position).then((chart) => rfiToMixes(chart))
-        : getBbDefenseChart(opener, '6max').then((chart) => bbToMixes(chart));
+        ? getPreflopChart('6max', position).then((chart) => ({
+            mixes: rfiToMixes(chart),
+            found: chart !== null,
+          }))
+        : getBbDefenseChart(opener, '6max').then((chart) => ({
+            mixes: bbToMixes(chart),
+            found: chart !== null,
+          }));
 
-    task.then((next) => {
-      if (!cancelled) {
-        setMixes(next);
+    task
+      .then(({ mixes: next, found }) => {
+        if (cancelled) return;
+        if (!found) {
+          setError('이 시나리오의 차트 데이터를 찾지 못했어요.');
+        } else {
+          setMixes(next);
+        }
         setLoading(false);
-      }
-    });
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : '차트 로드 중 문제가 발생했어요.');
+        setLoading(false);
+      });
+
     return () => {
       cancelled = true;
     };
@@ -156,22 +175,31 @@ export default function LivePlayPage() {
 
         {/* 13x13 chart */}
         <section className="mt-5">
-          {loading ? (
+          {loading && (
             <div className="flex h-60 items-center justify-center rounded-[var(--radius-panel)] border-hair surface">
               <p className="font-mono text-[12px] text-fg-muted">불러오는 중…</p>
             </div>
-          ) : (
-            <div className="w-full overflow-x-auto">
+          )}
+          {!loading && error && (
+            <div className="rounded-[var(--radius-panel)] border border-[color:var(--color-raise)]/40 bg-[color:var(--color-raise)]/10 p-6 text-center">
+              <p className="font-mono text-[12px] text-[color:var(--color-raise)]">{error}</p>
+              <p className="mt-2 text-[12px] text-fg-muted">
+                다른 시나리오나 포지션을 선택해 주세요.
+              </p>
+            </div>
+          )}
+          {!loading && !error && Object.keys(mixes).length > 0 && (
+            <div className="w-full">
               <RangeGrid
                 mixes={mixes}
                 highlight={highlight ?? undefined}
                 onCellClick={(combo) => setHighlight(combo)}
-                className="mx-auto w-full"
+                className="w-full"
               />
             </div>
           )}
 
-          <Legend scenario={scenario} />
+          {!error && <Legend scenario={scenario} />}
         </section>
 
         {/* Focused combo detail */}

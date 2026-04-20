@@ -47,10 +47,15 @@ export function RangeGrid({
 
   return (
     <div
-      className={cn('inline-grid gap-[2px] rounded-[10px] p-1.5', className)}
+      className={className}
       style={{
+        display: 'grid',
         gridTemplateColumns: 'repeat(13, minmax(0, 1fr))',
+        gap: 2,
+        padding: 6,
+        borderRadius: 10,
         background: 'rgba(0,0,0,0.4)',
+        width: '100%',
       }}
       role="grid"
       aria-label="Preflop range grid"
@@ -70,16 +75,29 @@ export function RangeGrid({
             role="gridcell"
             aria-label={`${combo} — raise ${r.toFixed(0)}%, call ${c.toFixed(0)}%, fold ${f.toFixed(0)}%`}
             onClick={onCellClick ? () => onCellClick(combo) : undefined}
-            className={cn(
-              'relative aspect-square select-none overflow-hidden rounded-[3px]',
-              'font-mono leading-none',
-              clickable ? 'cursor-pointer active:scale-[0.94]' : 'cursor-default',
-              isHighlight && 'ring-2 ring-[color:var(--color-accent)]',
-            )}
-            style={{ fontSize: 9, padding: 0 }}
+            style={{
+              position: 'relative',
+              aspectRatio: '1 / 1',
+              width: '100%',
+              padding: 0,
+              border: 'none',
+              borderRadius: 3,
+              cursor: clickable ? 'pointer' : 'default',
+              overflow: 'hidden',
+              userSelect: 'none',
+              outline: isHighlight ? '2px solid var(--color-accent)' : 'none',
+              outlineOffset: isHighlight ? '1px' : 0,
+            }}
           >
             {/* Stacked background bars */}
-            <div className="absolute inset-0 flex">
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                pointerEvents: 'none',
+              }}
+            >
               <div style={{ width: `${r}%`, background: '#C8102E' }} />
               <div style={{ width: `${c}%`, background: '#1F9D55' }} />
               <div style={{ width: `${f}%`, background: '#2B5F8F' }} />
@@ -87,11 +105,20 @@ export function RangeGrid({
             {/* Label */}
             {labels && (
               <span
-                className="absolute inset-0 flex items-center justify-center font-bold"
                 style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: 'var(--font-mono, monospace)',
+                  fontSize: 9,
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  letterSpacing: '-0.02em',
                   color: '#FFFFFF',
                   textShadow: '0 1px 2px rgba(0,0,0,0.7)',
-                  letterSpacing: '-0.02em',
+                  pointerEvents: 'none',
                 }}
               >
                 {combo}

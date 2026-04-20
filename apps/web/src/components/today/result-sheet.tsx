@@ -23,6 +23,17 @@ const ACTION_LABEL: Record<GradedAction, string> = {
   raise: '레이즈',
 };
 
+/**
+ * Return 이/가 based on the word's final Hangul syllable.
+ * Hangul syllables span U+AC00–U+D7A3; a final consonant exists when
+ * (code - 0xAC00) % 28 !== 0. Non-Hangul falls back to 가.
+ */
+function particleSubject(word: string): string {
+  const last = word.charCodeAt(word.length - 1);
+  if (last < 0xac00 || last > 0xd7a3) return '가';
+  return (last - 0xac00) % 28 === 0 ? '가' : '이';
+}
+
 const ACTION_COLOR: Record<GradedAction, string> = {
   fold: 'var(--color-fold)',
   check: 'var(--color-info)',
@@ -118,8 +129,9 @@ export function ResultSheet({
     }
     // wrong
     const gto = dominantAction(spot);
+    const label = ACTION_LABEL[gto];
     return {
-      title: `${ACTION_LABEL[gto]}가 더 유리했어요`,
+      title: `${label}${particleSubject(label)} 더 유리했어요`,
       subtitle: '같은 상황에서 왜 그런지 확인해 보세요.',
       tone: 'gtoColor' as const,
       gtoAction: gto,
