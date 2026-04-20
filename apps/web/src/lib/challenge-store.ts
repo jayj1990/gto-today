@@ -76,7 +76,11 @@ export const useChallengeStore = create<ChallengeState>()(
       },
 
       advance: () => {
-        set((s) => ({ cursor: Math.min(s.cursor + 1, s.spots.length) }));
+        // Don't clamp to spots.length — the mixed daily lineup has 10
+        // items (preflop + postflop) but only preflop items are
+        // persisted to spots[]. Let cursor run freely up to the page's
+        // TOTAL (the page treats cursor >= TOTAL as 'done').
+        set((s) => ({ cursor: s.cursor + 1 }));
       },
 
       completeDay: () => {
