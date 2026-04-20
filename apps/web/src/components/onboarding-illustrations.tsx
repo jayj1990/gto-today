@@ -62,7 +62,7 @@ export function DailyTrainingIllustration() {
         </div>
 
         <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[color:var(--color-gold)]">
-          Day 7 · Streak
+          7일차 · 연속
         </p>
 
         {/* Card stack drifting into frame */}
