@@ -72,7 +72,7 @@ export default function LogosPage() {
           <h2 className="font-display text-[18px] font-bold">선택 방법</h2>
           <ul className="mt-3 space-y-1 text-[13px] text-fg-muted">
             <li>• A, B, C 중 하나 고르시면 앱 아이콘 (favicon / 192 / 512 / maskable) 전부 재생성</li>
-            <li>• 원하는 조합(예: "B의 닷 + C의 스페이드") 있으시면 말씀만 하세요 — 새 SVG 파생</li>
+            <li>• 원하는 조합 (예: B의 닷 + C의 스페이드) 있으시면 말씀만 하세요 — 새 SVG 파생</li>
             <li>• 색상·닷 크기·테두리 두께 같은 튜닝은 언제든지 수정 가능</li>
           </ul>
         </section>

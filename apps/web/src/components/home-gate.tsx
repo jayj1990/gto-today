@@ -81,7 +81,7 @@ export function HomeGate() {
           href="/today"
           eyebrow="Daily Challenge"
           title="오늘의 훈련"
-          description="하루 10핸드로 연속 훈련을 이어가세요."
+          description="매일 무료로 제공되는 GTO 훈련."
           variant="primary"
           delay={0}
         />
