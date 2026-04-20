@@ -186,6 +186,86 @@ async function writeJson(path: string, data: unknown) {
   await writeFile(path, JSON.stringify(data, null, 2) + '\n', 'utf8');
 }
 
+/* ==================================================================
+ *  qb_ranges parser — a deeper, flat-file corpus that covers vs-3bet,
+ *  vs-4bet, and 3-way squeeze scenarios that 6max_range/ doesn't.
+ *
+ *  File naming pattern (inside qb_ranges/100bb 2.5x 500rake/<POS>/):
+ *
+ *    <P1>_<A1>_<P2>_<A2>_..._<PK>_<AK>.txt
+ *
+ *  where the LAST segment is the action the owning player took at
+ *  their decision node. Sibling files differing only in that last
+ *  action describe the same node — we group them and synthesise a
+ *  {action → freq} mix for every combo.
+ * ================================================================== */
+
+interface DecisionMix {
+  actions: Record<string, Record<string, number>>; // action label → combo → freq
+}
+
+function parseActionToken(token: string): 'FOLD' | 'Call' | 'AllIn' | { size: number } | null {
+  if (token === 'FOLD' || token === 'Call' || token === 'AllIn') return token;
+  if (token.endsWith('bb')) {
+    const n = Number(token.slice(0, -2));
+    if (Number.isFinite(n)) return { size: n };
+  }
+  return null;
+}
+
+/** Read every .txt file under `dir` recursively, ignoring non-range files. */
+async function collectRangeFiles(dir: string): Promise<string[]> {
+  if (!existsSync(dir)) return [];
+  const out: string[] = [];
+  const entries = await readdir(dir, { withFileTypes: true });
+  for (const e of entries) {
+    const p = join(dir, e.name);
+    if (e.isDirectory()) {
+      out.push(...(await collectRangeFiles(p)));
+    } else if (e.name.endsWith('.txt')) {
+      out.push(p);
+    }
+  }
+  return out;
+}
+
+/** Parse a qb_ranges folder into keyed decision mixes. */
+async function extractQbRanges(qbRoot: string) {
+  const files = await collectRangeFiles(qbRoot);
+  // Group by prefix (action path minus last token).
+  const groups = new Map<string, { files: { path: string; lastToken: string }[] }>();
+
+  for (const full of files) {
+    // Use POSIX-style relative path starting from the position folder
+    // so the key format is "BTN/vs_3bet/BTN_2.5bb_BB_11.0bb_BTN".
+    const relRaw = full.slice(qbRoot.length + 1).replace(/\\/g, '/');
+    const rel = relRaw.replace(/\.txt$/, '');
+    const lastSep = rel.lastIndexOf('_');
+    if (lastSep < 0) continue;
+    const prefix = rel.slice(0, lastSep);
+    const lastToken = rel.slice(lastSep + 1);
+    // Only group files whose last token is a valid action.
+    if (!parseActionToken(lastToken)) continue;
+    const bucket = groups.get(prefix) ?? { files: [] };
+    bucket.files.push({ path: full, lastToken });
+    groups.set(prefix, bucket);
+  }
+
+  const decisions: Record<string, DecisionMix> = {};
+  for (const [prefix, { files: group }] of groups) {
+    const mix: DecisionMix = { actions: {} };
+    for (const { path, lastToken } of group) {
+      const range = await parseRangeFile(path);
+      if (!range) continue;
+      mix.actions[lastToken] = range;
+    }
+    if (Object.keys(mix.actions).length > 0) {
+      decisions[prefix] = mix;
+    }
+  }
+  return decisions;
+}
+
 async function main() {
   console.log(`source: ${SOURCE}`);
   if (!existsSync(SOURCE)) {
@@ -219,7 +299,21 @@ async function main() {
     }
   }
 
-  console.log(`\nwrote ${wrote} charts to ${OUT_DIR}`);
+  console.log(`\nwrote ${wrote} primary charts to ${OUT_DIR}`);
+
+  // ============ qb_ranges (advanced scenarios) ============
+  const qbRoot = join(SOURCE, '..', 'qb_ranges', '100bb 2.5x 500rake');
+  if (existsSync(qbRoot)) {
+    console.log(`\nparsing qb_ranges: ${qbRoot}`);
+    const decisions = await extractQbRanges(qbRoot);
+    const qbOut = join(OUT_DIR, '6max_100bb_qb_decisions.json');
+    await writeJson(qbOut, decisions);
+    console.log(
+      `  ✓ qb_ranges → ${qbOut} (${Object.keys(decisions).length} decision nodes)`,
+    );
+  } else {
+    console.log('\n(qb_ranges folder not found — skipped)');
+  }
 }
 
 main().catch((err) => {
