@@ -1,0 +1,28 @@
+set_pot 5.5
+set_effective_stack 97.5
+set_board 8s,8d,3c
+set_range_ip 22:0.176,33:0.306,44:0.506,55:0.807,66,77,88,99,AA,AKs,AQs,AJs,ATs,A9s,A8s:0.772,A7s:0.528,A6s:0.428,A5s,A4s:0.830,A3s:0.573,A2s:0.373,AKo,KK,KQs,KJs,KTs,K9s:0.601,K8s:0.201,AQo,KQo,QQ,QJs,QTs,Q9s:0.422,AJo,KJo:0.708,QJo:0.423,JJ,JTs,J9s:0.528,ATo:0.574,KTo:0.300,TT,T9s:0.826,T8s:0.226,A9o:0.227,98s:0.590,87s:0.416,76s:0.322,65s:0.188,54s:0.208
+set_range_oop 22,33,44:0.990,55:0.990,66:0.932,77:0.920,88:0.914,99:0.852,AJs:0.404,ATs:0.534,A9s:0.796,A8s:0.832,A7s:0.850,A6s:0.812,A5s:0.652,A4s:0.622,A3s:0.836,A2s:0.956,KQs:0.146,KTs:0.308,K9s:0.938,K8s:0.938,K7s:0.788,K6s:0.828,K5s:0.826,K4s:0.810,K3s,K2s,AQo:0.860,KQo:0.910,QTs:0.250,Q9s:0.656,Q8s:0.676,Q7s:0.708,Q6s:0.860,Q5s:0.626,Q4s:0.276,AJo,KJo,QJo:0.858,JJ:0.220,JTs:0.486,J9s:0.732,J8s:0.816,J7s:0.518,ATo:0.940,KTo:0.598,QTo:0.452,JTo:0.480,TT:0.672,T9s:0.680,T8s:0.788,T7s:0.946,T6s:0.028,A9o:0.328,T9o:0.068,98s:0.892,97s:0.900,96s,95s:0.154,87s:0.704,86s:0.916,85s,76s:0.690,75s:0.824,74s:0.674,65s:0.622,64s:0.784,63s:0.604,A5o:0.044,54s:0.668,53s:0.824,52s:0.524,43s:0.870,42s:0.466,32s:0.102
+set_bet_sizes ip,flop,bet,33,75
+set_bet_sizes ip,flop,raise,300
+set_bet_sizes oop,flop,bet,33,75
+set_bet_sizes oop,flop,donk,33
+set_bet_sizes oop,flop,raise,300
+set_bet_sizes ip,turn,bet,60,125
+set_bet_sizes ip,turn,raise,300
+set_bet_sizes oop,turn,bet,60,125
+set_bet_sizes oop,turn,raise,300
+set_bet_sizes ip,river,bet,60,125
+set_bet_sizes ip,river,raise,300
+set_bet_sizes oop,river,bet,60,125
+set_bet_sizes oop,river,raise,300
+set_allin_threshold 0.85
+build_tree
+set_thread_num 8
+set_accuracy 0.25
+set_max_iteration 200
+set_print_interval 50
+set_use_isomorphism 1
+start_solve
+set_dump_rounds 1
+dump_result C:\Users\Jay\poker-gto-guide\solver-run\outputs/MP_vs_BB__P_mid_883.json
