@@ -19,11 +19,20 @@ export const metadata: Metadata = {
     description: '매일 한 핸드, 더 나은 판단. 포커 GTO 가이드와 일일 훈련, AI 해설.',
     url: 'https://gto.today',
     locale: 'ko_KR',
+    images: [
+      {
+        url: '/og.png',
+        width: 1200,
+        height: 630,
+        alt: 'gto.today — 매일 한 핸드, 감이 아닌 솔버의 답.',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'gto.today',
     description: '매일 한 핸드, 더 나은 판단.',
+    images: ['/og.png'],
   },
   icons: {
     icon: [
