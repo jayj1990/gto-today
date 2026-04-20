@@ -83,7 +83,7 @@ export function PostflopHand({ spot, className }: PostflopHandProps) {
 
       <p className="mt-2 text-[12px] text-fg-muted">{spot.context.preflopSummary}</p>
 
-      {/* Table with heads-up layout */}
+      {/* Table with heads-up layout + community board centred inside */}
       <div className="mt-4">
         <PokerTable
           format={format}
@@ -91,6 +91,7 @@ export function PostflopHand({ spot, className }: PostflopHandProps) {
           toAct={hero}
           seats={seats}
           heroCards={[h1, h2]}
+          board={spot.board}
           pot={spot.context.potBB}
           effectiveStack={effStack}
           lastBet={spot.facingBetBB > 0 ? spot.facingBetBB : undefined}
@@ -100,21 +101,6 @@ export function PostflopHand({ spot, className }: PostflopHandProps) {
             return <CardView rank={rank} suit={suit} size={size} deckScheme="four-color" />;
           }}
         />
-      </div>
-
-      {/* Board cards — rendered below the table since PokerTable doesn't
-          know about community cards. */}
-      <div className="mt-4">
-        <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-fg-muted">
-          보드
-        </p>
-        <div className="flex gap-1.5">
-          {spot.board.map((code, i) => {
-            const rank = code.charAt(0);
-            const suit = code.charAt(1) as 's' | 'h' | 'd' | 'c';
-            return <CardView key={i} rank={rank} suit={suit} size="md" deckScheme="four-color" />;
-          })}
-        </div>
       </div>
 
       {/* Facing-action hint */}

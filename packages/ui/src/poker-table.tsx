@@ -39,6 +39,10 @@ export interface PokerTableProps extends HTMLAttributes<HTMLDivElement> {
   pot?: number | undefined;
   effectiveStack?: number | undefined;
   lastBet?: number | undefined;
+  /** Community board — array of 0..5 card codes. Slots for flop (3) +
+   *  turn (1) + river (1) always render; dealt cards fill from left,
+   *  remaining slots show as empty placeholders. */
+  board?: readonly string[];
   renderCard?: (code: string, size: 'xs' | 'sm' | 'md') => ReactNode;
   showMarkers?: boolean;
 }
@@ -75,6 +79,7 @@ export function PokerTable({
   pot,
   effectiveStack,
   lastBet,
+  board = [],
   renderCard,
   showMarkers = true,
   className,
@@ -90,18 +95,19 @@ export function PokerTable({
       style={{
         position: 'relative',
         width: '100%',
-        aspectRatio: '16 / 10',
-        minHeight: 300,
+        aspectRatio: '10 / 14',
+        minHeight: 380,
         ...style,
       }}
       role="img"
       aria-label={`${format} table — hero on ${hero ?? '-'}`}
       {...rest}
     >
-      {/* Felt — SVG ellipse with radial gradient. Reverted from the
-          DALL·E top-down table image which didn't read well on mobile. */}
+      {/* Felt — portrait-oriented ellipse. Hero sits at the bottom,
+          villain at the top; the tall shape leaves room for 5 community
+          card slots dead-centre. */}
       <svg
-        viewBox="0 0 320 200"
+        viewBox="0 0 200 280"
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
         aria-hidden
       >
@@ -112,28 +118,54 @@ export function PokerTable({
             <stop offset="100%" stopColor="#061C14" />
           </radialGradient>
         </defs>
-        <ellipse cx="160" cy="100" rx="152" ry="88" fill="#080808" />
+        <ellipse cx="100" cy="140" rx="92" ry="130" fill="#080808" />
         <ellipse
-          cx="160"
-          cy="100"
-          rx="150"
-          ry="86"
+          cx="100"
+          cy="140"
+          rx="90"
+          ry="128"
           fill="none"
           stroke="rgba(212,175,55,0.22)"
           strokeWidth="1"
         />
         <ellipse
-          cx="160"
-          cy="100"
-          rx="140"
-          ry="78"
+          cx="100"
+          cy="140"
+          rx="82"
+          ry="120"
           fill="url(#pt-felt)"
           stroke="rgba(255,255,255,0.06)"
           strokeWidth="1"
         />
       </svg>
 
-      {/* Center pot block — precisely centered */}
+      {/* Effective stack — just above the board */}
+      {effectiveStack !== undefined && (
+        <div
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '38%',
+            transform: 'translate(-50%, -50%)',
+            pointerEvents: 'none',
+          }}
+        >
+          <span
+            style={{
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: 10,
+              letterSpacing: '0.1em',
+              color: 'rgba(244, 239, 230, 0.55)',
+              fontVariantNumeric: 'tabular-nums',
+              textTransform: 'uppercase',
+            }}
+          >
+            stack {fmt(effectiveStack)}bb
+          </span>
+        </div>
+      )}
+
+      {/* Community board — 5 slots, fills from left. Dead centre. */}
       <div
         style={{
           position: 'absolute',
@@ -141,26 +173,45 @@ export function PokerTable({
           top: '50%',
           transform: 'translate(-50%, -50%)',
           display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 3,
+          gap: 4,
           pointerEvents: 'none',
-          textAlign: 'center',
         }}
       >
-        {effectiveStack !== undefined && (
+        {Array.from({ length: 5 }).map((_, i) => {
+          const code = board[i];
+          if (code && renderCard) {
+            return <div key={i}>{renderCard(code, 'sm')}</div>;
+          }
+          return <BoardSlot key={i} street={i < 3 ? 'flop' : i === 3 ? 'turn' : 'river'} />;
+        })}
+      </div>
+
+      {/* Pot — just below the board */}
+      {pot !== undefined && (
+        <div
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '62%',
+            transform: 'translate(-50%, -50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 1,
+            pointerEvents: 'none',
+          }}
+        >
           <span
             style={{
               fontFamily: 'var(--font-mono, monospace)',
-              fontSize: 11,
-              color: 'rgba(244, 239, 230, 0.6)',
-              fontVariantNumeric: 'tabular-nums',
+              fontSize: 10,
+              letterSpacing: '0.12em',
+              color: 'rgba(212, 175, 55, 0.7)',
+              textTransform: 'uppercase',
             }}
           >
-            {fmt(effectiveStack)}bb
+            pot
           </span>
-        )}
-        {pot !== undefined && (
           <span
             style={{
               fontFamily: 'var(--font-mono, monospace)',
@@ -173,20 +224,20 @@ export function PokerTable({
           >
             {fmt(pot)} bb
           </span>
-        )}
-        {lastBet !== undefined && (
-          <span
-            style={{
-              fontFamily: 'var(--font-mono, monospace)',
-              fontSize: 11,
-              color: 'rgba(244, 239, 230, 0.6)',
-              fontVariantNumeric: 'tabular-nums',
-            }}
-          >
-            {fmt(lastBet)} bb
-          </span>
-        )}
-      </div>
+          {lastBet !== undefined && (
+            <span
+              style={{
+                fontFamily: 'var(--font-mono, monospace)',
+                fontSize: 11,
+                color: 'rgba(244, 239, 230, 0.6)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              last bet {fmt(lastBet)}bb
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Seats */}
       {seats.map((seat, i) => {
@@ -511,16 +562,47 @@ function seatGeom(
   index: number,
   total: number,
 ): { x: number; y: number; inward: { x: number; y: number } } {
+  // Portrait-oriented table — seats run around a tall ellipse. First
+  // seat (index 0 = the seat we want at the bottom, which maps to the
+  // hero in our arrangement) sits at the 6-o'clock position.
   const offset = Math.PI / 2;
   const angle = offset + (index / total) * Math.PI * 2;
-  const rx = 44;
-  const ry = 36;
+  const rx = 30;
+  const ry = 42;
   const x = 50 + rx * Math.cos(angle);
   const y = 50 + ry * Math.sin(angle);
   const dx = 50 - x;
   const dy = 50 - y;
   const mag = Math.hypot(dx, dy) || 1;
   return { x, y, inward: { x: dx / mag, y: dy / mag } };
+}
+
+function BoardSlot({ street }: { street: 'flop' | 'turn' | 'river' }) {
+  // Empty placeholder for undealt community cards. Size matches
+  // CardView 'sm' (42×60) so dealt + undealt align perfectly.
+  const label = street === 'flop' ? 'F' : street === 'turn' ? 'T' : 'R';
+  return (
+    <div
+      aria-hidden
+      style={{
+        width: 42,
+        height: 60,
+        borderRadius: 6,
+        border: '1.5px dashed rgba(212,175,55,0.35)',
+        background: 'rgba(0,0,0,0.18)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'var(--font-mono, monospace)',
+        fontSize: 11,
+        fontWeight: 600,
+        color: 'rgba(212,175,55,0.45)',
+        letterSpacing: '0.1em',
+      }}
+    >
+      {label}
+    </div>
+  );
 }
 
 function formatStack(stack: number): string {
