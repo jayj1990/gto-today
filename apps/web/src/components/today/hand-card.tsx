@@ -110,10 +110,11 @@ export function HandCard({ spot, className }: HandCardProps) {
           </Pill>
         </div>
       </div>
-      {/* Data-accuracy disclaimer — our ranges are public-chart seeds,
-          not raw solver output. Replace once TexasSolver pipeline lands. */}
-      <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-warning)]">
-        β GTO 근사 — 솔버 완전 통합 전
+      {/* Data provenance — TexasSolver 0.2 solved ranges for 6max 100BB.
+          Preflop (RFI + BB vs open) is exact solver output; postflop
+          spots are still handcrafted seeds (Phase 5a). */}
+      <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-call)]">
+        TexasSolver GTO · 6max 100BB
       </p>
 
       <div className="mt-4">
