@@ -137,34 +137,39 @@ export function PostflopResult({
           <div className="space-y-2">
             {sortedMix.map(([action, freq], idx) => {
               const isTop = idx === 0 && (freq ?? 0) > 0;
+              const color = POSTFLOP_ACTION_COLOR[action];
               return (
                 <div key={action} className="flex items-center gap-3">
                   <span
                     className={cn(
-                      'w-24 font-mono text-[12px]',
-                      isTop ? 'font-semibold text-fg' : 'text-fg-muted',
+                      'w-24 font-mono',
+                      isTop ? 'text-[13px] font-bold text-fg' : 'text-[12px] text-fg-muted',
                     )}
                   >
+                    {isTop && <span className="mr-1 text-[color:var(--color-gold)]">★</span>}
                     {POSTFLOP_ACTION_LABEL[action]}
-                    {isTop && (
-                      <span className="ml-1 text-[10px] font-mono text-[color:var(--color-gold)]">
-                        ★
-                      </span>
-                    )}
                   </span>
-                  <div className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]">
+                  <div
+                    className={cn(
+                      'relative flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]',
+                      isTop ? 'h-4' : 'h-2.5',
+                    )}
+                  >
                     <div
                       className="h-full rounded-full"
                       style={{
                         width: `${(freq ?? 0) * 100}%`,
-                        background: POSTFLOP_ACTION_COLOR[action],
+                        background: color,
+                        boxShadow: isTop ? `0 0 10px ${color}55` : undefined,
                       }}
                     />
                   </div>
                   <span
                     className={cn(
-                      'w-12 text-right font-mono text-[12px] tabular-nums',
-                      isTop ? 'font-bold text-fg' : 'font-semibold text-fg-muted',
+                      'w-12 text-right font-mono tabular-nums',
+                      isTop
+                        ? 'text-[13px] font-bold text-fg'
+                        : 'text-[12px] font-semibold text-fg-muted',
                     )}
                   >
                     {((freq ?? 0) * 100).toFixed(1)}%

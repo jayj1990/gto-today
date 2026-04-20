@@ -41,7 +41,7 @@ const TONE: Record<ActionKind, { cls: string }> = {
     cls: 'border border-[color:var(--color-call)]/60 bg-[color:var(--color-call)]/15 text-[color:var(--color-call)] font-semibold',
   },
   raise: {
-    cls: 'border border-[color:var(--color-raise)]/60 bg-[color:var(--color-raise)]/15 text-[color:var(--color-raise)] font-semibold',
+    cls: 'bg-[color:var(--color-raise)] text-white font-bold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-raise)]',
   },
 };
 

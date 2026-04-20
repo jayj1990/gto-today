@@ -132,19 +132,21 @@ export function ChartNavigator({
                     {node.legal.map((act) => {
                       const color = actionColour(act);
                       const compact = node.legal.length >= 3;
+                      const fill = act === 'AllIn' || act.endsWith('bb');
                       return (
                         <button
                           key={act}
                           type="button"
                           onClick={() => handleAction(act)}
                           className={cn(
-                            'rounded-[var(--radius-button)] border font-mono font-semibold whitespace-nowrap active:scale-[0.98]',
+                            'rounded-[var(--radius-button)] border font-mono whitespace-nowrap active:scale-[0.98]',
+                            fill ? 'font-bold shadow-[var(--shadow-card)]' : 'font-semibold',
                             compact ? 'h-11 text-[11px] px-1' : 'h-12 text-[13px] px-2',
                           )}
                           style={{
-                            background: `${color}22`,
-                            borderColor: `${color}66`,
-                            color,
+                            background: fill ? color : `${color}22`,
+                            borderColor: fill ? color : `${color}66`,
+                            color: fill ? '#ffffff' : color,
                           }}
                         >
                           {prettyAction(act, compact)}

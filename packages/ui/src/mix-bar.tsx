@@ -10,6 +10,8 @@ export interface MixBarSegment {
   value: number;
   /** CSS color. Defaults to action-appropriate token. */
   color?: string;
+  /** Mark the GTO-preferred action — row renders taller + bolder. */
+  dominant?: boolean;
 }
 
 export interface MixBarProps {
@@ -36,15 +38,27 @@ export function MixBar({ segments, labeled = true, className }: MixBarProps) {
     >
       {segments.map((seg, i) => {
         const color = seg.color ?? defaultColorFor(seg.label);
+        const dom = seg.dominant === true;
         return (
           <li key={seg.label} className="contents">
             {labeled && (
-              <span className="flex items-center font-mono text-[13px] text-fg-muted">
+              <span
+                className={cn(
+                  'flex items-center font-mono',
+                  dom ? 'text-[14px] font-bold text-fg' : 'text-[13px] text-fg-muted',
+                )}
+              >
+                {dom && <span className="mr-1 text-[color:var(--color-gold)]">★</span>}
                 {seg.label}
               </span>
             )}
             <div className="flex items-center">
-              <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-[color:var(--color-border)]">
+              <div
+                className={cn(
+                  'relative w-full overflow-hidden rounded-full bg-[color:var(--color-border)]',
+                  dom ? 'h-4' : 'h-2.5',
+                )}
+              >
                 <motion.div
                   initial={{ clipPath: 'inset(0 100% 0 0)' }}
                   animate={{ clipPath: `inset(0 ${Math.max(0, 100 - seg.value)}% 0 0)` }}
@@ -54,12 +68,20 @@ export function MixBar({ segments, labeled = true, className }: MixBarProps) {
                     delay: i * 0.06,
                   }}
                   className="absolute inset-0 rounded-full"
-                  style={{ background: color }}
+                  style={{
+                    background: color,
+                    boxShadow: dom ? `0 0 10px ${color}55` : undefined,
+                  }}
                 />
               </div>
             </div>
             {labeled && (
-              <span className="flex items-center justify-end font-mono text-[13px] font-semibold tabular-nums">
+              <span
+                className={cn(
+                  'flex items-center justify-end font-mono tabular-nums',
+                  dom ? 'text-[14px] font-bold text-fg' : 'text-[13px] font-semibold',
+                )}
+              >
                 {seg.value.toFixed(1)}%
               </span>
             )}

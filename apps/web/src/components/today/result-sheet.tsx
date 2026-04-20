@@ -75,17 +75,43 @@ export function ResultSheet({
     setExplaining(false);
   }, [spot?.id]);
 
+  const top = spot ? dominantAction(spot) : null;
   const segments: MixBarSegment[] =
     spot?.scenario === 'vs_open'
       ? [
-          { label: '레이즈', value: spot.gtoRaise * 100, color: 'var(--color-raise)' },
-          { label: '콜', value: (spot.gtoCall ?? 0) * 100, color: 'var(--color-call)' },
-          { label: '폴드', value: spot.gtoFold * 100, color: 'var(--color-fold)' },
+          {
+            label: '레이즈',
+            value: spot.gtoRaise * 100,
+            color: 'var(--color-raise)',
+            dominant: top === 'raise',
+          },
+          {
+            label: '콜',
+            value: (spot.gtoCall ?? 0) * 100,
+            color: 'var(--color-call)',
+            dominant: top === 'call',
+          },
+          {
+            label: '폴드',
+            value: spot.gtoFold * 100,
+            color: 'var(--color-fold)',
+            dominant: top === 'fold',
+          },
         ]
       : spot
         ? [
-            { label: '레이즈', value: spot.gtoRaise * 100, color: 'var(--color-raise)' },
-            { label: '폴드', value: spot.gtoFold * 100, color: 'var(--color-fold)' },
+            {
+              label: '레이즈',
+              value: spot.gtoRaise * 100,
+              color: 'var(--color-raise)',
+              dominant: top === 'raise',
+            },
+            {
+              label: '폴드',
+              value: spot.gtoFold * 100,
+              color: 'var(--color-fold)',
+              dominant: top === 'fold',
+            },
           ]
         : [];
 
