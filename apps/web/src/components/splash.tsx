@@ -77,8 +77,8 @@ export function Splash() {
                 />
                 <span className="font-light text-ivory/90">today</span>
               </h1>
-              <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.32em] text-[color:var(--color-gold)]">
-                매일 · 한 걸음
+              <p className="mt-3 text-center font-mono text-[11px] tracking-[0.2em] text-[color:var(--color-gold)]">
+                매일 쌓이는 실력, 후회 없는 액션
               </p>
             </motion.div>
           </div>

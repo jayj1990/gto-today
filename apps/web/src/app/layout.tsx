@@ -9,14 +9,14 @@ export const metadata: Metadata = {
     default: 'gto.today — GTO, Today.',
     template: '%s · gto.today',
   },
-  description: '매일 한 핸드, 더 나은 판단. 포커 GTO 가이드와 일일 훈련, AI 해설.',
+  description: '매일 쌓이는 실력, 후회 없는 액션. 포커 GTO 가이드와 일일 훈련, AI 해설.',
   applicationName: 'gto.today',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://gto.today'),
   openGraph: {
     type: 'website',
     siteName: 'gto.today',
     title: 'gto.today — GTO, Today.',
-    description: '매일 한 핸드, 더 나은 판단. 포커 GTO 가이드와 일일 훈련, AI 해설.',
+    description: '매일 쌓이는 실력, 후회 없는 액션. 포커 GTO 가이드와 일일 훈련, AI 해설.',
     url: 'https://gto.today',
     locale: 'ko_KR',
     images: [

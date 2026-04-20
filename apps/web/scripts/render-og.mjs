@@ -54,12 +54,12 @@ const textSvg = Buffer.from(`
   >today</text>
   <text
     x="520" y="355"
-    font-family="'JetBrains Mono', monospace"
-    font-size="20"
-    font-weight="500"
-    letter-spacing="6"
+    font-family="'Pretendard Variable', sans-serif"
+    font-size="26"
+    font-weight="600"
+    letter-spacing="2"
     fill="#D4AF37"
-  >매일 · 한 걸음</text>
+  >매일 쌓이는 실력, 후회 없는 액션</text>
   <text
     x="520" y="445"
     font-family="Inter, 'Pretendard Variable', sans-serif"

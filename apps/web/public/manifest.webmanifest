@@ -1,7 +1,7 @@
 {
   "name": "gto.today",
   "short_name": "gto.today",
-  "description": "GTO, Today. 매일 한 스팟, 매일 더 나은 판단.",
+  "description": "GTO, Today. 매일 쌓이는 실력, 후회 없는 액션.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
