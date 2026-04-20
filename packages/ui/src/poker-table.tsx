@@ -485,43 +485,23 @@ function chipStyle(action: Exclude<SeatAction, { kind: 'fold' }>): {
 /* ══════════════════════════ CARD BACK ══════════════════════════ */
 
 function CardBack() {
-  // Dark charcoal card body + G3 gold-chip watermark at 35% opacity.
-  // Red version was too loud; the full-frame green design blended into
-  // the felt. Back to the subtle silhouette mark — it reads as "card"
-  // without dragging the eye away from the hero cards.
+  // DALL·E-designed green double-border card back at 28×38 (the version
+  // right before the too-loud burgundy variant).
   return (
     <div
       style={{
         width: 28,
         height: 38,
         borderRadius: 4,
-        background: 'linear-gradient(135deg, #3A3A42 0%, #1E1E24 100%)',
-        border: '1px solid rgba(255,255,255,0.1)',
+        backgroundImage: "url('/ai-assets/card-back/double-border.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
         boxShadow: '0 2px 6px rgba(0,0,0,0.6)',
-        position: 'relative',
-        overflow: 'hidden',
         flexShrink: 0,
       }}
       aria-hidden
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/logos/mark-g3-transparent.png"
-        alt=""
-        width={20}
-        height={20}
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 20,
-          height: 20,
-          opacity: 0.35,
-          pointerEvents: 'none',
-        }}
-      />
-    </div>
+    />
   );
 }
 
