@@ -21,19 +21,26 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..');
 const LOGOS_DIR = join(REPO_ROOT, 'apps', 'web', 'public', 'logos');
+const SUITS_DIR = join(REPO_ROOT, 'apps', 'web', 'public', 'ai-assets', 'suits');
 
 // Tuned for DALL·E chip-wordmark outputs where the chip roughly fills
 // the frame with a small gutter. inner 45% = chip core, outer 52% =
 // edge fade zone, beyond 52% fully transparent.
 const INPUTS = [
-  { file: 'mark-g1.png', innerPct: 0.40, outerPct: 0.49 },
-  { file: 'mark-g3.png', innerPct: 0.40, outerPct: 0.49 },
+  { dir: LOGOS_DIR, file: 'mark-g1.png', innerPct: 0.40, outerPct: 0.49 },
+  { dir: LOGOS_DIR, file: 'mark-g3.png', innerPct: 0.40, outerPct: 0.49 },
+  // Suit glyphs: prompt says shape fills ~80% of frame, so a wider
+  // inner radius captures the full glyph outline.
+  { dir: SUITS_DIR, file: 'spade.png', innerPct: 0.44, outerPct: 0.50 },
+  { dir: SUITS_DIR, file: 'heart.png', innerPct: 0.44, outerPct: 0.50 },
+  { dir: SUITS_DIR, file: 'diamond.png', innerPct: 0.44, outerPct: 0.50 },
+  { dir: SUITS_DIR, file: 'club.png', innerPct: 0.44, outerPct: 0.50 },
 ];
 
-async function processFile({ file, innerPct, outerPct }) {
-  const inputPath = join(LOGOS_DIR, file);
+async function processFile({ dir, file, innerPct, outerPct }) {
+  const inputPath = join(dir, file);
   const outName = file.replace(/\.png$/, '-transparent.png');
-  const outputPath = join(LOGOS_DIR, outName);
+  const outputPath = join(dir, outName);
 
   const { data, info } = await sharp(inputPath)
     .ensureAlpha()

@@ -385,19 +385,46 @@ function BetChip({ action }: { action: SeatAction }) {
   if (action.kind === 'fold') return null;
   const s = chipStyle(action);
   const isBlind = action.kind === 'post';
+  const blindSrc =
+    isBlind && action.bb <= 0.5
+      ? '/ai-assets/markers/small-blind-chip.png'
+      : isBlind
+        ? '/ai-assets/markers/big-blind-chip.png'
+        : null;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-      <div
-        style={{
-          width: isBlind ? 12 : 16,
-          height: isBlind ? 12 : 16,
-          borderRadius: '50%',
-          background: s.gradient,
-          border: `1px solid ${s.rim}`,
-          boxShadow: '0 2px 5px rgba(0,0,0,0.55)',
-          flexShrink: 0,
-        }}
-      />
+      {blindSrc ? (
+        /* SB / BB blind chips use the DALL·E HD markers (ivory+green for
+           SB, ivory+wine for BB) — reads more like a real casino chip
+           than a flat radial-gradient circle. */
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={blindSrc}
+          alt=""
+          width={14}
+          height={14}
+          style={{
+            width: 14,
+            height: 14,
+            borderRadius: '50%',
+            objectFit: 'cover',
+            flexShrink: 0,
+            boxShadow: '0 2px 5px rgba(0,0,0,0.55)',
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            width: 16,
+            height: 16,
+            borderRadius: '50%',
+            background: s.gradient,
+            border: `1px solid ${s.rim}`,
+            boxShadow: '0 2px 5px rgba(0,0,0,0.55)',
+            flexShrink: 0,
+          }}
+        />
+      )}
       <span
         style={{
           fontFamily: 'var(--font-mono, monospace)',

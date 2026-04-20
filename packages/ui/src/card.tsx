@@ -57,20 +57,22 @@ const SIZE: Record<
 };
 
 /**
- * Refined SVG suit paths in a 24×24 square viewBox. Compared to v1 these
- * have softer S-curves, tapered stems, and evenly-proportioned lobes so
- * every suit reads as a proper "elegant" playing-card glyph. All four
- * occupy roughly the same visual bounding box (y 2–23, x 2–22).
+ * Flat silhouette suit paths, derived from the DALL·E v3 spade
+ * (cleanest result from five prompt iterations). Same line thickness
+ * and visual mass across all four so they read as one family —
+ * minimalist iOS-emoji-style shapes designed to sit behind a rank at
+ * low opacity as a watermark.
  */
 const SUIT_PATH: Record<Suit, string> = {
-  // Spade — sharp apex, full hips, slim tapered stem
-  s: 'M12 2 C 12 6.5 3 9 3 13.5 C 3 16.5 5 18.8 7.8 18.8 C 9.3 18.8 10.5 18.2 11.2 17.4 L 10 23 L 14 23 L 12.8 17.4 C 13.5 18.2 14.7 18.8 16.2 18.8 C 19 18.8 21 16.5 21 13.5 C 21 9 12 6.5 12 2 Z',
-  // Heart — gently rounded lobes, pointed tip
-  h: 'M12 22 C 4.5 16.5 2 12.5 2 8.5 C 2 5.5 4 3 7 3 C 8.8 3 10.8 4 12 6.5 C 13.2 4 15.2 3 17 3 C 20 3 22 5.5 22 8.5 C 22 12.5 19.5 16.5 12 22 Z',
-  // Diamond — clean rhombus, slightly elongated
-  d: 'M12 2 L 21 12 L 12 22 L 3 12 Z',
-  // Club — three equal r=3.5 lobes arranged in a triangle + trapezoidal stem
-  c: 'M12 2 C 9.8 2 8 3.8 8 6 C 8 7.3 8.6 8.4 9.5 9 C 7.3 9.1 5.5 10.9 5.5 13.1 C 5.5 15.3 7.3 17.1 9.5 17.1 C 10.3 17.1 11 16.9 11.6 16.5 L 10 23 L 14 23 L 12.4 16.5 C 13 16.9 13.7 17.1 14.5 17.1 C 16.7 17.1 18.5 15.3 18.5 13.1 C 18.5 10.9 16.7 9.1 14.5 9 C 15.4 8.4 16 7.3 16 6 C 16 3.8 14.2 2 12 2 Z',
+  // Spade — DALL·E v3 outline traced. Pointed top, full hips, short stem.
+  s: 'M12 1.5 C 12 5.5 2.5 8.5 2.5 13.5 C 2.5 16.5 4.7 18.8 7.5 18.8 C 9.2 18.8 10.5 18.2 11.2 17.2 L 10 22.5 L 14 22.5 L 12.8 17.2 C 13.5 18.2 14.8 18.8 16.5 18.8 C 19.3 18.8 21.5 16.5 21.5 13.5 C 21.5 8.5 12 5.5 12 1.5 Z',
+  // Heart — two equal lobes, same stroke mass as spade.
+  h: 'M12 22 C 4 16 2 12.5 2 8.5 C 2 5.4 4.2 3 7.2 3 C 9.1 3 10.8 4 12 6 C 13.2 4 14.9 3 16.8 3 C 19.8 3 22 5.4 22 8.5 C 22 12.5 20 16 12 22 Z',
+  // Diamond — clean rhombus, same visual weight.
+  d: 'M12 1.5 L 21.5 12 L 12 22.5 L 2.5 12 Z',
+  // Club — three equal circles (r=3.6) + trapezoidal stem matching the
+  // spade's stem proportions so the pair reads as siblings.
+  c: 'M12 1.5 C 9.8 1.5 8 3.3 8 5.5 C 8 6.9 8.7 8.1 9.8 8.8 C 7.4 8.8 5.5 10.7 5.5 13.1 C 5.5 15.5 7.4 17.4 9.8 17.4 C 10.6 17.4 11.3 17.2 11.9 16.8 L 10 22.5 L 14 22.5 L 12.1 16.8 C 12.7 17.2 13.4 17.4 14.2 17.4 C 16.6 17.4 18.5 15.5 18.5 13.1 C 18.5 10.7 16.6 8.8 14.2 8.8 C 15.3 8.1 16 6.9 16 5.5 C 16 3.3 14.2 1.5 12 1.5 Z',
 };
 
 function suitBackground(suit: Suit, scheme: DeckScheme): { bg: string; rim: string } {
