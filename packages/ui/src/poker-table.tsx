@@ -387,26 +387,33 @@ function SeatChip({
         )}
       </div>
       {showDealerBadge && (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          src="/ai-assets/markers/dealer-button.png"
-          alt=""
+        <span
           aria-label="딜러"
           title="딜러"
-          width={22}
-          height={22}
           style={{
             position: 'absolute',
-            right: -12,
+            right: -14,
             top: '50%',
             transform: 'translateY(-50%)',
-            width: 22,
-            height: 22,
+            width: 26,
+            height: 26,
             borderRadius: '50%',
-            objectFit: 'cover',
+            backgroundImage: "url('/ai-assets/chip-set-v4/dealer-transparent.png')",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
             boxShadow: '0 2px 5px rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontFamily: 'var(--font-display, Inter), system-ui, sans-serif',
+            fontWeight: 800,
+            fontSize: 12,
+            color: '#1A1A1F',
+            textShadow: '0 0 3px rgba(244,239,230,0.8)',
           }}
-        />
+        >
+          D
+        </span>
       )}
     </div>
   );
@@ -414,56 +421,52 @@ function SeatChip({
 
 /* ══════════════════════════ BET CHIP ══════════════════════════ */
 
+// Map action → chip colour from the DALL·E chip-set-v4 palette. Keeps
+// the visual meaning of the action (fold=red, call=green, etc.) but
+// swaps the flat radial-gradient for a consistent rendered chip.
+function chipSrcFor(action: Exclude<SeatAction, { kind: 'fold' }>): string {
+  switch (action.kind) {
+    case 'post':
+      return action.bb <= 0.5
+        ? '/ai-assets/chip-set-v4/green-transparent.png'
+        : '/ai-assets/chip-set-v4/red-transparent.png';
+    case 'raise':
+    case 'bet':
+      return '/ai-assets/chip-set-v4/red-transparent.png';
+    case '3bet':
+      return '/ai-assets/chip-set-v4/gold-transparent.png';
+    case 'call':
+      return '/ai-assets/chip-set-v4/emerald-transparent.png';
+    case 'check':
+      return '/ai-assets/chip-set-v4/grey-transparent.png';
+  }
+}
+
 function BetChip({ action }: { action: SeatAction }) {
   if (action.kind === 'fold') return null;
   const s = chipStyle(action);
-  const isBlind = action.kind === 'post';
-  const blindSrc =
-    isBlind && action.bb <= 0.5
-      ? '/ai-assets/markers/small-blind-chip.png'
-      : isBlind
-        ? '/ai-assets/markers/big-blind-chip.png'
-        : null;
+  const src = chipSrcFor(action);
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-      {blindSrc ? (
-        /* SB / BB blind chips use the DALL·E HD markers (ivory+green for
-           SB, ivory+wine for BB) — reads more like a real casino chip
-           than a flat radial-gradient circle. */
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          src={blindSrc}
-          alt=""
-          width={14}
-          height={14}
-          style={{
-            width: 14,
-            height: 14,
-            borderRadius: '50%',
-            objectFit: 'cover',
-            flexShrink: 0,
-            boxShadow: '0 2px 5px rgba(0,0,0,0.55)',
-          }}
-        />
-      ) : (
-        <div
-          style={{
-            width: 16,
-            height: 16,
-            borderRadius: '50%',
-            background: s.gradient,
-            border: `1px solid ${s.rim}`,
-            boxShadow: '0 2px 5px rgba(0,0,0,0.55)',
-            flexShrink: 0,
-          }}
-        />
-      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        width={18}
+        height={18}
+        style={{
+          width: 18,
+          height: 18,
+          flexShrink: 0,
+          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.55))',
+        }}
+      />
       <span
         style={{
           fontFamily: 'var(--font-mono, monospace)',
           fontSize: 11,
           fontWeight: 600,
-          color: isBlind ? 'rgba(244,239,230,0.65)' : '#F4EFE6',
+          color: '#F4EFE6',
           fontVariantNumeric: 'tabular-nums',
           whiteSpace: 'nowrap',
         }}
