@@ -49,26 +49,65 @@ const AI_MARKS: Mark[] = [
   {
     key: 'ai-dot',
     src: '/ai-assets/logo/dot-halo.png',
-    title: 'C1 · Dot Halo (AI)',
+    title: 'C1 · Dot Halo (AI v1)',
     desc: 'DALL·E 3 HD. 골드 닷 + 할로 + 라운드 스퀘어.',
   },
   {
     key: 'ai-chip',
     src: '/ai-assets/logo/chip-stack.png',
-    title: 'C2 · Chip Stack (AI)',
-    desc: '3단 칩 스택 탑뷰 + 골드 도트. 질감 풍부.',
+    title: 'C2 · Chip Stack (AI v1) — 현재 앱 아이콘',
+    desc: '3단 칩 스택 탑뷰 + 골드 도트. 질감 풍부. 현재 favicon/192/512/maskable로 승격 상태.',
   },
   {
     key: 'ai-spade',
     src: '/ai-assets/logo/spade-minimal.png',
-    title: 'C3 · Spade Minimal (AI)',
+    title: 'C3 · Spade Minimal (AI v1)',
     desc: '한 획 느낌의 추상화된 스페이드.',
   },
   {
     key: 'ai-compass',
     src: '/ai-assets/logo/compass-of-suits.png',
-    title: 'C4 · Compass of Suits (AI)',
+    title: 'C4 · Compass of Suits (AI v1)',
     desc: '네 슈트가 나침반처럼 둘러싼 골드 닷. 상징성 강함.',
+  },
+];
+
+const AI_MARKS_V2: Mark[] = [
+  {
+    key: 'v2-seal',
+    src: '/ai-assets/logo-v2/gold-seal.png',
+    title: 'D1 · Gold Seal (AI v2)',
+    desc: '아트데코 나침반 훈장. 럭셔리 감 최상. 디테일이 많아 작은 사이즈에서는 뭉개질 수 있음.',
+  },
+  {
+    key: 'v2-spade',
+    src: '/ai-assets/logo-v2/spade-emblem.png',
+    title: 'D2 · Spade Emblem (AI v2)',
+    desc: '깔끔한 스페이드 + 골드 프레임. 포커 정체성 가장 명확.',
+  },
+  {
+    key: 'v2-chip',
+    src: '/ai-assets/logo-v2/chip-dot.png',
+    title: 'D3 · Chip Dot (AI v2)',
+    desc: '고전 포커칩 탑뷰 + 중앙 도트. 범용적, 깔끔.',
+  },
+  {
+    key: 'v2-crown',
+    src: '/ai-assets/logo-v2/crown-chip.png',
+    title: 'D4 · Crown Chip (AI v2)',
+    desc: '왕관 + 칩 조합. "GTO의 왕관" 서사. 유니크하고 포지셔닝 강함.',
+  },
+  {
+    key: 'v2-ace',
+    src: '/ai-assets/logo-v2/ace-monogram.png',
+    title: 'D5 · Ace Monogram (AI v2)',
+    desc: '빈 아트데코 플라크 프레임. 단독 사용보다 텍스트 오버레이용.',
+  },
+  {
+    key: 'v2-geom',
+    src: '/ai-assets/logo-v2/geom-dot.png',
+    title: 'D6 · Geom Dot (AI v2)',
+    desc: '동심원 + 궤도 도트. 모던·추상·테크루. 태양계 느낌.',
   },
 ];
 
@@ -85,7 +124,10 @@ export default function LogosPage() {
             로고 후보
           </h1>
           <p className="mt-2 text-fg-muted">
-            A(코딩) · B(타이포) · C(AI) 세 가지 방향. 각 후보를 세 사이즈에서 확인하고 최종 1개를 고르세요.
+            네 가지 방향 · 총 15개 후보. A(코딩) · B(타이포) · C(AI v1) · D(AI v2 — 고퀄리티 재생성).
+          </p>
+          <p className="mt-2 text-[12px] font-mono text-[color:var(--color-accent)]">
+            현재 앱 아이콘(favicon / 192 / 512 / apple / maskable) 전부 C2 chip-stack 적용 중.
           </p>
         </header>
 
@@ -105,9 +147,16 @@ export default function LogosPage() {
 
         <Family
           badge="C"
-          title="AI 제너레이트 (DALL·E 3 HD)"
-          subtitle="질감·광택·디테일이 풍부. 앱 아이콘 / 스토어 썸네일 / 키비주얼에 강함."
+          title="AI v1 — 미니멀 방향 (DALL·E 3 HD)"
+          subtitle="첫 배치. 평면적·미니멀 스타일. 현재 C2 chip-stack이 앱 아이콘으로 승격."
           marks={AI_MARKS}
+        />
+
+        <Family
+          badge="D"
+          title="AI v2 — 프리미엄 방향 (DALL·E 3 HD)"
+          subtitle="두 번째 배치. 볼류메트릭 라이팅 + 아트데코 프레임 + 엠보스 메탈. 럭셔리 극대화."
+          marks={AI_MARKS_V2}
         />
 
         <section className="mt-12 rounded-[var(--radius-panel)] border-hair surface p-6">
