@@ -172,7 +172,7 @@ export function MotionDemo() {
             style={{ touchAction: 'manipulation' }}
             className="select-none rounded-[var(--radius-button)] bg-gold-gradient px-4 py-2 text-[13px] font-semibold text-noir active:scale-[0.97]"
           >
-            Sharp.
+            정확해요
           </button>
         </div>
       </Section>

@@ -115,15 +115,15 @@ export function ResultSheet({
     if (!spot || !grade) return null;
     if (grade === 'sharp') {
       return {
-        title: 'Sharp.',
-        subtitle: '좋은 판단이에요.',
+        title: '정확해요',
+        subtitle: '좋은 판단이었어요.',
         tone: 'gold' as const,
       };
     }
     if (grade === 'acceptable') {
       return {
-        title: 'Playable.',
-        subtitle: '이쪽 선택도 충분히 가능해요.',
+        title: '괜찮아요',
+        subtitle: '다른 선택도 충분히 해볼만 해요.',
         tone: 'info' as const,
       };
     }

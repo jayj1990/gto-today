@@ -1,16 +1,13 @@
 import Link from 'next/link';
-import { ThemeToggle } from './theme-toggle';
 
 /**
- * Sticky top header with a clickable wordmark (→ home) and theme toggle.
- * The wordmark is drawn in inline HTML so its baseline matches the splash —
- * previously using the SVG Logo component produced inconsistent spacing
- * between the tick-dot and the word "today".
+ * Sticky top header with a clickable wordmark that routes to home.
+ * Theme toggle removed — the app is pinned to the Tonight palette.
  */
 export function SiteHeader() {
   return (
     <header className="safe-top sticky top-0 z-20 border-b border-hair backdrop-blur-md bg-[color:var(--color-bg)]/70">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between safe-pad-x">
+      <div className="mx-auto flex h-14 max-w-5xl items-center safe-pad-x">
         <Link
           href="/"
           aria-label="gto.today 홈"
@@ -35,9 +32,6 @@ export function SiteHeader() {
             today
           </span>
         </Link>
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-        </div>
       </div>
     </header>
   );

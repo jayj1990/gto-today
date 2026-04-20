@@ -98,6 +98,7 @@ function buildPrompt(
       '• equity → "에쿼티"',
       '• range → "레인지"',
       '• blocker → "블로커"',
+      '• Sharp / Playable 같은 영어 평가어 금지 → "정확한 판단", "해볼만한 선택" 식으로 한국어로',
       '',
       '── 스팟 정보 ──',
       `상황: 6맥스 100BB ${scenarioLabel}`,

@@ -18,12 +18,15 @@ export function resolveTheme(mode: ThemeMode, now: Date = new Date()): 'dark' | 
  * Inline script body (stringified) that runs before hydration so there is no
  * theme flash on first paint. Exported for use in <Script id="theme-init" …>.
  */
+/**
+ * Theme is currently pinned to "tonight" (the deep felt-green palette).
+ * The Light / Dark / Auto variants live on in resolveTheme() for future
+ * use, but the UI toggle has been removed at the user's request so every
+ * visitor gets the same consistent look.
+ */
 export const themeInitScript = `
 (function(){try{
-  var m=localStorage.getItem('${THEME_STORAGE_KEY}')||'tonight';
-  var h=new Date().getHours(), t=m;
-  if(m==='auto'){ t=(h>=22||h<5)?'tonight':(h>=6&&h<18)?'light':'dark'; }
-  document.documentElement.setAttribute('data-theme',t);
-  document.documentElement.style.colorScheme=(t==='light'?'light':'dark');
+  document.documentElement.setAttribute('data-theme','tonight');
+  document.documentElement.style.colorScheme='dark';
 }catch(e){}})();
 `.trim();

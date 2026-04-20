@@ -17,23 +17,20 @@ import { ResultSheet } from '@/components/today/result-sheet';
 
 const ALL_POSITIONS: Position[] = ['UTG', 'MP', 'CO', 'BTN', 'SB'];
 
-type Difficulty = 'any' | 'mixed-only' | 'clear-only';
-
-const DIFFICULTY_LABELS: Record<Difficulty, string> = {
-  any: '전체',
-  'mixed-only': '믹스 전략만',
-  'clear-only': '명확한 핸드만',
-};
-
+/**
+ * Free simulation — endless GTO training loop.
+ *
+ * Filters for position / difficulty were removed per user feedback: they
+ * took up disproportionate screen space for a screen whose whole point
+ * is "one more hand, fast." We default to every position + full mix so
+ * the user sees the widest possible variety of spots.
+ */
 export default function SimPage() {
   const [spot, setSpot] = useState<TrainingSpot | null>(null);
   const [loading, setLoading] = useState(false);
   const [resultOpen, setResultOpen] = useState(false);
   const [lastGrade, setLastGrade] = useState<AnswerGrade | null>(null);
   const [lastAnswer, setLastAnswer] = useState<GradedAction | null>(null);
-
-  const [positions, setPositions] = useState<Position[]>(ALL_POSITIONS);
-  const [difficulty, setDifficulty] = useState<Difficulty>('any');
 
   const [sharp, setSharp] = useState(0);
   const [acceptable, setAcceptable] = useState(0);
@@ -43,7 +40,10 @@ export default function SimPage() {
 
   const loadNext = async () => {
     setLoading(true);
-    const next = await generateRandomSpot({ positions, difficulty });
+    const next = await generateRandomSpot({
+      positions: ALL_POSITIONS,
+      difficulty: 'any',
+    });
     if (next) setSpot(next);
     setLoading(false);
   };
@@ -70,23 +70,12 @@ export default function SimPage() {
   };
 
   const handleRetry = () => {
-    // Undo the session stats so retry isn't penalised twice.
     if (lastGrade === 'sharp') setSharp((v) => Math.max(0, v - 1));
     else if (lastGrade === 'acceptable') setAcceptable((v) => Math.max(0, v - 1));
     else if (lastGrade === 'wrong') setWrong((v) => Math.max(0, v - 1));
     setResultOpen(false);
     setLastAnswer(null);
     setLastGrade(null);
-  };
-
-  const togglePosition = (p: Position) => {
-    setPositions((cur) => {
-      if (cur.includes(p)) {
-        const next = cur.filter((x) => x !== p);
-        return next.length === 0 ? cur : next;
-      }
-      return [...cur, p];
-    });
   };
 
   return (
@@ -100,70 +89,13 @@ export default function SimPage() {
           <h1 className="mt-2 font-display text-[28px] font-bold tracking-[-0.015em]">
             무한 GTO 훈련
           </h1>
-
           <dl className="mt-4 grid grid-cols-4 gap-2 text-center">
             <Stat label="누적" value={String(total)} />
             <Stat label="정확도" value={`${Math.round(accuracy)}%`} tone="accent" />
-            <Stat label="Sharp" value={String(sharp)} tone="gold" />
+            <Stat label="정답" value={String(sharp)} tone="gold" />
             <Stat label="오답" value={String(wrong)} tone="raise" />
           </dl>
         </header>
-
-        <section className="mb-5 space-y-3">
-          <div>
-            <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted">
-              포지션
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {ALL_POSITIONS.map((p) => {
-                const active = positions.includes(p);
-                return (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => togglePosition(p)}
-                    style={{ touchAction: 'manipulation' }}
-                    className={
-                      'select-none rounded-full border-hair px-3 py-1.5 text-[12px] font-mono active:scale-[0.96] ' +
-                      (active
-                        ? 'bg-[color:var(--color-accent)] text-noir font-semibold'
-                        : 'text-fg-muted')
-                    }
-                  >
-                    {p}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted">
-              난이도
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {(Object.keys(DIFFICULTY_LABELS) as Difficulty[]).map((d) => {
-                const active = difficulty === d;
-                return (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setDifficulty(d)}
-                    style={{ touchAction: 'manipulation' }}
-                    className={
-                      'select-none rounded-full border-hair px-3 py-1.5 text-[12px] active:scale-[0.96] ' +
-                      (active
-                        ? 'bg-[color:var(--color-accent)] text-noir font-semibold'
-                        : 'text-fg-muted')
-                    }
-                  >
-                    {DIFFICULTY_LABELS[d]}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </section>
 
         {loading && !spot && (
           <div className="flex flex-1 items-center justify-center">

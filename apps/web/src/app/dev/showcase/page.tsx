@@ -173,7 +173,7 @@ export default function ShowcasePage() {
             <p className="text-heading font-semibold">Heading — 매일 한 핸드.</p>
             <p className="text-subheading">Subheading — 한 번의 판단을 다듬습니다.</p>
             <p className="text-body-lg">
-              Body LG — &quot;Sharp.&quot; / &quot;이유를 볼까요.&quot; 정답/오답 대신 설명을 드립니다.
+              Body LG — &quot;정확해요&quot; / &quot;해설 보기&quot; 정답/오답 대신 설명을 드립니다.
             </p>
             <p className="font-mono text-mono-lg font-semibold">EV +2.14 BB</p>
             <p className="font-mono text-mono">Bet 75% · 68%</p>

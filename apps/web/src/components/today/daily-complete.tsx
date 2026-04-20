@@ -49,8 +49,8 @@ export function DailyComplete({ answers, currentStreak, bestStreak, className }:
       <p className="font-mono text-[12px] uppercase tracking-[0.24em] text-[color:var(--color-accent)]">
         오늘의 훈련 완료
       </p>
-      <h1 className="mt-3 font-display text-[48px] font-bold leading-none tracking-[-0.02em]">
-        Sharp.
+      <h1 className="mt-3 font-display text-[42px] font-bold leading-none tracking-[-0.02em]">
+        오늘도 한 걸음
       </h1>
       <p className="mt-3 text-body text-fg-muted">
         {currentStreak === 1 ? '연속 훈련을 시작했어요.' : `${currentStreak}일 연속, 꾸준합니다.`}
@@ -64,10 +64,10 @@ export function DailyComplete({ answers, currentStreak, bestStreak, className }:
 
       <ul className="mt-8 flex justify-center gap-3 text-[13px] font-mono text-fg-muted">
         <li>
-          <span className="text-[color:var(--color-gold)]">●</span> Sharp <CountUp value={sharp} />
+          <span className="text-[color:var(--color-gold)]">●</span> 정답 <CountUp value={sharp} />
         </li>
         <li>
-          <span className="text-[color:var(--color-info)]">●</span> Playable{' '}
+          <span className="text-[color:var(--color-info)]">●</span> 무난{' '}
           <CountUp value={acceptable} />
         </li>
         <li>
