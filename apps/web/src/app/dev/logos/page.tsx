@@ -2,33 +2,77 @@ import { SiteHeader } from '@/components/site-header';
 
 export const metadata = { title: '로고 미리보기' };
 
-/**
- * /dev/logos — internal preview page for the 3 logo concepts.
- * Each card shows the same SVG mark at 3 sizes (256 / 96 / 48) against
- * both a dark and a light backdrop so the user can judge legibility.
- */
-export default function LogosPage() {
-  const concepts = [
-    {
-      key: 'chip',
-      src: '/logos/mark-chip.svg',
-      title: '콘셉트 A · Chip',
-      desc: '포커 칩 림 + 중앙 골드 코인 + GT 모노그램. 카지노 토큰 감성, 인쇄물·배지에 유리.',
-    },
-    {
-      key: 'dot',
-      src: '/logos/mark-dot.svg',
-      title: '콘셉트 B · Dot',
-      desc: '브랜드 시그니처 골드 닷 + 스택된 "GTO today" 워드마크. 미니멀, 앱 아이콘 기본값 후보.',
-    },
-    {
-      key: 'spade',
-      src: '/logos/mark-spade.svg',
-      title: '콘셉트 C · Spade',
-      desc: '스타일라이즈된 스페이드 실루엣 안에 골드 닷. 포커의 아이덴티티를 강하게.',
-    },
-  ];
+type Mark = {
+  key: string;
+  src: string;
+  title: string;
+  desc: string;
+};
 
+const CODED_MARKS: Mark[] = [
+  {
+    key: 'chip',
+    src: '/logos/mark-chip.svg',
+    title: 'A1 · Chip (코딩)',
+    desc: '포커 칩 림 + 중앙 골드 코인 + GT 모노그램. 카지노 토큰 감성.',
+  },
+  {
+    key: 'dot',
+    src: '/logos/mark-dot.svg',
+    title: 'A2 · Dot (코딩)',
+    desc: '브랜드 시그니처 골드 닷 + 스택된 워드마크. 미니멀.',
+  },
+  {
+    key: 'spade',
+    src: '/logos/mark-spade.svg',
+    title: 'A3 · Spade (코딩)',
+    desc: '스페이드 실루엣 안 골드 닷. 포커 아이덴티티 강조.',
+  },
+];
+
+const WORDMARKS: Mark[] = [
+  {
+    key: 'wm-h',
+    src: '/logos/wordmark-horizontal.svg',
+    title: 'B1 · Wordmark Horizontal',
+    desc: '타이포 기반 가로형. 헤더 / 명함 / 인보이스.',
+  },
+  {
+    key: 'wm-s',
+    src: '/logos/wordmark-stacked.svg',
+    title: 'B2 · Wordmark Stacked',
+    desc: '타이포 기반 2단 스택. 스플래시 / 세로 레이아웃.',
+  },
+];
+
+const AI_MARKS: Mark[] = [
+  {
+    key: 'ai-dot',
+    src: '/ai-assets/logo/dot-halo.png',
+    title: 'C1 · Dot Halo (AI)',
+    desc: 'DALL·E 3 HD. 골드 닷 + 할로 + 라운드 스퀘어.',
+  },
+  {
+    key: 'ai-chip',
+    src: '/ai-assets/logo/chip-stack.png',
+    title: 'C2 · Chip Stack (AI)',
+    desc: '3단 칩 스택 탑뷰 + 골드 도트. 질감 풍부.',
+  },
+  {
+    key: 'ai-spade',
+    src: '/ai-assets/logo/spade-minimal.png',
+    title: 'C3 · Spade Minimal (AI)',
+    desc: '한 획 느낌의 추상화된 스페이드.',
+  },
+  {
+    key: 'ai-compass',
+    src: '/ai-assets/logo/compass-of-suits.png',
+    title: 'C4 · Compass of Suits (AI)',
+    desc: '네 슈트가 나침반처럼 둘러싼 골드 닷. 상징성 강함.',
+  },
+];
+
+export default function LogosPage() {
   return (
     <>
       <SiteHeader />
@@ -41,43 +85,89 @@ export default function LogosPage() {
             로고 후보
           </h1>
           <p className="mt-2 text-fg-muted">
-            3가지 방향. 어느 걸로 가시든 세 사이즈(256/96/48)에서 잘 읽히는지 먼저 보고 결정하세요.
+            A(코딩) · B(타이포) · C(AI) 세 가지 방향. 각 후보를 세 사이즈에서 확인하고 최종 1개를 고르세요.
           </p>
         </header>
 
-        <ul className="space-y-10">
-          {concepts.map((c) => (
-            <li
-              key={c.key}
-              className="rounded-[var(--radius-panel)] border-hair surface p-6"
-            >
-              <div className="mb-5">
-                <h2 className="font-display text-[22px] font-bold">{c.title}</h2>
-                <p className="mt-1 text-[13px] text-fg-muted">{c.desc}</p>
-              </div>
+        <Family
+          badge="A"
+          title="코딩 SVG 마크"
+          subtitle="벡터 기반. 크기·색 튜닝이 즉시 가능. 정석 / 미니멀 방향."
+          marks={CODED_MARKS}
+        />
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <PreviewPanel src={c.src} alt={c.title} background="dark" />
-                <PreviewPanel src={c.src} alt={c.title} background="light" />
-              </div>
+        <Family
+          badge="B"
+          title="타이포그래피 워드마크"
+          subtitle="로고 = 브랜드명 그 자체. 가독성 + 고급감. 간판·헤더·명함에 강함."
+          marks={WORDMARKS}
+        />
 
-              <p className="mt-4 font-mono text-[11px] text-fg-muted">
-                파일: {c.src}
-              </p>
-            </li>
-          ))}
-        </ul>
+        <Family
+          badge="C"
+          title="AI 제너레이트 (DALL·E 3 HD)"
+          subtitle="질감·광택·디테일이 풍부. 앱 아이콘 / 스토어 썸네일 / 키비주얼에 강함."
+          marks={AI_MARKS}
+        />
 
         <section className="mt-12 rounded-[var(--radius-panel)] border-hair surface p-6">
           <h2 className="font-display text-[18px] font-bold">선택 방법</h2>
           <ul className="mt-3 space-y-1 text-[13px] text-fg-muted">
-            <li>• A, B, C 중 하나 고르시면 앱 아이콘 (favicon / 192 / 512 / maskable) 전부 재생성</li>
-            <li>• 원하는 조합 (예: B의 닷 + C의 스페이드) 있으시면 말씀만 하세요 — 새 SVG 파생</li>
-            <li>• 색상·닷 크기·테두리 두께 같은 튜닝은 언제든지 수정 가능</li>
+            <li>• 마음에 드는 후보 번호(A2, B1, C4 등)를 알려주시면 최종 산출물(favicon / 192 / 512 / maskable / Open Graph) 전부 재생성</li>
+            <li>• 조합도 가능 — 예: C1 아이콘 + B1 워드마크 = 앱 마크 + 로고 세트</li>
+            <li>• 색상·디테일 튜닝은 선택 후 바로 작업</li>
+            <li>• AI 후보(C)는 PNG — 확정 시 SVG로 트레이스하거나 더 고해상도로 재생성</li>
           </ul>
         </section>
       </main>
     </>
+  );
+}
+
+function Family({
+  badge,
+  title,
+  subtitle,
+  marks,
+}: {
+  badge: string;
+  title: string;
+  subtitle: string;
+  marks: Mark[];
+}) {
+  return (
+    <section className="mb-12">
+      <div className="mb-4 flex items-baseline gap-3">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[color:var(--color-accent)] font-mono text-[13px] font-bold text-noir">
+          {badge}
+        </span>
+        <h2 className="font-display text-[24px] font-bold tracking-[-0.02em]">{title}</h2>
+      </div>
+      <p className="mb-5 text-[13px] text-fg-muted">{subtitle}</p>
+
+      <ul className="space-y-6">
+        {marks.map((m) => (
+          <li
+            key={m.key}
+            className="rounded-[var(--radius-panel)] border-hair surface p-6"
+          >
+            <div className="mb-5">
+              <h3 className="font-display text-[20px] font-bold">{m.title}</h3>
+              <p className="mt-1 text-[13px] text-fg-muted">{m.desc}</p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <PreviewPanel src={m.src} alt={m.title} background="dark" />
+              <PreviewPanel src={m.src} alt={m.title} background="light" />
+            </div>
+
+            <p className="mt-4 font-mono text-[11px] text-fg-muted">
+              파일: {m.src}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -103,9 +193,9 @@ function PreviewPanel({
         {background === 'dark' ? 'Tonight (기본 테마)' : 'Light (배경 대비용)'}
       </p>
       <div className="flex items-end gap-6">
-        <img src={src} alt={alt} width={128} height={128} style={{ borderRadius: 18 }} />
-        <img src={src} alt="" width={72} height={72} style={{ borderRadius: 12 }} />
-        <img src={src} alt="" width={40} height={40} style={{ borderRadius: 8 }} />
+        <img src={src} alt={alt} width={128} height={128} style={{ borderRadius: 18, objectFit: 'contain' }} />
+        <img src={src} alt="" width={72} height={72} style={{ borderRadius: 12, objectFit: 'contain' }} />
+        <img src={src} alt="" width={40} height={40} style={{ borderRadius: 8, objectFit: 'contain' }} />
       </div>
       <p
         className="mt-4 font-mono text-[10px]"
