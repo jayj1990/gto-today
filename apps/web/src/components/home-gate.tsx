@@ -143,7 +143,7 @@ export function HomeGate() {
           href="/live"
           eyebrow="Live Assist"
           title="실전 모드"
-          description="상황별 GTO 차트를 즉시 조회."
+          description="내 상황에서 GTO의 선택은?"
           variant="secondary"
           delay={0.12}
         />
@@ -202,9 +202,6 @@ function PrimaryCard({
         >
           {description}
         </p>
-        <span className="mt-6 inline-flex items-center gap-1 font-medium">
-          시작 <span aria-hidden>→</span>
-        </span>
       </Link>
     </motion.div>
   );
