@@ -22,6 +22,19 @@ const result: NextAuthResult = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'database' },
   providers: [Google],
+  // Production debug on while we stabilise — writes full stack traces
+  // to Vercel Function logs so we can see actual OAuth / adapter
+  // failures instead of the generic 'server configuration' page.
+  debug: true,
+  trustHost: true,
+  logger: {
+    error(err) {
+      console.error('[auth][error]', err);
+    },
+    warn(code) {
+      console.warn('[auth][warn]', code);
+    },
+  },
   pages: {
     signIn: '/signin',
   },
