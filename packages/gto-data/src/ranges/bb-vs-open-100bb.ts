@@ -16,21 +16,28 @@
 type Mix = { call: number; raise: number; fold: number };
 type BbRange = Record<string, Mix>;
 
-/* ─────────────── vs UTG open (tightest opener, BB defends narrow) ────── */
+/* ─────────────── vs UTG open (tightest opener, BB defends narrow) ──────
+ * UTG opens ~15%. BB is out of position postflop. 3-bet for value with
+ * JJ+/AK; mix 3-bet with AQs/AJs/ATs/KQs for blocker+equity; bluff 3-bet
+ * low suited aces. Pocket pairs below JJ mostly flat. */
 export const BB_VS_UTG: BbRange = {
   // Value 3bets
   AA: { call: 0, raise: 1, fold: 0 },
   KK: { call: 0, raise: 1, fold: 0 },
-  QQ: { call: 0.1, raise: 0.9, fold: 0 },
-  JJ: { call: 0.7, raise: 0.3, fold: 0 },
-  AKs: { call: 0.2, raise: 0.8, fold: 0 },
-  AKo: { call: 0.5, raise: 0.5, fold: 0 },
-  AQs: { call: 0.9, raise: 0.1, fold: 0 },
-  // Bluff 3bets (polarized)
-  A5s: { call: 0.4, raise: 0.4, fold: 0.2 },
-  A4s: { call: 0.3, raise: 0.4, fold: 0.3 },
-  A3s: { call: 0.2, raise: 0.3, fold: 0.5 },
-  // Calls
+  QQ: { call: 0.05, raise: 0.95, fold: 0 },
+  JJ: { call: 0.4, raise: 0.6, fold: 0 },
+  AKs: { call: 0.15, raise: 0.85, fold: 0 },
+  AKo: { call: 0.35, raise: 0.65, fold: 0 },
+  AQs: { call: 0.55, raise: 0.45, fold: 0 },
+  AJs: { call: 0.65, raise: 0.35, fold: 0 },
+  ATs: { call: 0.7, raise: 0.3, fold: 0 },
+  KQs: { call: 0.6, raise: 0.4, fold: 0 },
+  // Bluff 3bets (polarized, small suited aces / kings)
+  A5s: { call: 0.25, raise: 0.6, fold: 0.15 },
+  A4s: { call: 0.2, raise: 0.55, fold: 0.25 },
+  A3s: { call: 0.15, raise: 0.4, fold: 0.45 },
+  K5s: { call: 0.4, raise: 0.25, fold: 0.35 },
+  // Calls (pocket pairs + medium broadway)
   TT: { call: 1, raise: 0, fold: 0 },
   '99': { call: 1, raise: 0, fold: 0 },
   '88': { call: 1, raise: 0, fold: 0 },
@@ -40,12 +47,9 @@ export const BB_VS_UTG: BbRange = {
   '44': { call: 0.7, raise: 0, fold: 0.3 },
   '33': { call: 0.5, raise: 0, fold: 0.5 },
   '22': { call: 0.4, raise: 0, fold: 0.6 },
-  AJs: { call: 1, raise: 0, fold: 0 },
-  ATs: { call: 1, raise: 0, fold: 0 },
-  A9s: { call: 0.7, raise: 0, fold: 0.3 },
-  A8s: { call: 0.5, raise: 0, fold: 0.5 },
-  A7s: { call: 0.3, raise: 0, fold: 0.7 },
-  KQs: { call: 1, raise: 0, fold: 0 },
+  A9s: { call: 0.85, raise: 0, fold: 0.15 },
+  A8s: { call: 0.55, raise: 0, fold: 0.45 },
+  A7s: { call: 0.35, raise: 0, fold: 0.65 },
   KJs: { call: 1, raise: 0, fold: 0 },
   KTs: { call: 0.9, raise: 0, fold: 0.1 },
   QJs: { call: 1, raise: 0, fold: 0 },
@@ -60,26 +64,32 @@ export const BB_VS_UTG: BbRange = {
   KJo: { call: 0.4, raise: 0, fold: 0.6 },
 };
 
-/* ─────────────── vs CO open ─────────────── */
+/* ─────────────── vs CO open ─────────────── *
+ * CO opens ~25%. BB is out of position postflop so 3-bet to realise
+ * equity and charge CO's dominated hands. ATs / AJs / KQs 3-bet heavy
+ * for blocker + equity + fold equity. Low suited aces as polar bluffs. */
 export const BB_VS_CO: BbRange = {
   AA: { call: 0, raise: 1, fold: 0 },
   KK: { call: 0, raise: 1, fold: 0 },
   QQ: { call: 0, raise: 1, fold: 0 },
-  JJ: { call: 0.2, raise: 0.8, fold: 0 },
-  TT: { call: 0.6, raise: 0.4, fold: 0 },
-  AKs: { call: 0.1, raise: 0.9, fold: 0 },
-  AKo: { call: 0.3, raise: 0.7, fold: 0 },
-  AQs: { call: 0.5, raise: 0.5, fold: 0 },
-  AQo: { call: 0.7, raise: 0.2, fold: 0.1 },
-  AJs: { call: 0.7, raise: 0.3, fold: 0 },
-  KQs: { call: 0.8, raise: 0.2, fold: 0 },
-  // Bluff 3bets
-  A5s: { call: 0.2, raise: 0.6, fold: 0.2 },
-  A4s: { call: 0.2, raise: 0.5, fold: 0.3 },
-  A3s: { call: 0.2, raise: 0.4, fold: 0.4 },
-  A2s: { call: 0.3, raise: 0.3, fold: 0.4 },
-  K5s: { call: 0.3, raise: 0.3, fold: 0.4 },
-  '54s': { call: 0.4, raise: 0.2, fold: 0.4 },
+  JJ: { call: 0.1, raise: 0.9, fold: 0 },
+  TT: { call: 0.35, raise: 0.65, fold: 0 },
+  AKs: { call: 0.05, raise: 0.95, fold: 0 },
+  AKo: { call: 0.2, raise: 0.8, fold: 0 },
+  AQs: { call: 0.2, raise: 0.8, fold: 0 },
+  AQo: { call: 0.5, raise: 0.5, fold: 0 },
+  AJs: { call: 0.3, raise: 0.7, fold: 0 },
+  ATs: { call: 0.3, raise: 0.7, fold: 0 },
+  KQs: { call: 0.35, raise: 0.65, fold: 0 },
+  KJs: { call: 0.55, raise: 0.45, fold: 0 },
+  KTs: { call: 0.7, raise: 0.3, fold: 0 },
+  // Bluff 3bets (polar bluffs with wheel-ace / small king blockers)
+  A5s: { call: 0.15, raise: 0.7, fold: 0.15 },
+  A4s: { call: 0.15, raise: 0.6, fold: 0.25 },
+  A3s: { call: 0.2, raise: 0.5, fold: 0.3 },
+  A2s: { call: 0.25, raise: 0.4, fold: 0.35 },
+  K5s: { call: 0.25, raise: 0.4, fold: 0.35 },
+  '54s': { call: 0.45, raise: 0.25, fold: 0.3 },
   // Calls
   '99': { call: 1, raise: 0, fold: 0 },
   '88': { call: 1, raise: 0, fold: 0 },
@@ -89,19 +99,16 @@ export const BB_VS_CO: BbRange = {
   '44': { call: 0.9, raise: 0, fold: 0.1 },
   '33': { call: 0.8, raise: 0, fold: 0.2 },
   '22': { call: 0.7, raise: 0, fold: 0.3 },
-  ATs: { call: 1, raise: 0, fold: 0 },
-  A9s: { call: 1, raise: 0, fold: 0 },
-  A8s: { call: 0.9, raise: 0, fold: 0.1 },
+  A9s: { call: 0.85, raise: 0.15, fold: 0 },
+  A8s: { call: 0.85, raise: 0, fold: 0.15 },
   A7s: { call: 0.7, raise: 0, fold: 0.3 },
   A6s: { call: 0.5, raise: 0, fold: 0.5 },
-  KJs: { call: 1, raise: 0, fold: 0 },
-  KTs: { call: 1, raise: 0, fold: 0 },
   K9s: { call: 0.7, raise: 0, fold: 0.3 },
   K8s: { call: 0.4, raise: 0, fold: 0.6 },
-  QJs: { call: 1, raise: 0, fold: 0 },
-  QTs: { call: 1, raise: 0, fold: 0 },
+  QJs: { call: 0.75, raise: 0.25, fold: 0 },
+  QTs: { call: 0.85, raise: 0.15, fold: 0 },
   Q9s: { call: 0.7, raise: 0, fold: 0.3 },
-  JTs: { call: 1, raise: 0, fold: 0 },
+  JTs: { call: 0.85, raise: 0.15, fold: 0 },
   J9s: { call: 0.6, raise: 0, fold: 0.4 },
   T9s: { call: 1, raise: 0, fold: 0 },
   T8s: { call: 0.5, raise: 0, fold: 0.5 },
@@ -109,10 +116,10 @@ export const BB_VS_CO: BbRange = {
   '87s': { call: 0.8, raise: 0, fold: 0.2 },
   '76s': { call: 0.7, raise: 0, fold: 0.3 },
   '65s': { call: 0.5, raise: 0, fold: 0.5 },
-  AJo: { call: 0.9, raise: 0, fold: 0.1 },
+  AJo: { call: 0.7, raise: 0.3, fold: 0 },
   ATo: { call: 0.7, raise: 0, fold: 0.3 },
   A9o: { call: 0.4, raise: 0, fold: 0.6 },
-  KQo: { call: 1, raise: 0, fold: 0 },
+  KQo: { call: 0.7, raise: 0.3, fold: 0 },
   KJo: { call: 0.8, raise: 0, fold: 0.2 },
   KTo: { call: 0.5, raise: 0, fold: 0.5 },
   QJo: { call: 0.7, raise: 0, fold: 0.3 },
@@ -132,10 +139,10 @@ export const BB_VS_BTN: BbRange = {
   AKo: { call: 0.2, raise: 0.8, fold: 0 },
   AQs: { call: 0.2, raise: 0.8, fold: 0 },
   AQo: { call: 0.4, raise: 0.6, fold: 0 },
-  AJs: { call: 0.4, raise: 0.6, fold: 0 },
-  AJo: { call: 0.7, raise: 0.3, fold: 0 },
-  ATs: { call: 0.7, raise: 0.3, fold: 0 },
-  KQs: { call: 0.4, raise: 0.6, fold: 0 },
+  AJs: { call: 0.2, raise: 0.8, fold: 0 },
+  AJo: { call: 0.5, raise: 0.5, fold: 0 },
+  ATs: { call: 0.25, raise: 0.75, fold: 0 },
+  KQs: { call: 0.3, raise: 0.7, fold: 0 },
   KQo: { call: 0.8, raise: 0.2, fold: 0 },
   KJs: { call: 0.7, raise: 0.3, fold: 0 },
   KTs: { call: 0.9, raise: 0.1, fold: 0 },
