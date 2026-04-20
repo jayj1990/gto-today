@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 180" role="img" aria-label="gto.today">
+  <!-- Gold middle dot — kerned precisely between "GTO" and "today" -->
+  <g font-family="Inter, -apple-system, 'Helvetica Neue', Arial, sans-serif">
+    <text x="40" y="124"
+          font-weight="900"
+          font-size="144"
+          letter-spacing="-8"
+          fill="currentColor">GTO</text>
+    <circle cx="388" cy="74" r="11" fill="#D4AF37"/>
+    <text x="410" y="124"
+          font-weight="300"
+          font-size="144"
+          letter-spacing="-4"
+          fill="currentColor"
+          opacity="0.9">today</text>
+  </g>
+</svg>
