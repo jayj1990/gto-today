@@ -26,12 +26,13 @@ const LABELS: Record<ActionKind, string> = {
   raise: '레이즈',
 };
 
-// Jay's spec: fold=red (stop/danger), check=neutral, call=green (match),
-// raise=gold (premium). Every action gets the same outline + translucent
-// fill + colored text pattern so the set reads as a coherent family.
+// Color family matches the range-grid legend and chart-navigator:
+// fold=blue, call=green, raise=red, check=neutral. Every action uses
+// the same outline + translucent fill + colored text pattern so the
+// set reads as a coherent family.
 const TONE: Record<ActionKind, { cls: string }> = {
   fold: {
-    cls: 'border border-[color:var(--color-raise)]/60 bg-[color:var(--color-raise)]/15 text-[color:var(--color-raise)] font-semibold',
+    cls: 'border border-[color:var(--color-fold)]/60 bg-[color:var(--color-fold)]/15 text-[color:var(--color-fold)] font-semibold',
   },
   check: {
     cls: 'border-hair surface-raised text-fg font-semibold',
@@ -40,7 +41,7 @@ const TONE: Record<ActionKind, { cls: string }> = {
     cls: 'border border-[color:var(--color-call)]/60 bg-[color:var(--color-call)]/15 text-[color:var(--color-call)] font-semibold',
   },
   raise: {
-    cls: 'bg-gold-gradient font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)]',
+    cls: 'border border-[color:var(--color-raise)]/60 bg-[color:var(--color-raise)]/15 text-[color:var(--color-raise)] font-semibold',
   },
 };
 
