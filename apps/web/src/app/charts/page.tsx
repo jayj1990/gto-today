@@ -24,7 +24,6 @@ export default function ChartsPage() {
         <ChartNavigator />
 
         <p className="mt-6 text-[12px] text-fg-muted">
-          데이터: TexasSolver 0.2 · 6max 100BB · 2.5x open · 500 rake.{' '}
           <Link href="/live/play" className="underline-offset-4 hover:underline">
             실전 모드로 →
           </Link>

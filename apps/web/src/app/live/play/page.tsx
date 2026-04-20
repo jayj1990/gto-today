@@ -43,10 +43,6 @@ export default function LivePlayPage() {
         </header>
 
         <ChartNavigator />
-
-        <p className="mt-6 text-[12px] text-fg-muted">
-          데이터: TexasSolver 0.2 · 6max 100BB · 2.5x open · 500 rake.
-        </p>
       </main>
     </>
   );

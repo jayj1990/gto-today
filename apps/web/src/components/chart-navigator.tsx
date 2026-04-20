@@ -13,6 +13,8 @@ interface NodeData {
   actor: string;
   actions: Record<string, Record<string, number>>;
   legal: string[];
+  /** True when every non-BB seat has folded — BB wins the pot uncontested. */
+  bbWins?: boolean;
 }
 
 export interface ChartNavigatorProps {
@@ -101,43 +103,81 @@ export function ChartNavigator({
             </p>
           </section>
 
-          <section className="mb-4">
-            {Object.keys(mixes).length > 0 ? (
-              <RangeGrid mixes={mixes} className="w-full" />
-            ) : (
-              <div className="rounded-[var(--radius-panel)] border-hair surface p-6 text-center">
-                <p className="font-mono text-[12px] text-fg-muted">
-                  이 노드의 차트 데이터가 없어요.
-                </p>
-              </div>
-            )}
-          </section>
-
-          {node.legal.length > 0 && (
-            <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {node.legal.map((act) => {
-                const color = actionColour(act);
-                return (
-                  <button
-                    key={act}
-                    type="button"
-                    onClick={() => handleAction(act)}
-                    className="h-12 rounded-[var(--radius-button)] border font-mono text-[13px] font-semibold active:scale-[0.98]"
-                    style={{
-                      background: `${color}22`,
-                      borderColor: `${color}66`,
-                      color,
-                    }}
-                  >
-                    {prettyAction(act)}
-                  </button>
-                );
-              })}
+          {node.bbWins ? (
+            /* Everyone folded to the big blind — no decision to make,
+               BB scoops the blinds + antes. */
+            <section className="rounded-[var(--radius-panel)] border border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 p-8 text-center">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-gold)]">
+                결과
+              </p>
+              <h2 className="mt-2 font-display text-[30px] font-bold text-[color:var(--color-gold)]">
+                BB 승리
+              </h2>
+              <p className="mt-3 text-[13px] text-fg-muted">
+                모두 폴드 → BB가 블라인드를 가져갑니다. 핸드가 끝났어요.
+              </p>
             </section>
+          ) : (
+            <>
+              <section className="mb-3">
+                {Object.keys(mixes).length > 0 ? (
+                  <RangeGrid mixes={mixes} className="w-full" />
+                ) : (
+                  <div className="rounded-[var(--radius-panel)] border-hair surface p-6 text-center">
+                    <p className="font-mono text-[12px] text-fg-muted">
+                      이 노드의 차트 데이터가 없어요.
+                    </p>
+                  </div>
+                )}
+              </section>
+
+              {/* Colour legend under the grid */}
+              <section className="mb-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] text-fg-muted">
+                <LegendDot color="#C8102E" label="레이즈" />
+                <LegendDot color="#1F9D55" label="콜" />
+                <LegendDot color="#2B5F8F" label="폴드" />
+              </section>
+
+              {node.legal.length > 0 && (
+                <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {node.legal.map((act) => {
+                    const color = actionColour(act);
+                    return (
+                      <button
+                        key={act}
+                        type="button"
+                        onClick={() => handleAction(act)}
+                        className="h-12 rounded-[var(--radius-button)] border font-mono text-[13px] font-semibold active:scale-[0.98]"
+                        style={{
+                          background: `${color}22`,
+                          borderColor: `${color}66`,
+                          color,
+                        }}
+                      >
+                        {prettyAction(act)}
+                      </button>
+                    );
+                  })}
+                </section>
+              )}
+            </>
           )}
         </>
       )}
     </div>
+  );
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span
+        aria-hidden
+        className="inline-block h-2.5 w-2.5 rounded-sm"
+        style={{ background: color }}
+      />
+      {label}
+    </span>
   );
 }
 
@@ -171,6 +211,19 @@ function BreadcrumbChip({
 function resolveNode(decisions: DecisionsJson, path: string[]): NodeData | null {
   const actor = nextActor(path);
   if (!actor) return null;
+
+  // Special case: if every seat in front of BB has folded and nobody
+  // raised, BB wins the pot uncontested — no decision to make.
+  const tokensWithAct = path.map((t) => t.split('_'));
+  const folds = tokensWithAct.filter((x) => x[x.length - 1] === 'FOLD').length;
+  const hasAggression = path.some((t) => {
+    const act = t.slice(t.indexOf('_') + 1);
+    return act !== 'FOLD';
+  });
+  if (actor === 'BB' && !hasAggression && folds >= 5) {
+    return { actor, actions: {}, legal: [], bbWins: true };
+  }
+
   const activeTokens = path.filter((t) => !t.endsWith('_FOLD'));
   const key = [...activeTokens, actor].join('_');
   const raw = decisions[key];
