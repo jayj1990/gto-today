@@ -111,6 +111,47 @@ const AI_MARKS_V2: Mark[] = [
   },
 ];
 
+// Wordmark lockups (symbol + "GTO TODAY" text included).
+// DALL·E 3 renders text unreliably — expect 2-3 out of 6 legible.
+const WORDMARK_LOCKUPS: Mark[] = [
+  {
+    key: 'wm-v1',
+    src: '/ai-assets/wordmark/v1-stacked-serif.png',
+    title: 'E1 · Stacked Serif (AI)',
+    desc: 'GTO 큰 serif + TODAY 작은 이보리. 세로 스택. 클래식.',
+  },
+  {
+    key: 'wm-v2',
+    src: '/ai-assets/wordmark/v2-horizontal-dot.png',
+    title: 'E2 · Horizontal Dot (AI)',
+    desc: 'GTO · today 가로 배열 + 중앙 골드 닷. 모던·미니멀.',
+  },
+  {
+    key: 'wm-v3',
+    src: '/ai-assets/wordmark/v3-embossed-gold.png',
+    title: 'E3 · Embossed Gold (AI)',
+    desc: '다크 차콜 + 골드 엠보스 3D. 깊은 럭셔리.',
+  },
+  {
+    key: 'wm-v4',
+    src: '/ai-assets/wordmark/v4-art-deco-frame.png',
+    title: 'E4 · Art Deco Frame (AI)',
+    desc: '가로형 골드 프레임 플라크 + 슬랩 serif 텍스트.',
+  },
+  {
+    key: 'wm-v5',
+    src: '/ai-assets/wordmark/v5-mark-plus-type.png',
+    title: 'E5 · Mark + Type (AI)',
+    desc: '왼쪽 칩 아이콘 + 오른쪽 텍스트. 가로 락업, 헤더 최적.',
+  },
+  {
+    key: 'wm-v6',
+    src: '/ai-assets/wordmark/v6-monogram-circle.png',
+    title: 'E6 · Monogram Circle (AI)',
+    desc: '원형 메달리온 + GTO 모노그램 + TODAY 아치. 크레스트 느낌.',
+  },
+];
+
 export default function LogosPage() {
   return (
     <>
@@ -157,6 +198,13 @@ export default function LogosPage() {
           title="AI v2 — 프리미엄 방향 (DALL·E 3 HD)"
           subtitle="두 번째 배치. 볼류메트릭 라이팅 + 아트데코 프레임 + 엠보스 메탈. 럭셔리 극대화."
           marks={AI_MARKS_V2}
+        />
+
+        <Family
+          badge="E"
+          title="AI 워드마크 락업 — 'GTO TODAY' 텍스트 포함 (DALL·E 3 HD)"
+          subtitle="스플래시 / 헤더 / 명함용. DALL·E는 텍스트 렌더링이 불안정 — 2-3개만 쓸만할 것."
+          marks={WORDMARK_LOCKUPS}
         />
 
         <section className="mt-12 rounded-[var(--radius-panel)] border-hair surface p-6">
