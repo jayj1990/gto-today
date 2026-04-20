@@ -19,6 +19,8 @@ export interface MixBarProps {
   /** Show labels + values next to each bar row. */
   labeled?: boolean;
   className?: string;
+  /** Color of the ★ prefix on the dominant row. Defaults to gold. */
+  highlightColor?: string;
 }
 
 /**
@@ -26,7 +28,12 @@ export interface MixBarProps {
  * Each segment fills its own track (one row per action) — more readable
  * than a single stacked bar for decision review.
  */
-export function MixBar({ segments, labeled = true, className }: MixBarProps) {
+export function MixBar({
+  segments,
+  labeled = true,
+  className,
+  highlightColor = 'var(--color-gold)',
+}: MixBarProps) {
   // CSS grid guarantees every row's track starts at the same x position,
   // regardless of how wide each Korean label happens to render.
   return (
@@ -48,7 +55,11 @@ export function MixBar({ segments, labeled = true, className }: MixBarProps) {
                   dom ? 'text-[14px] font-bold text-fg' : 'text-[13px] text-fg-muted',
                 )}
               >
-                {dom && <span className="mr-1 text-[color:var(--color-gold)]">★</span>}
+                {dom && (
+                  <span className="mr-1" style={{ color: highlightColor }}>
+                    ★
+                  </span>
+                )}
                 {seg.label}
               </span>
             )}

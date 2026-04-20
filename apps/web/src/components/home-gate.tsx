@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Logo, cn } from '@gto/ui';
 import { useAuthStore } from '@/lib/auth-store';
-import { formatTodayKR } from '@/lib/date';
 
 /**
  * Client-only landing component that gates the home screen behind:
@@ -79,11 +78,12 @@ export function HomeGate() {
         <button
           type="button"
           onClick={() => {
+            if (!window.confirm('로그아웃 하시겠어요?')) return;
             signOut();
             void nextAuthSignOut({ callbackUrl: '/signin' });
           }}
           className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-fg-muted active:scale-[0.96]"
-          aria-label="로그아웃"
+          aria-label="프로필 — 탭하면 로그아웃"
         >
           <span className="hidden sm:inline">{user?.name ?? '게스트'}</span>
           {avatarUrl ? (
@@ -121,17 +121,6 @@ export function HomeGate() {
           )}
         </button>
       </header>
-
-      <section className="mt-10">
-        <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[color:var(--color-gold)]">
-          오늘 · {formatTodayKR()}
-        </p>
-        <h1 className="mt-3 font-display text-[36px] font-bold leading-[1.08] tracking-[-0.02em]">
-          어디서부터
-          <br />
-          시작할까요?
-        </h1>
-      </section>
 
       <div className="mt-10 grid gap-4">
         <PrimaryCard

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import { RangeGrid, type ComboMix } from '@gto/ui';
 
 type DecisionsJson = Record<string, Record<string, Record<string, number>>>;
@@ -113,9 +114,6 @@ export function ChartNavigator({
             <>
               <section className="mb-4 rounded-[var(--radius-panel)] border border-[color:var(--color-accent)]/40 bg-[color:var(--color-accent)]/5 p-4">
                 <div className="flex items-baseline gap-2">
-                  <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]">
-                    지금 차례
-                  </span>
                   <span className="font-display text-[22px] font-bold text-[color:var(--color-accent)]">
                     {node.actor}
                   </span>
@@ -132,22 +130,43 @@ export function ChartNavigator({
                     {node.legal.map((act) => {
                       const color = actionColour(act);
                       const compact = node.legal.length >= 3;
-                      const fill = act === 'AllIn' || act.endsWith('bb');
+                      const isAllIn = act === 'AllIn';
+                      const cls = cn(
+                        'rounded-[var(--radius-button)] border font-mono font-bold text-white whitespace-nowrap shadow-[var(--shadow-card)] active:scale-[0.98]',
+                        compact ? 'h-11 text-[11px] px-1' : 'h-12 text-[13px] px-2',
+                      );
+                      const style = {
+                        background: color,
+                        borderColor: color,
+                        color: '#ffffff',
+                      };
+                      if (isAllIn) {
+                        return (
+                          <motion.button
+                            key={act}
+                            type="button"
+                            onClick={() => handleAction(act)}
+                            className={cls}
+                            style={style}
+                            animate={{
+                              boxShadow: [
+                                '0 0 0 0 rgba(212, 175, 55, 0.55)',
+                                '0 0 0 8px rgba(212, 175, 55, 0)',
+                              ],
+                            }}
+                            transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut' }}
+                          >
+                            {prettyAction(act, compact)}
+                          </motion.button>
+                        );
+                      }
                       return (
                         <button
                           key={act}
                           type="button"
                           onClick={() => handleAction(act)}
-                          className={cn(
-                            'rounded-[var(--radius-button)] border font-mono whitespace-nowrap active:scale-[0.98]',
-                            fill ? 'font-bold shadow-[var(--shadow-card)]' : 'font-semibold',
-                            compact ? 'h-11 text-[11px] px-1' : 'h-12 text-[13px] px-2',
-                          )}
-                          style={{
-                            background: fill ? color : `${color}22`,
-                            borderColor: fill ? color : `${color}66`,
-                            color: fill ? '#ffffff' : color,
-                          }}
+                          className={cls}
+                          style={style}
                         >
                           {prettyAction(act, compact)}
                         </button>

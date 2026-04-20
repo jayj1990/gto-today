@@ -226,7 +226,12 @@ export function ResultSheet({
               <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted">
                 GTO 믹스
               </p>
-              <MixBar segments={segments} />
+              <MixBar
+                segments={segments}
+                highlightColor={
+                  grade === 'acceptable' ? 'var(--color-call)' : 'var(--color-gold)'
+                }
+              />
               {userAnswer && (
                 <p className="mt-4 font-mono text-[12px] text-fg-muted">
                   내 선택:{' '}

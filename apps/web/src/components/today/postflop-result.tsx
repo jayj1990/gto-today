@@ -146,7 +146,19 @@ export function PostflopResult({
                       isTop ? 'text-[13px] font-bold text-fg' : 'text-[12px] text-fg-muted',
                     )}
                   >
-                    {isTop && <span className="mr-1 text-[color:var(--color-gold)]">★</span>}
+                    {isTop && (
+                      <span
+                        className="mr-1"
+                        style={{
+                          color:
+                            grade === 'acceptable'
+                              ? 'var(--color-call)'
+                              : 'var(--color-gold)',
+                        }}
+                      >
+                        ★
+                      </span>
+                    )}
                     {POSTFLOP_ACTION_LABEL[action]}
                   </span>
                   <div
