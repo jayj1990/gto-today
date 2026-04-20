@@ -63,7 +63,17 @@ export default function SignInPage() {
       }}
     >
       <header className="flex items-center justify-between">
-        <Logo variant="full" width={108} />
+        <div className="flex items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logos/mark-g3-transparent.png"
+            alt=""
+            width={32}
+            height={32}
+            style={{ width: 32, height: 32, objectFit: 'contain' }}
+          />
+          <Logo variant="full" width={88} aria-hidden />
+        </div>
         <Link
           href="/"
           className="font-mono text-[12px] uppercase tracking-[0.2em] text-fg-muted"

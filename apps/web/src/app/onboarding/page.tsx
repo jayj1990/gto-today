@@ -93,7 +93,17 @@ export default function OnboardingPage() {
             ←
           </button>
         ) : (
-          <Logo variant="full" width={108} />
+          <div className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logos/mark-g3-transparent.png"
+              alt=""
+              width={32}
+              height={32}
+              style={{ width: 32, height: 32, objectFit: 'contain' }}
+            />
+            <Logo variant="full" width={88} aria-hidden />
+          </div>
         )}
         <button
           type="button"
@@ -186,4 +196,3 @@ export default function OnboardingPage() {
   );
 }
 
-/* Slide visuals now live in components/onboarding-illustrations.tsx */

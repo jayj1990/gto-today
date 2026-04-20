@@ -51,7 +51,22 @@ export function HomeGate() {
       }}
     >
       <header className="flex items-center justify-between">
-        <Logo variant="full" width={108} />
+        <div className="flex items-center gap-2.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logos/mark-g3-transparent.png"
+            alt=""
+            width={36}
+            height={36}
+            style={{
+              width: 36,
+              height: 36,
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))',
+            }}
+          />
+          <Logo variant="full" width={96} aria-hidden />
+        </div>
         <button
           type="button"
           onClick={() => {
