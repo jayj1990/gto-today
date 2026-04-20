@@ -185,13 +185,14 @@ export const CardView = forwardRef<HTMLDivElement, CardViewProps>(function CardV
         {glyph}
       </div>
 
-      {/* Rank — pinned to the LEFT, vertically centered, always in front */}
+      {/* Rank — centered on the card, always in front of the suit */}
       <div
         style={{
           position: 'absolute',
-          top: '50%',
-          left: sz.w * 0.12,
-          transform: 'translateY(-50%)',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           fontFamily: 'var(--font-display, Inter), system-ui, sans-serif',
           fontWeight: 900,
           fontSize: sz.rank,
