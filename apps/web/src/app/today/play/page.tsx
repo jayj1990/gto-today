@@ -21,6 +21,7 @@ import { ActionBar } from '@/components/today/action-bar';
 import { ResultSheet } from '@/components/today/result-sheet';
 import { DailyComplete } from '@/components/today/daily-complete';
 import { PostflopHand } from '@/components/today/postflop-hand';
+import { PostflopResult } from '@/components/today/postflop-result';
 import { useChallengeStore } from '@/lib/challenge-store';
 import { isoDateKR } from '@/lib/date';
 
@@ -200,53 +201,15 @@ export default function TodayPlayPage() {
           isLast={items !== null && cursor === TOTAL - 1}
         />
 
-        {/* Postflop result — simple inline banner since ResultSheet is
-            tied to preflop TrainingSpot shape. */}
-        {resultOpen && current?.kind === 'postflop' && lastGrade && lastPostflopAnswer && (
-          <div className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-lg rounded-t-[var(--radius-panel)] surface-raised border-hair border-t px-6 pt-6 pb-8 shadow-[var(--shadow-panel)]">
-            <div
-              className="mx-auto mb-4 h-1 w-10 rounded-full bg-[color:var(--color-border)]"
-              aria-hidden
-            />
-            <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-fg-muted">
-              {current.spot.context.heroPos} · {current.spot.street}
-            </p>
-            <h2
-              className="mt-1 font-display text-[28px] font-bold leading-tight tracking-[-0.02em]"
-              style={{
-                color:
-                  lastGrade === 'sharp'
-                    ? 'var(--color-call)'
-                    : lastGrade === 'acceptable'
-                      ? 'var(--color-info)'
-                      : 'var(--color-raise)',
-              }}
-            >
-              {lastGrade === 'sharp'
-                ? '정확해요'
-                : lastGrade === 'acceptable'
-                  ? '괜찮아요'
-                  : '다른 선택이 더 유리했어요'}
-            </h2>
-            <p className="mt-2 text-[13px] text-fg-muted">
-              내 선택:{' '}
-              <span className="text-fg">{POSTFLOP_ACTION_LABEL[lastPostflopAnswer]}</span>
-            </p>
-            <div className="mt-4 rounded-[var(--radius-button)] border border-[color:var(--color-accent)]/30 bg-[color:var(--color-accent)]/10 px-4 py-3 text-[12px] leading-[1.55] text-fg">
-              <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]">
-                왜 그런지
-              </p>
-              {current.spot.teachingNote}
-            </div>
-            <button
-              type="button"
-              onClick={handleNext}
-              className="mt-5 h-14 w-full rounded-[var(--radius-button)] bg-gold-gradient font-semibold text-noir shadow-[var(--shadow-card)]"
-            >
-              {cursor === TOTAL - 1 ? '결과 보기' : '다음 핸드 →'}
-            </button>
-          </div>
-        )}
+        {/* Postflop bottom-sheet — retry + gated teaching note. */}
+        <PostflopResult
+          open={resultOpen && current?.kind === 'postflop'}
+          spot={current?.kind === 'postflop' ? current.spot : null}
+          userAnswer={lastPostflopAnswer}
+          onNext={handleNext}
+          onRetry={handleRetry}
+          nextLabel={cursor === TOTAL - 1 ? '결과 보기' : '다음 핸드 →'}
+        />
       </main>
     </>
   );

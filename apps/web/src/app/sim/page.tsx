@@ -3,34 +3,39 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  generateRandomSpot,
+  generateRandomItem,
   gradeAnswer,
+  gradePostflopAction,
+  POSTFLOP_ACTION_COLOR,
+  POSTFLOP_ACTION_LABEL,
   type AnswerGrade,
   type GradedAction,
-  type TrainingSpot,
+  type PostflopAction,
+  type RandomItem,
 } from '@gto/gto-data';
 import type { Position } from '@gto/poker-core';
+import { cn } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
 import { HandCard } from '@/components/today/hand-card';
 import { ActionBar } from '@/components/today/action-bar';
 import { ResultSheet } from '@/components/today/result-sheet';
+import { PostflopHand } from '@/components/today/postflop-hand';
+import { PostflopResult } from '@/components/today/postflop-result';
 
 const ALL_POSITIONS: Position[] = ['UTG', 'MP', 'CO', 'BTN', 'SB'];
 
 /**
- * Free simulation — endless GTO training loop.
- *
- * Filters for position / difficulty were removed per user feedback: they
- * took up disproportionate screen space for a screen whose whole point
- * is "one more hand, fast." We default to every position + full mix so
- * the user sees the widest possible variety of spots.
+ * Free simulation — endless GTO training loop. Mixes preflop RFI, BB
+ * defense, and postflop drills so the user sees the full scenario
+ * palette. No date seed — every hand is random.
  */
 export default function SimPage() {
-  const [spot, setSpot] = useState<TrainingSpot | null>(null);
+  const [item, setItem] = useState<RandomItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [resultOpen, setResultOpen] = useState(false);
   const [lastGrade, setLastGrade] = useState<AnswerGrade | null>(null);
-  const [lastAnswer, setLastAnswer] = useState<GradedAction | null>(null);
+  const [lastPreflopAnswer, setLastPreflopAnswer] = useState<GradedAction | null>(null);
+  const [lastPostflopAnswer, setLastPostflopAnswer] = useState<PostflopAction | null>(null);
 
   const [sharp, setSharp] = useState(0);
   const [acceptable, setAcceptable] = useState(0);
@@ -40,11 +45,8 @@ export default function SimPage() {
 
   const loadNext = async () => {
     setLoading(true);
-    const next = await generateRandomSpot({
-      positions: ALL_POSITIONS,
-      difficulty: 'any',
-    });
-    if (next) setSpot(next);
+    const next = await generateRandomItem({ positions: ALL_POSITIONS, difficulty: 'any' });
+    if (next) setItem(next);
     setLoading(false);
   };
 
@@ -52,15 +54,28 @@ export default function SimPage() {
     void loadNext();
   }, []);
 
-  const handleAnswer = (action: GradedAction) => {
-    if (!spot) return;
-    const grade = gradeAnswer(spot, action);
-    setLastAnswer(action);
+  const recordGrade = (grade: AnswerGrade) => {
     setLastGrade(grade);
     setResultOpen(true);
     if (grade === 'sharp') setSharp((v) => v + 1);
     else if (grade === 'acceptable') setAcceptable((v) => v + 1);
     else setWrong((v) => v + 1);
+  };
+
+  const handlePreflopAnswer = (action: GradedAction) => {
+    if (!item || item.kind !== 'preflop') return;
+    const grade = gradeAnswer(item.spot, action);
+    setLastPreflopAnswer(action);
+    setLastPostflopAnswer(null);
+    recordGrade(grade);
+  };
+
+  const handlePostflopAnswer = (action: PostflopAction) => {
+    if (!item || item.kind !== 'postflop') return;
+    const grade = gradePostflopAction(item.spot, action);
+    setLastPostflopAnswer(action);
+    setLastPreflopAnswer(null);
+    recordGrade(grade);
   };
 
   const handleNext = async () => {
@@ -73,7 +88,8 @@ export default function SimPage() {
     else if (lastGrade === 'acceptable') setAcceptable((v) => Math.max(0, v - 1));
     else if (lastGrade === 'wrong') setWrong((v) => Math.max(0, v - 1));
     setResultOpen(false);
-    setLastAnswer(null);
+    setLastPreflopAnswer(null);
+    setLastPostflopAnswer(null);
     setLastGrade(null);
   };
 
@@ -96,41 +112,81 @@ export default function SimPage() {
           </dl>
         </header>
 
-        {loading && !spot && (
+        {loading && !item && (
           <div className="flex flex-1 items-center justify-center">
             <p className="font-mono text-[13px] text-fg-muted">불러오는 중…</p>
           </div>
         )}
 
-        {spot && (
+        {item && (
           <AnimatePresence mode="wait">
             <motion.div
-              key={spot.id}
+              key={item.kind === 'preflop' ? item.spot.id : item.spot.id}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.2 }}
             >
-              <HandCard spot={spot} />
+              {item.kind === 'preflop' ? (
+                <HandCard spot={item.spot} />
+              ) : (
+                <PostflopHand spot={item.spot} />
+              )}
             </motion.div>
           </AnimatePresence>
         )}
 
-        {spot && (
+        {item?.kind === 'preflop' && (
           <ActionBar
             disabled={resultOpen || loading}
-            actions={spot.availableActions}
-            callSize={spot.openSize}
-            raiseSize={spot.scenario === 'vs_open' ? 9 : 2.5}
-            onAnswer={handleAnswer}
+            actions={item.spot.availableActions}
+            callSize={item.spot.openSize}
+            raiseSize={item.spot.scenario === 'vs_open' ? 9 : 2.5}
+            onAnswer={handlePreflopAnswer}
           />
         )}
 
+        {item?.kind === 'postflop' && (
+          <div
+            className={cn(
+              'safe-bottom mt-5 grid gap-2',
+              item.spot.availableActions.length === 2 ? 'grid-cols-2' : 'grid-cols-3',
+            )}
+          >
+            {item.spot.availableActions.map((a) => (
+              <button
+                key={a}
+                type="button"
+                disabled={resultOpen || loading}
+                onClick={() => handlePostflopAnswer(a)}
+                className="h-14 select-none rounded-[var(--radius-button)] text-[14px] font-semibold transition-colors disabled:opacity-40 active:scale-[0.98]"
+                style={{
+                  background: POSTFLOP_ACTION_COLOR[a],
+                  color:
+                    a.startsWith('bet') || a.startsWith('raise')
+                      ? 'var(--color-noir)'
+                      : 'var(--color-ivory)',
+                }}
+              >
+                {POSTFLOP_ACTION_LABEL[a]}
+              </button>
+            ))}
+          </div>
+        )}
+
         <ResultSheet
-          open={resultOpen}
-          spot={spot}
-          userAnswer={lastAnswer}
+          open={resultOpen && item?.kind === 'preflop'}
+          spot={item?.kind === 'preflop' ? item.spot : null}
+          userAnswer={lastPreflopAnswer}
           grade={lastGrade}
+          onNext={handleNext}
+          onRetry={handleRetry}
+        />
+
+        <PostflopResult
+          open={resultOpen && item?.kind === 'postflop'}
+          spot={item?.kind === 'postflop' ? item.spot : null}
+          userAnswer={lastPostflopAnswer}
           onNext={handleNext}
           onRetry={handleRetry}
         />

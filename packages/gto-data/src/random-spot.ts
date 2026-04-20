@@ -3,6 +3,7 @@ import { allCombos } from './combos';
 import { classifyAnswer, type TrainingSpot } from './spot-generator';
 import { getPreflopChart } from './preflop';
 import { getBbDefenseChart, SUPPORTED_OPENERS } from './bb-defense';
+import { listPostflopSpots, type PostflopSpot } from './postflop';
 import { SUITS } from '@gto/poker-core';
 import type { CardCode, ComboKey } from '@gto/poker-core';
 
@@ -148,4 +149,29 @@ export async function generateRandomSpot(opts: RandomSpotOptions = {}): Promise<
     correctAnswer: classifyAnswer(entry.raise),
     availableActions: ['fold', 'raise'],
   };
+}
+
+/**
+ * Random training item — sometimes preflop, sometimes postflop. Mirrors
+ * the shape used by generateDailyItems so /sim can consume the same
+ * DailyItem union and branch rendering consistently.
+ */
+export type RandomItem =
+  | { readonly kind: 'preflop'; readonly spot: TrainingSpot }
+  | { readonly kind: 'postflop'; readonly spot: PostflopSpot };
+
+export async function generateRandomItem(
+  opts: RandomSpotOptions = {},
+): Promise<RandomItem | null> {
+  // 35% chance of a postflop drill. Preflop still dominates because our
+  // postflop pool is only 5 seeds and would feel repetitive at 50/50.
+  if (Math.random() < 0.35) {
+    const pool = listPostflopSpots();
+    if (pool.length > 0) {
+      const spot = pool[Math.floor(Math.random() * pool.length)]!;
+      return { kind: 'postflop', spot };
+    }
+  }
+  const pre = await generateRandomSpot(opts);
+  return pre ? { kind: 'preflop', spot: pre } : null;
 }

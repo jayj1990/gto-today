@@ -1,32 +1,23 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import {
-  gradePostflopAction,
   listPostflopSpots,
   POSTFLOP_ACTION_COLOR,
   POSTFLOP_ACTION_LABEL,
   type PostflopAction,
-  type PostflopSpot,
 } from '@gto/gto-data';
 import { cn } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
 import { PostflopHand } from '@/components/today/postflop-hand';
-
-const STREET_LABEL = { flop: '플랍', turn: '턴', river: '리버' } as const;
-const POT_LABEL = { srp: 'SRP', '3bp': '3-bet 팟', '4bp': '4-bet 팟', limped: '림프' } as const;
+import { PostflopResult } from '@/components/today/postflop-result';
 
 /**
- * Phase 5a/b — post-flop training loop.
- *
- * Uses the 5 hand-crafted post-flop seeds from @gto/gto-data. Each spot
- * is a single-decision drill (flop c-bet, flop x/r, turn barrel, river
- * bluff-catch, flop donk). User picks an action, we grade against the
- * spot's GTO mix, show the mix bar + the teaching note, advance.
- *
- * Multi-street chains (Phase 5b proper) come later — for now this loop
- * covers the same core gameplay as /today/play but for post-flop.
+ * Stand-alone post-flop training loop. Walks through the 5 handcrafted
+ * postflop seeds. Uses the shared PostflopResult bottom-sheet so retry
+ * + gated teaching-note behave identically to the mixed /today/play and
+ * /sim flows.
  */
 export default function TodayPostflopPage() {
   const spots = useMemo(() => listPostflopSpots(), []);
@@ -47,6 +38,11 @@ export default function TodayPostflopPage() {
     setResultOpen(false);
     setAnswer(null);
     setCursor((c) => c + 1);
+  };
+
+  const handleRetry = () => {
+    setResultOpen(false);
+    setAnswer(null);
   };
 
   const handleRestart = () => {
@@ -71,18 +67,26 @@ export default function TodayPostflopPage() {
               <PostflopHand key={spot.id} spot={spot} />
             </AnimatePresence>
 
-            {/* Action bar */}
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            <div
+              className={cn(
+                'mt-4 grid gap-2',
+                spot.availableActions.length === 2 ? 'grid-cols-2' : 'grid-cols-3',
+              )}
+            >
               {spot.availableActions.map((a) => (
                 <button
                   key={a}
                   type="button"
                   onClick={() => handleAnswer(a)}
                   disabled={resultOpen}
-                  className={cn(
-                    'h-14 rounded-[var(--radius-button)] font-semibold text-ivory active:scale-[0.98] disabled:opacity-50',
-                  )}
-                  style={{ background: POSTFLOP_ACTION_COLOR[a] }}
+                  className="h-14 rounded-[var(--radius-button)] font-semibold active:scale-[0.98] disabled:opacity-50"
+                  style={{
+                    background: POSTFLOP_ACTION_COLOR[a],
+                    color:
+                      a.startsWith('bet') || a.startsWith('raise')
+                        ? 'var(--color-noir)'
+                        : 'var(--color-ivory)',
+                  }}
                 >
                   {POSTFLOP_ACTION_LABEL[a]}
                 </button>
@@ -112,121 +116,15 @@ export default function TodayPostflopPage() {
           </div>
         )}
 
-        {/* Result sheet */}
-        <AnimatePresence>
-          {resultOpen && spot && answer && (
-            <>
-              <motion.div
-                key="bd"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18 }}
-                className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm"
-                aria-hidden
-              />
-              <motion.div
-                key="sheet"
-                role="dialog"
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
-                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                className={cn(
-                  'fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-lg',
-                  'rounded-t-[var(--radius-panel)] surface-raised border-hair border-t',
-                  'safe-sticky-bottom px-6 pt-6 shadow-[var(--shadow-panel)]',
-                )}
-              >
-                <div
-                  className="mx-auto mb-4 h-1 w-10 rounded-full bg-[color:var(--color-border)]"
-                  aria-hidden
-                />
-                <ResultContent spot={spot} userAnswer={answer} />
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  className="mt-5 mb-3 h-14 w-full rounded-[var(--radius-button)] bg-gold-gradient font-semibold text-noir shadow-[var(--shadow-card)] active:scale-[0.98]"
-                >
-                  {cursor === spots.length - 1 ? '결과 보기' : '다음 스팟 →'}
-                </button>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+        <PostflopResult
+          open={resultOpen}
+          spot={spot}
+          userAnswer={answer}
+          onNext={handleNext}
+          onRetry={handleRetry}
+          nextLabel={cursor === spots.length - 1 ? '결과 보기' : '다음 스팟 →'}
+        />
       </main>
-    </>
-  );
-}
-
-function ResultContent({
-  spot,
-  userAnswer,
-}: {
-  spot: PostflopSpot;
-  userAnswer: PostflopAction;
-}) {
-  const grade = gradePostflopAction(spot, userAnswer);
-  const total = Object.values(spot.mix).reduce((s, v) => s + (v ?? 0), 0);
-  const gradeLabel = grade === 'sharp' ? '정확해요' : grade === 'acceptable' ? '괜찮아요' : '다른 선택이 더 유리했어요';
-  const gradeColor =
-    grade === 'sharp'
-      ? 'var(--color-gold)'
-      : grade === 'acceptable'
-        ? 'var(--color-info)'
-        : 'var(--color-raise)';
-
-  return (
-    <>
-      <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-fg-muted">
-        {spot.context.heroPos} · {STREET_LABEL[spot.street]}
-      </p>
-      <h2
-        className="mt-1 font-display text-[28px] font-bold leading-tight tracking-[-0.02em]"
-        style={{ color: gradeColor }}
-      >
-        {gradeLabel}
-      </h2>
-      <p className="mt-2 text-[13px] text-fg-muted">
-        내 선택:{' '}
-        <span className="text-fg">{POSTFLOP_ACTION_LABEL[userAnswer]}</span>
-      </p>
-
-      <div className="mt-5 rounded-[var(--radius-button)] border-hair surface p-4">
-        <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted">
-          GTO 믹스 (합계 {Math.round(total * 100)}%)
-        </p>
-        <div className="space-y-2">
-          {(Object.entries(spot.mix) as [PostflopAction, number][])
-            .sort(([, a], [, b]) => (b ?? 0) - (a ?? 0))
-            .map(([action, freq]) => (
-              <div key={action} className="flex items-center gap-3">
-                <span className="w-24 font-mono text-[12px] text-fg-muted">
-                  {POSTFLOP_ACTION_LABEL[action]}
-                </span>
-                <div className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]">
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${(freq ?? 0) * 100}%`,
-                      background: POSTFLOP_ACTION_COLOR[action],
-                    }}
-                  />
-                </div>
-                <span className="w-12 text-right font-mono text-[12px] font-semibold tabular-nums">
-                  {((freq ?? 0) * 100).toFixed(1)}%
-                </span>
-              </div>
-            ))}
-        </div>
-      </div>
-
-      <div className="mt-4 rounded-[var(--radius-button)] border border-[color:var(--color-accent)]/30 bg-[color:var(--color-accent)]/10 px-4 py-3 text-[12px] leading-[1.55] text-fg">
-        <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]">
-          왜 그런지
-        </p>
-        {spot.teachingNote}
-      </div>
     </>
   );
 }
