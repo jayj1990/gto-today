@@ -28,10 +28,10 @@ export default function LiveSetupPage() {
             실전 모드 · 설정
           </p>
           <h1 className="mt-2 font-display text-[30px] font-bold tracking-[-0.02em]">
-            솔버 데이터 선택
+            GTO 데이터 선택
           </h1>
           <p className="mt-3 text-[13px] text-fg-muted">
-            TexasSolver 0.2가 제공하는 범위로 고정. 추가 스택·오픈 사이즈·앤티 지원은 향후 솔버 데이터 확장되면 열립니다.
+            현재는 6맥스 100BB 범위로 고정. 추가 스택·오픈 사이즈·앤티 지원은 추후 업데이트 예정입니다.
           </p>
         </header>
 
@@ -66,14 +66,9 @@ export default function LiveSetupPage() {
             </div>
           </FieldSet>
 
-          <InfoRow label="테이블" value="6맥스 (솔버 범위)" locked />
+          <InfoRow label="테이블" value="6맥스" locked />
           <InfoRow label="스택" value="100BB" locked />
           <InfoRow label="오픈 사이즈" value="2.5x (SB 3x)" locked />
-          <InfoRow
-            label="데이터 출처"
-            value="TexasSolver 0.2"
-            valueClass="text-[color:var(--color-call)]"
-          />
         </motion.section>
 
         <Link
@@ -85,7 +80,7 @@ export default function LiveSetupPage() {
         </Link>
 
         <div className="mt-4 rounded-[var(--radius-button)] border border-[color:var(--color-info)]/40 bg-[color:var(--color-info)]/10 px-4 py-3 text-[12px] text-[color:var(--color-info)]">
-          향후 확장 예정: 다양한 스택 뎁스 (50BB / 200BB), 추가 오픈 사이즈 (2.25x / 3x), ICM 버블 모드. TexasSolver로 솔빙 후 추가됩니다.
+          추후 업데이트 예정: 다양한 스택 뎁스 (50BB / 200BB), 추가 오픈 사이즈 (2.25x / 3x), ICM 버블 모드.
         </div>
       </main>
     </>

@@ -28,7 +28,7 @@ export default function PostflopDevPage() {
             포스트플랍 시드
           </h1>
           <p className="mt-2 text-fg-muted">
-            Phase 5a — 5개의 손으로 심은 포스트플랍 스팟. 데이터 포맷 + 그레이딩 동작 확인용. TexasSolver 파이프라인 연결되면 실 데이터로 교체됩니다.
+            Phase 5a — 5개의 손으로 심은 포스트플랍 스팟. 데이터 포맷 + 그레이딩 동작 확인용. 추후 실 데이터로 교체 예정.
           </p>
         </header>
 

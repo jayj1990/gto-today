@@ -66,6 +66,8 @@ export function ChartNavigator({
 
   const handleAction = (action: string) => setPath((p) => [...p, `${node?.actor}_${action}`]);
   const handlePop = (idx: number) => setPath((p) => p.slice(0, idx));
+  const handleBack = () => setPath((p) => p.slice(0, -1));
+  const handleRestart = () => setPath([]);
 
   return (
     <div className={className}>
@@ -104,8 +106,6 @@ export function ChartNavigator({
           </section>
 
           {node.bbWins ? (
-            /* Everyone folded to the big blind — no decision to make,
-               BB scoops the blinds + antes. */
             <section className="rounded-[var(--radius-panel)] border border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 p-8 text-center">
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-gold)]">
                 결과
@@ -116,6 +116,13 @@ export function ChartNavigator({
               <p className="mt-3 text-[13px] text-fg-muted">
                 모두 폴드 → BB가 블라인드를 가져갑니다. 핸드가 끝났어요.
               </p>
+              <button
+                type="button"
+                onClick={handleRestart}
+                className="mt-6 inline-flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-gold-gradient px-6 font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+              >
+                새 핸드 시작 ↻
+              </button>
             </section>
           ) : (
             <>
@@ -131,7 +138,6 @@ export function ChartNavigator({
                 )}
               </section>
 
-              {/* Colour legend under the grid */}
               <section className="mb-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] text-fg-muted">
                 <LegendDot color="#C8102E" label="레이즈" />
                 <LegendDot color="#1F9D55" label="콜" />
@@ -139,7 +145,7 @@ export function ChartNavigator({
               </section>
 
               {node.legal.length > 0 && (
-                <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <section className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {node.legal.map((act) => {
                     const color = actionColour(act);
                     return (
@@ -162,6 +168,25 @@ export function ChartNavigator({
               )}
             </>
           )}
+
+          <section className="mt-4 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={handleBack}
+              disabled={path.length === 0}
+              className="h-11 rounded-[var(--radius-button)] border-hair surface font-mono text-[12px] text-fg-muted disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.98]"
+            >
+              ← 뒤로
+            </button>
+            <button
+              type="button"
+              onClick={handleRestart}
+              disabled={path.length === 0}
+              className="h-11 rounded-[var(--radius-button)] border-hair surface font-mono text-[12px] text-fg-muted disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.98]"
+            >
+              ↻ 처음부터
+            </button>
+          </section>
         </>
       )}
     </div>
