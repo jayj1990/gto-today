@@ -27,7 +27,7 @@ export default function TodayIntroPage() {
         </p>
 
         <dl className="mt-8 grid grid-cols-3 gap-3">
-          <Summary label="포맷" value="6맥스" />
+          <Summary label="게임" value="MTT 6맥스" />
           <Summary label="스택" value="100BB" />
           <Summary label="시나리오" value="RFI · BB 디펜스" />
         </dl>

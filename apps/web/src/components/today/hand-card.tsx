@@ -93,7 +93,7 @@ export function HandCard({ spot, className }: HandCardProps) {
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
-          {formatLabel}
+          MTT · {formatLabel}
         </span>
         <div className="flex items-center gap-1.5">
           <Pill>{spot.position}</Pill>

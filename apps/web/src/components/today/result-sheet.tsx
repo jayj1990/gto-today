@@ -112,14 +112,17 @@ export function ResultSheet({
     }
   };
 
-  // Build the headline based on grade + GTO dominant action.
+  // Build the headline based on grade. Colour is grade-bound (not
+  // action-bound) so a wrong answer always reads RED even when the
+  // "correct" action is call-green. Avoids the visual cue that
+  // suggests the user was right.
   const headline = (() => {
     if (!spot || !grade) return null;
     if (grade === 'sharp') {
       return {
         title: '정확해요',
         subtitle: '좋은 판단이었어요.',
-        tone: 'gold' as const,
+        tone: 'correct' as const,
       };
     }
     if (grade === 'acceptable') {
@@ -135,8 +138,7 @@ export function ResultSheet({
     return {
       title: `${label}${particleSubject(label)} 더 유리했어요`,
       subtitle: '같은 상황에서 왜 그런지 확인해 보세요.',
-      tone: 'gtoColor' as const,
-      gtoAction: gto,
+      tone: 'wrong' as const,
     };
   })();
 
@@ -183,11 +185,11 @@ export function ResultSheet({
               className="mt-1 font-display text-[30px] font-bold leading-tight tracking-[-0.02em]"
               style={{
                 color:
-                  headline.tone === 'gold'
-                    ? 'var(--color-gold)'
+                  headline.tone === 'correct'
+                    ? 'var(--color-call)'
                     : headline.tone === 'info'
                       ? 'var(--color-info)'
-                      : ACTION_COLOR[headline.gtoAction],
+                      : 'var(--color-raise)',
               }}
             >
               {headline.title}
