@@ -229,38 +229,47 @@ async function collectRangeFiles(dir: string): Promise<string[]> {
   return out;
 }
 
-/** Parse a qb_ranges folder into keyed decision mixes. */
+/** Parse a qb_ranges folder into keyed decision mixes. Key format:
+ *    "UTG_2.5bb_BB"                  — BB decides after UTG opens
+ *    "UTG_2.5bb_BB_11.0bb_UTG"       — UTG decides after BB 3-bet
+ *  Values: { [actionLabel]: { [combo]: freq } } — flat, no wrapper. */
 async function extractQbRanges(qbRoot: string) {
   const files = await collectRangeFiles(qbRoot);
-  // Group by prefix (action path minus last token).
   const groups = new Map<string, { files: { path: string; lastToken: string }[] }>();
 
   for (const full of files) {
-    // Use POSIX-style relative path starting from the position folder
-    // so the key format is "BTN/vs_3bet/BTN_2.5bb_BB_11.0bb_BTN".
     const relRaw = full.slice(qbRoot.length + 1).replace(/\\/g, '/');
-    const rel = relRaw.replace(/\.txt$/, '');
+    // Strip position subfolder ("BB/" / "BTN/vs_3bet/" etc.) — the
+    // action-path segments in the filename already carry the full
+    // context we need. Splitting on '/' and taking the last part
+    // drops those folders.
+    const noFolders = relRaw.split('/').pop()!;
+    const rel = noFolders.replace(/\.txt$/, '');
     const lastSep = rel.lastIndexOf('_');
     if (lastSep < 0) continue;
     const prefix = rel.slice(0, lastSep);
     const lastToken = rel.slice(lastSep + 1);
-    // Only group files whose last token is a valid action.
     if (!parseActionToken(lastToken)) continue;
     const bucket = groups.get(prefix) ?? { files: [] };
     bucket.files.push({ path: full, lastToken });
     groups.set(prefix, bucket);
   }
 
-  const decisions: Record<string, DecisionMix> = {};
+  // Flat { key: { action: { combo: freq } } } — no wrapper object.
+  const decisions: Record<string, Record<string, Record<string, number>>> = {};
   for (const [prefix, { files: group }] of groups) {
-    const mix: DecisionMix = { actions: {} };
+    const actions: Record<string, Record<string, number>> = {};
     for (const { path, lastToken } of group) {
       const range = await parseRangeFile(path);
       if (!range) continue;
-      mix.actions[lastToken] = range;
+      actions[lastToken] = range;
     }
-    if (Object.keys(mix.actions).length > 0) {
-      decisions[prefix] = mix;
+    if (Object.keys(actions).length > 0) {
+      // Later files may overwrite earlier ones if the same decision
+      // appears both in the position's top folder and inside its
+      // vs_3bet/vs_4bet subfolder. Last one wins (deeper files are
+      // typically the duplicate copies — TexasSolver ships both).
+      decisions[prefix] = { ...(decisions[prefix] ?? {}), ...actions };
     }
   }
   return decisions;
