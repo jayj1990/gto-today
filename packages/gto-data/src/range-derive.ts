@@ -105,7 +105,7 @@ export function deriveRanges(
  */
 export function freqsToRangeString(
   freqs: Record<string, number>,
-  minFreq = 0.05,
+  minFreq = 0.1,
 ): string {
   const parts: string[] = [];
   for (const [combo, freq] of Object.entries(freqs)) {

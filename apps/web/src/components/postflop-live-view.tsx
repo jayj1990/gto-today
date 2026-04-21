@@ -101,10 +101,11 @@ export function PostflopLiveView({
         pot,
         effStack,
         scenario,
-        // 80 iters converges most SRP flops to target exploitability
-        // without burning the full 150-iter budget. Retries bump +1
-        // to bust the cache key.
-        maxIter: 80 + attempt,
+        // 100 iters balances convergence vs. timeout budget —
+        // below 80 leaves exploitability at 5%+ on wide ranges; above
+        // 150 risks hitting the Function's 300s cap. Retries bump
+        // +1 to bust the cache key (and pick up marginal convergence).
+        maxIter: 100 + attempt,
       }),
       signal: controller.signal,
     })
