@@ -11,8 +11,7 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
 use postflop_solver::{
-    ActionTree, BetSizeOptions, BoardState, CardConfig, PostFlopGame, SolverConfig, TreeConfig,
-    solve,
+    ActionTree, BetSizeOptions, BoardState, CardConfig, PostFlopGame, TreeConfig, solve,
 };
 
 #[derive(Debug, Deserialize)]
@@ -68,9 +67,9 @@ pub fn solve_flop(input: JsValue) -> Result<JsValue, JsValue> {
         .map_err(|e| JsValue::from_str(&format!("bad board: {e}")))?;
     let card_config = CardConfig {
         range: [
-            postflop_solver::Range::from_sanitized(&input.oop_range)
+            postflop_solver::Range::from_sanitized_str(&input.oop_range)
                 .map_err(|e| JsValue::from_str(&format!("oop range: {e}")))?,
-            postflop_solver::Range::from_sanitized(&input.ip_range)
+            postflop_solver::Range::from_sanitized_str(&input.ip_range)
                 .map_err(|e| JsValue::from_str(&format!("ip range: {e}")))?,
         ],
         flop: board,
@@ -111,7 +110,10 @@ pub fn solve_flop(input: JsValue) -> Result<JsValue, JsValue> {
     game.allocate_memory(false);
 
     let target = input.accuracy / 100.0;
-    let (iters, expl) = solve(&mut game, input.max_iter, target, false);
+    // solve() returns final exploitability as f32. It iterates up to
+    // `max_iter` times internally; we don't get a separate iteration
+    // count back, so report the cap as a conservative upper bound.
+    let expl = solve(&mut game, input.max_iter, target, false);
 
     // Extract root strategy.
     game.cache_normalized_weights();
@@ -122,19 +124,18 @@ pub fn solve_flop(input: JsValue) -> Result<JsValue, JsValue> {
         actions,
         mix,
         exploitability: expl * 100.0,
-        iterations: iters,
+        iterations: input.max_iter,
     };
     serde_wasm_bindgen::to_value(&out).map_err(|e| JsValue::from_str(&format!("serialize: {e}")))
 }
 
-fn parse_board(board: &[String; 3]) -> Result<Vec<u8>, String> {
-    board
-        .iter()
-        .map(|s| {
-            postflop_solver::card_from_str(s)
-                .map_err(|e| format!("card '{s}': {e}"))
-        })
-        .collect()
+fn parse_board(board: &[String; 3]) -> Result<[u8; 3], String> {
+    let mut out = [0u8; 3];
+    for (i, s) in board.iter().enumerate() {
+        out[i] = postflop_solver::card_from_str(s)
+            .map_err(|e| format!("card '{s}': {e}"))?;
+    }
+    Ok(out)
 }
 
 /// Readable labels for the root node's action set.
