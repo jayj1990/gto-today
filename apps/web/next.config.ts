@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
     // at the right place). Client bundle is unaffected.
     if (isServer) {
       config.output = config.output ?? {};
-      config.output.webassemblyModuleFilename = 'chunks/[id].[contenthash].wasm';
+      config.output.webassemblyModuleFilename = 'chunks/[modulehash].wasm';
     }
     return config;
   },
