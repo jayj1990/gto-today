@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ComboDetailSheet, RangeGrid, type ComboMix } from '@gto/ui';
+import { BoardPicker } from '@/components/board-picker';
+import { PostflopLiveView } from '@/components/postflop-live-view';
 
 type DecisionsJson = Record<string, Record<string, Record<string, number>>>;
 
@@ -78,6 +80,17 @@ export function ChartNavigator({
   const [pickedCombo, setPickedCombo] = useState<string | null>(null);
   const pickedMix = pickedCombo ? mixes[pickedCombo] : undefined;
 
+  // Flop picker / live-solve state. When boardPickerOpen is true we
+  // show the board selection sheet; when flopBoard is set we render
+  // the solver result in place of the preflop grid.
+  const [boardPickerOpen, setBoardPickerOpen] = useState(false);
+  const [flopBoard, setFlopBoard] = useState<[string, string, string] | null>(null);
+
+  // Should the "플랍 탐색" CTA appear? Yes when there's at least one
+  // preflop action recorded, no all-in yet, no BB-wins, and the hand
+  // could realistically continue to a flop.
+  const canExploreFlop = path.length > 0 && !node?.bbWins && !node?.showdown && !node?.postAllIn;
+
   return (
     <div className={className}>
       {loading && <p className="font-mono text-[13px] text-fg-muted">차트 불러오는 중…</p>}
@@ -88,7 +101,39 @@ export function ChartNavigator({
         </p>
       )}
 
-      {node && (
+      {node && flopBoard && (
+        <>
+          <SeatRibbon state={seatState} />
+          <PostflopLiveView
+            board={flopBoard}
+            oopRange="AA,KK,QQ,JJ,TT,99,88,77,66,55,44,33,22,AKs,AQs,AJs,ATs,A9s,A8s,A7s,A6s,A5s,A4s,A3s,A2s,KQs,KJs,KTs,K9s,QJs,QTs,Q9s,JTs,J9s,T9s,98s,87s,76s,65s,54s,AKo,AQo,AJo,ATo,KQo,KJo"
+            ipRange="AA,KK,QQ,JJ,TT,99,88,77,66,55,AKs,AQs,AJs,ATs,A9s,A8s,KQs,KJs,KTs,QJs,QTs,JTs,T9s,98s,AKo,AQo,AJo,KQo"
+            pot={5.5}
+            effStack={97.5}
+            scenario="cash"
+            onBack={() => setFlopBoard(null)}
+          />
+
+          <section className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={handleBack}
+              className="h-10 rounded-[var(--radius-button)] border-hair surface font-mono text-[12px] text-fg-muted active:scale-[0.98]"
+            >
+              ← 뒤로
+            </button>
+            <button
+              type="button"
+              onClick={handleRestart}
+              className="h-10 rounded-[var(--radius-button)] border-hair surface font-mono text-[12px] text-fg-muted active:scale-[0.98]"
+            >
+              ↻ 처음부터
+            </button>
+          </section>
+        </>
+      )}
+
+      {node && !flopBoard && (
         <>
           <SeatRibbon state={seatState} />
 
@@ -222,6 +267,16 @@ export function ChartNavigator({
             </>
           )}
 
+          {canExploreFlop && (
+            <button
+              type="button"
+              onClick={() => setBoardPickerOpen(true)}
+              className="mt-2 w-full h-11 rounded-[var(--radius-button)] border border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 font-medium text-[color:var(--color-gold)] active:scale-[0.98]"
+            >
+              플랍 탐색 → (라이브 솔빙)
+            </button>
+          )}
+
           <section className="mt-3 grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -246,6 +301,15 @@ export function ChartNavigator({
             combo={pickedCombo}
             mix={pickedMix}
             onClose={() => setPickedCombo(null)}
+          />
+
+          <BoardPicker
+            open={boardPickerOpen}
+            onClose={() => setBoardPickerOpen(false)}
+            onSubmit={(b) => {
+              setFlopBoard(b);
+              setBoardPickerOpen(false);
+            }}
           />
         </>
       )}
