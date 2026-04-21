@@ -10,7 +10,7 @@ repository = "https://github.com/jayj1990/gto-today-solver-wasm"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-postflop-solver = { git = "https://github.com/b-inary/postflop-solver", rev = "main" }
+postflop-solver = { git = "https://github.com/b-inary/postflop-solver", rev = "9d1509fe5077d019825f833eed04b16d342dfda1" }
 wasm-bindgen = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde-wasm-bindgen = "0.6"
