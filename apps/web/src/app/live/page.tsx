@@ -68,15 +68,15 @@ export default function LiveSetupPage() {
           <InfoRow label="테이블" value="6맥스" locked />
           <InfoRow label="스택" value="100BB" locked />
           <InfoRow label="오픈 사이즈" value="2.5x (SB 3x)" locked />
-          <InfoRow
-            label="앤티"
-            value={config.gameType === 'mtt' ? '1BB (BB 앤티)' : '없음'}
-            valueClass={
-              config.gameType === 'mtt'
-                ? 'text-[color:var(--color-accent)]'
-                : undefined
-            }
-          />
+          {config.gameType === 'mtt' ? (
+            <InfoRow
+              label="앤티"
+              value="1BB (BB 앤티)"
+              valueClass="text-[color:var(--color-accent)]"
+            />
+          ) : (
+            <InfoRow label="앤티" value="없음" />
+          )}
         </motion.section>
 
         <Link
