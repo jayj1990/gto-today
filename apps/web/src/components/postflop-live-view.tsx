@@ -48,6 +48,7 @@ interface SolveState {
     mix: Record<string, number[]>;
     exploitability: number;
     note?: string;
+    elapsedMs?: number;
   };
   error?: string;
 }
@@ -171,8 +172,17 @@ export function PostflopLiveView({
 function StrategyView({
   result,
 }: {
-  result: { actions: string[]; mix: Record<string, number[]>; exploitability: number; note?: string };
+  result: {
+    actions: string[];
+    mix: Record<string, number[]>;
+    exploitability: number;
+    note?: string;
+    elapsedMs?: number;
+  };
 }) {
+  const isCache = (result.note ?? '').startsWith('cache hit');
+  const isMock = (result.note ?? '').startsWith('Mock');
+  const elapsedSec = result.elapsedMs ? (result.elapsedMs / 1000).toFixed(1) : null;
   // Convert WASM mix (per-combo freq array) into RangeGrid ComboMix.
   // Action index 0 typically = check/fold, 1..N = raises. We map:
   //   dominant bet index → raise band, call index → call, fold → fold.
@@ -211,12 +221,23 @@ function StrategyView({
       </section>
 
       <section className="rounded-[var(--radius-button)] border-hair surface p-3 text-center font-mono text-[11px] text-fg-muted">
-        수렴 exploitability <span className="text-fg">{result.exploitability.toFixed(2)}%</span>
-        {result.note && (
-          <>
-            {' · '}
-            <span className="text-[color:var(--color-warning)]">{result.note}</span>
-          </>
+        <div>
+          수렴 exploitability <span className="text-fg">{result.exploitability.toFixed(2)}%</span>
+          {elapsedSec && !isMock && (
+            <>
+              {' · '}
+              {isCache ? (
+                <span className="text-[color:var(--color-call)]">캐시 히트 {elapsedSec}s</span>
+              ) : (
+                <span>솔브 {elapsedSec}s</span>
+              )}
+            </>
+          )}
+        </div>
+        {isMock && (
+          <div className="mt-1 text-[color:var(--color-warning)]">
+            {result.note}
+          </div>
         )}
       </section>
     </>

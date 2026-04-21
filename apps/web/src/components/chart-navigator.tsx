@@ -6,6 +6,7 @@ import { ComboDetailSheet, RangeGrid, type ComboMix } from '@gto/ui';
 import { deriveRanges } from '@gto/gto-data';
 import { BoardPicker } from '@/components/board-picker';
 import { PostflopLiveView } from '@/components/postflop-live-view';
+import { useLiveStore } from '@/lib/live-store';
 
 type DecisionsJson = Record<string, Record<string, Record<string, number>>>;
 
@@ -579,13 +580,19 @@ function PostflopFlopSolve({
   const derived = useMemo(() => deriveRanges(decisions, path), [decisions, path]);
   const oopRange = derived?.oopRange || FALLBACK_OOP_RANGE;
   const ipRange = derived?.ipRange || FALLBACK_IP_RANGE;
+  const gameType = useLiveStore((s) => s.config.gameType);
+  // Cash SRP after CO 2.5x open + BB call: SB 0.5 + BB 1 + CO 2.5 + BB 1.5
+  // = 5.5 BB pot, 97.5 BB effective. MTT adds the 1 BB ante → 6.5 BB pot,
+  // 97 BB effective (both players already posted the ante).
+  const pot = gameType === 'mtt' ? 6.5 : 5.5;
+  const effStack = gameType === 'mtt' ? 97 : 97.5;
 
   return (
     <>
       {derived ? (
         <section className="mb-3 rounded-[var(--radius-panel)] border border-[color:var(--color-accent)]/40 bg-[color:var(--color-accent)]/10 p-3 text-center">
           <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[color:var(--color-accent)]">
-            실제 프리플랍 레인지로 솔빙 중
+            실제 프리플랍 레인지로 솔빙 중 · {gameType === 'mtt' ? 'MTT · 1BB 앤티' : 'Cash'}
           </p>
           <p className="mt-1 font-display text-[15px] font-semibold text-fg">
             <span className="text-[color:var(--color-accent)]">{derived.oopPos}</span>
@@ -607,9 +614,9 @@ function PostflopFlopSolve({
         board={board}
         oopRange={oopRange}
         ipRange={ipRange}
-        pot={5.5}
-        effStack={97.5}
-        scenario="cash"
+        pot={pot}
+        effStack={effStack}
+        scenario={gameType}
         onBack={onBack}
       />
     </>
