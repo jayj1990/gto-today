@@ -106,7 +106,9 @@ export function BoardPicker({ open, onClose, onSubmit }: BoardPickerProps) {
               3장 다 고르면 솔빙을 시작합니다. 30~90초 걸려요.
             </p>
 
-            {/* Three card slots */}
+            {/* Three card slots — fixed dimensions so the chosen card and
+                the empty placeholder render at the exact same size and
+                vertical-center alignment (no up-shift when filled). */}
             <div className="mt-4 flex gap-2 justify-center">
               {cards.map((card, i) => (
                 <button
@@ -117,7 +119,8 @@ export function BoardPicker({ open, onClose, onSubmit }: BoardPickerProps) {
                     setPendingRank(null);
                   }}
                   className={cn(
-                    'rounded-[var(--radius-button)] border p-1.5 transition-colors',
+                    'flex items-center justify-center rounded-[var(--radius-button)] border transition-colors',
+                    'h-[86px] w-[60px] p-1.5',
                     activeSlot === i
                       ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/10'
                       : 'border-hair surface',
@@ -131,6 +134,7 @@ export function BoardPicker({ open, onClose, onSubmit }: BoardPickerProps) {
                         animate={{ scale: 1, opacity: 1, rotate: 0 }}
                         exit={{ scale: 0.8, opacity: 0 }}
                         transition={{ type: 'spring', stiffness: 400, damping: 24 }}
+                        className="flex items-center justify-center"
                       >
                         <CardView
                           rank={card[0]!}
@@ -153,8 +157,12 @@ export function BoardPicker({ open, onClose, onSubmit }: BoardPickerProps) {
               ))}
             </div>
 
-            {/* Rank / Suit picker swap */}
-            <div className="mt-5 min-h-[130px]">
+            {/* Rank / Suit picker swap. Fixed height — rank picker uses an
+                explicit 7-column grid so 13 buttons always wrap into
+                exactly 2 rows regardless of viewport width, and the suit
+                row centers vertically inside the same container so the
+                sheet's total height doesn't reflow. */}
+            <div className="mt-5 h-[176px] flex flex-col">
               <AnimatePresence mode="wait">
                 {!pendingRank ? (
                   <motion.section
@@ -163,11 +171,12 @@ export function BoardPicker({ open, onClose, onSubmit }: BoardPickerProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
                     transition={{ duration: 0.16 }}
+                    className="flex flex-col items-center justify-center flex-1"
                   >
                     <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted text-center">
                       랭크 선택
                     </p>
-                    <div className="flex flex-wrap justify-center gap-1.5">
+                    <div className="grid grid-cols-7 gap-1.5 justify-items-center">
                       {RANKS.map((r) => (
                         <motion.button
                           key={r}
@@ -189,6 +198,7 @@ export function BoardPicker({ open, onClose, onSubmit }: BoardPickerProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
                     transition={{ duration: 0.16 }}
+                    className="flex flex-col justify-center flex-1"
                   >
                     <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted text-center">
                       <span className="text-[color:var(--color-accent)]">{pendingRank}</span> 수트 선택
