@@ -84,6 +84,13 @@ export function PostflopLiveView({
       }
     }, 500);
 
+    // 4:20 soft deadline — Vercel Fluid Compute caps at 300s, and the
+    // user experience past 4 minutes is already broken. Abort a little
+    // before the function itself would so we show a friendly error
+    // instead of the browser's fetch failing noisily.
+    const controller = new AbortController();
+    const hardTimeout = setTimeout(() => controller.abort(), 260_000);
+
     fetch('/api/live-solve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -94,14 +101,18 @@ export function PostflopLiveView({
         pot,
         effStack,
         scenario,
-        // Retries add +1 iter per attempt to bust the fingerprint cache.
-        maxIter: 150 + attempt,
+        // 80 iters converges most SRP flops to target exploitability
+        // without burning the full 150-iter budget. Retries bump +1
+        // to bust the cache key.
+        maxIter: 80 + attempt,
       }),
+      signal: controller.signal,
     })
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return;
         clearInterval(tick);
+        clearTimeout(hardTimeout);
         if ('error' in data) {
           setState({ phase: 'error', elapsed: 0, error: data.error });
         } else {
@@ -111,16 +122,24 @@ export function PostflopLiveView({
       .catch((e: unknown) => {
         if (cancelled) return;
         clearInterval(tick);
+        clearTimeout(hardTimeout);
+        const isAbort = e instanceof Error && e.name === 'AbortError';
         setState({
           phase: 'error',
           elapsed: 0,
-          error: e instanceof Error ? e.message : '솔빙 실패',
+          error: isAbort
+            ? '솔빙이 너무 오래 걸립니다. 더 좁은 레인지나 다른 보드로 시도해 보세요.'
+            : e instanceof Error
+              ? e.message
+              : '솔빙 실패',
         });
       });
 
     return () => {
       cancelled = true;
       clearInterval(tick);
+      clearTimeout(hardTimeout);
+      controller.abort();
     };
   }, [board, oopRange, ipRange, pot, effStack, scenario, attempt]);
 
@@ -160,11 +179,18 @@ export function PostflopLiveView({
             {state.elapsed < 5 ? '캐시 확인…' : '솔빙 중…'}
           </p>
           <p className="mt-1 font-mono text-[11px] text-fg-muted tabular-nums">
-            {state.elapsed}초 · 보드·레인지 기반 첫 솔브는 최대 3분
+            {state.elapsed}초 · 보드·레인지 기반 첫 솔브는 최대 90초
           </p>
-          {state.elapsed >= 30 && (
+          {state.elapsed >= 30 && state.elapsed < 120 && (
             <p className="mt-2 text-[11px] text-[color:var(--color-accent)]">
               같은 스팟 재방문 시 즉시 결과가 나옵니다.
+            </p>
+          )}
+          {state.elapsed >= 120 && (
+            <p className="mt-2 text-[11px] text-[color:var(--color-warning)]">
+              솔빙이 예상보다 오래 걸리고 있어요 ({state.elapsed}초).
+              <br />
+              240초까지 자동으로 기다립니다.
             </p>
           )}
         </div>
