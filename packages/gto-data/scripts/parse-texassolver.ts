@@ -283,17 +283,39 @@ async function extractQbRanges(qbRoot: string) {
 }
 
 /** Reject solver nodes whose output is visibly unconverged — deep
- *  vs_5bet branches sometimes ship with AA folding or KK folding at
- *  rates that are never correct GTO. We only accept a node where the
- *  top-of-range hands behave sanely (AA never folds more than 5%, KK
- *  never folds more than 25%). */
+ *  vs_5bet branches ship with AA/KK folding at rates that are never
+ *  correct GTO, plus hand-rank ordering violations (JJ jams more than
+ *  QQ, AQ jams more than AK) which show up when the CFR iteration
+ *  didn't fully converge on that branch. */
 function isSaneNode(actions: Record<string, Record<string, number>>): boolean {
   const foldBranch = actions['FOLD'];
   if (!foldBranch) return true;
+
+  // Premium fold check.
   const aaFold = foldBranch['AA'] ?? 0;
   const kkFold = foldBranch['KK'] ?? 0;
   if (aaFold > 0.05) return false;
   if (kkFold > 0.25) return false;
+
+  // Hand-rank ordering — if the node has an AllIn action, better
+  // hands should jam at least as much as worse hands of the same
+  // class. Inversion = unconverged.
+  const allIn = actions['AllIn'];
+  if (allIn) {
+    const aa = allIn['AA'] ?? 0;
+    const kk = allIn['KK'] ?? 0;
+    const qq = allIn['QQ'] ?? 0;
+    const jj = allIn['JJ'] ?? 0;
+    const tt = allIn['TT'] ?? 0;
+    const aks = allIn['AKs'] ?? 0;
+    const aqs = allIn['AQs'] ?? 0;
+    const tol = 0.05; // allow 5% noise
+    if (kk + tol < qq) return false;
+    if (qq + tol < jj) return false;
+    if (jj + tol < tt) return false;
+    if (aa + tol < kk) return false;
+    if (aks + tol < aqs) return false;
+  }
   return true;
 }
 
