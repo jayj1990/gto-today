@@ -203,7 +203,7 @@ export function BoardPicker({ open, onClose, onSubmit }: BoardPickerProps) {
                             type="button"
                             disabled={dupe}
                             onClick={() => pickSuit(s.id)}
-                            whileTap={dupe ? undefined : { scale: 0.92 }}
+                            {...(dupe ? {} : { whileTap: { scale: 0.92 } })}
                             transition={{ type: 'spring', stiffness: 500, damping: 20 }}
                             className={cn(
                               'aspect-square rounded-[var(--radius-button)] border-hair surface flex items-center justify-center',
@@ -242,7 +242,7 @@ export function BoardPicker({ open, onClose, onSubmit }: BoardPickerProps) {
                 type="button"
                 onClick={submit}
                 disabled={!allFilled}
-                whileTap={allFilled ? { scale: 0.97 } : undefined}
+                {...(allFilled ? { whileTap: { scale: 0.97 } } : {})}
                 className={cn(
                   'h-11 rounded-[var(--radius-button)] font-bold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset',
                   allFilled
