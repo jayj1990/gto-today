@@ -38,8 +38,8 @@ jobs:
       - name: Install wasm-pack
         run: cargo install wasm-pack --version ^0.12
 
-      - name: Build WASM (bundler target)
-        run: wasm-pack build --target bundler --release
+      - name: Build WASM (web target)
+        run: wasm-pack build --target web --release
 
       - name: Prep package for publish
         run: |
