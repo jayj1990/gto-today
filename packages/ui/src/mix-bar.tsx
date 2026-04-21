@@ -49,7 +49,7 @@ export function MixBar({
             {labeled && (
               <span
                 className={cn(
-                  'w-16 flex-shrink-0 font-mono',
+                  'w-20 flex-shrink-0 font-mono',
                   dom ? 'text-[13px] font-bold text-fg' : 'text-[13px] text-fg-muted',
                 )}
               >

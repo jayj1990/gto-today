@@ -190,7 +190,7 @@ export function PostflopResult({
                 <div key={action} className="flex items-center gap-3">
                   <span
                     className={cn(
-                      'w-24 font-mono',
+                      'w-24 flex-shrink-0 font-mono',
                       isTop ? 'text-[13px] font-bold text-fg' : 'text-[12px] text-fg-muted',
                     )}
                   >
@@ -223,7 +223,7 @@ export function PostflopResult({
                   </div>
                   <span
                     className={cn(
-                      'w-12 text-right font-mono tabular-nums',
+                      'w-14 flex-shrink-0 text-right font-mono tabular-nums',
                       isTop
                         ? 'text-[13px] font-bold text-fg'
                         : 'text-[12px] font-semibold text-fg-muted',
