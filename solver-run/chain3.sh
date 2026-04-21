@@ -17,12 +17,14 @@ WATCH="$REPO/solver-run/watchdog.log"
 
 echo "=== chain3 start $(date) ===" >> "$WATCH"
 
-# Wait for the primary chain (phase2 parser) to finish first.
-echo "[$(date +%H:%M:%S)] waiting for primary chain (=== chain done)" >> "$WATCH"
-while ! grep -q "=== chain done" "$WATCH" 2>/dev/null; do
+# Wait for the primary chain (phase2 parser) to finish first. We look
+# for the marker "chain done" at the START of a line so the reminder
+# text we echo here doesn't match itself.
+echo "[$(date +%H:%M:%S)] waiting for primary chain" >> "$WATCH"
+while ! grep -q "^=== chain done" "$WATCH" 2>/dev/null; do
   sleep 120
 done
-echo "[$(date +%H:%M:%S)] primary chain done — starting phase 3" >> "$WATCH"
+echo "[$(date +%H:%M:%S)] primary chain finished — starting phase 3" >> "$WATCH"
 
 run_phase () {
   local N="$1"
