@@ -180,19 +180,16 @@ function mockSolve(req: SolveRequest): SolveResponse {
   const paired = new Set(ranks).size < 3;
   const hasAce = ranks.includes('A');
 
-  // Action set depends on who's acting OOP first. Phase 1: always show
-  // OOP check/bet33/bet75 — BB's typical flop decision tree.
-  const actions = ['check', 'bet33', 'bet75'];
+  // Match solver-wasm 0.5+ action set: check + bet50 only.
+  const actions = ['check', 'bet50'];
 
-  // Baseline mix per board texture.
-  let base: [number, number, number];
-  if (monotone) base = [0.75, 0.2, 0.05]; // mostly check, some small bet
-  else if (paired) base = [0.8, 0.15, 0.05]; // check-heavy, rare bet
-  else if (hasAce) base = [0.35, 0.4, 0.25]; // cbet-heavy, A-high dry
-  else base = [0.55, 0.3, 0.15]; // mixed
+  // Baseline check/bet split per board texture.
+  let base: [number, number];
+  if (monotone) base = [0.8, 0.2];
+  else if (paired) base = [0.85, 0.15];
+  else if (hasAce) base = [0.4, 0.6]; // cbet-heavy on A-high
+  else base = [0.6, 0.4];
 
-  // Populate mix for all 169 hand types. Strong hands (pairs, AK, AQ)
-  // lean more toward bets; weak hands toward checks.
   const mix: Record<string, number[]> = {};
   const ranksOrder = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
   for (let i = 0; i < 13; i++) {
@@ -205,12 +202,11 @@ function mockSolve(req: SolveRequest): SolveResponse {
       else combo = lo + hi + 'o';
 
       const strength = handStrength(combo, hasAce);
-      const bias = (strength - 0.5) * 0.3; // ±0.15 shift
+      const bias = (strength - 0.5) * 0.3; // ±0.15 shift toward bet for strong
       const c = clamp01(base[0] - bias);
-      const b33 = clamp01(base[1] + bias * 0.5);
-      const b75 = clamp01(base[2] + bias * 0.5);
-      const total = c + b33 + b75;
-      mix[combo] = [c / total, b33 / total, b75 / total];
+      const b = clamp01(base[1] + bias);
+      const total = c + b;
+      mix[combo] = [c / total, b / total];
     }
   }
 
