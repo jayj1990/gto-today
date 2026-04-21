@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ComboDetailSheet, RangeGrid, type ComboMix } from '@gto/ui';
+import { deriveRanges } from '@gto/gto-data';
 import { BoardPicker } from '@/components/board-picker';
 import { PostflopLiveView } from '@/components/postflop-live-view';
 
@@ -130,16 +131,13 @@ export function ChartNavigator({
         </p>
       )}
 
-      {node && flopBoard && (
+      {node && flopBoard && decisions && (
         <>
           <SeatRibbon state={seatState} />
-          <PostflopLiveView
+          <PostflopFlopSolve
+            decisions={decisions}
+            path={path}
             board={flopBoard}
-            oopRange="AA,KK,QQ,JJ,TT,99,88,77,66,55,44,33,22,AKs,AQs,AJs,ATs,A9s,A8s,A7s,A6s,A5s,A4s,A3s,A2s,KQs,KJs,KTs,K9s,QJs,QTs,Q9s,JTs,J9s,T9s,98s,87s,76s,65s,54s,AKo,AQo,AJo,ATo,KQo,KJo"
-            ipRange="AA,KK,QQ,JJ,TT,99,88,77,66,55,AKs,AQs,AJs,ATs,A9s,A8s,KQs,KJs,KTs,QJs,QTs,JTs,T9s,98s,AKo,AQo,AJo,KQo"
-            pot={5.5}
-            effStack={97.5}
-            scenario="cash"
             onBack={() => setFlopBoard(null)}
           />
 
@@ -555,4 +553,54 @@ function prettyAction(a: string, compact = false): string {
 
 function cn(...parts: (string | false | undefined)[]) {
   return parts.filter(Boolean).join(' ');
+}
+
+/* ─────────── preflop → postflop bridge ─────────── */
+
+// Fallback ranges used when the preflop path is outside the supported
+// SRP detection (e.g. 3bet pot). Broad enough to keep the solver busy
+// without claiming precision.
+const FALLBACK_OOP_RANGE =
+  'AA,KK,QQ,JJ,TT,99,88,77,66,55,44,33,22,AKs,AQs,AJs,ATs,A9s,A8s,A7s,A6s,A5s,A4s,A3s,A2s,KQs,KJs,KTs,K9s,QJs,QTs,Q9s,JTs,J9s,T9s,98s,87s,76s,65s,54s,AKo,AQo,AJo,ATo,KQo,KJo';
+const FALLBACK_IP_RANGE =
+  'AA,KK,QQ,JJ,TT,99,88,77,66,55,AKs,AQs,AJs,ATs,A9s,A8s,KQs,KJs,KTs,QJs,QTs,JTs,T9s,98s,AKo,AQo,AJo,KQo';
+
+function PostflopFlopSolve({
+  decisions,
+  path,
+  board,
+  onBack,
+}: {
+  decisions: DecisionsJson;
+  path: readonly string[];
+  board: [string, string, string];
+  onBack: () => void;
+}) {
+  const derived = useMemo(() => deriveRanges(decisions, path), [decisions, path]);
+  const oopRange = derived?.oopRange || FALLBACK_OOP_RANGE;
+  const ipRange = derived?.ipRange || FALLBACK_IP_RANGE;
+
+  return (
+    <>
+      {derived ? (
+        <section className="mb-3 rounded-[var(--radius-button)] border-hair surface p-2.5 text-center font-mono text-[11px] text-fg-muted">
+          <span className="text-[color:var(--color-accent)]">{derived.oopPos}</span> (OOP) vs{' '}
+          <span className="text-[color:var(--color-accent)]">{derived.ipPos}</span> (IP) · 양쪽 실제 프리플랍 레인지로 솔빙
+        </section>
+      ) : (
+        <section className="mb-3 rounded-[var(--radius-button)] border border-[color:var(--color-warning)]/30 bg-[color:var(--color-warning)]/5 p-2.5 text-center font-mono text-[11px] text-[color:var(--color-warning)]">
+          3벳+ 스팟은 아직 미지원 — 일반적인 SRP 레인지로 대체 솔빙 중
+        </section>
+      )}
+      <PostflopLiveView
+        board={board}
+        oopRange={oopRange}
+        ipRange={ipRange}
+        pot={5.5}
+        effStack={97.5}
+        scenario="cash"
+        onBack={onBack}
+      />
+    </>
+  );
 }
