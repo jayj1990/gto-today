@@ -21,7 +21,10 @@ export interface BoardPickerProps {
 
 /**
  * Bottom-sheet 3-card flop picker. User taps rank then suit for
- * each slot. Dupe cards disabled.
+ * each slot. Dupe cards disabled. Rank buttons arranged in a
+ * centered 7+6 flex layout so the 13 choices don't look like a
+ * broken grid. Suit buttons forced to square aspect for uniform
+ * sizing regardless of glyph metrics.
  */
 export function BoardPicker({ open, onClose, onSubmit }: BoardPickerProps) {
   const [cards, setCards] = useState<(string | null)[]>([null, null, null]);
@@ -39,7 +42,6 @@ export function BoardPicker({ open, onClose, onSubmit }: BoardPickerProps) {
     next[activeSlot] = card;
     setCards(next);
     setPendingRank(null);
-    // Auto-advance to next empty slot.
     const nextEmpty = next.findIndex((c) => c === null);
     if (nextEmpty >= 0) setActiveSlot(nextEmpty as 0 | 1 | 2);
   };
@@ -110,88 +112,125 @@ export function BoardPicker({ open, onClose, onSubmit }: BoardPickerProps) {
                 <button
                   key={i}
                   type="button"
-                  onClick={() => setActiveSlot(i as 0 | 1 | 2)}
+                  onClick={() => {
+                    setActiveSlot(i as 0 | 1 | 2);
+                    setPendingRank(null);
+                  }}
                   className={cn(
-                    'rounded-[var(--radius-button)] border p-1.5',
+                    'rounded-[var(--radius-button)] border p-1.5 transition-colors',
                     activeSlot === i
                       ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/10'
                       : 'border-hair surface',
                   )}
                 >
-                  {card ? (
-                    <CardView
-                      rank={card[0]!}
-                      suit={card[1] as 's' | 'h' | 'd' | 'c'}
-                      size="sm"
-                      deckScheme="four-color"
-                    />
-                  ) : (
-                    <div className="h-14 w-10 rounded-sm border border-dashed border-[color:var(--color-border)]" />
-                  )}
+                  <AnimatePresence mode="wait">
+                    {card ? (
+                      <motion.div
+                        key={card}
+                        initial={{ scale: 0.6, opacity: 0, rotate: -8 }}
+                        animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 24 }}
+                      >
+                        <CardView
+                          rank={card[0]!}
+                          suit={card[1] as 's' | 'h' | 'd' | 'c'}
+                          size="sm"
+                          deckScheme="four-color"
+                        />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="h-14 w-10 rounded-sm border border-dashed border-[color:var(--color-border)]"
+                      />
+                    )}
+                  </AnimatePresence>
                 </button>
               ))}
             </div>
 
-            {/* Rank picker */}
-            {!pendingRank && (
-              <section className="mt-5">
-                <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted">
-                  랭크 선택
-                </p>
-                <div className="grid grid-cols-7 gap-1.5">
-                  {RANKS.map((r) => (
+            {/* Rank / Suit picker swap */}
+            <div className="mt-5 min-h-[130px]">
+              <AnimatePresence mode="wait">
+                {!pendingRank ? (
+                  <motion.section
+                    key="rank-picker"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.16 }}
+                  >
+                    <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted text-center">
+                      랭크 선택
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-1.5">
+                      {RANKS.map((r) => (
+                        <motion.button
+                          key={r}
+                          type="button"
+                          onClick={() => pickRank(r)}
+                          whileTap={{ scale: 0.92 }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                          className="aspect-square w-11 rounded-[var(--radius-button)] border-hair surface font-display text-[16px] font-bold"
+                        >
+                          {r}
+                        </motion.button>
+                      ))}
+                    </div>
+                  </motion.section>
+                ) : (
+                  <motion.section
+                    key="suit-picker"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.16 }}
+                  >
+                    <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted text-center">
+                      <span className="text-[color:var(--color-accent)]">{pendingRank}</span> 수트 선택
+                    </p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {SUITS.map((s) => {
+                        const card = pendingRank + s.id;
+                        const dupe = usedCards.has(card);
+                        return (
+                          <motion.button
+                            key={s.id}
+                            type="button"
+                            disabled={dupe}
+                            onClick={() => pickSuit(s.id)}
+                            whileTap={dupe ? undefined : { scale: 0.92 }}
+                            transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                            className={cn(
+                              'aspect-square rounded-[var(--radius-button)] border-hair surface flex items-center justify-center',
+                              'text-[32px] font-bold leading-none',
+                              dupe && 'opacity-25 cursor-not-allowed',
+                            )}
+                            style={{ color: s.color }}
+                          >
+                            {s.label}
+                          </motion.button>
+                        );
+                      })}
+                    </div>
                     <button
-                      key={r}
                       type="button"
-                      onClick={() => pickRank(r)}
-                      className="h-10 rounded-[var(--radius-button)] border-hair surface font-display text-[16px] font-bold active:scale-[0.95]"
+                      onClick={() => setPendingRank(null)}
+                      className="mt-2 w-full font-mono text-[11px] text-fg-muted"
                     >
-                      {r}
+                      ← 랭크 다시 선택
                     </button>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Suit picker */}
-            {pendingRank && (
-              <section className="mt-5">
-                <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted">
-                  <span className="text-[color:var(--color-accent)]">{pendingRank}</span> 수트 선택
-                </p>
-                <div className="grid grid-cols-4 gap-2">
-                  {SUITS.map((s) => {
-                    const card = pendingRank + s.id;
-                    const dupe = usedCards.has(card);
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        disabled={dupe}
-                        onClick={() => pickSuit(s.id)}
-                        className={cn(
-                          'h-14 rounded-[var(--radius-button)] border-hair surface text-[28px] font-bold active:scale-[0.95]',
-                          dupe && 'opacity-30 cursor-not-allowed',
-                        )}
-                        style={{ color: s.color }}
-                      >
-                        {s.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPendingRank(null)}
-                  className="mt-2 w-full font-mono text-[11px] text-fg-muted"
-                >
-                  ← 랭크 다시 선택
-                </button>
-              </section>
-            )}
+                  </motion.section>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Submit */}
-            <div className="mt-6 grid grid-cols-2 gap-2">
+            <div className="mt-5 grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={reset}
@@ -199,19 +238,20 @@ export function BoardPicker({ open, onClose, onSubmit }: BoardPickerProps) {
               >
                 초기화
               </button>
-              <button
+              <motion.button
                 type="button"
                 onClick={submit}
                 disabled={!allFilled}
+                whileTap={allFilled ? { scale: 0.97 } : undefined}
                 className={cn(
-                  'h-11 rounded-[var(--radius-button)] font-bold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset active:scale-[0.98]',
+                  'h-11 rounded-[var(--radius-button)] font-bold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset',
                   allFilled
                     ? 'bg-gold-gradient ring-[color:var(--color-gold-deep)]'
                     : 'bg-[color:var(--color-border)] ring-[color:var(--color-border)] opacity-50 cursor-not-allowed',
                 )}
               >
                 솔빙 시작 →
-              </button>
+              </motion.button>
             </div>
           </motion.div>
         </>
