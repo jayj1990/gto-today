@@ -292,16 +292,36 @@ function StrategyView({
       </section>
 
       <section className="rounded-[var(--radius-button)] border-hair surface p-3 text-center font-mono text-[11px] text-fg-muted">
-        수렴 exploitability <span className="text-fg">{result.exploitability.toFixed(2)}%</span>
-        {elapsedSec && !isMock && (
-          <>
-            {' · '}
-            {isCache ? (
-              <span className="text-[color:var(--color-call)]">캐시 히트 {elapsedSec}s</span>
-            ) : (
-              <span>솔브 {elapsedSec}s</span>
-            )}
-          </>
+        <div>
+          수렴 exploitability{' '}
+          <span
+            className={
+              result.exploitability < 2
+                ? 'text-[color:var(--color-call)]'
+                : result.exploitability < 10
+                  ? 'text-[color:var(--color-warning)]'
+                  : 'text-[color:var(--color-raise)]'
+            }
+          >
+            {result.exploitability.toFixed(2)}%
+          </span>
+          {elapsedSec && !isMock && (
+            <>
+              {' · '}
+              {isCache ? (
+                <span className="text-[color:var(--color-call)]">캐시 히트 {elapsedSec}s</span>
+              ) : (
+                <span>솔브 {elapsedSec}s</span>
+              )}
+            </>
+          )}
+        </div>
+        {!isMock && result.exploitability >= 2 && (
+          <div className="mt-1 text-[10px] text-[color:var(--color-warning)]">
+            {result.exploitability >= 10
+              ? '수렴 미완료 — 결과 참고만, 재시도 권장'
+              : '수렴 정확도 낮음 — 일반 경향은 유효'}
+          </div>
         )}
       </section>
     </>
