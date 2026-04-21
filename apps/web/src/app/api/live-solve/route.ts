@@ -56,14 +56,16 @@ function canonRange(r: string): string {
  * the UI never hard-fails.
  */
 
-let wasmReady: Promise<void> | null = null;
-
-async function ensureWasmInit(): Promise<void> {
-  if (wasmReady === null) {
-    wasmReady = init(SOLVER_WASM_BYTES).then(() => undefined);
-  }
-  return wasmReady;
-}
+// Kick off WASM init at module load so the first request doesn't pay
+// the ~100-500ms decode + instantiate latency. On warm reuse the
+// Promise has already resolved and `await` returns immediately.
+const wasmReady: Promise<void> = init(SOLVER_WASM_BYTES).then(
+  () => undefined,
+  (err) => {
+    console.error('[live-solve] WASM init failed at module load:', err);
+    throw err;
+  },
+);
 
 export interface SolveRequest {
   /** Three flop cards, e.g. ['As','Kh','7d']. */
@@ -116,7 +118,7 @@ export async function POST(req: Request): Promise<NextResponse<SolveResponse | {
 
   let wasmError: string | null = null;
   try {
-    await ensureWasmInit();
+    await wasmReady;
     const out = solve_flop({
       board: body.board,
       oop_range: body.oopRange,
