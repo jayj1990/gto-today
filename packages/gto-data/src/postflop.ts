@@ -54,7 +54,7 @@ export type PostflopMix = Partial<Record<PostflopAction, number>>;
  * `potType` is a convenience label — derived from `preflopActions` but
  * stored explicitly so the UI can color-code without re-deriving.
  */
-export type PotType = 'srp' | '3bp' | '4bp' | 'limped';
+export type PotType = 'srp' | '3bp' | '4bp' | 'limped' | 'mtt';
 
 export interface PostflopContext {
   readonly heroPos: Position;

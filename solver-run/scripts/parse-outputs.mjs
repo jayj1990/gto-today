@@ -18,8 +18,11 @@ const INPUT = path.join(ROOT, 'solver-run/outputs');
 const OUT_JSON = path.join(ROOT, 'packages/gto-data/data/postflop-solver-spots.json');
 const OUT_TS = path.join(ROOT, 'packages/gto-data/src/ranges/solver-spots.ts');
 
-const POT = 5.5;            // BB + CO 2.5 + BB 1.5 + SB 0.5
-const EFF_STACK = 97.5;
+// Default pot/stack when the input txt doesn't declare them. We now
+// read the actual values per file so MTT (pot 6.5) and cash (pot 5.5)
+// produce separately labeled spots.
+const DEFAULT_POT = 5.5;
+const DEFAULT_EFF = 97.5;
 
 // Classify a "BET N" action label into our sizing bucket.
 function classifyBet(amount, pot) {
@@ -92,7 +95,7 @@ function preflopSummaryKR() {
 
 // Walk the solver JSON down to the root-node's strategy block and
 // normalise it into { [ourAction]: { [combo]: freq } }.
-function extractRootStrategy(root) {
+function extractRootStrategy(root, pot) {
   // The root itself is player 0 (OOP=BB) deciding. Its strategy is
   // at root.strategy.strategy (combo → freq-array).
   // But root has `actions` and no `strategy`... wait — looking again,
@@ -102,7 +105,7 @@ function extractRootStrategy(root) {
   const actionList = root.strategy.actions ?? root.actions;
   if (!actionList) return null;
 
-  const mapped = actionList.map((a) => mapAction(a, POT));
+  const mapped = actionList.map((a) => mapAction(a, pot));
   if (mapped.some((a) => a === null)) return null;
 
   const byAction = {};
@@ -157,11 +160,11 @@ function heroCardsFromCombo(combo) {
   return [combo.slice(0, 2), combo.slice(2, 4)];
 }
 
-function buildSpot(sourceName, board, root, { c, freqs }) {
+function buildSpot(sourceName, board, root, { c, freqs }, meta) {
   const actionList = root.strategy.actions ?? root.actions;
   const mix = {};
   for (let i = 0; i < actionList.length; i++) {
-    const act = mapAction(actionList[i], POT);
+    const act = mapAction(actionList[i], meta.pot);
     if (!act) continue;
     mix[act] = (mix[act] ?? 0) + (freqs[i] ?? 0);
   }
@@ -169,13 +172,15 @@ function buildSpot(sourceName, board, root, { c, freqs }) {
   const texture = classifyTexture(board);
   const hero = heroCardsFromCombo(c);
 
-  // Short teaching note — short, drivable from mix dominance.
   const sortedMix = Object.entries(mix).sort((a, b) => b[1] - a[1]);
   const [top, topFreq] = sortedMix[0];
   const actionKR = { check: '체크', bet33: '1/3 벳', bet50: '1/2 벳', bet75: '3/4 벳', bet_pot: '팟 벳', bet_overbet: '오버벳' };
   const teachingNote = topFreq >= 0.85
     ? `이 보드 · 이 핸드에서는 ${actionKR[top] ?? top}이 단독 정답에 가깝습니다.`
     : `혼합 전략 — ${actionKR[top] ?? top}이 가장 빈번하지만 ${sortedMix[1] ? actionKR[sortedMix[1][0]] ?? sortedMix[1][0] : '대체 액션'}도 충분한 비중.`;
+
+  const isMTT = meta.format === 'mtt';
+  const preflopSummary = isMTT ? 'CO 오픈 · BB 콜 (MTT · 1BB 앤티)' : 'CO 오픈 · BB 콜';
 
   return {
     id: `pf_${sourceName}_${c}`,
@@ -186,11 +191,11 @@ function buildSpot(sourceName, board, root, { c, freqs }) {
     context: {
       heroPos: 'BB',
       villainPos: 'CO',
-      potType: 'srp',
-      spr: EFF_STACK / POT,
-      potBB: POT,
-      effStackBB: EFF_STACK,
-      preflopSummary: preflopSummaryKR(),
+      potType: isMTT ? 'mtt' : 'srp',
+      spr: meta.eff / meta.pot,
+      potBB: meta.pot,
+      effStackBB: meta.eff,
+      preflopSummary,
     },
     facingBetBB: 0,
     mix,
@@ -218,18 +223,27 @@ function main() {
     // to look up the board. The input txt file has `set_board X,Y,Z`.
     const inputPath = path.join(ROOT, 'solver-run/inputs', f.replace(/\.json$/, '.txt'));
     let board = [];
+    let pot = DEFAULT_POT;
+    let eff = DEFAULT_EFF;
     if (fs.existsSync(inputPath)) {
       const txt = fs.readFileSync(inputPath, 'utf8');
-      const m = txt.match(/^set_board\s+(.+)$/m);
-      if (m) board = m[1].split(',').map((s) => s.trim());
+      const mBoard = txt.match(/^set_board\s+(.+)$/m);
+      if (mBoard) board = mBoard[1].split(',').map((s) => s.trim());
+      const mPot = txt.match(/^set_pot\s+([\d.]+)/m);
+      if (mPot) pot = parseFloat(mPot[1]);
+      const mEff = txt.match(/^set_effective_stack\s+([\d.]+)/m);
+      if (mEff) eff = parseFloat(mEff[1]);
     }
     if (board.length !== 3) {
       console.warn(`  ! ${f} — could not recover board`);
       continue;
     }
+    // MTT trees carry the 1BB big-blind ante in their pot (6.5 vs 5.5).
+    const isMTT = pot > 6.0 || f.startsWith('mtt_');
+    const meta = { pot, eff, format: isMTT ? 'mtt' : 'cash' };
 
     const root = tree;
-    const extracted = extractRootStrategy(root);
+    const extracted = extractRootStrategy(root, pot);
     if (!extracted) {
       console.warn(`  ! ${f} — no root strategy`);
       continue;
@@ -238,9 +252,9 @@ function main() {
     const heroPicks = pickHeroCombos(root, board);
     const sourceName = f.replace(/\.json$/, '');
     for (const pick of heroPicks) {
-      spots.push(buildSpot(sourceName, board, root, pick));
+      spots.push(buildSpot(sourceName, board, root, pick, meta));
     }
-    console.log(`  ✓ ${f} → ${heroPicks.length} spots`);
+    console.log(`  ✓ ${f} → ${heroPicks.length} spots (${meta.format})`);
   }
 
   fs.mkdirSync(path.dirname(OUT_JSON), { recursive: true });
