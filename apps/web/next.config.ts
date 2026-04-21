@@ -8,6 +8,17 @@ const nextConfig: NextConfig = {
   // ships the .wasm binary alongside node_modules instead of trying
   // to pack it through Webpack (which would 404 the runtime fetch).
   serverExternalPackages: ['@jayj1990/gto-today-solver-wasm'],
+  // The wasm-pack nodejs wrapper loads the binary at init time via
+  // readFileSync(__dirname + '/..._bg.wasm'). Next.js doesn't trace
+  // sibling .wasm files of an external package automatically, so we
+  // tell it explicitly to include the whole package in the Function
+  // output for /api/live-solve.
+  outputFileTracingIncludes: {
+    '/api/live-solve': [
+      '../../node_modules/.pnpm/@jayj1990+gto-today-solver-wasm@*/node_modules/@jayj1990/gto-today-solver-wasm/**',
+      '../../node_modules/@jayj1990/gto-today-solver-wasm/**',
+    ],
+  },
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
