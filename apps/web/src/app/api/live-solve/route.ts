@@ -22,6 +22,8 @@ const CACHE_TTL_MS = 60 * 60 * 1000; // 1h
 function fingerprint(body: SolveRequest): string {
   // Canonical string so the hash is order-independent for ranges
   // (users may re-enter the same ranges in different comma orders).
+  // Accuracy + maxIter are in the key: a higher-accuracy re-solve
+  // won't be served from a coarser cached result.
   const canon = [
     body.board.slice().sort().join(''),
     canonRange(body.oopRange),
@@ -29,6 +31,8 @@ function fingerprint(body: SolveRequest): string {
     body.pot.toFixed(2),
     body.effStack.toFixed(2),
     body.scenario,
+    (body.accuracy ?? 0.5).toFixed(2),
+    String(body.maxIter ?? 150),
     SOLVER_WASM_VERSION,
   ].join('|');
   return createHash('sha256').update(canon).digest('hex').slice(0, 16);
@@ -78,6 +82,10 @@ export interface SolveRequest {
   effStack: number;
   /** 'cash' (no ante) or 'mtt' (ante baked into pot). */
   scenario: 'cash' | 'mtt';
+  /** Target exploitability in % (lower = more accurate, slower). Default 0.5. */
+  accuracy?: number;
+  /** Hard iteration cap so runaway solves can't exceed the Function timeout. Default 150. */
+  maxIter?: number;
 }
 
 export interface SolveResponse {
@@ -125,8 +133,8 @@ export async function POST(req: Request): Promise<NextResponse<SolveResponse | {
       ip_range: body.ipRange,
       pot: body.pot,
       eff_stack: body.effStack,
-      accuracy: 0.5,
-      max_iter: 150,
+      accuracy: body.accuracy ?? 0.5,
+      max_iter: body.maxIter ?? 150,
     }) as {
       actions: string[];
       mix: Record<string, number[]>;
