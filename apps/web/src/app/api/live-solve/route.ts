@@ -39,6 +39,20 @@ async function loadWasm() {
     wasmLoadError = `solve_flop not a function (keys: ${Object.keys(mod).join(',')})`;
   } catch (e) {
     wasmLoadError = e instanceof Error ? `${e.message}` : String(e);
+    // Debug: list sibling wasm files so we know where Vercel
+    // actually placed them.
+    try {
+      const pathMatch = wasmLoadError.match(/open '([^']+)'/);
+      if (pathMatch) {
+        const { readdirSync } = await import('node:fs');
+        const { dirname } = await import('node:path');
+        const dir = dirname(pathMatch[1]!);
+        const wasmFiles = readdirSync(dir).filter((f) => f.endsWith('.wasm'));
+        wasmLoadError += ` | dir '${dir}' wasm files: [${wasmFiles.join(',')}]`;
+      }
+    } catch (probe) {
+      wasmLoadError += ` | readdir failed: ${probe instanceof Error ? probe.message : String(probe)}`;
+    }
     console.warn('[live-solve] WASM load failed:', wasmLoadError);
   }
   return null;

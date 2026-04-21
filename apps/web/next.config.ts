@@ -25,11 +25,16 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
-  // Belt-and-suspenders — even if the webpack redirect misses, this
-  // explicitly traces any .wasm under the server build tree into
-  // the live-solve Function.
+  // Belt-and-suspenders — belt-and-two-more-suspenders by now —
+  // try multiple patterns so at least one matches the emitted
+  // .wasm path Vercel actually copies into the Function bundle.
   outputFileTracingIncludes: {
-    '/api/live-solve': ['.next/server/**/*.wasm'],
+    '/api/live-solve': [
+      '.next/server/chunks/**/*.wasm',
+      '.next/server/static/wasm/**/*.wasm',
+      '.next/server/**/*.wasm',
+      '**/*.wasm',
+    ],
   },
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
