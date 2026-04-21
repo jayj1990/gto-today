@@ -168,10 +168,14 @@ function BoardMixPanel({ spots }: { spots: readonly PostflopSpot[] }) {
                   const isTop = act === top[0] && freq > 0;
                   const color = POSTFLOP_ACTION_COLOR[act];
                   return (
-                    <li key={act} className="flex items-center gap-2">
+                    <li
+                      key={act}
+                      className="grid items-center gap-2"
+                      style={{ gridTemplateColumns: '56px minmax(0, 1fr) 44px' }}
+                    >
                       <span
                         className={cn(
-                          'w-14 flex-shrink-0 font-mono text-[11px]',
+                          'text-right font-mono text-[11px]',
                           isTop ? 'font-bold text-white' : 'text-fg-muted',
                         )}
                       >
@@ -179,7 +183,7 @@ function BoardMixPanel({ spots }: { spots: readonly PostflopSpot[] }) {
                       </span>
                       <div
                         className={cn(
-                          'relative flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]',
+                          'relative overflow-hidden rounded-full bg-[color:var(--color-border)]',
                           isTop ? 'h-3.5' : 'h-2.5',
                         )}
                       >
@@ -190,7 +194,7 @@ function BoardMixPanel({ spots }: { spots: readonly PostflopSpot[] }) {
                       </div>
                       <span
                         className={cn(
-                          'w-12 flex-shrink-0 text-right font-mono text-[11px] tabular-nums',
+                          'text-right font-mono text-[11px] tabular-nums',
                           isTop ? 'font-bold text-white' : '',
                         )}
                       >

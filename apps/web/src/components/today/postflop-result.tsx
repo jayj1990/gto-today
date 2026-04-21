@@ -187,10 +187,14 @@ export function PostflopResult({
               const isTop = action === topAction && (freq ?? 0) > 0;
               const color = POSTFLOP_ACTION_COLOR[action];
               return (
-                <div key={action} className="flex items-center gap-3">
+                <div
+                  key={action}
+                  className="grid items-center gap-3"
+                  style={{ gridTemplateColumns: '72px minmax(0, 1fr) 56px' }}
+                >
                   <span
                     className={cn(
-                      'w-24 flex-shrink-0 font-mono',
+                      'text-right font-mono',
                       isTop ? 'text-[13px] font-bold text-white' : 'text-[12px] text-fg-muted',
                     )}
                   >
@@ -198,7 +202,7 @@ export function PostflopResult({
                   </span>
                   <div
                     className={cn(
-                      'relative flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]',
+                      'relative overflow-hidden rounded-full bg-[color:var(--color-border)]',
                       isTop ? 'h-4' : 'h-3',
                     )}
                   >
@@ -212,7 +216,7 @@ export function PostflopResult({
                   </div>
                   <span
                     className={cn(
-                      'w-14 flex-shrink-0 text-right font-mono tabular-nums',
+                      'text-right font-mono tabular-nums',
                       isTop
                         ? 'text-[13px] font-bold text-white'
                         : 'text-[12px] font-semibold text-fg-muted',

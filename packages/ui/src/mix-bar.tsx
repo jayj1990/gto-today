@@ -45,11 +45,17 @@ export function MixBar({
         const color = seg.color ?? defaultColorFor(seg.label);
         const dom = seg.dominant === true;
         return (
-          <li key={seg.label} className="flex items-center gap-3">
+          <li
+            key={seg.label}
+            className="grid items-center gap-3"
+            style={{
+              gridTemplateColumns: labeled ? '56px minmax(0, 1fr) 48px' : 'minmax(0, 1fr)',
+            }}
+          >
             {labeled && (
               <span
                 className={cn(
-                  'w-20 flex-shrink-0 font-mono text-[13px]',
+                  'text-right font-mono text-[13px]',
                   dom ? 'font-bold text-white' : 'text-fg-muted',
                 )}
               >
@@ -58,18 +64,14 @@ export function MixBar({
             )}
             <div
               className={cn(
-                'relative flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]',
+                'relative overflow-hidden rounded-full bg-[color:var(--color-border)]',
                 dom ? 'h-4' : 'h-3',
               )}
             >
               <motion.div
                 initial={{ clipPath: 'inset(0 100% 0 0)' }}
                 animate={{ clipPath: `inset(0 ${Math.max(0, 100 - seg.value)}% 0 0)` }}
-                transition={{
-                  duration: d.mixBar,
-                  ease: easeQuart,
-                  delay: i * 0.06,
-                }}
+                transition={{ duration: d.mixBar, ease: easeQuart, delay: i * 0.06 }}
                 className="absolute inset-0 rounded-full"
                 style={{ background: color }}
               />
@@ -77,7 +79,7 @@ export function MixBar({
             {labeled && (
               <span
                 className={cn(
-                  'w-14 flex-shrink-0 text-right font-mono tabular-nums text-[13px]',
+                  'text-right font-mono tabular-nums text-[13px]',
                   dom ? 'font-bold text-white' : 'font-semibold',
                 )}
               >

@@ -82,16 +82,20 @@ export function ComboDetailSheet({
                 {rows.map((r) => {
                   const isTop = r === top && r.value > 0;
                   return (
-                    <li key={r.label} className="flex items-center gap-2">
+                    <li
+                      key={r.label}
+                      className="grid items-center gap-2"
+                      style={{ gridTemplateColumns: '48px minmax(0, 1fr) 48px' }}
+                    >
                       <span
                         className={cn(
-                          'w-12 flex-shrink-0 font-mono text-[13px]',
+                          'text-right font-mono text-[13px]',
                           isTop ? 'font-bold text-white' : 'text-fg-muted',
                         )}
                       >
                         {r.label}
                       </span>
-                      <div className="relative h-3 flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]">
+                      <div className="relative h-3 overflow-hidden rounded-full bg-[color:var(--color-border)]">
                         <div
                           className="h-full rounded-full transition-[width] duration-500 ease-out"
                           style={{ width: `${r.value}%`, background: r.color }}
@@ -99,7 +103,7 @@ export function ComboDetailSheet({
                       </div>
                       <span
                         className={cn(
-                          'w-12 flex-shrink-0 text-right font-mono tabular-nums text-[13px]',
+                          'text-right font-mono tabular-nums text-[13px]',
                           isTop ? 'font-bold text-white' : 'font-semibold',
                         )}
                       >
