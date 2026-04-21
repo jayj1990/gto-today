@@ -91,11 +91,15 @@ export function PostflopResult({
   const grade = gradePostflopAction(spot, userAnswer);
   const total = Object.values(spot.mix).reduce((s, v) => s + (v ?? 0), 0);
 
-  // Figure out the single highest-frequency GTO action — that's the
-  // answer we treat as "correct" when grading is wrong.
-  const sortedMix = (Object.entries(spot.mix) as [PostflopAction, number][])
-    .sort(([, a], [, b]) => (b ?? 0) - (a ?? 0));
-  const topAction = sortedMix[0]?.[0];
+  // Display the mix rows in button order (same order the user saw the
+  // action buttons) — matches intuition better than frequency-sorting.
+  // topAction is still derived from frequency, since that's the
+  // "correct GTO" signal used for the wrong-answer headline.
+  const orderedMix = spot.availableActions.map(
+    (a) => [a, spot.mix[a] ?? 0] as [PostflopAction, number],
+  );
+  const topAction = (Object.entries(spot.mix) as [PostflopAction, number][])
+    .sort(([, a], [, b]) => (b ?? 0) - (a ?? 0))[0]?.[0];
   const topLabel = topAction ? POSTFLOP_ACTION_LABEL[topAction] : '';
 
   const gradeLabel =
@@ -106,6 +110,12 @@ export function PostflopResult({
         : topAction
           ? `${topLabel}${particleSubject(topLabel)} 더 유리했어요`
           : '다른 선택이 더 유리했어요';
+  const gradeSubtitle =
+    grade === 'sharp'
+      ? '좋은 판단이었어요.'
+      : grade === 'acceptable'
+        ? '다른 선택도 충분히 해볼만 해요.'
+        : '왜 그런지 해설에서 확인해 보세요.';
   const gradeColor =
     grade === 'sharp'
       ? 'var(--color-call)'
@@ -152,7 +162,8 @@ export function PostflopResult({
         >
           {gradeLabel}
         </h2>
-        <p className="mt-2 text-[13px] text-fg-muted">
+        <p className="mt-2 text-[13px] text-fg-muted">{gradeSubtitle}</p>
+        <p className="mt-1 text-[13px] text-fg-muted">
           내 선택:{' '}
           <span className="text-fg">{POSTFLOP_ACTION_LABEL[userAnswer]}</span>
         </p>
@@ -162,8 +173,8 @@ export function PostflopResult({
             GTO 믹스 (합계 {Math.round(total * 100)}%)
           </p>
           <div className="space-y-2">
-            {sortedMix.map(([action, freq], idx) => {
-              const isTop = idx === 0 && (freq ?? 0) > 0;
+            {orderedMix.map(([action, freq]) => {
+              const isTop = action === topAction && (freq ?? 0) > 0;
               const color = POSTFLOP_ACTION_COLOR[action];
               return (
                 <div key={action} className="flex items-center gap-3">
