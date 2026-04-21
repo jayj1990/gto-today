@@ -16,7 +16,11 @@ import { useLiveStore } from '@/lib/live-store';
 export default function LivePlayPage() {
   const config = useLiveStore((s) => s.config);
 
-  const typeLabel = config.gameType === 'cash' ? '캐시 게임' : '토너먼트';
+  const isMtt = config.gameType === 'mtt';
+  const typeLabel = isMtt ? '토너먼트 · 1BB 앤티 근사' : '캐시 게임';
+  const dataPath = isMtt
+    ? '/data/preflop/mtt_6max_100bb_qb_decisions.json'
+    : '/data/preflop/6max_100bb_qb_decisions.json';
 
   return (
     <>
@@ -39,7 +43,7 @@ export default function LivePlayPage() {
           </Link>
         </header>
 
-        <ChartNavigator />
+        <ChartNavigator key={dataPath} dataPath={dataPath} />
       </main>
     </>
   );
