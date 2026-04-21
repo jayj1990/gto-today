@@ -92,10 +92,33 @@ export function ChartNavigator({
   const [boardPickerOpen, setBoardPickerOpen] = useState(false);
   const [flopBoard, setFlopBoard] = useState<[string, string, string] | null>(null);
 
-  // Should the "플랍 탐색" CTA appear? Yes when there's at least one
-  // preflop action recorded, no all-in yet, no BB-wins, and the hand
-  // could realistically continue to a flop.
+  // A preflop "flop reached" state = someone raised, someone called,
+  // no more decisions. Detected when resolveNode can't find a solver
+  // node (legal=[] with no special flag) and the path isn't empty.
+  const flopReached =
+    path.length > 0 &&
+    node?.legal.length === 0 &&
+    !node?.bbWins &&
+    !node?.showdown &&
+    !node?.postAllIn;
+
+  // The CTA is a fallback for earlier-stage exploration; the natural
+  // flow auto-opens the picker when the flop is actually reached.
   const canExploreFlop = path.length > 0 && !node?.bbWins && !node?.showdown && !node?.postAllIn;
+
+  // Auto-open the board picker once when the flop is naturally
+  // reached and no board / picker is already active. We track the
+  // path-that-triggered-it so reopening the same state without the
+  // user having advanced doesn't spam-reopen the sheet.
+  const [autoOpenedAtPath, setAutoOpenedAtPath] = useState<string | null>(null);
+  const pathKey = path.join('|');
+  useEffect(() => {
+    if (!flopReached) return;
+    if (flopBoard || boardPickerOpen) return;
+    if (autoOpenedAtPath === pathKey) return;
+    setBoardPickerOpen(true);
+    setAutoOpenedAtPath(pathKey);
+  }, [flopReached, flopBoard, boardPickerOpen, pathKey, autoOpenedAtPath]);
 
   return (
     <div className={className}>
@@ -162,6 +185,25 @@ export function ChartNavigator({
                 className="mt-4 inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-gold-gradient px-5 font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
               >
                 새 핸드 시작 ↻
+              </button>
+            </section>
+          ) : flopReached ? (
+            <section className="rounded-[var(--radius-panel)] border border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 p-6 text-center">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-gold)]">
+                프리플랍 종료
+              </p>
+              <h2 className="mt-1 font-display text-[22px] font-bold text-[color:var(--color-gold)]">
+                플랍 선택
+              </h2>
+              <p className="mt-2 text-[13px] text-fg-muted">
+                레이즈·콜로 핸드가 플랍까지 왔어요. 3장의 보드 카드를 선택하면 라이브 솔빙이 시작됩니다.
+              </p>
+              <button
+                type="button"
+                onClick={() => setBoardPickerOpen(true)}
+                className="mt-4 inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-gold-gradient px-5 font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+              >
+                보드 선택 →
               </button>
             </section>
           ) : (
@@ -273,7 +315,7 @@ export function ChartNavigator({
             </>
           )}
 
-          {canExploreFlop && (
+          {canExploreFlop && !flopReached && (
             <button
               type="button"
               onClick={() => setBoardPickerOpen(true)}
