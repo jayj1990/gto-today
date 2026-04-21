@@ -23,14 +23,15 @@ let wasmSolveFlop:
 async function loadWasm() {
   if (wasmSolveFlop !== null) return wasmSolveFlop;
   try {
-    // Dynamic import so a missing package doesn't fail the build.
-    // The module name is indirected through a variable so TypeScript
-    // doesn't try to resolve types at compile time (the package lives
-    // in GitHub Packages and only installs in Vercel's prod env).
-    const pkgName = '@jayj1990/gto-today-solver-wasm';
-    const mod = (await import(
-      /* webpackIgnore: true */ /* @vite-ignore */ pkgName
-    ).catch(() => null)) as
+    // Direct import so Next.js bundles the WASM package into the
+    // Vercel Function output. Earlier we had /* webpackIgnore */ to
+    // let the build succeed before the package was published, but
+    // that also prevented it from being bundled at runtime — WASM
+    // silently fell back to mock. Package now lives at
+    // @jayj1990/gto-today-solver-wasm via GitHub Packages.
+    const mod = (await import('@jayj1990/gto-today-solver-wasm').catch(
+      () => null,
+    )) as
       | { solve_flop: (input: unknown) => ReturnType<NonNullable<typeof wasmSolveFlop>> }
       | null;
     if (mod && typeof mod.solve_flop === 'function') {
