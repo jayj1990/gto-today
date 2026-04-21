@@ -8,19 +8,26 @@ const nextConfig: NextConfig = {
   // handles the .wasm import via its native asyncWebAssembly flow
   // (no readFileSync + __dirname path resolution to fight). That
   // means we enable the experiment in the Function compiler too.
-  webpack(config) {
+  webpack(config, { isServer }) {
     config.experiments = {
       ...(config.experiments ?? {}),
       asyncWebAssembly: true,
     };
+    // Vercel's Function packager auto-includes `.next/server/chunks/`
+    // but NOT `.next/server/static/wasm/` where asyncWebAssembly
+    // otherwise lands binaries. Redirect the server bundle's .wasm
+    // output into chunks/ so the binary ships with the Function
+    // (and the hashed filename in the emitted chunk still points
+    // at the right place). Client bundle is unaffected.
+    if (isServer) {
+      config.output = config.output ?? {};
+      config.output.webassemblyModuleFilename = 'chunks/[id].[contenthash].wasm';
+    }
     return config;
   },
-  // With asyncWebAssembly, Webpack emits the hashed
-  // ".next/server/static/wasm/<hash>.wasm" alongside the chunk
-  // that imports it, but Vercel's Function packager doesn't
-  // auto-include anything under `.next/server/static/` in the
-  // Function output — only chunks/ and vendor-chunks/. Name it
-  // explicitly so the binary ships with /api/live-solve.
+  // Belt-and-suspenders — even if the webpack redirect misses, this
+  // explicitly traces any .wasm under the server build tree into
+  // the live-solve Function.
   outputFileTracingIncludes: {
     '/api/live-solve': ['.next/server/**/*.wasm'],
   },
