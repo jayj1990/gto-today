@@ -11,7 +11,7 @@ import { SiteHeader } from '@/components/site-header';
 export const metadata = { title: '포스트플랍 시드' };
 
 const STREET_LABEL = { flop: '플랍', turn: '턴', river: '리버' } as const;
-const POT_LABEL = { srp: 'SRP', '3bp': '3-bet 팟', '4bp': '4-bet 팟', limped: '림프' } as const;
+const POT_LABEL = { srp: 'SRP', '3bp': '3-bet 팟', '4bp': '4-bet 팟', limped: '림프', mtt: 'MTT' } as const;
 
 export default function PostflopDevPage() {
   const spots = listPostflopSpots();

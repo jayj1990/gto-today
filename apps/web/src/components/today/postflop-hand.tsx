@@ -21,6 +21,7 @@ const POT_LABEL: Record<PostflopSpot['context']['potType'], string> = {
   '3bp': '3-bet 팟',
   '4bp': '4-bet 팟',
   limped: '림프',
+  mtt: 'MTT',
 };
 
 /**

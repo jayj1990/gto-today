@@ -49,7 +49,7 @@ interface LiveStore {
 }
 
 const DEFAULTS: LiveConfig = {
-  gameType: 'cash',
+  gameType: 'mtt',
   format: '6max',
   stackBB: 100,
   openSize: 'gto',
