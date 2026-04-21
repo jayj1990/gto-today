@@ -53,16 +53,20 @@ function canonRange(r: string): string {
  * the UI never hard-fails.
  */
 
-// Kick off WASM init at module load so the first request doesn't pay
-// the ~100-500ms decode + instantiate latency. On warm reuse the
-// Promise has already resolved and `await` returns immediately.
-const wasmReady: Promise<void> = init(SOLVER_WASM_BYTES).then(
-  () => undefined,
-  (err) => {
-    console.error('[live-solve] WASM init failed at module load:', err);
-    throw err;
-  },
-);
+// Lazy init — the module-load eager init tried to save 100-500ms on
+// cold starts but if init() threw (e.g. wasm-bindgen rejecting the
+// byte shape) the whole Function failed to load and Vercel returned
+// raw HTML error pages the client couldn't parse as JSON. Defer to
+// the first POST so failures become catchable JSON errors.
+let wasmReady: Promise<void> | null = null;
+function ensureWasmReady(): Promise<void> {
+  if (wasmReady === null) {
+    wasmReady = (async () => {
+      await init(SOLVER_WASM_BYTES);
+    })();
+  }
+  return wasmReady;
+}
 
 export interface SolveRequest {
   /** Three flop cards, e.g. ['As','Kh','7d']. */
@@ -93,6 +97,22 @@ export interface SolveResponse {
 }
 
 export async function POST(req: Request): Promise<NextResponse<SolveResponse | { error: string }>> {
+  // Wrap the whole handler so any unexpected throw (WASM init, cache
+  // adapter, JSON serialization, etc.) becomes a proper JSON error
+  // response instead of a Vercel HTML crash page the client can't
+  // parse with response.json().
+  try {
+    return await handleSolve(req);
+  } catch (e) {
+    const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+    console.error('[live-solve] unhandled error:', msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
+
+async function handleSolve(
+  req: Request,
+): Promise<NextResponse<SolveResponse | { error: string }>> {
   let body: SolveRequest;
   try {
     body = await req.json();
@@ -119,7 +139,7 @@ export async function POST(req: Request): Promise<NextResponse<SolveResponse | {
 
   let wasmError: string | null = null;
   try {
-    await wasmReady;
+    await ensureWasmReady();
     const out = solve_flop({
       board: body.board,
       oop_range: body.oopRange,
