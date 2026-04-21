@@ -81,4 +81,20 @@ describe('freqsToRangeString', () => {
   it('returns empty string when every combo has freq 0', () => {
     expect(freqsToRangeString({ AA: 0, KK: 0 })).toBe('');
   });
+
+  it('drops combos below the minFreq threshold (default 0.05)', () => {
+    // A7o at 1% and J8s at 3% are noise — the default threshold
+    // should omit them entirely without affecting strategic combos.
+    const s = freqsToRangeString({ AA: 1, A5s: 0.3, A7o: 0.01, J8s: 0.03 });
+    const parts = s.split(',').sort();
+    expect(parts).toContain('AA');
+    expect(parts).toContain('A5s:0.300');
+    expect(parts).not.toContain('A7o:0.010');
+    expect(parts.some((p) => p.startsWith('J8s'))).toBe(false);
+  });
+
+  it('respects a higher minFreq when passed explicitly', () => {
+    const s = freqsToRangeString({ AA: 1, A5s: 0.3, T9s: 0.6 }, 0.5);
+    expect(s.split(',').sort()).toEqual(['AA', 'T9s:0.600'].sort());
+  });
 });
