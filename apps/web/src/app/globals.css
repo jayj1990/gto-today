@@ -27,19 +27,22 @@
   --color-warning: #e6a817;
   --color-info: #4a9eff;
 
-  /* Apple system fonts everywhere — iOS/macOS SF Pro for Latin + digits,
-     Apple SD Gothic Neo for Hangul (renders automatically when the glyph
-     isn't in SF). Android / Windows fall back to their own system UI. */
+  /* Single Apple-first font stack for everything — display / body /
+     "mono" (eyebrows, numbers) all resolve to SF Pro on iOS/macOS,
+     system-ui on other platforms. The explicit 'SF Pro Display'/
+     'Text' names are intentionally dropped — '-apple-system' already
+     switches between them based on text size, and listing both
+     caused the numeric labels to render in a different typeface from
+     their surrounding body text. Numbers get monospace alignment via
+     the `tabular-nums` utility where needed. */
   --font-display:
-    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Apple SD Gothic Neo',
-    'Pretendard Variable', system-ui, sans-serif;
+    -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', system-ui, sans-serif;
   --font-body:
-    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Apple SD Gothic Neo',
-    'Pretendard Variable', system-ui, sans-serif;
+    -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', system-ui, sans-serif;
   --font-kr:
-    -apple-system, 'Apple SD Gothic Neo', 'Pretendard Variable', system-ui, sans-serif;
+    -apple-system, 'Apple SD Gothic Neo', system-ui, sans-serif;
   --font-mono:
-    ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', system-ui, sans-serif;
   --font-serif:
     ui-serif, 'New York', 'Times New Roman', serif;
 

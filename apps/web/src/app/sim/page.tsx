@@ -163,16 +163,10 @@ export default function SimPage() {
                   disabled={resultOpen || loading}
                   onClick={() => handlePostflopAnswer(a)}
                   className={cn(
-                    'select-none rounded-[var(--radius-button)] font-semibold whitespace-nowrap px-1 transition-colors disabled:opacity-40 active:scale-[0.98]',
+                    'select-none rounded-[var(--radius-button)] font-bold text-white whitespace-nowrap px-1 shadow-[var(--shadow-card)] transition-colors disabled:opacity-40 active:scale-[0.98]',
                     compact ? 'h-12 text-[12px]' : 'h-14 text-[14px]',
                   )}
-                  style={{
-                    background: POSTFLOP_ACTION_COLOR[a],
-                    color:
-                      a.startsWith('bet') || a.startsWith('raise')
-                        ? 'var(--color-noir)'
-                        : 'var(--color-ivory)',
-                  }}
+                  style={{ background: POSTFLOP_ACTION_COLOR[a] }}
                 >
                   {POSTFLOP_ACTION_LABEL[a]}
                 </button>
