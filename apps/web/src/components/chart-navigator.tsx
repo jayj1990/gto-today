@@ -72,8 +72,14 @@ export function ChartNavigator({
   }, [node]);
 
   const handleAction = (action: string) => setPath((p) => [...p, `${node?.actor}_${action}`]);
-  const handleBack = () => setPath((p) => p.slice(0, -1));
-  const handleRestart = () => setPath([]);
+  const handleBack = () => {
+    setFlopBoard(null);
+    setPath((p) => p.slice(0, -1));
+  };
+  const handleRestart = () => {
+    setFlopBoard(null);
+    setPath([]);
+  };
 
   const seatState = useMemo(() => buildSeatState(path, node?.actor), [path, node?.actor]);
 
