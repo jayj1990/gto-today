@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession, signOut as nextAuthSignOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Logo, cn } from '@gto/ui';
@@ -22,7 +22,6 @@ export function HomeGate() {
   const onboarded = useAuthStore((s) => s.onboarded);
   const signedIn = useAuthStore((s) => s.signedIn);
   const user = useAuthStore((s) => s.user);
-  const signOut = useAuthStore((s) => s.signOut);
   const { data: nextAuthSession, status: sessionStatus } = useSession();
   const avatarUrl = nextAuthSession?.user?.image ?? null;
   // NextAuth is the source of truth — use it directly to avoid the
@@ -75,15 +74,10 @@ export function HomeGate() {
           />
           <Logo variant="full" width={96} aria-hidden />
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            if (!window.confirm('로그아웃 하시겠어요?')) return;
-            signOut();
-            void nextAuthSignOut({ callbackUrl: '/signin' });
-          }}
+        <Link
+          href="/account"
           className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-fg-muted active:scale-[0.96]"
-          aria-label="프로필 — 탭하면 로그아웃"
+          aria-label="내 계정"
         >
           <span className="hidden sm:inline">{user?.name ?? '게스트'}</span>
           {avatarUrl ? (
@@ -119,7 +113,7 @@ export function HomeGate() {
               {(user?.name ?? '게')[0]}
             </span>
           )}
-        </button>
+        </Link>
       </header>
 
       <div className="mt-6 grid gap-3">

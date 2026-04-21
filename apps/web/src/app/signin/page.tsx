@@ -106,6 +106,10 @@ export default function SignInPage() {
       <div className="mt-auto pt-10">
         <p className="text-center text-[11px] text-fg-muted/70">
           계속 진행하면{' '}
+          <Link href="/terms" className="underline-offset-2 hover:underline">
+            이용약관
+          </Link>
+          {' '}및{' '}
           <Link href="/privacy" className="underline-offset-2 hover:underline">
             개인정보 처리방침
           </Link>
