@@ -81,21 +81,31 @@ async function main() {
 
     for (const combo of allCombos) {
       const oldFold = foldBranch[combo] ?? 0;
-      const shift = oldFold * bump;
-      newActions['FOLD']![combo] = clamp01(oldFold - shift);
 
-      // Total non-fold weight currently for this combo
+      // Total non-fold weight currently for this combo.
       let totalNonFold = 0;
       for (const a of nonFoldKeys) {
         totalNonFold += actions[a]?.[combo] ?? 0;
       }
 
+      // Only shift fold→non-fold for combos that ALREADY have some
+      // non-fold play in cash. Pure-fold hands (totalNonFold === 0)
+      // stay at 100% fold — MTT shouldn't make trash raise out of
+      // thin air. Shift scales with oldFold (more fold = more room).
+      if (totalNonFold === 0) {
+        newActions['FOLD']![combo] = clamp01(oldFold);
+        for (const a of nonFoldKeys) {
+          newActions[a]![combo] = actions[a]?.[combo] ?? 0;
+        }
+        continue;
+      }
+
+      const shift = oldFold * bump;
+      newActions['FOLD']![combo] = clamp01(oldFold - shift);
+
       for (const a of nonFoldKeys) {
         const cur = actions[a]?.[combo] ?? 0;
-        // Distribute shift: if combo already has some non-fold weight,
-        // add proportionally. Otherwise dump into first non-fold action
-        // (usually the call / smallest raise).
-        const share = totalNonFold > 0 ? cur / totalNonFold : (a === nonFoldKeys[0] ? 1 : 0);
+        const share = cur / totalNonFold; // safe: totalNonFold > 0 here
         newActions[a]![combo] = clamp01(cur + shift * share);
       }
     }

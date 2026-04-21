@@ -80,48 +80,16 @@ async function buildRfi(pos: string) {
 
   const out: Record<string, { raise: number; fold: number }> = {};
   for (const [combo, v] of Object.entries(cash)) {
-    // Hands already raised: nudge slightly higher. Hands never raised:
-    // bump a portion of them into the mix based on combo "strength"
-    // (approximated by original raise freq — hands already at mid-
-    // frequency get the biggest shift, since those are the marginal
-    // ones that tip over with ante).
-    const raise = v.raise > 0
-      ? clamp01(v.raise + bump * (1 - v.raise))
-      : clamp01(bump * marginalBonusFor(combo));
+    // ONLY widen hands that already play in cash. Pure-fold hands stay
+    // pure fold — trash like K2s / Q3o shouldn't suddenly open in MTT.
+    // An earlier version injected new hands via a marginal-bonus helper;
+    // that produced false 3-6% opens on real trash which Jay caught.
+    const raise =
+      v.raise > 0 ? clamp01(v.raise + bump * (1 - v.raise)) : 0;
     out[combo] = { raise, fold: clamp01(1 - raise) };
   }
   await writeJson(outputPath, out);
   return { path: outputPath, bump };
-}
-
-/** Hands near the margin (e.g. 65s, K9o, A5o) are more likely to enter
- *  the range with ante dead money. Premium-ish hands (77, ATs) already
- *  in the range stay. True trash (32o, 72o) stays folded.
- *  This heuristic scales 0→0.7 based on rough hand strength proxy. */
-function marginalBonusFor(combo: string): number {
-  // Suited connectors, small pairs, weak aces: +0.3-0.7
-  // Pure trash: 0
-  if (combo === '32o' || combo === '42o' || combo === '52o' || combo === '62o' || combo === '72o' || combo === '82o') return 0;
-  if (combo === '22') return 0.5; // small pair
-  if (combo.endsWith('s') && combo[0] !== combo[1]) {
-    const r1 = combo[0]!;
-    const r2 = combo[1]!;
-    const gap = Math.abs(rankVal(r1) - rankVal(r2));
-    if (gap === 1) return 0.7;  // connectors
-    if (gap === 2) return 0.5;  // one-gappers
-    if (r1 === 'A') return 0.6; // suited aces
-    return 0.3;
-  }
-  if (combo.endsWith('o')) return 0.1; // offsuit trash
-  return 0.5; // pairs default
-}
-
-function rankVal(r: string): number {
-  const v: Record<string, number> = {
-    A: 14, K: 13, Q: 12, J: 11, T: 10,
-    '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2,
-  };
-  return v[r] ?? 0;
 }
 
 async function buildDefense(defender: string, opener: string) {
