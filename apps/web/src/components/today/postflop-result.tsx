@@ -200,12 +200,7 @@ export function PostflopResult({
                   >
                     {POSTFLOP_ACTION_LABEL[action]}
                   </span>
-                  <div
-                    className={cn(
-                      'relative overflow-hidden rounded-full bg-[color:var(--color-border)]',
-                      isTop ? 'h-4' : 'h-3',
-                    )}
-                  >
+                  <div className="relative h-3 overflow-hidden rounded-full bg-[color:var(--color-border)]">
                     <div
                       className="h-full rounded-full"
                       style={{

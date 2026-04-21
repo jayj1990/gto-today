@@ -62,12 +62,7 @@ export function MixBar({
                 {seg.label}
               </span>
             )}
-            <div
-              className={cn(
-                'relative overflow-hidden rounded-full bg-[color:var(--color-border)]',
-                dom ? 'h-4' : 'h-3',
-              )}
-            >
+            <div className="relative h-3 overflow-hidden rounded-full bg-[color:var(--color-border)]">
               <motion.div
                 initial={{ clipPath: 'inset(0 100% 0 0)' }}
                 animate={{ clipPath: `inset(0 ${Math.max(0, 100 - seg.value)}% 0 0)` }}

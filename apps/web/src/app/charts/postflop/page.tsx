@@ -181,12 +181,7 @@ function BoardMixPanel({ spots }: { spots: readonly PostflopSpot[] }) {
                       >
                         {POSTFLOP_ACTION_LABEL[act]}
                       </span>
-                      <div
-                        className={cn(
-                          'relative overflow-hidden rounded-full bg-[color:var(--color-border)]',
-                          isTop ? 'h-3.5' : 'h-2.5',
-                        )}
-                      >
+                      <div className="relative h-2.5 overflow-hidden rounded-full bg-[color:var(--color-border)]">
                         <div
                           className="h-full rounded-full transition-[width] duration-300 ease-out"
                           style={{ width: `${freq * 100}%`, background: color }}
