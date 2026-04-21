@@ -1,0 +1,62 @@
+name: solver-wasm — build + publish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'solver-wasm/**'
+      - '.github/workflows/solver-wasm.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: solver-wasm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            solver-wasm/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('solver-wasm/Cargo.toml') }}
+
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --version ^0.12
+
+      - name: Build WASM (Node target)
+        run: wasm-pack build --target nodejs --release
+
+      - name: Prep package for publish
+        run: |
+          cd pkg
+          # Use scoped package name so it lives under the user's
+          # GitHub Packages namespace automatically.
+          node -e "const p=require('./package.json');p.name='@jayj1990/gto-today-solver-wasm';p.repository='github:jayj1990/poker-gto-guide';require('fs').writeFileSync('./package.json',JSON.stringify(p,null,2));"
+
+      - name: Configure npm for GitHub Packages
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" > ~/.npmrc
+          echo "@jayj1990:registry=https://npm.pkg.github.com" >> ~/.npmrc
+
+      - name: Publish (only if version bumped)
+        working-directory: solver-wasm/pkg
+        run: |
+          PKG_NAME=$(node -p "require('./package.json').name")
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          echo "Publishing $PKG_NAME@$PKG_VERSION"
+          npm publish || echo "Version exists, skipping"

@@ -6,12 +6,42 @@ export const maxDuration = 300; // Vercel Fluid Compute — up to 300s
 /**
  * Live postflop solver endpoint.
  *
- * Phase 1 (this file today): mock strategy based on board texture so
- * the UI can be built and tested end-to-end.
- * Phase 2: replace `mockSolve()` with a call into @gto-today/solver-
- * wasm (postflop-solver Rust crate → WASM). The request / response
- * shape is frozen now so the WASM swap is a 1-line change.
+ * Runs the WASM build of postflop-solver when available. The WASM
+ * package lives in a separate AGPL-licensed repo (solver-wasm/) and
+ * is distributed via GitHub Packages; if it can't be loaded (local
+ * dev without the package installed, or the dynamic import fails)
+ * we fall back to a texture-based mock so the UI stays functional.
+ *
+ * The fallback is logged server-side so we notice if prod ever
+ * silently degrades.
  */
+
+let wasmSolveFlop:
+  | ((input: unknown) => { actions: string[]; mix: Record<string, number[]>; exploitability: number; iterations: number })
+  | null = null;
+
+async function loadWasm() {
+  if (wasmSolveFlop !== null) return wasmSolveFlop;
+  try {
+    // Dynamic import so a missing package doesn't fail the build.
+    // The module name is indirected through a variable so TypeScript
+    // doesn't try to resolve types at compile time (the package lives
+    // in GitHub Packages and only installs in Vercel's prod env).
+    const pkgName = '@jayj1990/gto-today-solver-wasm';
+    const mod = (await import(
+      /* webpackIgnore: true */ /* @vite-ignore */ pkgName
+    ).catch(() => null)) as
+      | { solve_flop: (input: unknown) => ReturnType<NonNullable<typeof wasmSolveFlop>> }
+      | null;
+    if (mod && typeof mod.solve_flop === 'function') {
+      wasmSolveFlop = mod.solve_flop;
+      return wasmSolveFlop;
+    }
+  } catch (e) {
+    console.warn('[live-solve] WASM load failed, using mock:', e);
+  }
+  return null;
+}
 
 export interface SolveRequest {
   /** Three flop cards, e.g. ['As','Kh','7d']. */
@@ -50,8 +80,34 @@ export async function POST(req: Request): Promise<NextResponse<SolveResponse | {
   }
 
   const start = Date.now();
+  const wasm = await loadWasm();
+  if (wasm) {
+    try {
+      const out = wasm({
+        board: body.board,
+        oop_range: body.oopRange,
+        ip_range: body.ipRange,
+        pot: body.pot,
+        eff_stack: body.effStack,
+        accuracy: 0.5,
+        max_iter: 150,
+      });
+      return NextResponse.json({
+        actions: out.actions,
+        mix: out.mix,
+        exploitability: out.exploitability,
+        iterations: out.iterations,
+        elapsedMs: Date.now() - start,
+      });
+    } catch (e) {
+      console.error('[live-solve] WASM solve threw:', e);
+      // Fall through to mock below.
+    }
+  }
+
   const result = mockSolve(body);
   result.elapsedMs = Date.now() - start;
+  result.note = (result.note ?? '') + ' (WASM unavailable — using mock)';
   return NextResponse.json(result);
 }
 

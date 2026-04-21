@@ -1,0 +1,21 @@
+GNU AFFERO GENERAL PUBLIC LICENSE
+                       Version 3, 19 November 2007
+
+ Copyright (C) 2026 Jay Jung
+
+ Everyone is permitted to copy and distribute verbatim copies of this
+ license document, but changing it is not allowed.
+
+ Full text: https://www.gnu.org/licenses/agpl-3.0.txt
+
+This crate (gto-today-solver-wasm) is licensed under AGPL-3.0 because
+it links to postflop-solver, which is AGPL-3.0. Any derivative work
+— including modifications and re-bundlings — must itself be AGPL-3.0
+and make source available to any user who interacts with the software
+over a network.
+
+The gto.today application (https://gto.today) consumes this package
+via npm dependency and HTTP-only runtime calls; under AGPL-3.0
+"mere aggregation" this does not force the main app's source to be
+published. This distinction is preserved only by keeping this
+package separate and unmodified.

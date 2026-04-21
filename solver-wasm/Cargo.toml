@@ -1,0 +1,28 @@
+[package]
+name = "gto-today-solver-wasm"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0"
+description = "WASM bindings for postflop-solver — serves the gto.today live-solve API"
+repository = "https://github.com/jayj1990/gto-today-solver-wasm"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+postflop-solver = { git = "https://github.com/b-inary/postflop-solver", rev = "main" }
+wasm-bindgen = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+# console_error_panic_hook forwards Rust panics to the browser/Node
+# console so failures surface instead of dying silently.
+console_error_panic_hook = { version = "0.1", optional = true }
+
+[features]
+default = ["console_error_panic_hook"]
+
+[profile.release]
+# LTO + single codegen unit → smaller WASM + ~15% faster solves.
+lto = true
+codegen-units = 1
+opt-level = 3
