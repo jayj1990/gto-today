@@ -54,48 +54,69 @@ pub struct SolveOutput {
 
 /// Entry point called from Node via wasm-bindgen. Takes/returns
 /// JsValue so the JS side just serialises/deserialises with serde.
+///
+/// Wraps the body in `catch_unwind` so Rust panics surface as JS
+/// errors with the actual panic message instead of raw WASM
+/// `unreachable` traps the caller can't introspect.
 #[wasm_bindgen]
 pub fn solve_flop(input: JsValue) -> Result<JsValue, JsValue> {
     #[cfg(feature = "console_error_panic_hook")]
     console_error_panic_hook::set_once();
 
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| solve_flop_inner(input)));
+    match result {
+        Ok(r) => r,
+        Err(e) => {
+            let msg = if let Some(s) = e.downcast_ref::<String>() {
+                s.clone()
+            } else if let Some(s) = e.downcast_ref::<&'static str>() {
+                (*s).to_string()
+            } else {
+                "unknown panic".to_string()
+            };
+            Err(JsValue::from_str(&format!("rust panic: {msg}")))
+        }
+    }
+}
+
+fn solve_flop_inner(input: JsValue) -> Result<JsValue, JsValue> {
     let input: SolveInput = serde_wasm_bindgen::from_value(input)
         .map_err(|e| JsValue::from_str(&format!("bad input: {e}")))?;
 
     // Build card config — board + ranges.
     let board = parse_board(&input.board)
         .map_err(|e| JsValue::from_str(&format!("bad board: {e}")))?;
+    let oop_range = postflop_solver::Range::from_sanitized_str(&input.oop_range)
+        .map_err(|e| JsValue::from_str(&format!("oop range: {e}")))?;
+    let ip_range = postflop_solver::Range::from_sanitized_str(&input.ip_range)
+        .map_err(|e| JsValue::from_str(&format!("ip range: {e}")))?;
     let card_config = CardConfig {
-        range: [
-            postflop_solver::Range::from_sanitized_str(&input.oop_range)
-                .map_err(|e| JsValue::from_str(&format!("oop range: {e}")))?,
-            postflop_solver::Range::from_sanitized_str(&input.ip_range)
-                .map_err(|e| JsValue::from_str(&format!("ip range: {e}")))?,
-        ],
+        range: [oop_range, ip_range],
         flop: board,
         ..Default::default()
     };
 
     // Tree config — simplified bet sizing. Matches what the cash
-    // batch used so solves stay comparable.
+    // batch used so solves stay comparable. Each `?` here surfaces
+    // whatever BetSizeOptions parser error to the caller instead of
+    // the previous `.unwrap()` which trapped the whole module.
+    let flop_bet = || {
+        BetSizeOptions::try_from(("33%,75%", "3x"))
+            .map_err(|e| JsValue::from_str(&format!("flop bet sizes: {e}")))
+    };
+    let turn_bet = || {
+        BetSizeOptions::try_from(("60%,125%", "3x"))
+            .map_err(|e| JsValue::from_str(&format!("turn bet sizes: {e}")))
+    };
     let tree_config = TreeConfig {
         initial_state: BoardState::Flop,
         starting_pot: (input.pot * 100.0) as i32, // chips, BB-scaled
         effective_stack: (input.eff_stack * 100.0) as i32,
         rake_rate: 0.0,
         rake_cap: 0.0,
-        flop_bet_sizes: [
-            BetSizeOptions::try_from(("33%,75%", "3x")).unwrap(),
-            BetSizeOptions::try_from(("33%,75%", "3x")).unwrap(),
-        ],
-        turn_bet_sizes: [
-            BetSizeOptions::try_from(("60%,125%", "3x")).unwrap(),
-            BetSizeOptions::try_from(("60%,125%", "3x")).unwrap(),
-        ],
-        river_bet_sizes: [
-            BetSizeOptions::try_from(("60%,125%", "3x")).unwrap(),
-            BetSizeOptions::try_from(("60%,125%", "3x")).unwrap(),
-        ],
+        flop_bet_sizes: [flop_bet()?, flop_bet()?],
+        turn_bet_sizes: [turn_bet()?, turn_bet()?],
+        river_bet_sizes: [turn_bet()?, turn_bet()?],
         turn_donk_sizes: None,
         river_donk_sizes: None,
         add_allin_threshold: 1.5,
@@ -107,12 +128,14 @@ pub fn solve_flop(input: JsValue) -> Result<JsValue, JsValue> {
         .map_err(|e| JsValue::from_str(&format!("tree: {e}")))?;
     let mut game = PostFlopGame::with_config(card_config, action_tree)
         .map_err(|e| JsValue::from_str(&format!("game: {e}")))?;
-    game.allocate_memory(false);
+    // `true` = enable compression, which halves the memory footprint
+    // at ~5% speed cost. Important on WASM where the linear-memory
+    // cap is 4GB but each browser/runtime enforces much tighter
+    // limits. Without this, wide ranges + deep trees abort with a
+    // memory-grow failure masquerading as `unreachable`.
+    game.allocate_memory(true);
 
     let target = input.accuracy / 100.0;
-    // solve() returns final exploitability as f32. It iterates up to
-    // `max_iter` times internally; we don't get a separate iteration
-    // count back, so report the cap as a conservative upper bound.
     let expl = solve(&mut game, input.max_iter, target, false);
 
     // Extract root strategy.
