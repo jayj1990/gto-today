@@ -96,16 +96,18 @@ fn solve_flop_inner(input: JsValue) -> Result<JsValue, JsValue> {
         ..Default::default()
     };
 
-    // Tree config — simplified bet sizing. Matches what the cash
-    // batch used so solves stay comparable. Each `?` here surfaces
-    // whatever BetSizeOptions parser error to the caller instead of
-    // the previous `.unwrap()` which trapped the whole module.
+    // Tree config — trimmed to one bet size per street so the game
+    // tree fits in WASM memory on wider preflop-derived ranges. v0.4
+    // with 33%+75% flop and 60%+125% turn/river was OOM-ing out as
+    // a `unreachable` trap the JS side couldn't introspect. A single
+    // 50% cbet / 75% turn / 75% river still covers the dominant GTO
+    // lines and halves the branching factor.
     let flop_bet = || {
-        BetSizeOptions::try_from(("33%,75%", "3x"))
+        BetSizeOptions::try_from(("50%", "3x"))
             .map_err(|e| JsValue::from_str(&format!("flop bet sizes: {e}")))
     };
     let turn_bet = || {
-        BetSizeOptions::try_from(("60%,125%", "3x"))
+        BetSizeOptions::try_from(("75%", "3x"))
             .map_err(|e| JsValue::from_str(&format!("turn bet sizes: {e}")))
     };
     let tree_config = TreeConfig {
@@ -161,15 +163,10 @@ fn parse_board(board: &[String; 3]) -> Result<[u8; 3], String> {
     Ok(out)
 }
 
-/// Readable labels for the root node's action set.
+/// Readable labels for the root node's action set. Flop tree is
+/// Check + Bet 50% after the v0.5 bet-sizing simplification.
 fn root_action_labels(_game: &PostFlopGame) -> Vec<String> {
-    // Mapping depends on the concrete action_tree above. Our flop
-    // config is: Check + Bet 33% + Bet 75%. Label them accordingly.
-    vec![
-        "check".to_string(),
-        "bet33".to_string(),
-        "bet75".to_string(),
-    ]
+    vec!["check".to_string(), "bet50".to_string()]
 }
 
 /// Flatten the root strategy into { "AsKh" → [0.4, 0.3, 0.3] }.

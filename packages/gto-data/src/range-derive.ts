@@ -94,12 +94,22 @@ export function deriveRanges(
 
 /**
  * Convert a {combo: freq} map into a Pio-style comma-separated range
- * string. `AKs:0.85` for partial weights, bare `AA` for 1.0, skip 0.0.
+ * string. `AKs:0.85` for partial weights, bare `AA` for 1.0.
+ *
+ * `minFreq` drops combos below the threshold entirely. WASM solver
+ * memory scales roughly quadratically with range width, so small-
+ * weight long-tail combos inflate the tree without changing the
+ * top-level strategy meaningfully. Default 0.05 (5%) keeps strategic
+ * action but strips the 1-2% "noise" combos the preflop solver
+ * occasionally emits.
  */
-export function freqsToRangeString(freqs: Record<string, number>): string {
+export function freqsToRangeString(
+  freqs: Record<string, number>,
+  minFreq = 0.05,
+): string {
   const parts: string[] = [];
   for (const [combo, freq] of Object.entries(freqs)) {
-    if (freq <= 0.001) continue;
+    if (freq < minFreq) continue;
     parts.push(freq >= 0.999 ? combo : `${combo}:${freq.toFixed(3)}`);
   }
   return parts.join(',');
