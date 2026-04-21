@@ -20,7 +20,6 @@
     "@gto/gto-data": "workspace:*",
     "@gto/poker-core": "workspace:*",
     "@gto/ui": "workspace:*",
-    "@jayj1990/gto-today-solver-wasm": "^0.1.0",
     "clsx": "^2.1.1",
     "framer-motion": "^11.16.0",
     "lucide-react": "^0.471.0",

@@ -14,9 +14,6 @@ export default function SignInPage() {
   const handleGoogle = () => {
     void nextAuthSignIn('google', { callbackUrl: '/' });
   };
-  const handleKakao = () => {
-    void nextAuthSignIn('kakao', { callbackUrl: '/' });
-  };
   const handleNaver = () => {
     void nextAuthSignIn('naver', { callbackUrl: '/' });
   };
@@ -76,22 +73,33 @@ export default function SignInPage() {
 
         <button
           type="button"
-          onClick={handleKakao}
-          style={{ background: '#FEE500', color: '#191919', touchAction: 'manipulation' }}
-          className="flex h-14 w-full items-center justify-center gap-3 rounded-[var(--radius-button)] border-hair font-semibold shadow-[var(--shadow-card)] active:scale-[0.98]"
-        >
-          <KakaoGlyph />
-          카카오로 계속하기
-        </button>
-
-        <button
-          type="button"
           onClick={handleNaver}
           style={{ background: '#03C75A', color: '#FFFFFF', touchAction: 'manipulation' }}
           className="flex h-14 w-full items-center justify-center gap-3 rounded-[var(--radius-button)] border-hair font-semibold shadow-[var(--shadow-card)] active:scale-[0.98]"
         >
           <span aria-hidden className="font-display text-[20px] font-bold">N</span>
           네이버로 계속하기
+        </button>
+
+        <button
+          type="button"
+          disabled
+          aria-disabled="true"
+          title="카카오 로그인은 심사 완료 후 활성화됩니다."
+          style={{
+            background: '#FEE500',
+            color: '#191919',
+            touchAction: 'manipulation',
+            opacity: 0.4,
+            cursor: 'not-allowed',
+          }}
+          className="flex h-14 w-full items-center justify-center gap-3 rounded-[var(--radius-button)] border-hair font-semibold shadow-[var(--shadow-card)]"
+        >
+          <KakaoGlyph />
+          <span>카카오로 계속하기</span>
+          <span className="ml-1 rounded-full bg-noir/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em]">
+            곧 지원
+          </span>
         </button>
       </div>
 
