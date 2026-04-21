@@ -7,10 +7,9 @@ import { SiteHeader } from '@/components/site-header';
 import { useLiveStore, type GameType } from '@/lib/live-store';
 
 /**
- * 실전 모드 setup. Scope is constrained to what TexasSolver 0.2
- * bundles for us, so every field below is locked except the game
- * type (cash vs MTT — we map both to the same data today since the
- * underlying ranges are identical at 6max 100BB).
+ * 실전 모드 setup. Game type is live (cash → TexasSolver qb_ranges,
+ * MTT → heuristic-widened ranges approximating 1BB BB-ante). Table /
+ * stack / open size are locked to what our solved dataset covers.
  */
 export default function LiveSetupPage() {
   const config = useLiveStore((s) => s.config);
@@ -31,7 +30,7 @@ export default function LiveSetupPage() {
             GTO 데이터 선택
           </h1>
           <p className="mt-3 text-[13px] text-fg-muted">
-            현재는 6맥스 100BB 범위로 고정. 추가 스택·오픈 사이즈·앤티 지원은 추후 업데이트 예정입니다.
+            6맥스 100BB · 캐시(앤티 없음) 와 토너먼트(1BB 앤티) 지원. 추가 스택·오픈 사이즈는 추후 업데이트.
           </p>
         </header>
 
@@ -59,7 +58,7 @@ export default function LiveSetupPage() {
                     {k === 'cash' ? '캐시 게임' : '토너먼트'}
                   </p>
                   <p className="mt-1 text-[12px] text-fg-muted">
-                    {k === 'cash' ? 'NL200 · 500 rake' : 'MTT 100BB 기준'}
+                    {k === 'cash' ? '앤티 없음 · NL cash 기준' : '1BB 앤티 · ChipEV (근사)'}
                   </p>
                 </button>
               ))}
@@ -69,6 +68,15 @@ export default function LiveSetupPage() {
           <InfoRow label="테이블" value="6맥스" locked />
           <InfoRow label="스택" value="100BB" locked />
           <InfoRow label="오픈 사이즈" value="2.5x (SB 3x)" locked />
+          <InfoRow
+            label="앤티"
+            value={config.gameType === 'mtt' ? '1BB (BB 앤티)' : '없음'}
+            valueClass={
+              config.gameType === 'mtt'
+                ? 'text-[color:var(--color-accent)]'
+                : undefined
+            }
+          />
         </motion.section>
 
         <Link
@@ -79,8 +87,14 @@ export default function LiveSetupPage() {
           실전 시작 →
         </Link>
 
+        {config.gameType === 'mtt' && (
+          <div className="mt-4 rounded-[var(--radius-button)] border border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 px-4 py-3 text-[12px] text-[color:var(--color-gold)]">
+            토너먼트 데이터는 캐시 범위를 앤티 효과로 보정한 <strong>근사값</strong>이에요. 정확한 ChipEV 솔브는 추후 업데이트.
+          </div>
+        )}
+
         <div className="mt-4 rounded-[var(--radius-button)] border border-[color:var(--color-info)]/40 bg-[color:var(--color-info)]/10 px-4 py-3 text-[12px] text-[color:var(--color-info)]">
-          추후 업데이트 예정: 다양한 스택 뎁스 (50BB / 200BB), 추가 오픈 사이즈 (2.25x / 3x), ICM 버블 모드.
+          추후 업데이트: 다양한 스택 뎁스 (50BB / 200BB), 추가 오픈 사이즈 (2.25x / 3x), ICM 버블 모드.
         </div>
       </main>
     </>
