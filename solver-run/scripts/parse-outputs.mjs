@@ -200,7 +200,6 @@ function buildSpot(sourceName, board, root, { c, freqs }) {
 }
 
 function main() {
-  fs.mkdirSync(path.dirname(OUT), { recursive: true });
   const files = fs.readdirSync(INPUT).filter((f) => f.endsWith('.json'));
   console.log(`found ${files.length} solver outputs`);
 
@@ -249,15 +248,18 @@ function main() {
   console.log(`\nwrote ${spots.length} spots → ${OUT_JSON}`);
 
   // Emit TS module so the data is bundled directly (no runtime fetch).
+  // `as unknown as` double-cast lets plain JSON strings satisfy the
+  // CardCode branded type without writing per-card constructors.
   const ts = [
     '// AUTO-GENERATED from solver-run/outputs/. Do not edit by hand.',
     '// Regenerate: node solver-run/scripts/parse-outputs.mjs',
+    '/* eslint-disable */',
     '',
     "import type { PostflopSpot } from '../postflop';",
     '',
-    'export const SOLVER_SPOTS: readonly PostflopSpot[] = ' +
+    'export const SOLVER_SPOTS = (' +
       JSON.stringify(spots, null, 2) +
-      ' as const;',
+      ' as unknown) as readonly PostflopSpot[];',
     '',
   ].join('\n');
   fs.mkdirSync(path.dirname(OUT_TS), { recursive: true });

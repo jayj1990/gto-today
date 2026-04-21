@@ -1,10 +1,4 @@
-// AUTO-GENERATED from solver-run/outputs/. Do not edit by hand.
-// Regenerate: node solver-run/scripts/parse-outputs.mjs
-/* eslint-disable */
-
-import type { PostflopSpot } from '../postflop';
-
-export const SOLVER_SPOTS = ([
+[
   {
     "id": "pf_A_dry_A72_3d3c",
     "street": "flop",
@@ -8930,4 +8924,4 @@ export const SOLVER_SPOTS = ([
     ],
     "teachingNote": "이 보드 · 이 핸드에서는 체크이 단독 정답에 가깝습니다."
   }
-] as unknown) as readonly PostflopSpot[];
+]
