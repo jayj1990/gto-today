@@ -60,7 +60,7 @@ export function RangeGrid({
       role="grid"
       aria-label="Preflop range grid"
     >
-      {cells.map(({ combo, mix }) => {
+      {cells.map(({ combo, mix, inRange }) => {
         const isHighlight = combo === highlight;
         const pct = (n: number) => Math.max(0, Math.min(100, n * 100));
         const r = pct(mix.raise);
@@ -73,7 +73,11 @@ export function RangeGrid({
             key={combo}
             type="button"
             role="gridcell"
-            aria-label={`${combo} — raise ${r.toFixed(0)}%, call ${c.toFixed(0)}%, fold ${f.toFixed(0)}%`}
+            aria-label={
+              inRange === false
+                ? `${combo} — 히어로 범위 밖`
+                : `${combo} — raise ${r.toFixed(0)}%, call ${c.toFixed(0)}%, fold ${f.toFixed(0)}%`
+            }
             onClick={onCellClick ? () => onCellClick(combo) : undefined}
             style={{
               position: 'relative',
@@ -85,22 +89,29 @@ export function RangeGrid({
               cursor: clickable ? 'pointer' : 'default',
               overflow: 'hidden',
               userSelect: 'none',
+              opacity: inRange === false ? 0.25 : 1,
               outline: isHighlight ? '2px solid var(--color-accent)' : 'none',
               outlineOffset: isHighlight ? '1px' : 0,
             }}
           >
-            {/* Stacked background bars */}
+            {/* Stacked background bars. Out-of-range cells render as
+                a flat mid-gray so they don't read as "folded" */}
             <div
               style={{
                 position: 'absolute',
                 inset: 0,
                 display: 'flex',
                 pointerEvents: 'none',
+                background: inRange === false ? '#3a3a3e' : 'transparent',
               }}
             >
-              <div style={{ width: `${r}%`, background: '#C8102E' }} />
-              <div style={{ width: `${c}%`, background: '#1F9D55' }} />
-              <div style={{ width: `${f}%`, background: '#2B5F8F' }} />
+              {inRange !== false && (
+                <>
+                  <div style={{ width: `${r}%`, background: '#C8102E' }} />
+                  <div style={{ width: `${c}%`, background: '#1F9D55' }} />
+                  <div style={{ width: `${f}%`, background: '#2B5F8F' }} />
+                </>
+              )}
             </div>
             {/* Label */}
             {labels && (
@@ -132,9 +143,15 @@ export function RangeGrid({
 }
 
 /* Build every cell in the 13×13 grid (pairs on the diagonal, suited
-   upper triangle, offsuit lower triangle). */
-function buildCells(mixes: Record<string, ComboMix>): Array<{ combo: string; mix: ComboMix }> {
-  const out: Array<{ combo: string; mix: ComboMix }> = [];
+   upper triangle, offsuit lower triangle).
+   A combo MISSING from `mixes` means the hero's range at this
+   decision node doesn't contain that hand — render it as gray/dim
+   rather than "100% fold", which is misleading (e.g. AA at a node
+   where BTN already 3-bet AA instead of calling). */
+function buildCells(
+  mixes: Record<string, ComboMix>,
+): Array<{ combo: string; mix: ComboMix; inRange: boolean }> {
+  const out: Array<{ combo: string; mix: ComboMix; inRange: boolean }> = [];
   for (let row = 0; row < 13; row++) {
     for (let col = 0; col < 13; col++) {
       const hi = RANKS[row];
@@ -144,8 +161,9 @@ function buildCells(mixes: Record<string, ComboMix>): Array<{ combo: string; mix
       if (row === col) combo = `${hi}${lo}`;
       else if (row < col) combo = `${hi}${lo}s`;
       else combo = `${lo}${hi}o`;
-      const mix = mixes[combo] ?? { raise: 0, fold: 1 };
-      out.push({ combo, mix });
+      const mix = mixes[combo];
+      if (mix) out.push({ combo, mix, inRange: true });
+      else out.push({ combo, mix: { raise: 0, fold: 1 }, inRange: false });
     }
   }
   return out;
