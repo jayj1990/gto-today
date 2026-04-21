@@ -20,26 +20,26 @@ let wasmSolveFlop:
   | ((input: unknown) => { actions: string[]; mix: Record<string, number[]>; exploitability: number; iterations: number })
   | null = null;
 
+// Debug marker — when WASM fails to load we stash the error message
+// so the response can surface it instead of silently mocking. Reset
+// between cold starts because `let` at module scope is per-instance.
+let wasmLoadError: string | null = null;
+
 async function loadWasm() {
   if (wasmSolveFlop !== null) return wasmSolveFlop;
   try {
-    // Direct import so Next.js bundles the WASM package into the
-    // Vercel Function output. Earlier we had /* webpackIgnore */ to
-    // let the build succeed before the package was published, but
-    // that also prevented it from being bundled at runtime — WASM
-    // silently fell back to mock. Package now lives at
-    // @jayj1990/gto-today-solver-wasm via GitHub Packages.
-    const mod = (await import('@jayj1990/gto-today-solver-wasm').catch(
-      () => null,
-    )) as
-      | { solve_flop: (input: unknown) => ReturnType<NonNullable<typeof wasmSolveFlop>> }
-      | null;
-    if (mod && typeof mod.solve_flop === 'function') {
+    const mod = (await import('@jayj1990/gto-today-solver-wasm')) as {
+      solve_flop: (input: unknown) => ReturnType<NonNullable<typeof wasmSolveFlop>>;
+    };
+    if (typeof mod.solve_flop === 'function') {
       wasmSolveFlop = mod.solve_flop;
+      wasmLoadError = null;
       return wasmSolveFlop;
     }
+    wasmLoadError = `solve_flop not a function (keys: ${Object.keys(mod).join(',')})`;
   } catch (e) {
-    console.warn('[live-solve] WASM load failed, using mock:', e);
+    wasmLoadError = e instanceof Error ? `${e.message}` : String(e);
+    console.warn('[live-solve] WASM load failed:', wasmLoadError);
   }
   return null;
 }
@@ -108,7 +108,8 @@ export async function POST(req: Request): Promise<NextResponse<SolveResponse | {
 
   const result = mockSolve(body);
   result.elapsedMs = Date.now() - start;
-  result.note = (result.note ?? '') + ' (WASM unavailable — using mock)';
+  const reason = wasmLoadError ? `WASM load error: ${wasmLoadError}` : 'WASM unavailable';
+  result.note = (result.note ?? '') + ` (${reason} — using mock)`;
   return NextResponse.json(result);
 }
 
