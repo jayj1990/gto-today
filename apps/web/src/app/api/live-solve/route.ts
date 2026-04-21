@@ -147,7 +147,19 @@ export async function POST(req: Request): Promise<NextResponse<SolveResponse | {
     return NextResponse.json(response);
   } catch (e) {
     wasmError = e instanceof Error ? e.message : String(e);
-    console.error('[live-solve] WASM failed, falling back to mock:', wasmError);
+    // Log the full spot so we can correlate failing inputs against
+    // the Vercel Function logs — panic messages from wasm32 don't
+    // survive to JS, so the spot itself is the best clue we have.
+    console.error('[live-solve] WASM failed:', {
+      err: wasmError,
+      board: body.board,
+      oopCombos: body.oopRange.split(',').length,
+      ipCombos: body.ipRange.split(',').length,
+      pot: body.pot,
+      effStack: body.effStack,
+      scenario: body.scenario,
+      fp,
+    });
   }
 
   const result = mockSolve(body);
