@@ -10,16 +10,17 @@ repository = "https://github.com/jayj1990/gto-today-solver-wasm"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-postflop-solver = { git = "https://github.com/b-inary/postflop-solver", rev = "9d1509fe5077d019825f833eed04b16d342dfda1" }
+# Disable default features to skip `bincode` (save/load — we don't
+# need it for live solve) and `rayon` (WASM has no threads by default).
+# Leaves just the core CFR solver, which is all we need.
+#
+# `bincode` default-on would otherwise pull in bincode 2.0.0 stable,
+# but postflop-solver was written against 2.0.0-rc.3 and the two have
+# a breaking `Decode<Context>` signature change that fails to compile.
+postflop-solver = { git = "https://github.com/b-inary/postflop-solver", rev = "9d1509fe5077d019825f833eed04b16d342dfda1", default-features = false }
 wasm-bindgen = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde-wasm-bindgen = "0.6"
-# bincode 2.0.1 added a `Context` generic to `Decode`/`BorrowDecode` that
-# breaks postflop-solver @ 9d1509f (upstream hasn't migrated yet). Pin
-# to exactly 2.0.0 via = so Cargo's SAT solver picks the last version
-# that still compiles. Remove this line once postflop-solver adopts the
-# new API.
-bincode = "=2.0.0"
 # console_error_panic_hook forwards Rust panics to the browser/Node
 # console so failures surface instead of dying silently.
 console_error_panic_hook = { version = "0.1", optional = true }
