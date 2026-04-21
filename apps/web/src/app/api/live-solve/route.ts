@@ -1,9 +1,47 @@
+import { createHash } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import init, { solve_flop } from '@jayj1990/gto-today-solver-wasm';
 import { SOLVER_WASM_BYTES, SOLVER_WASM_VERSION } from '@/lib/solver-wasm-bytes';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300; // Vercel Fluid Compute — up to 300s
+
+// In-memory solve cache, warm-instance scoped. A Fluid Compute instance
+// can serve many requests, so the same user hitting the same spot twice
+// gets an instant hit instead of re-running the 30-200s solver. Entries
+// live for an hour — long enough for a study session, short enough that
+// a solver-wasm upgrade (new accuracy/iter defaults) takes effect after
+// the next cold start.
+interface CacheEntry {
+  response: SolveResponse;
+  expiresAt: number;
+}
+const solveCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1h
+
+function fingerprint(body: SolveRequest): string {
+  // Canonical string so the hash is order-independent for ranges
+  // (users may re-enter the same ranges in different comma orders).
+  const canon = [
+    body.board.slice().sort().join(''),
+    canonRange(body.oopRange),
+    canonRange(body.ipRange),
+    body.pot.toFixed(2),
+    body.effStack.toFixed(2),
+    body.scenario,
+    SOLVER_WASM_VERSION,
+  ].join('|');
+  return createHash('sha256').update(canon).digest('hex').slice(0, 16);
+}
+
+function canonRange(r: string): string {
+  return r
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .sort()
+    .join(',');
+}
 
 /**
  * Live postflop solver endpoint. The WASM binary ships as a base64
@@ -64,6 +102,18 @@ export async function POST(req: Request): Promise<NextResponse<SolveResponse | {
   }
 
   const start = Date.now();
+
+  // Cache check — avoid re-running a 30-200s solve for the same spot.
+  const fp = fingerprint(body);
+  const cached = solveCache.get(fp);
+  if (cached && cached.expiresAt > Date.now()) {
+    return NextResponse.json({
+      ...cached.response,
+      elapsedMs: Date.now() - start,
+      note: `cache hit · fp=${fp}`,
+    });
+  }
+
   let wasmError: string | null = null;
   try {
     await ensureWasmInit();
@@ -81,13 +131,18 @@ export async function POST(req: Request): Promise<NextResponse<SolveResponse | {
       exploitability: number;
       iterations: number;
     };
-    return NextResponse.json({
+    const response: SolveResponse = {
       actions: out.actions,
       mix: out.mix,
       exploitability: out.exploitability,
       iterations: out.iterations,
       elapsedMs: Date.now() - start,
+    };
+    solveCache.set(fp, {
+      response,
+      expiresAt: Date.now() + CACHE_TTL_MS,
     });
+    return NextResponse.json(response);
   } catch (e) {
     wasmError = e instanceof Error ? e.message : String(e);
     console.error('[live-solve] WASM failed, falling back to mock:', wasmError);
