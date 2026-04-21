@@ -140,10 +140,17 @@ export function PostflopLiveView({
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
           />
-          <p className="mt-4 font-mono text-[13px] text-fg">솔빙 중…</p>
-          <p className="mt-1 font-mono text-[11px] text-fg-muted tabular-nums">
-            {state.elapsed}초 경과 · 예상 30~90초
+          <p className="mt-4 font-mono text-[13px] text-fg">
+            {state.elapsed < 5 ? '캐시 확인…' : '솔빙 중…'}
           </p>
+          <p className="mt-1 font-mono text-[11px] text-fg-muted tabular-nums">
+            {state.elapsed}초 · 보드·레인지 기반 첫 솔브는 최대 3분
+          </p>
+          {state.elapsed >= 30 && (
+            <p className="mt-2 text-[11px] text-[color:var(--color-accent)]">
+              같은 스팟 재방문 시 즉시 결과가 나옵니다.
+            </p>
+          )}
         </div>
       )}
 
