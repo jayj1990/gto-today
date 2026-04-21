@@ -75,11 +75,15 @@ function dominantAction(mix: BbDefenseMix): BbDefenseStrategy['primary'] {
 }
 
 export async function getBbDefenseStrategy(
-  query: BbDefenseQuery,
+  query: BbDefenseQuery & { gameType?: 'cash' | 'mtt' },
 ): Promise<BbDefenseStrategy | null> {
   const format = query.format ?? '6max';
-  const key = `${format}_100bb_bb_vs_${query.opener}`;
-  const chart = await load(key);
+  const prefix = query.gameType === 'mtt' ? 'mtt_' : '';
+  const key = `${prefix}${format}_100bb_bb_vs_${query.opener}`;
+  let chart = await load(key);
+  if (!chart && query.gameType === 'mtt') {
+    chart = await load(`${format}_100bb_bb_vs_${query.opener}`);
+  }
   if (!chart) return null;
   const entry = chart[query.combo];
   if (!entry) {
@@ -105,9 +109,13 @@ export async function getBbDefenseStrategy(
 export async function getBbDefenseChart(
   opener: Position,
   format: TableFormat = '6max',
+  gameType: 'cash' | 'mtt' = 'cash',
 ): Promise<BbDefenseStrategyJson | null> {
-  const key = `${format}_100bb_bb_vs_${opener}`;
-  return load(key);
+  const prefix = gameType === 'mtt' ? 'mtt_' : '';
+  const key = `${prefix}${format}_100bb_bb_vs_${opener}`;
+  const data = await load(key);
+  if (data || gameType !== 'mtt') return data;
+  return load(`${format}_100bb_bb_vs_${opener}`);
 }
 
 export function clearBbDefenseCache(): void {

@@ -17,8 +17,9 @@ export interface RandomSpotOptions {
   readonly positions?: readonly Position[];
   readonly difficulty?: 'mixed-only' | 'clear-only' | 'any';
   readonly stackBB?: number;
-  /** Filter postflop spots to cash- or MTT-tagged pool. Falls back to
-   *  the full pool if the preferred format has no spots yet. */
+  /** Filter preflop charts + postflop spots to cash- or MTT-tagged
+   *  pool. MTT preflop uses the heuristic widening in
+   *  mtt_6max_100bb_*.json. Falls back to cash if MTT missing. */
   readonly gameType?: 'cash' | 'mtt';
 }
 
@@ -83,7 +84,7 @@ export async function generateRandomSpot(opts: RandomSpotOptions = {}): Promise<
   const wantBbDefense = Math.random() < 0.4;
   if (wantBbDefense) {
     const opener = SUPPORTED_OPENERS[Math.floor(Math.random() * SUPPORTED_OPENERS.length)]!;
-    const bbChart = await getBbDefenseChart(opener, format);
+    const bbChart = await getBbDefenseChart(opener, format, opts.gameType ?? 'cash');
     if (bbChart) {
       const pool = allCombos().filter((c) => (bbChart[c]?.fold ?? 1) < 0.97);
       if (pool.length > 0) {
@@ -112,7 +113,7 @@ export async function generateRandomSpot(opts: RandomSpotOptions = {}): Promise<
 
   // RFI fallback
   const position = positions[Math.floor(Math.random() * positions.length)]!;
-  const chart = await getPreflopChart(format, position);
+  const chart = await getPreflopChart(format, position, { gameType: opts.gameType ?? 'cash' });
   if (!chart) return null;
 
   const combos = allCombos();

@@ -174,6 +174,8 @@ export interface GenerateOptions {
   readonly count?: number;
   readonly dateSeed?: string;
   readonly format?: TableFormat;
+  /** 'mtt' pulls heuristic ante-adjusted charts; default 'cash'. */
+  readonly gameType?: 'cash' | 'mtt';
 }
 
 /** Classify a 3-way BB-defense mix into a dominant action. */
@@ -236,17 +238,19 @@ export async function generateDailySpots(
   const rng = seeded(seedFromDate(dateKey));
   const positions = format === '6max' ? POSITIONS_6MAX : POSITIONS_9MAX;
 
+  const gameType = opts.gameType ?? 'cash';
+
   // Pre-load RFI charts per position.
   const rfiCharts = new Map<Position, PreflopStrategyJson>();
   for (const p of positions) {
-    const chart = await getPreflopChart(format, p);
+    const chart = await getPreflopChart(format, p, { gameType });
     if (chart) rfiCharts.set(p, chart);
   }
 
   // Pre-load BB-defense charts per supported opener.
   const bbCharts = new Map<Position, BbDefenseStrategyJson>();
   for (const opener of SUPPORTED_OPENERS) {
-    const chart = await getBbDefenseChart(opener, format);
+    const chart = await getBbDefenseChart(opener, format, gameType);
     if (chart) bbCharts.set(opener, chart);
   }
 

@@ -23,6 +23,7 @@ import { DailyComplete } from '@/components/today/daily-complete';
 import { PostflopHand } from '@/components/today/postflop-hand';
 import { PostflopResult } from '@/components/today/postflop-result';
 import { useChallengeStore } from '@/lib/challenge-store';
+import { useLiveStore } from '@/lib/live-store';
 import { isoDateKR } from '@/lib/date';
 
 const TOTAL = 10;
@@ -45,10 +46,12 @@ export default function TodayPlayPage() {
   const advance = useChallengeStore((s) => s.advance);
   const completeDay = useChallengeStore((s) => s.completeDay);
 
+  const gameType = useLiveStore((s) => s.config.gameType);
+
   useEffect(() => {
     let cancelled = false;
     const today = isoDateKR();
-    generateDailyItems({ count: TOTAL, dateSeed: today }).then((list) => {
+    generateDailyItems({ count: TOTAL, dateSeed: today, gameType }).then((list) => {
       if (cancelled) return;
       setItems(list);
       // Persist just the preflop-spot list to the challenge-store for
@@ -61,7 +64,7 @@ export default function TodayPlayPage() {
     return () => {
       cancelled = true;
     };
-  }, [startDay]);
+  }, [startDay, gameType]);
 
   useEffect(() => {
     if (items && cursor >= TOTAL && dateKey) completeDay();

@@ -23,6 +23,8 @@ export interface PreflopQuery {
   readonly stackBB?: number;
   /** Scenario defaults to 'rfi' (raise first in — action folds to hero). */
   readonly scenario?: 'rfi';
+  /** 'mtt' pulls the ante-adjusted heuristic chart; default 'cash'. */
+  readonly gameType?: 'cash' | 'mtt';
 }
 
 type Loader = (key: string) => Promise<PreflopStrategyJson | null>;
@@ -77,8 +79,15 @@ function stackBucketFor(stackBB: number): '100bb' {
   return '100bb';
 }
 
-function normalizeKey(format: TableFormat, stack: '100bb', scenario: string, pos: Position): string {
-  return `${format}_${stack}_${scenario}_${pos}`;
+function normalizeKey(
+  format: TableFormat,
+  stack: '100bb',
+  scenario: string,
+  pos: Position,
+  gameType: 'cash' | 'mtt' = 'cash',
+): string {
+  const prefix = gameType === 'mtt' ? 'mtt_' : '';
+  return `${prefix}${format}_${stack}_${scenario}_${pos}`;
 }
 
 /**
@@ -106,8 +115,12 @@ export async function getPreflopStrategy(query: PreflopQuery): Promise<PreflopMi
     }
   }
 
-  const key = normalizeKey(tableFormat, stack, scenario, resolvedPos);
-  const data = await loadStrategyFile(key);
+  const key = normalizeKey(tableFormat, stack, scenario, resolvedPos, query.gameType);
+  let data = await loadStrategyFile(key);
+  // MTT fallback → cash if MTT heuristic file missing for this key.
+  if (!data && query.gameType === 'mtt') {
+    data = await loadStrategyFile(normalizeKey(tableFormat, stack, scenario, resolvedPos, 'cash'));
+  }
   if (!data) return null;
 
   const entry = data[query.combo];
@@ -134,7 +147,7 @@ export async function getPreflopStrategy(query: PreflopQuery): Promise<PreflopMi
 export async function getPreflopChart(
   format: TableFormat,
   position: Position,
-  opts: { stackBB?: number; scenario?: 'rfi' } = {},
+  opts: { stackBB?: number; scenario?: 'rfi'; gameType?: 'cash' | 'mtt' } = {},
 ): Promise<PreflopStrategyJson | null> {
   const tableFormat: TableFormat =
     format === '10max' || format === '11max' ? '9max' : format;
@@ -142,8 +155,10 @@ export async function getPreflopChart(
   const resolvedPos = fallback ?? position;
   const scenario = opts.scenario ?? 'rfi';
   const stack = stackBucketFor(opts.stackBB ?? 100);
-  const key = normalizeKey(tableFormat, stack, scenario, resolvedPos);
-  return loadStrategyFile(key);
+  const key = normalizeKey(tableFormat, stack, scenario, resolvedPos, opts.gameType);
+  const data = await loadStrategyFile(key);
+  if (data || opts.gameType !== 'mtt') return data;
+  return loadStrategyFile(normalizeKey(tableFormat, stack, scenario, resolvedPos, 'cash'));
 }
 
 export function clearPreflopCache(): void {
