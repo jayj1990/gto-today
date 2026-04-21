@@ -68,10 +68,15 @@ export function PostflopLiveView({
   onBack,
 }: PostflopLiveViewProps) {
   const [state, setState] = useState<SolveState>({ phase: 'loading', elapsed: 0 });
+  // Incrementing this key re-runs the effect below — used by the
+  // retry button on mock/error to force a fresh attempt with a
+  // slightly tweaked maxIter so the cache key doesn't collide.
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     const start = Date.now();
+    setState({ phase: 'loading', elapsed: 0 });
 
     const tick = setInterval(() => {
       if (!cancelled) {
@@ -82,7 +87,16 @@ export function PostflopLiveView({
     fetch('/api/live-solve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ board, oopRange, ipRange, pot, effStack, scenario }),
+      body: JSON.stringify({
+        board,
+        oopRange,
+        ipRange,
+        pot,
+        effStack,
+        scenario,
+        // Retries add +1 iter per attempt to bust the fingerprint cache.
+        maxIter: 150 + attempt,
+      }),
     })
       .then((r) => r.json())
       .then((data) => {
@@ -108,7 +122,9 @@ export function PostflopLiveView({
       cancelled = true;
       clearInterval(tick);
     };
-  }, [board, oopRange, ipRange, pot, effStack, scenario]);
+  }, [board, oopRange, ipRange, pot, effStack, scenario, attempt]);
+
+  const retry = () => setAttempt((n) => n + 1);
 
   return (
     <section className="mt-3">
@@ -170,7 +186,7 @@ export function PostflopLiveView({
       )}
 
       {state.phase === 'done' && state.result && (
-        <StrategyView result={state.result} />
+        <StrategyView result={state.result} onRetry={retry} />
       )}
     </section>
   );
@@ -178,6 +194,7 @@ export function PostflopLiveView({
 
 function StrategyView({
   result,
+  onRetry,
 }: {
   result: {
     actions: string[];
@@ -186,6 +203,7 @@ function StrategyView({
     note?: string;
     elapsedMs?: number;
   };
+  onRetry: () => void;
 }) {
   const isCache = (result.note ?? '').startsWith('cache hit');
   const isMock = (result.note ?? '').startsWith('Mock');
@@ -210,6 +228,25 @@ function StrategyView({
 
   return (
     <>
+      {isMock && (
+        <section className="mb-3 rounded-[var(--radius-panel)] border border-[color:var(--color-warning)]/50 bg-[color:var(--color-warning)]/10 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[color:var(--color-warning)]">
+                솔버 에러 · 보조 데이터 표시 중
+              </p>
+              <p className="mt-1 text-[11px] text-fg-muted truncate">{result.note}</p>
+            </div>
+            <button
+              type="button"
+              onClick={onRetry}
+              className="shrink-0 rounded-[var(--radius-button)] border border-[color:var(--color-warning)]/60 bg-[color:var(--color-warning)]/20 px-3 py-1.5 font-mono text-[11px] font-semibold text-[color:var(--color-warning)]"
+            >
+              재시도
+            </button>
+          </div>
+        </section>
+      )}
       <section className="mb-3">
         <RangeGrid mixes={mixes} className="w-full" />
       </section>
@@ -228,23 +265,16 @@ function StrategyView({
       </section>
 
       <section className="rounded-[var(--radius-button)] border-hair surface p-3 text-center font-mono text-[11px] text-fg-muted">
-        <div>
-          수렴 exploitability <span className="text-fg">{result.exploitability.toFixed(2)}%</span>
-          {elapsedSec && !isMock && (
-            <>
-              {' · '}
-              {isCache ? (
-                <span className="text-[color:var(--color-call)]">캐시 히트 {elapsedSec}s</span>
-              ) : (
-                <span>솔브 {elapsedSec}s</span>
-              )}
-            </>
-          )}
-        </div>
-        {isMock && (
-          <div className="mt-1 text-[color:var(--color-warning)]">
-            {result.note}
-          </div>
+        수렴 exploitability <span className="text-fg">{result.exploitability.toFixed(2)}%</span>
+        {elapsedSec && !isMock && (
+          <>
+            {' · '}
+            {isCache ? (
+              <span className="text-[color:var(--color-call)]">캐시 히트 {elapsedSec}s</span>
+            ) : (
+              <span>솔브 {elapsedSec}s</span>
+            )}
+          </>
         )}
       </section>
     </>
