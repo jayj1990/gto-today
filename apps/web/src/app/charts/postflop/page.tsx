@@ -172,21 +172,28 @@ function BoardMixPanel({ spots }: { spots: readonly PostflopSpot[] }) {
                       <span
                         className={cn(
                           'w-14 flex-shrink-0 font-mono text-[11px]',
-                          isTop ? 'font-bold text-fg' : 'text-fg-muted',
+                          isTop ? 'font-bold text-white' : 'text-fg-muted',
                         )}
                       >
-                        {isTop && (
-                          <span className="mr-1 text-[color:var(--color-gold)]">★</span>
-                        )}
                         {POSTFLOP_ACTION_LABEL[act]}
                       </span>
-                      <div className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]">
+                      <div
+                        className={cn(
+                          'relative flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]',
+                          isTop ? 'h-3.5' : 'h-2.5',
+                        )}
+                      >
                         <div
                           className="h-full rounded-full transition-[width] duration-300 ease-out"
                           style={{ width: `${freq * 100}%`, background: color }}
                         />
                       </div>
-                      <span className="w-12 flex-shrink-0 text-right font-mono text-[11px] tabular-nums">
+                      <span
+                        className={cn(
+                          'w-12 flex-shrink-0 text-right font-mono text-[11px] tabular-nums',
+                          isTop ? 'font-bold text-white' : '',
+                        )}
+                      >
                         {(freq * 100).toFixed(1)}%
                       </span>
                     </li>

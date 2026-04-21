@@ -89,19 +89,16 @@ export function ComboDetailSheet({
                       <span
                         className={cn(
                           'w-20 flex-shrink-0 font-mono text-[13px]',
-                          isTop ? 'font-bold text-fg' : 'text-fg-muted',
+                          isTop ? 'font-bold text-white' : 'text-fg-muted',
                         )}
                       >
-                        {isTop && (
-                          <span className="mr-1" style={{ color: 'var(--color-gold)' }}>
-                            ★
-                          </span>
-                        )}
                         {r.label}
                       </span>
                       <div
-                        className="relative h-3 flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]"
-                        style={isTop ? { boxShadow: `0 0 0 1.5px ${r.color}` } : undefined}
+                        className={cn(
+                          'relative flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]',
+                          isTop ? 'h-4' : 'h-3',
+                        )}
                       >
                         <div
                           className="h-full rounded-full transition-[width] duration-500 ease-out"
@@ -110,8 +107,8 @@ export function ComboDetailSheet({
                       </div>
                       <span
                         className={cn(
-                          'w-14 flex-shrink-0 text-right font-mono tabular-nums',
-                          isTop ? 'text-[13px] font-bold text-fg' : 'text-[13px] font-semibold',
+                          'w-14 flex-shrink-0 text-right font-mono tabular-nums text-[13px]',
+                          isTop ? 'font-bold text-white' : 'font-semibold',
                         )}
                       >
                         {r.value.toFixed(1)}%

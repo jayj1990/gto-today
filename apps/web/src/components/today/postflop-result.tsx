@@ -191,27 +191,16 @@ export function PostflopResult({
                   <span
                     className={cn(
                       'w-24 flex-shrink-0 font-mono',
-                      isTop ? 'text-[13px] font-bold text-fg' : 'text-[12px] text-fg-muted',
+                      isTop ? 'text-[13px] font-bold text-white' : 'text-[12px] text-fg-muted',
                     )}
                   >
-                    {isTop && (
-                      <span
-                        className="mr-1"
-                        style={{
-                          color:
-                            grade === 'acceptable'
-                              ? 'var(--color-call)'
-                              : 'var(--color-gold)',
-                        }}
-                      >
-                        ★
-                      </span>
-                    )}
                     {POSTFLOP_ACTION_LABEL[action]}
                   </span>
                   <div
-                    className="relative h-3 flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]"
-                    style={isTop ? { boxShadow: `0 0 0 1.5px ${color}` } : undefined}
+                    className={cn(
+                      'relative flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]',
+                      isTop ? 'h-4' : 'h-3',
+                    )}
                   >
                     <div
                       className="h-full rounded-full"
@@ -225,7 +214,7 @@ export function PostflopResult({
                     className={cn(
                       'w-14 flex-shrink-0 text-right font-mono tabular-nums',
                       isTop
-                        ? 'text-[13px] font-bold text-fg'
+                        ? 'text-[13px] font-bold text-white'
                         : 'text-[12px] font-semibold text-fg-muted',
                     )}
                   >

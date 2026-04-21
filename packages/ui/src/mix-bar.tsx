@@ -49,21 +49,18 @@ export function MixBar({
             {labeled && (
               <span
                 className={cn(
-                  'w-20 flex-shrink-0 font-mono',
-                  dom ? 'text-[13px] font-bold text-fg' : 'text-[13px] text-fg-muted',
+                  'w-20 flex-shrink-0 font-mono text-[13px]',
+                  dom ? 'font-bold text-white' : 'text-fg-muted',
                 )}
               >
-                {dom && (
-                  <span className="mr-1" style={{ color: highlightColor }}>
-                    ★
-                  </span>
-                )}
                 {seg.label}
               </span>
             )}
             <div
-              className="relative h-3 flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]"
-              style={dom ? { boxShadow: `0 0 0 1.5px ${color}` } : undefined}
+              className={cn(
+                'relative flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]',
+                dom ? 'h-4' : 'h-3',
+              )}
             >
               <motion.div
                 initial={{ clipPath: 'inset(0 100% 0 0)' }}
@@ -80,8 +77,8 @@ export function MixBar({
             {labeled && (
               <span
                 className={cn(
-                  'w-14 flex-shrink-0 text-right font-mono tabular-nums',
-                  dom ? 'text-[13px] font-bold text-fg' : 'text-[13px] font-semibold',
+                  'w-14 flex-shrink-0 text-right font-mono tabular-nums text-[13px]',
+                  dom ? 'font-bold text-white' : 'font-semibold',
                 )}
               >
                 {seg.value.toFixed(1)}%
