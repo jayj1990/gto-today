@@ -77,11 +77,6 @@ export function ChartNavigator({
 
   const [pickedCombo, setPickedCombo] = useState<string | null>(null);
   const pickedMix = pickedCombo ? mixes[pickedCombo] : undefined;
-  const raiseLabel = useMemo(() => {
-    if (!node) return undefined;
-    const raiseAct = node.legal.find((a) => a.endsWith('bb') || a === 'AllIn');
-    return raiseAct;
-  }, [node]);
 
   return (
     <div className={className}>
@@ -250,7 +245,6 @@ export function ChartNavigator({
             open={pickedCombo !== null}
             combo={pickedCombo}
             mix={pickedMix}
-            raiseSize={raiseLabel}
             onClose={() => setPickedCombo(null)}
           />
         </>

@@ -31,6 +31,12 @@ const SOURCE = process.argv[2] ?? DEFAULT_SOURCE;
 
 const OUT_DIR = join(REPO_ROOT, 'apps', 'web', 'public', 'data', 'preflop');
 
+/** qb_ranges root — flat files with real action-probability weights.
+ *  Supersedes the old 6max_range walk which only gave 0/1 "in tree"
+ *  flags, producing wrong RFI mixes for solver-mixed combos like 65s. */
+const QB_ROOT_DEFAULT =
+  'C:\\Users\\Jay\\Desktop\\GTO-Today\\TexasSolver-v0.2.0-Windows\\ranges\\qb_ranges\\100bb 2.5x 500rake';
+
 /** 6-max position → TexasSolver folder name. */
 const POSITIONS: readonly string[] = ['UTG', 'MP', 'CO', 'BTN', 'SB'];
 
@@ -291,31 +297,96 @@ function isSaneNode(actions: Record<string, Record<string, number>>): boolean {
   return true;
 }
 
+/** Opening sizes TexasSolver ships per position. UTG/MP/CO/BTN raise
+ *  2.5x; SB opens 3x (different tree). Used to find the right action
+ *  probability file. */
+const OPEN_SIZE: Record<string, string> = {
+  UTG: '2.5bb',
+  MP: '2.5bb',
+  CO: '2.5bb',
+  BTN: '2.5bb',
+  SB: '3.0bb',
+};
+
+/** Read `<POS>/<POS>_<openSize>.txt` → probability POS opens each combo.
+ *  This is the REAL mix (e.g. 65s = 0.442 for CO). */
+async function extractRfiFromQb(qbRoot: string, pos: string) {
+  const size = OPEN_SIZE[pos]!;
+  const raiseFile = join(qbRoot, pos, `${pos}_${size}.txt`);
+  const raiseRange = (await parseRangeFile(raiseFile)) ?? {};
+
+  const rfiOut: Record<string, PreflopCombo> = {};
+  for (const combo of allCombos()) {
+    const raise = Math.min(1, raiseRange[combo] ?? 0);
+    rfiOut[combo] = { raise, fold: 1 - raise };
+  }
+  return rfiOut;
+}
+
+/** Read defender's call + 3bet + fold files for a given opener.
+ *  File pattern: `<DEFENDER>/<opener>_<openSize>_<DEFENDER>_<action>.txt`
+ *  where action ∈ { Call, FOLD, <3bet size> }. */
+async function extractDefenseFromQb(qbRoot: string, opener: string, defender: string) {
+  const openSize = OPEN_SIZE[opener]!;
+  const defDir = join(qbRoot, defender);
+  if (!existsSync(defDir)) return null;
+
+  const prefix = `${opener}_${openSize}_${defender}_`;
+  const entries = await readdir(defDir);
+  let callFile: string | null = null;
+  let foldFile: string | null = null;
+  let raiseFile: string | null = null;
+  for (const name of entries) {
+    if (!name.startsWith(prefix) || !name.endsWith('.txt')) continue;
+    const action = name.slice(prefix.length, -4);
+    if (action === 'Call') callFile = join(defDir, name);
+    else if (action === 'FOLD') foldFile = join(defDir, name);
+    else if (action.endsWith('bb')) raiseFile = join(defDir, name);
+  }
+  if (!callFile && !foldFile && !raiseFile) return null;
+
+  const callRange = callFile ? ((await parseRangeFile(callFile)) ?? {}) : {};
+  const foldRange = foldFile ? ((await parseRangeFile(foldFile)) ?? {}) : {};
+  const raiseRange = raiseFile ? ((await parseRangeFile(raiseFile)) ?? {}) : {};
+
+  const mix: Record<string, { call: number; raise: number; fold: number }> = {};
+  for (const combo of allCombos()) {
+    const call = Math.min(1, callRange[combo] ?? 0);
+    const raise = Math.min(1, raiseRange[combo] ?? 0);
+    // Prefer the solver's own fold weight if present; fall back to
+    // 1 − call − raise (should equal the recorded fold exactly).
+    const foldRaw = foldRange[combo];
+    const fold =
+      foldRaw !== undefined
+        ? Math.max(0, Math.min(1, foldRaw))
+        : Math.max(0, 1 - call - raise);
+    mix[combo] = { call, raise, fold };
+  }
+  return mix;
+}
+
 async function main() {
-  console.log(`source: ${SOURCE}`);
-  if (!existsSync(SOURCE)) {
-    console.error('✗ source folder not found — pass it as argv[2]');
+  const qbRoot = process.argv[3] ?? QB_ROOT_DEFAULT;
+  console.log(`source: ${qbRoot}`);
+  if (!existsSync(qbRoot)) {
+    console.error('✗ qb_ranges folder not found');
     process.exit(1);
   }
 
   let wrote = 0;
   for (const pos of POSITIONS) {
-    const { rfi, defenceCharts } = await extractOpener(pos);
-
-    const rfiOut: Record<string, PreflopCombo> = {};
-    for (const combo of allCombos()) {
-      const raise = Math.min(1, rfi[combo] ?? 0);
-      rfiOut[combo] = { raise, fold: 1 - raise };
-    }
+    // RFI chart — real mix frequencies from <POS>/<POS>_<size>.txt.
+    const rfiOut = await extractRfiFromQb(qbRoot, pos);
     const rfiPath = join(OUT_DIR, `6max_100bb_rfi_${pos}.json`);
     await writeJson(rfiPath, rfiOut);
     console.log(`  ✓ RFI ${pos}  → ${rfiPath}`);
     wrote++;
 
-    // One defence chart per (defender_vs_opener) pair. Everyone in
-    // between the opener and the BB gets a chart, including SB, BTN,
-    // CO, MP depending on the opener's seat.
-    for (const [defender, mix] of Object.entries(defenceCharts)) {
+    // Defense charts for every defender that has files for this opener.
+    for (const defender of [...POSITIONS, 'BB']) {
+      if (defender === pos) continue;
+      const mix = await extractDefenseFromQb(qbRoot, pos, defender);
+      if (!mix) continue;
       const low = defender.toLowerCase();
       const path = join(OUT_DIR, `6max_100bb_${low}_vs_${pos}.json`);
       await writeJson(path, mix);
@@ -326,19 +397,14 @@ async function main() {
 
   console.log(`\nwrote ${wrote} primary charts to ${OUT_DIR}`);
 
-  // ============ qb_ranges (advanced scenarios) ============
-  const qbRoot = join(SOURCE, '..', 'qb_ranges', '100bb 2.5x 500rake');
-  if (existsSync(qbRoot)) {
-    console.log(`\nparsing qb_ranges: ${qbRoot}`);
-    const decisions = await extractQbRanges(qbRoot);
-    const qbOut = join(OUT_DIR, '6max_100bb_qb_decisions.json');
-    await writeJson(qbOut, decisions);
-    console.log(
-      `  ✓ qb_ranges → ${qbOut} (${Object.keys(decisions).length} decision nodes)`,
-    );
-  } else {
-    console.log('\n(qb_ranges folder not found — skipped)');
-  }
+  // ============ qb_ranges decision tree (for /charts navigator) ============
+  console.log(`\nparsing qb_ranges decisions: ${qbRoot}`);
+  const decisions = await extractQbRanges(qbRoot);
+  const qbOut = join(OUT_DIR, '6max_100bb_qb_decisions.json');
+  await writeJson(qbOut, decisions);
+  console.log(
+    `  ✓ qb_ranges → ${qbOut} (${Object.keys(decisions).length} decision nodes)`,
+  );
 }
 
 main().catch((err) => {

@@ -11,8 +11,6 @@ export interface ComboDetailSheetProps {
   combo: string | null;
   /** Mix at this spot. If undefined, shown as "데이터 없음". */
   mix?: ComboMix | undefined;
-  /** Additional size info — how many chips the raise commits, etc. */
-  raiseSize?: string | undefined;
   onClose: () => void;
 }
 
@@ -25,10 +23,9 @@ export function ComboDetailSheet({
   open,
   combo,
   mix,
-  raiseSize,
   onClose,
 }: ComboDetailSheetProps) {
-  const rows = mix ? buildRows(mix, raiseSize) : [];
+  const rows = mix ? buildRows(mix) : [];
   const top = rows.reduce((a, b) => (b.value > a.value ? b : a), rows[0]!);
 
   return (
@@ -85,21 +82,16 @@ export function ComboDetailSheet({
                 {rows.map((r) => {
                   const isTop = r === top && r.value > 0;
                   return (
-                    <li key={r.label} className="flex items-center gap-3">
+                    <li key={r.label} className="flex items-center gap-2">
                       <span
                         className={cn(
-                          'w-20 flex-shrink-0 font-mono text-[13px]',
+                          'w-12 flex-shrink-0 font-mono text-[13px]',
                           isTop ? 'font-bold text-white' : 'text-fg-muted',
                         )}
                       >
                         {r.label}
                       </span>
-                      <div
-                        className={cn(
-                          'relative flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]',
-                          isTop ? 'h-4' : 'h-3',
-                        )}
-                      >
+                      <div className="relative h-3 flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]">
                         <div
                           className="h-full rounded-full transition-[width] duration-500 ease-out"
                           style={{ width: `${r.value}%`, background: r.color }}
@@ -107,7 +99,7 @@ export function ComboDetailSheet({
                       </div>
                       <span
                         className={cn(
-                          'w-14 flex-shrink-0 text-right font-mono tabular-nums text-[13px]',
+                          'w-12 flex-shrink-0 text-right font-mono tabular-nums text-[13px]',
                           isTop ? 'font-bold text-white' : 'font-semibold',
                         )}
                       >
@@ -131,16 +123,12 @@ interface Row {
   color: string;
 }
 
-function buildRows(mix: ComboMix, raiseSize?: string): Row[] {
+function buildRows(mix: ComboMix): Row[] {
   const total = (mix.raise || 0) + (mix.call || 0) + (mix.fold || 0);
   // Normalise: if the mix is a fraction (<=1), scale to 0..100.
   const scale = total > 1.5 ? 1 : 100;
   const rows: Row[] = [
-    {
-      label: raiseSize ? `레이즈 ${raiseSize}` : '레이즈',
-      value: (mix.raise ?? 0) * scale,
-      color: '#C8102E',
-    },
+    { label: '레이즈', value: (mix.raise ?? 0) * scale, color: '#C8102E' },
   ];
   if (mix.call !== undefined) {
     rows.push({ label: '콜', value: mix.call * scale, color: '#1F9D55' });
