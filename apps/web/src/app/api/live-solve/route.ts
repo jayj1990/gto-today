@@ -108,8 +108,8 @@ export async function POST(req: Request): Promise<NextResponse<SolveResponse | {
 
   const result = mockSolve(body);
   result.elapsedMs = Date.now() - start;
-  const reason = wasmLoadError ? `WASM load error: ${wasmLoadError}` : 'WASM unavailable';
-  result.note = (result.note ?? '') + ` (${reason} — using mock)`;
+  const reason = wasmLoadError ? `WASM load error: ${wasmLoadError}` : 'WASM load returned null';
+  result.note = `[debug-v2] ${result.note ?? ''} | ${reason}`;
   return NextResponse.json(result);
 }
 
