@@ -583,13 +583,24 @@ function PostflopFlopSolve({
   return (
     <>
       {derived ? (
-        <section className="mb-3 rounded-[var(--radius-button)] border-hair surface p-2.5 text-center font-mono text-[11px] text-fg-muted">
-          <span className="text-[color:var(--color-accent)]">{derived.oopPos}</span> (OOP) vs{' '}
-          <span className="text-[color:var(--color-accent)]">{derived.ipPos}</span> (IP) · 양쪽 실제 프리플랍 레인지로 솔빙
+        <section className="mb-3 rounded-[var(--radius-panel)] border border-[color:var(--color-accent)]/40 bg-[color:var(--color-accent)]/10 p-3 text-center">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[color:var(--color-accent)]">
+            실제 프리플랍 레인지로 솔빙 중
+          </p>
+          <p className="mt-1 font-display text-[15px] font-semibold text-fg">
+            <span className="text-[color:var(--color-accent)]">{derived.oopPos}</span>
+            <span className="mx-2 text-fg-muted">OOP · IP</span>
+            <span className="text-[color:var(--color-accent)]">{derived.ipPos}</span>
+          </p>
         </section>
       ) : (
-        <section className="mb-3 rounded-[var(--radius-button)] border border-[color:var(--color-warning)]/30 bg-[color:var(--color-warning)]/5 p-2.5 text-center font-mono text-[11px] text-[color:var(--color-warning)]">
-          3벳+ 스팟은 아직 미지원 — 일반적인 SRP 레인지로 대체 솔빙 중
+        <section className="mb-3 rounded-[var(--radius-panel)] border border-[color:var(--color-warning)]/40 bg-[color:var(--color-warning)]/10 p-3 text-center">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[color:var(--color-warning)]">
+            3벳+ 미지원
+          </p>
+          <p className="mt-1 text-[12px] text-fg-muted">
+            일반적인 SRP 레인지로 대체 솔빙 중
+          </p>
         </section>
       )}
       <PostflopLiveView
