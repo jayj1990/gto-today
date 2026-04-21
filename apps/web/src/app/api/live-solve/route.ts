@@ -2,22 +2,15 @@ import { createHash } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import init, { solve_flop } from '@jayj1990/gto-today-solver-wasm';
 import { SOLVER_WASM_BYTES, SOLVER_WASM_VERSION } from '@/lib/solver-wasm-bytes';
+import { cacheGet, cacheSet, CACHE_BACKEND } from '@/lib/solve-cache';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300; // Vercel Fluid Compute — up to 300s
 
-// In-memory solve cache, warm-instance scoped. A Fluid Compute instance
-// can serve many requests, so the same user hitting the same spot twice
-// gets an instant hit instead of re-running the 30-200s solver. Entries
-// live for an hour — long enough for a study session, short enough that
-// a solver-wasm upgrade (new accuracy/iter defaults) takes effect after
-// the next cold start.
-interface CacheEntry {
-  response: SolveResponse;
-  expiresAt: number;
-}
-const solveCache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1h
+// Solve cache: Upstash Redis when env vars are set (shared across all
+// Fluid Compute instances and cold starts), otherwise an in-memory map
+// scoped to the current warm instance. Both live behind cacheGet/cacheSet
+// so the rest of this route doesn't care.
 
 function fingerprint(body: SolveRequest): string {
   // Canonical string so the hash is order-independent for ranges
@@ -115,12 +108,12 @@ export async function POST(req: Request): Promise<NextResponse<SolveResponse | {
 
   // Cache check — avoid re-running a 30-200s solve for the same spot.
   const fp = fingerprint(body);
-  const cached = solveCache.get(fp);
-  if (cached && cached.expiresAt > Date.now()) {
+  const cached = await cacheGet<SolveResponse>(fp);
+  if (cached) {
     return NextResponse.json({
-      ...cached.response,
+      ...cached,
       elapsedMs: Date.now() - start,
-      note: `cache hit · fp=${fp}`,
+      note: `cache hit · ${CACHE_BACKEND} · fp=${fp}`,
     });
   }
 
@@ -148,10 +141,9 @@ export async function POST(req: Request): Promise<NextResponse<SolveResponse | {
       iterations: out.iterations,
       elapsedMs: Date.now() - start,
     };
-    solveCache.set(fp, {
-      response,
-      expiresAt: Date.now() + CACHE_TTL_MS,
-    });
+    // Fire-and-forget cache write; we don't want a slow Redis to
+    // delay the response the user is already waiting for.
+    void cacheSet(fp, response);
     return NextResponse.json(response);
   } catch (e) {
     wasmError = e instanceof Error ? e.message : String(e);
