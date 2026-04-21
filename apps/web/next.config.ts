@@ -15,6 +15,15 @@ const nextConfig: NextConfig = {
     };
     return config;
   },
+  // With asyncWebAssembly, Webpack emits the hashed
+  // ".next/server/static/wasm/<hash>.wasm" alongside the chunk
+  // that imports it, but Vercel's Function packager doesn't
+  // auto-include anything under `.next/server/static/` in the
+  // Function output — only chunks/ and vendor-chunks/. Name it
+  // explicitly so the binary ships with /api/live-solve.
+  outputFileTracingIncludes: {
+    '/api/live-solve': ['.next/server/**/*.wasm'],
+  },
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
