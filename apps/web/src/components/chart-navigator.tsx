@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { RangeGrid, type ComboMix } from '@gto/ui';
+import { ComboDetailSheet, RangeGrid, type ComboMix } from '@gto/ui';
 
 type DecisionsJson = Record<string, Record<string, Record<string, number>>>;
 
@@ -74,6 +74,18 @@ export function ChartNavigator({
   const handleRestart = () => setPath([]);
 
   const seatState = useMemo(() => buildSeatState(path, node?.actor), [path, node?.actor]);
+
+  const [pickedCombo, setPickedCombo] = useState<string | null>(null);
+  const pickedMix = pickedCombo ? mixes[pickedCombo] : undefined;
+  const raiseLabel = useMemo(() => {
+    if (!node) return undefined;
+    const raiseAct = node.legal.find((a) => a.endsWith('bb') || a === 'AllIn');
+    return raiseAct;
+  }, [node]);
+  const spotLabel = useMemo(() => {
+    if (!node) return undefined;
+    return `${node.actor} 차례 · 6max 100BB`;
+  }, [node]);
 
   return (
     <div className={className}>
@@ -195,7 +207,11 @@ export function ChartNavigator({
                 <>
                   <section className="mb-2">
                     {Object.keys(mixes).length > 0 ? (
-                      <RangeGrid mixes={mixes} className="w-full" />
+                      <RangeGrid
+                        mixes={mixes}
+                        onCellClick={(c) => setPickedCombo(c)}
+                        className="w-full"
+                      />
                     ) : (
                       <div className="rounded-[var(--radius-panel)] border-hair surface p-4 text-center">
                         <p className="font-mono text-[12px] text-fg-muted">
@@ -233,6 +249,15 @@ export function ChartNavigator({
               ↻ 처음부터
             </button>
           </section>
+
+          <ComboDetailSheet
+            open={pickedCombo !== null}
+            combo={pickedCombo}
+            mix={pickedMix}
+            raiseSize={raiseLabel}
+            spotLabel={spotLabel}
+            onClose={() => setPickedCombo(null)}
+          />
         </>
       )}
     </div>

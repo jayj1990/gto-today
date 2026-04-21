@@ -6,8 +6,10 @@ export { MixBar } from './mix-bar';
 export { CountUp } from './count-up';
 export { PokerTable } from './poker-table';
 export { RangeGrid } from './range-grid';
+export { ComboDetailSheet } from './combo-detail-sheet';
 export { TouchButton } from './touch-button';
 
+export type { ComboDetailSheetProps } from './combo-detail-sheet';
 export type { LogoProps, LogoVariant } from './logo';
 export type { CardViewProps, CardFace, DeckScheme } from './card';
 export type { ChipProps, ChipTone } from './chip';
