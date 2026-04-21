@@ -90,10 +90,23 @@ export interface PostflopSpot {
 
 /** Returns a cloned, deterministic list of all postflop spots. Solver-
  *  generated spots take priority when available; the handcrafted seeds
- *  act as a bootstrap fallback until the overnight batch completes. */
-export function listPostflopSpots(): PostflopSpot[] {
+ *  act as a bootstrap fallback until the overnight batch completes.
+ *
+ *  `gameType` (optional) filters the pool to either cash (non-MTT
+ *  potTypes) or MTT. If the requested format has no spots yet (the
+ *  MTT batch is still solving), we fall back to the other format
+ *  rather than returning an empty list. */
+export function listPostflopSpots(
+  options: { gameType?: 'cash' | 'mtt' } = {},
+): PostflopSpot[] {
   const pool = SOLVER_SPOTS.length > 0 ? SOLVER_SPOTS : POSTFLOP_SEEDS;
-  return pool.map((s) => ({ ...s, board: [...s.board] }));
+  const gameType = options.gameType;
+  if (!gameType) return pool.map((s) => ({ ...s, board: [...s.board] }));
+  const matches = pool.filter((s) =>
+    gameType === 'mtt' ? s.context.potType === 'mtt' : s.context.potType !== 'mtt',
+  );
+  const final = matches.length > 0 ? matches : pool;
+  return final.map((s) => ({ ...s, board: [...s.board] }));
 }
 
 /** Look up a single seed spot by id. Returns null if not found. */

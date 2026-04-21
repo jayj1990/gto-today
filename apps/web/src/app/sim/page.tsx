@@ -16,6 +16,7 @@ import {
 import type { Position } from '@gto/poker-core';
 import { cn } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
+import { useLiveStore } from '@/lib/live-store';
 import { HandCard } from '@/components/today/hand-card';
 import { ActionBar } from '@/components/today/action-bar';
 import { ResultSheet } from '@/components/today/result-sheet';
@@ -30,6 +31,7 @@ const ALL_POSITIONS: Position[] = ['UTG', 'MP', 'CO', 'BTN', 'SB'];
  * palette. No date seed — every hand is random.
  */
 export default function SimPage() {
+  const gameType = useLiveStore((s) => s.config.gameType);
   const [item, setItem] = useState<RandomItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [resultOpen, setResultOpen] = useState(false);
@@ -45,7 +47,11 @@ export default function SimPage() {
 
   const loadNext = async () => {
     setLoading(true);
-    const next = await generateRandomItem({ positions: ALL_POSITIONS, difficulty: 'any' });
+    const next = await generateRandomItem({
+      positions: ALL_POSITIONS,
+      difficulty: 'any',
+      gameType,
+    });
     if (next) setItem(next);
     setLoading(false);
   };

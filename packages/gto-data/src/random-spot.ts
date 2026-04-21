@@ -17,6 +17,9 @@ export interface RandomSpotOptions {
   readonly positions?: readonly Position[];
   readonly difficulty?: 'mixed-only' | 'clear-only' | 'any';
   readonly stackBB?: number;
+  /** Filter postflop spots to cash- or MTT-tagged pool. Falls back to
+   *  the full pool if the preferred format has no spots yet. */
+  readonly gameType?: 'cash' | 'mtt';
 }
 
 const POSITIONS_9MAX: readonly Position[] = [
@@ -166,7 +169,7 @@ export async function generateRandomItem(
   // 35% chance of a postflop drill. Preflop still dominates because our
   // postflop pool is only 5 seeds and would feel repetitive at 50/50.
   if (Math.random() < 0.35) {
-    const pool = listPostflopSpots();
+    const pool = listPostflopSpots(opts.gameType ? { gameType: opts.gameType } : {});
     if (pool.length > 0) {
       const spot = pool[Math.floor(Math.random() * pool.length)]!;
       return { kind: 'postflop', spot };
