@@ -5,14 +5,20 @@ import { signIn as nextAuthSignIn } from 'next-auth/react';
 import { Logo } from '@gto/ui';
 
 /**
- * Sign-in screen. Phase 1 ships Google OAuth only; Kakao + Naver land
- * in the next iteration once Jay's developer-console keys are in
- * `.env.local`. The disabled buttons are shown now so users see the
- * roadmap instead of a lonely single Google button.
+ * Sign-in screen. All three providers (Google / Kakao / Naver) are
+ * wired up — Kakao & Naver only succeed when their client-id/secret
+ * env vars are present on the deployment (see docs/oauth-setup.md).
+ * If a key is missing, Auth.js redirects to its generic error page.
  */
 export default function SignInPage() {
   const handleGoogle = () => {
     void nextAuthSignIn('google', { callbackUrl: '/' });
+  };
+  const handleKakao = () => {
+    void nextAuthSignIn('kakao', { callbackUrl: '/' });
+  };
+  const handleNaver = () => {
+    void nextAuthSignIn('naver', { callbackUrl: '/' });
   };
 
   return (
@@ -70,30 +76,22 @@ export default function SignInPage() {
 
         <button
           type="button"
-          disabled
-          title="곧 지원 예정"
-          className="flex h-14 w-full items-center justify-center gap-3 rounded-[var(--radius-button)] border-hair font-semibold opacity-50"
-          style={{ background: '#FEE500', color: '#191919' }}
+          onClick={handleKakao}
+          style={{ background: '#FEE500', color: '#191919', touchAction: 'manipulation' }}
+          className="flex h-14 w-full items-center justify-center gap-3 rounded-[var(--radius-button)] border-hair font-semibold shadow-[var(--shadow-card)] active:scale-[0.98]"
         >
           <KakaoGlyph />
           카카오로 계속하기
-          <span className="ml-1 font-mono text-[10px] uppercase tracking-[0.18em]">
-            곧 지원
-          </span>
         </button>
 
         <button
           type="button"
-          disabled
-          title="곧 지원 예정"
-          className="flex h-14 w-full items-center justify-center gap-3 rounded-[var(--radius-button)] border-hair font-semibold opacity-50"
-          style={{ background: '#03C75A', color: '#FFFFFF' }}
+          onClick={handleNaver}
+          style={{ background: '#03C75A', color: '#FFFFFF', touchAction: 'manipulation' }}
+          className="flex h-14 w-full items-center justify-center gap-3 rounded-[var(--radius-button)] border-hair font-semibold shadow-[var(--shadow-card)] active:scale-[0.98]"
         >
           <span aria-hidden className="font-display text-[20px] font-bold">N</span>
           네이버로 계속하기
-          <span className="ml-1 font-mono text-[10px] uppercase tracking-[0.18em]">
-            곧 지원
-          </span>
         </button>
       </div>
 
