@@ -1,0 +1,7 @@
+# Solver runtime artifacts — deterministic outputs of the generator
+# scripts, not worth committing (bloats repo, regenerates anyway).
+inputs/
+outputs/
+batch.log
+watchdog.log
+*.log
