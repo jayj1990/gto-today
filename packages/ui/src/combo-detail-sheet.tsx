@@ -13,25 +13,19 @@ export interface ComboDetailSheetProps {
   mix?: ComboMix | undefined;
   /** Additional size info — how many chips the raise commits, etc. */
   raiseSize?: string | undefined;
-  /** Optional sub-heading (e.g. "BB vs CO · 2.5BB"). */
-  spotLabel?: string | undefined;
   onClose: () => void;
 }
 
 /**
- * Bottom sheet that appears when the user taps a cell in the range grid.
- * Shows the exact mix (raise / call / fold percentages) with a bar each,
- * marks the dominant action with a gold star, and lists the four
- * representative suit-combos for the hand (e.g. A♠K♥, A♠K♦, A♠K♣, ...).
- *
- * Mirrors the ResultSheet pattern so the two modals feel like siblings.
+ * Bottom sheet shown when the user taps a cell in the range grid.
+ * Slide down / drag down below a small threshold to dismiss —
+ * matches iOS sheet behaviour, no explicit close button needed.
  */
 export function ComboDetailSheet({
   open,
   combo,
   mix,
   raiseSize,
-  spotLabel,
   onClose,
 }: ComboDetailSheetProps) {
   const rows = mix ? buildRows(mix, raiseSize) : [];
@@ -60,10 +54,17 @@ export function ComboDetailSheet({
             animate="visible"
             exit="exit"
             variants={sheetUp}
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.7 }}
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 80 || info.velocity.y > 500) onClose();
+            }}
             className={cn(
               'fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-lg',
               'rounded-t-[var(--radius-panel)] surface-raised border-hair border-t',
               'safe-sticky-bottom px-5 pt-5 pb-6 shadow-[var(--shadow-panel)]',
+              'touch-pan-y',
             )}
           >
             <div
@@ -71,26 +72,9 @@ export function ComboDetailSheet({
               aria-hidden
             />
 
-            <div className="flex items-baseline justify-between">
-              <div>
-                {spotLabel && (
-                  <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-fg-muted">
-                    {spotLabel}
-                  </p>
-                )}
-                <h2 className="font-display text-[30px] font-bold leading-none tracking-[-0.02em]">
-                  {combo}
-                </h2>
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted active:scale-[0.95]"
-                aria-label="닫기"
-              >
-                닫기
-              </button>
-            </div>
+            <h2 className="font-display text-[32px] font-bold leading-none tracking-[-0.02em]">
+              {combo}
+            </h2>
 
             {rows.length === 0 ? (
               <p className="mt-4 rounded-[var(--radius-button)] border-hair surface p-4 text-center text-[12px] text-fg-muted">
@@ -104,7 +88,7 @@ export function ComboDetailSheet({
                     <li key={r.label} className="flex items-center gap-3">
                       <span
                         className={cn(
-                          'w-16 flex-shrink-0 font-mono text-[13px]',
+                          'w-20 flex-shrink-0 font-mono text-[13px]',
                           isTop ? 'font-bold text-fg' : 'text-fg-muted',
                         )}
                       >
@@ -137,11 +121,6 @@ export function ComboDetailSheet({
                 })}
               </ul>
             )}
-
-            <div className="mt-4 flex items-center gap-2 font-mono text-[11px] text-fg-muted">
-              <span>수츠별 콤보:</span>
-              <span className="text-fg">{suitsForCombo(combo)}</span>
-            </div>
           </motion.div>
         </>
       )}
@@ -156,9 +135,8 @@ interface Row {
 }
 
 function buildRows(mix: ComboMix, raiseSize?: string): Row[] {
-  const total =
-    (mix.raise || 0) + (mix.call || 0) + (mix.fold || 0);
-  // Normalise to percent if the mix is a fraction (<=1) or already in %.
+  const total = (mix.raise || 0) + (mix.call || 0) + (mix.fold || 0);
+  // Normalise: if the mix is a fraction (<=1), scale to 0..100.
   const scale = total > 1.5 ? 1 : 100;
   const rows: Row[] = [
     {
@@ -172,13 +150,4 @@ function buildRows(mix: ComboMix, raiseSize?: string): Row[] {
   }
   rows.push({ label: '폴드', value: (mix.fold ?? 0) * scale, color: '#2B5F8F' });
   return rows;
-}
-
-function suitsForCombo(combo: string): string {
-  // Pair (e.g. "AA"): 6 combos → ♠♥, ♠♦, ♠♣, ♥♦, ♥♣, ♦♣
-  if (combo.length === 2) return '♠♥ · ♠♦ · ♠♣ · ♥♦ · ♥♣ · ♦♣  (6)';
-  // Suited (e.g. "AKs"): 4 combos
-  if (combo.endsWith('s')) return '♠♠ · ♥♥ · ♦♦ · ♣♣  (4)';
-  // Offsuit (e.g. "AKo"): 12 combos
-  return '오프수트 12가지';
 }

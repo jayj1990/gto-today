@@ -142,10 +142,20 @@ export function PostflopResult({
         animate="visible"
         exit="exit"
         variants={sheetUp}
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.7 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 80 || info.velocity.y > 500) {
+            if (onRetry) onRetry();
+            else onNext();
+          }
+        }}
         className={cn(
           'fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-lg',
           'rounded-t-[var(--radius-panel)] surface-raised border-hair border-t',
           'safe-sticky-bottom px-6 pt-6 shadow-[var(--shadow-panel)]',
+          'touch-pan-y',
         )}
       >
         <div

@@ -82,10 +82,6 @@ export function ChartNavigator({
     const raiseAct = node.legal.find((a) => a.endsWith('bb') || a === 'AllIn');
     return raiseAct;
   }, [node]);
-  const spotLabel = useMemo(() => {
-    if (!node) return undefined;
-    return `${node.actor} 차례 · 6max 100BB`;
-  }, [node]);
 
   return (
     <div className={className}>
@@ -255,7 +251,6 @@ export function ChartNavigator({
             combo={pickedCombo}
             mix={pickedMix}
             raiseSize={raiseLabel}
-            spotLabel={spotLabel}
             onClose={() => setPickedCombo(null)}
           />
         </>
