@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePathname } from 'next/navigation';
+import { useAuthStore } from '@/lib/auth-store';
 
 /**
  * Dismissible PWA install banner.
@@ -24,12 +26,26 @@ interface BeforeInstallPromptEvent extends Event {
 const DISMISS_KEY = 'pwa-install-dismissed-at';
 const DISMISS_COOLDOWN_DAYS = 30;
 
+// Routes where the install prompt would be intrusive — onboarding,
+// signin, sensitive flows. Everywhere else is fair game after
+// onboarding completes.
+const SUPPRESSED_PATHS = ['/onboarding', '/signin'];
+
 export function InstallPrompt() {
   const [deferredEvent, setDeferredEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const pathname = usePathname();
+  const onboarded = useAuthStore((s) => s.onboarded);
+  const signedIn = useAuthStore((s) => s.signedIn);
+
+  const suppressed =
+    !onboarded ||
+    !signedIn ||
+    SUPPRESSED_PATHS.some((p) => pathname?.startsWith(p));
 
   useEffect(() => {
+    if (suppressed) return;
     // Respect cooldown
     const dismissedAt = Number(localStorage.getItem(DISMISS_KEY) ?? 0);
     if (dismissedAt && Date.now() - dismissedAt < DISMISS_COOLDOWN_DAYS * 86400_000) {
@@ -64,7 +80,13 @@ export function InstallPrompt() {
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
     };
-  }, []);
+  }, [suppressed]);
+
+  // Route changes can move the user onto a suppressed path while the
+  // prompt is up — hide it without clearing the dismissal cookie.
+  useEffect(() => {
+    if (suppressed) setVisible(false);
+  }, [suppressed]);
 
   const dismiss = () => {
     localStorage.setItem(DISMISS_KEY, String(Date.now()));
