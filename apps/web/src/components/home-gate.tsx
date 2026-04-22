@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Logo, cn } from '@gto/ui';
 import { useAuthStore } from '@/lib/auth-store';
+import { useChallengeStore } from '@/lib/challenge-store';
+import { isoDateKR } from '@/lib/date';
 
 /**
  * Client-only landing component that gates the home screen behind:
@@ -24,6 +26,13 @@ export function HomeGate() {
   const user = useAuthStore((s) => s.user);
   const { data: nextAuthSession, status: sessionStatus } = useSession();
   const avatarUrl = nextAuthSession?.user?.image ?? null;
+  const challengeDate = useChallengeStore((s) => s.dateKey);
+  const challengeCursor = useChallengeStore((s) => s.cursor);
+  const currentStreak = useChallengeStore((s) => s.currentStreak);
+  const today = isoDateKR();
+  const todayActive = challengeDate === today;
+  const todayDone = todayActive && challengeCursor >= 10;
+  const todayProgress = todayActive ? Math.min(challengeCursor, 10) : 0;
   // NextAuth is the source of truth — use it directly to avoid the
   // race where SessionSync hasn't mirrored the session into zustand
   // yet on the first render after an OAuth redirect.
@@ -119,11 +128,26 @@ export function HomeGate() {
       <div className="mt-6 grid gap-3">
         <PrimaryCard
           href="/today"
-          eyebrow="Daily Challenge"
+          eyebrow={
+            todayDone
+              ? `Daily · 오늘 완료 · ${currentStreak}일 연속`
+              : todayActive
+                ? `Daily · ${todayProgress}/10 진행 중`
+                : currentStreak > 0
+                  ? `Daily · ${currentStreak}일 연속`
+                  : 'Daily Challenge'
+          }
           title="오늘의 훈련"
-          description="매일 새로 공개되는 10핸드. 하루 5분."
+          description={
+            todayDone
+              ? '내일 공개되는 새 핸드 기다려요.'
+              : todayActive
+                ? '이어서 풀기 — 오늘자 핸드 남은 스팟.'
+                : '매일 새로 공개되는 10핸드. 하루 5분.'
+          }
           variant="primary"
           delay={0}
+          progress={todayActive ? todayProgress / 10 : 0}
         />
         <PrimaryCard
           href="/sim"
@@ -161,6 +185,7 @@ function PrimaryCard({
   description,
   variant,
   delay,
+  progress,
 }: {
   href: string;
   eyebrow: string;
@@ -168,6 +193,7 @@ function PrimaryCard({
   description: string;
   variant: 'primary' | 'secondary';
   delay: number;
+  progress?: number;
 }) {
   return (
     <motion.div
@@ -204,6 +230,14 @@ function PrimaryCard({
         >
           {description}
         </p>
+        {progress !== undefined && progress > 0 && progress < 1 && (
+          <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-noir/15">
+            <div
+              className="h-full rounded-full bg-noir/70 transition-[width] duration-500"
+              style={{ width: `${Math.round(progress * 100)}%` }}
+            />
+          </div>
+        )}
       </Link>
     </motion.div>
   );
