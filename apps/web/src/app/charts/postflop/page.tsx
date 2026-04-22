@@ -12,7 +12,7 @@ import {
   type PostflopAction,
   type PostflopSpot,
 } from '@gto/gto-data';
-import { comboKey } from '@gto/poker-core';
+import { canonicalizeFlop, comboKey, type FlopCards } from '@gto/poker-core';
 import { cn, RangeGrid, type ComboMix } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
 import { CardView } from '@gto/ui';
@@ -133,27 +133,39 @@ export default function PostflopChartPage() {
             <section className="mb-3 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
               {boards.map(({ board, key }) => {
                 const active = key === selectedBoard;
+                const canon = canonicalizeFlop(board as unknown as FlopCards);
                 return (
                   <button
                     key={key}
                     type="button"
                     onClick={() => setSelectedBoard(active ? null : key)}
+                    aria-label={`보드 ${canon.key}`}
                     className={cn(
-                      'flex items-center gap-1 rounded-[var(--radius-button)] border p-1.5 active:scale-[0.98]',
+                      'flex flex-col items-start gap-1 rounded-[var(--radius-button)] border p-1.5 active:scale-[0.98]',
                       active
                         ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/10'
                         : 'border-hair surface',
                     )}
                   >
-                    {board.map((c) => (
-                      <CardView
-                        key={c}
-                        rank={c.charAt(0)}
-                        suit={c.charAt(1) as 's' | 'h' | 'd' | 'c'}
-                        size="xs"
-                        deckScheme="four-color"
-                      />
-                    ))}
+                    <div className="flex w-full items-center justify-between gap-1">
+                      <span className="font-mono text-[10px] font-semibold tabular-nums text-fg">
+                        {canon.key}
+                      </span>
+                      <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-fg-muted">
+                        {suitPatternLabel(canon.pattern)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {board.map((c) => (
+                        <CardView
+                          key={c}
+                          rank={c.charAt(0)}
+                          suit={c.charAt(1) as 's' | 'h' | 'd' | 'c'}
+                          size="xs"
+                          deckScheme="four-color"
+                        />
+                      ))}
+                    </div>
                   </button>
                 );
               })}
@@ -332,6 +344,12 @@ function BoardMixPanel({ spots }: { spots: readonly PostflopSpot[] }) {
       )}
     </section>
   );
+}
+
+function suitPatternLabel(pattern: 'r' | 'tt' | 'mono'): string {
+  if (pattern === 'r') return '레인보우';
+  if (pattern === 'tt') return '투톤';
+  return '모노톤';
 }
 
 function LegendDot({ color, label }: { color: string; label: string }) {

@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Logo } from '@gto/ui';
 
 const SESSION_KEY = 'gto.splash.seen';
 
 /**
- * Full-screen splash. Wordmark is drawn in plain HTML (not the SVG Logo
- * component) so every line sits on the same horizontal axis — prevents
- * the off-center rendering we saw when using the Logo whose viewBox
- * left-aligned its text content.
+ * Full-screen splash. Uses the shared Logo component — the full wordmark
+ * was migrated to HTML so the middle dot no longer drifts across faces.
  */
 export function Splash() {
   const [visible, setVisible] = useState(false);
@@ -65,17 +64,8 @@ export function Splash() {
                   filter: 'drop-shadow(0 4px 18px rgba(212,175,55,0.35))',
                 }}
               />
-              <h1
-                className="mt-6 flex items-baseline gap-1 font-display leading-none tracking-[-0.02em]"
-                style={{ fontSize: 36 }}
-              >
-                <span className="font-bold uppercase text-ivory">GTO</span>
-                <span
-                  aria-hidden
-                  className="inline-block h-[6px] w-[6px] rounded-full bg-[color:var(--color-gold)]"
-                  style={{ transform: 'translateY(-0.35em)' }}
-                />
-                <span className="font-light text-ivory/90">today</span>
+              <h1 className="mt-6 text-ivory">
+                <Logo variant="full" width={200} title="gto.today" />
               </h1>
               <p className="mt-3 text-center font-mono text-[11px] tracking-[0.2em] text-[color:var(--color-gold)]">
                 매일 쌓이는 실력, 후회 없는 액션
