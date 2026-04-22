@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "node scripts/bundle-wasm.mjs && prisma generate --schema ../../prisma/schema.prisma && next build",
+    "build": "prisma generate --schema ../../prisma/schema.prisma && next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
@@ -20,7 +20,6 @@
     "@gto/gto-data": "workspace:*",
     "@gto/poker-core": "workspace:*",
     "@gto/ui": "workspace:*",
-    "@jayj1990/gto-today-solver-wasm": "^0.5.0",
     "@sentry/nextjs": "^10.49.0",
     "clsx": "^2.1.1",
     "framer-motion": "^11.16.0",
