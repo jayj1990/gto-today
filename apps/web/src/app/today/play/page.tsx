@@ -26,6 +26,7 @@ import { useChallengeStore } from '@/lib/challenge-store';
 import { useMistakesStore } from '@/lib/mistakes-store';
 import { useLiveStore } from '@/lib/live-store';
 import { isoDateKR } from '@/lib/date';
+import { haptic } from '@/lib/haptic';
 
 const TOTAL = 10;
 
@@ -89,6 +90,7 @@ export default function TodayPlayPage() {
         spot: current.spot,
       });
     }
+    haptic(grade === 'sharp' ? 'success' : grade === 'acceptable' ? 'warn' : 'error');
     setLastPreflopAnswer(action);
     setLastPostflopAnswer(null);
     setLastGrade(grade);
@@ -111,6 +113,7 @@ export default function TodayPlayPage() {
         spot: current.spot,
       });
     }
+    haptic(grade === 'sharp' ? 'success' : grade === 'acceptable' ? 'warn' : 'error');
     setLastPostflopAnswer(action);
     setLastPreflopAnswer(null);
     setLastGrade(grade);

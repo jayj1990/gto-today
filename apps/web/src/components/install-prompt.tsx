@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
+import { useChallengeStore } from '@/lib/challenge-store';
 
 /**
  * Dismissible PWA install banner.
@@ -38,10 +39,16 @@ export function InstallPrompt() {
   const pathname = usePathname();
   const onboarded = useAuthStore((s) => s.onboarded);
   const signedIn = useAuthStore((s) => s.signedIn);
+  // Require the user to have actually engaged with the product before
+  // asking them to install it — 5 answered spots proves intent and
+  // the prompt lands after value delivered, not before.
+  const answeredCount = useChallengeStore((s) => s.answers.length);
+  const engagementReady = answeredCount >= 5;
 
   const suppressed =
     !onboarded ||
     !signedIn ||
+    !engagementReady ||
     SUPPRESSED_PATHS.some((p) => pathname?.startsWith(p));
 
   useEffect(() => {

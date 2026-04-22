@@ -19,6 +19,7 @@ import { SiteHeader } from '@/components/site-header';
 import { useLiveStore } from '@/lib/live-store';
 import { useMistakesStore } from '@/lib/mistakes-store';
 import { isoDateKR } from '@/lib/date';
+import { haptic } from '@/lib/haptic';
 import { HandCard } from '@/components/today/hand-card';
 import { ActionBar } from '@/components/today/action-bar';
 import { ResultSheet } from '@/components/today/result-sheet';
@@ -63,6 +64,7 @@ export default function SimPage() {
   }, [loadNext]);
 
   const recordGrade = (grade: AnswerGrade) => {
+    haptic(grade === 'sharp' ? 'success' : grade === 'acceptable' ? 'warn' : 'error');
     setLastGrade(grade);
     setResultOpen(true);
     if (grade === 'sharp') setSharp((v) => v + 1);

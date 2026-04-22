@@ -4,6 +4,7 @@ import './globals.css';
 import { themeInitScript } from '@/lib/theme';
 import { SessionSync } from '@/components/session-sync';
 import { InstallPrompt } from '@/components/install-prompt';
+import { BottomNav } from '@/components/bottom-nav';
 
 export const metadata: Metadata = {
   title: {
@@ -82,8 +83,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {themeInitScript}
         </Script>
       </head>
-      <body className="min-h-dvh antialiased">
+      <body className="min-h-dvh pb-14 antialiased md:pb-0">
         <SessionSync>{children}</SessionSync>
+        <BottomNav />
         <InstallPrompt />
       </body>
     </html>
