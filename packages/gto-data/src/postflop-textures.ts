@@ -1,3 +1,4 @@
+import { canonicalizeFlop, rankValue, type FlopCards } from '@gto/poker-core';
 import type { BoardTexture, PostflopSpot } from './postflop';
 
 /** User-facing texture buckets for the flop picker. Multiple raw
@@ -71,6 +72,38 @@ export function groupSpotsByTexture(
     bucket!.push(s);
   }
   return out;
+}
+
+/** Classify a flop into its BoardTexture bucket. This is UX-layer
+ *  labeling only — do NOT use it as a lookup key. Lookup goes through
+ *  canonicalizeFlop (iso-canonical) to the pre-computed JSON pool.
+ *
+ *  Priority order matters: monotone wins over paired wins over
+ *  texture+rank classes. Broadway supersets wet_draw, so we check
+ *  broadway first when all three are T+.
+ */
+export function classifyBoardTexture(flop: FlopCards): BoardTexture {
+  const c = canonicalizeFlop(flop);
+  const [r1, r2, r3] = c.ranks;
+  const v1 = rankValue(r1);
+  const v3 = rankValue(r3);
+  const paired = r1 === r2 || r2 === r3;
+  const broadway = v1 >= 10 && rankValue(r2) >= 10 && v3 >= 10;
+  const aceHigh = r1 === 'A';
+  const allLow = v1 <= 8;
+  const connected3 = v1 - v3 <= 4 && !paired;
+  const connected2 = (rankValue(r1) - rankValue(r2) <= 2) || (rankValue(r2) - rankValue(r3) <= 2);
+
+  if (c.pattern === 'mono') return 'monotone';
+  if (paired) return 'paired';
+  if (broadway) return 'broadway';
+  if (allLow && connected3) return 'low_connected';
+  if (connected3 && c.pattern === 'tt') return 'wet_draw';
+  if (connected2 && c.pattern === 'tt') return 'semi_wet';
+  if (connected3) return v1 >= 10 ? 'semi_wet' : 'dry_mid';
+  if (aceHigh) return 'ace_high';
+  if (v1 >= 10) return 'dry_high';
+  return 'dry_mid';
 }
 
 /** Distinct boards (de-duped by 3-card join) present in a spot list,

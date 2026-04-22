@@ -1,4 +1,10 @@
-import type { CardCode, Position } from '@gto/poker-core';
+import {
+  boardDistance,
+  canonicalizeFlop,
+  type CardCode,
+  type FlopCards,
+  type Position,
+} from '@gto/poker-core';
 import { POSTFLOP_SEEDS } from './ranges/postflop-seeds';
 import { SOLVER_SPOTS } from './ranges/solver-spots';
 
@@ -107,6 +113,93 @@ export function listPostflopSpots(
   );
   const final = matches.length > 0 ? matches : pool;
   return final.map((s) => ({ ...s, board: [...s.board] }));
+}
+
+/** Lookup shape for query-by-board. Returns the matched spots grouped
+ *  by how they were found — an exact iso match (user's board has a
+ *  pre-computed entry) or the nearest iso neighbor (fallback). */
+export interface BoardLookupResult {
+  readonly match: 'exact' | 'nearest' | 'none';
+  /** All spots sharing the matched canonical board. Same board, possibly
+   *  different hero/context. Empty when `match === 'none'`. */
+  readonly spots: readonly PostflopSpot[];
+  /** Distance from the user's board to the returned match. 0 = exact. */
+  readonly distance: number;
+  /** Canonical key of what the user queried (for debugging & UX labels). */
+  readonly queryKey: string;
+  /** Canonical key of what was returned ('' if none). */
+  readonly matchKey: string;
+}
+
+/** Query the pre-computed spot pool by user-supplied flop. Uses iso
+ *  canonicalization so a board the user draws with different suits
+ *  still hits the same pre-solved strategy.
+ *
+ *  When no pre-computed board matches exactly, returns the nearest
+ *  neighbor (Hamming over ranks + pattern mismatch penalty). This is
+ *  acceptable UX: Tier 1 coverage is ~25% of boards; falling back to
+ *  a similar A-high board is better than "no data".
+ *
+ *  `opts.context` filters by position / potType when provided. */
+export function findSpotsByBoard(
+  board: FlopCards,
+  opts: { position?: Position; potType?: PotType; maxDistance?: number } = {},
+): BoardLookupResult {
+  const pool = SOLVER_SPOTS.length > 0 ? SOLVER_SPOTS : POSTFLOP_SEEDS;
+  const queryCanon = canonicalizeFlop(board);
+
+  const filtered = pool.filter((s) => {
+    if (opts.position && s.context.heroPos !== opts.position) return false;
+    if (opts.potType && s.context.potType !== opts.potType) return false;
+    return s.board.length === 3;
+  });
+
+  // Bucket by canonical key so we can return all hero variants at once.
+  const byKey = new Map<string, PostflopSpot[]>();
+  for (const s of filtered) {
+    const c = canonicalizeFlop(s.board as FlopCards);
+    const list = byKey.get(c.key);
+    if (list) list.push(s);
+    else byKey.set(c.key, [s]);
+  }
+
+  const exact = byKey.get(queryCanon.key);
+  if (exact && exact.length > 0) {
+    return {
+      match: 'exact',
+      spots: exact.map((s) => ({ ...s, board: [...s.board] })),
+      distance: 0,
+      queryKey: queryCanon.key,
+      matchKey: queryCanon.key,
+    };
+  }
+
+  // Nearest-neighbor fallback.
+  let bestKey = '';
+  let bestDist = Infinity;
+  let bestSpots: PostflopSpot[] = [];
+  for (const [key, spots] of byKey) {
+    const firstSpot = spots[0];
+    if (!firstSpot) continue;
+    const d = boardDistance(queryCanon, canonicalizeFlop(firstSpot.board as FlopCards));
+    if (d < bestDist) {
+      bestDist = d;
+      bestKey = key;
+      bestSpots = spots;
+    }
+  }
+
+  const cap = opts.maxDistance ?? 2;
+  if (bestDist > cap || bestSpots.length === 0) {
+    return { match: 'none', spots: [], distance: bestDist, queryKey: queryCanon.key, matchKey: '' };
+  }
+  return {
+    match: 'nearest',
+    spots: bestSpots.map((s) => ({ ...s, board: [...s.board] })),
+    distance: bestDist,
+    queryKey: queryCanon.key,
+    matchKey: bestKey,
+  };
 }
 
 /** Look up a single seed spot by id. Returns null if not found. */
