@@ -21,6 +21,8 @@
     "@gto/poker-core": "workspace:*",
     "@gto/ui": "workspace:*",
     "@sentry/nextjs": "^10.49.0",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.37.0",
     "clsx": "^2.1.1",
     "framer-motion": "^11.16.0",
     "lucide-react": "^0.471.0",

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   gradePostflopAction,
@@ -59,6 +60,35 @@ export function PostflopResult({
   onRetry,
   nextLabel = '다음 →',
 }: PostflopResultProps) {
+  const [explaining, setExplaining] = useState(false);
+  const [explanation, setExplanation] = useState<string | null>(null);
+  const [explainError, setExplainError] = useState<string | null>(null);
+  useEffect(() => {
+    setExplanation(null);
+    setExplainError(null);
+    setExplaining(false);
+  }, [spot?.id]);
+
+  const fetchExplanation = async () => {
+    if (!spot || explaining) return;
+    setExplaining(true);
+    setExplainError(null);
+    try {
+      const res = await fetch('/api/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ spot, userAnswer, locale: 'ko', tone: 'beginner' }),
+      });
+      const data = (await res.json()) as { text?: string; error?: string };
+      if (!res.ok) setExplainError(data.error ?? '해설을 불러오지 못했어요');
+      else if (data.text) setExplanation(data.text);
+    } catch {
+      setExplainError('네트워크 오류로 해설을 불러오지 못했어요');
+    } finally {
+      setExplaining(false);
+    }
+  };
+
   if (!open || !spot || !userAnswer) return null;
 
   const teachingNote = spot.teachingNote;
@@ -213,6 +243,45 @@ export function PostflopResult({
             <p className="whitespace-pre-wrap">{teachingNote}</p>
           </div>
         )}
+
+        {/* AI coach explanation — opt-in. Pre-computed note is cheap;
+            the Haiku call only fires when user taps the button. */}
+        <div className="mt-3">
+          {!explanation && !explaining && !explainError && (
+            <button
+              type="button"
+              onClick={fetchExplanation}
+              className="w-full rounded-[var(--radius-button)] border border-[color:var(--color-accent)]/30 bg-[color:var(--color-accent)]/8 px-3 py-2.5 text-[12px] font-medium text-[color:var(--color-accent)] active:scale-[0.98]"
+            >
+              AI 코치의 해설 보기
+            </button>
+          )}
+          {explaining && (
+            <div className="rounded-[var(--radius-button)] border-hair surface px-3 py-2.5 text-center font-mono text-[11px] text-fg-muted">
+              해설 작성 중…
+            </div>
+          )}
+          {explainError && (
+            <div className="flex items-center justify-between gap-2 rounded-[var(--radius-button)] border border-[color:var(--color-raise)]/40 bg-[color:var(--color-raise)]/5 px-3 py-2 text-[11px] text-[color:var(--color-raise)]">
+              <span className="min-w-0 flex-1 truncate">{explainError}</span>
+              <button
+                type="button"
+                onClick={fetchExplanation}
+                className="shrink-0 underline underline-offset-2"
+              >
+                재시도
+              </button>
+            </div>
+          )}
+          {explanation && (
+            <div className="rounded-[var(--radius-button)] border-hair surface px-3 py-2.5 text-[13px] leading-[1.6] text-fg">
+              <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]">
+                AI 해설
+              </p>
+              <p className="whitespace-pre-wrap">{explanation}</p>
+            </div>
+          )}
+        </div>
 
         {/* Retry + next */}
         <div className="mt-5 mb-3 flex gap-2">
