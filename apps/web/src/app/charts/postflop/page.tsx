@@ -127,9 +127,23 @@ export default function PostflopChartPage() {
             <p className="mt-2 text-[13px] text-fg">
               이 텍스처는 솔버가 곧 계산해서 채워 넣어요.
             </p>
-            <p className="mt-1 text-[11px] text-fg-muted">
-              다른 텍스처 탭으로 먼저 확인하거나 나중에 다시 열어주세요.
-            </p>
+            <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+              {TEXTURE_GROUPS.filter((g) => (grouped[g.id] ?? []).length > 0).map(
+                (g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => {
+                      setGroupId(g.id);
+                      setSelectedBoard(null);
+                    }}
+                    className="rounded-[var(--radius-button)] border-hair surface px-3 py-1.5 font-mono text-[11px] text-fg-muted active:scale-[0.98]"
+                  >
+                    {g.label} →
+                  </button>
+                ),
+              )}
+            </div>
           </div>
         ) : (
           <>

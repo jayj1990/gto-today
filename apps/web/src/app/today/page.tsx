@@ -4,6 +4,16 @@ import { formatTodayKR } from '@/lib/date';
 
 export const revalidate = 3600;
 
+export const metadata = {
+  title: '오늘의 훈련',
+  description:
+    '매일 새로 공개되는 10핸드 GTO 퀴즈. RFI · BB 디펜스부터 3벳 스팟까지.',
+  openGraph: {
+    title: '오늘의 훈련 · gto.today',
+    description: '매일 새로 공개되는 10핸드. 하루 5분.',
+  },
+};
+
 /**
  * /today entry — intro + "시작" button.
  *
