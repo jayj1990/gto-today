@@ -8,7 +8,7 @@ import { Logo } from '@gto/ui';
  */
 export function SiteHeader() {
   return (
-    <header className="safe-top sticky top-0 z-20 border-b border-hair backdrop-blur-md bg-[color:var(--color-bg)]/70">
+    <header className="safe-top sticky top-0 z-20 backdrop-blur-md bg-[color:var(--color-bg)]/70">
       <div className="mx-auto flex h-14 max-w-5xl items-center safe-pad-x">
         <Link
           href="/"
