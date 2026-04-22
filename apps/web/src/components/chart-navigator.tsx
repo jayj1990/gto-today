@@ -3,10 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ComboDetailSheet, RangeGrid, type ComboMix } from '@gto/ui';
-import { deriveRanges } from '@gto/gto-data';
-import { BoardPicker } from '@/components/board-picker';
-import { PostflopLiveView } from '@/components/postflop-live-view';
-import { useLiveStore } from '@/lib/live-store';
 
 type DecisionsJson = Record<string, Record<string, Record<string, number>>>;
 
@@ -74,53 +70,26 @@ export function ChartNavigator({
   }, [node]);
 
   const handleAction = (action: string) => setPath((p) => [...p, `${node?.actor}_${action}`]);
-  const handleBack = () => {
-    setFlopBoard(null);
-    setPath((p) => p.slice(0, -1));
-  };
-  const handleRestart = () => {
-    setFlopBoard(null);
-    setPath([]);
-  };
+  const handleBack = () => setPath((p) => p.slice(0, -1));
+  const handleRestart = () => setPath([]);
 
   const seatState = useMemo(() => buildSeatState(path, node?.actor), [path, node?.actor]);
 
   const [pickedCombo, setPickedCombo] = useState<string | null>(null);
   const pickedMix = pickedCombo ? mixes[pickedCombo] : undefined;
 
-  // Flop picker / live-solve state. When boardPickerOpen is true we
-  // show the board selection sheet; when flopBoard is set we render
-  // the solver result in place of the preflop grid.
-  const [boardPickerOpen, setBoardPickerOpen] = useState(false);
-  const [flopBoard, setFlopBoard] = useState<[string, string, string] | null>(null);
-
   // A preflop "flop reached" state = someone raised, someone called,
-  // no more decisions. Detected when resolveNode can't find a solver
-  // node (legal=[] with no special flag) and the path isn't empty.
+  // no more preflop decisions. Detected when resolveNode can't find a
+  // solver node (legal=[] with no special flag) and the path isn't
+  // empty. Postflop exploration is intentionally disabled while we
+  // migrate from WASM live-solve to pre-computed lookups — users get
+  // a clean "end of preflop" handoff instead of infinite loading.
   const flopReached =
     path.length > 0 &&
     node?.legal.length === 0 &&
     !node?.bbWins &&
     !node?.showdown &&
     !node?.postAllIn;
-
-  // The CTA is a fallback for earlier-stage exploration; the natural
-  // flow auto-opens the picker when the flop is actually reached.
-  const canExploreFlop = path.length > 0 && !node?.bbWins && !node?.showdown && !node?.postAllIn;
-
-  // Auto-open the board picker once when the flop is naturally
-  // reached and no board / picker is already active. We track the
-  // path-that-triggered-it so reopening the same state without the
-  // user having advanced doesn't spam-reopen the sheet.
-  const [autoOpenedAtPath, setAutoOpenedAtPath] = useState<string | null>(null);
-  const pathKey = path.join('|');
-  useEffect(() => {
-    if (!flopReached) return;
-    if (flopBoard || boardPickerOpen) return;
-    if (autoOpenedAtPath === pathKey) return;
-    setBoardPickerOpen(true);
-    setAutoOpenedAtPath(pathKey);
-  }, [flopReached, flopBoard, boardPickerOpen, pathKey, autoOpenedAtPath]);
 
   return (
     <div className={className}>
@@ -132,36 +101,7 @@ export function ChartNavigator({
         </p>
       )}
 
-      {node && flopBoard && decisions && (
-        <>
-          <SeatRibbon state={seatState} />
-          <PostflopFlopSolve
-            decisions={decisions}
-            path={path}
-            board={flopBoard}
-            onBack={() => setFlopBoard(null)}
-          />
-
-          <section className="mt-3 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="h-10 rounded-[var(--radius-button)] border-hair surface font-mono text-[12px] text-fg-muted active:scale-[0.98]"
-            >
-              ← 뒤로
-            </button>
-            <button
-              type="button"
-              onClick={handleRestart}
-              className="h-10 rounded-[var(--radius-button)] border-hair surface font-mono text-[12px] text-fg-muted active:scale-[0.98]"
-            >
-              ↻ 처음부터
-            </button>
-          </section>
-        </>
-      )}
-
-      {node && !flopBoard && (
+      {node && (
         <>
           <SeatRibbon state={seatState} />
 
@@ -192,17 +132,21 @@ export function ChartNavigator({
                 프리플랍 종료
               </p>
               <h2 className="mt-1 font-display text-[22px] font-bold text-[color:var(--color-gold)]">
-                플랍 선택
+                플랍 도달
               </h2>
               <p className="mt-2 text-[13px] text-fg-muted">
-                레이즈·콜로 핸드가 플랍까지 왔어요. 3장의 보드 카드를 선택하면 라이브 솔빙이 시작됩니다.
+                레이즈·콜이 끝났어요. 포스트플랍 차트는 준비 중이라, 지금은
+                프리플랍 세션만 종료합니다.
+              </p>
+              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-fg-muted">
+                새 핸드로 연습을 이어가세요
               </p>
               <button
                 type="button"
-                onClick={() => setBoardPickerOpen(true)}
+                onClick={handleRestart}
                 className="mt-4 inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-gold-gradient px-5 font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
               >
-                보드 선택 →
+                새 핸드 시작 ↻
               </button>
             </section>
           ) : (
@@ -314,16 +258,6 @@ export function ChartNavigator({
             </>
           )}
 
-          {canExploreFlop && !flopReached && (
-            <button
-              type="button"
-              onClick={() => setBoardPickerOpen(true)}
-              className="mt-2 w-full h-11 rounded-[var(--radius-button)] border border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 font-medium text-[color:var(--color-gold)] active:scale-[0.98]"
-            >
-              플랍 탐색 → (라이브 솔빙)
-            </button>
-          )}
-
           <section className="mt-3 grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -348,15 +282,6 @@ export function ChartNavigator({
             combo={pickedCombo}
             mix={pickedMix}
             onClose={() => setPickedCombo(null)}
-          />
-
-          <BoardPicker
-            open={boardPickerOpen}
-            onClose={() => setBoardPickerOpen(false)}
-            onSubmit={(b) => {
-              setFlopBoard(b);
-              setBoardPickerOpen(false);
-            }}
           />
         </>
       )}
@@ -556,69 +481,3 @@ function cn(...parts: (string | false | undefined)[]) {
   return parts.filter(Boolean).join(' ');
 }
 
-/* ─────────── preflop → postflop bridge ─────────── */
-
-// Fallback ranges used when the preflop path is outside the supported
-// SRP detection (e.g. 3bet pot). Broad enough to keep the solver busy
-// without claiming precision.
-const FALLBACK_OOP_RANGE =
-  'AA,KK,QQ,JJ,TT,99,88,77,66,55,44,33,22,AKs,AQs,AJs,ATs,A9s,A8s,A7s,A6s,A5s,A4s,A3s,A2s,KQs,KJs,KTs,K9s,QJs,QTs,Q9s,JTs,J9s,T9s,98s,87s,76s,65s,54s,AKo,AQo,AJo,ATo,KQo,KJo';
-const FALLBACK_IP_RANGE =
-  'AA,KK,QQ,JJ,TT,99,88,77,66,55,AKs,AQs,AJs,ATs,A9s,A8s,KQs,KJs,KTs,QJs,QTs,JTs,T9s,98s,AKo,AQo,AJo,KQo';
-
-function PostflopFlopSolve({
-  decisions,
-  path,
-  board,
-  onBack,
-}: {
-  decisions: DecisionsJson;
-  path: readonly string[];
-  board: [string, string, string];
-  onBack: () => void;
-}) {
-  const derived = useMemo(() => deriveRanges(decisions, path), [decisions, path]);
-  const oopRange = derived?.oopRange || FALLBACK_OOP_RANGE;
-  const ipRange = derived?.ipRange || FALLBACK_IP_RANGE;
-  const gameType = useLiveStore((s) => s.config.gameType);
-  // Cash SRP after CO 2.5x open + BB call: SB 0.5 + BB 1 + CO 2.5 + BB 1.5
-  // = 5.5 BB pot, 97.5 BB effective. MTT adds the 1 BB ante → 6.5 BB pot,
-  // 97 BB effective (both players already posted the ante).
-  const pot = gameType === 'mtt' ? 6.5 : 5.5;
-  const effStack = gameType === 'mtt' ? 97 : 97.5;
-
-  return (
-    <>
-      {derived ? (
-        <section className="mb-3 rounded-[var(--radius-panel)] border border-[color:var(--color-accent)]/40 bg-[color:var(--color-accent)]/10 p-3 text-center">
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[color:var(--color-accent)]">
-            실제 프리플랍 레인지로 솔빙 중 · {gameType === 'mtt' ? 'MTT · 1BB 앤티' : 'Cash'}
-          </p>
-          <p className="mt-1 font-display text-[15px] font-semibold text-fg">
-            <span className="text-[color:var(--color-accent)]">{derived.oopPos}</span>
-            <span className="mx-2 text-fg-muted">OOP · IP</span>
-            <span className="text-[color:var(--color-accent)]">{derived.ipPos}</span>
-          </p>
-        </section>
-      ) : (
-        <section className="mb-3 rounded-[var(--radius-panel)] border border-[color:var(--color-warning)]/40 bg-[color:var(--color-warning)]/10 p-3 text-center">
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[color:var(--color-warning)]">
-            3벳+ 미지원
-          </p>
-          <p className="mt-1 text-[12px] text-fg-muted">
-            일반적인 SRP 레인지로 대체 솔빙 중
-          </p>
-        </section>
-      )}
-      <PostflopLiveView
-        board={board}
-        oopRange={oopRange}
-        ipRange={ipRange}
-        pot={pot}
-        effStack={effStack}
-        scenario={gameType}
-        onBack={onBack}
-      />
-    </>
-  );
-}
