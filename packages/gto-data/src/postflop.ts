@@ -143,9 +143,15 @@ export interface BoardLookupResult {
  *  `opts.context` filters by position / potType when provided. */
 export function findSpotsByBoard(
   board: FlopCards,
-  opts: { position?: Position; potType?: PotType; maxDistance?: number } = {},
+  opts: {
+    position?: Position;
+    potType?: PotType;
+    maxDistance?: number;
+    /** Test-only override. Production uses solver pool (or seeds fallback). */
+    pool?: readonly PostflopSpot[];
+  } = {},
 ): BoardLookupResult {
-  const pool = SOLVER_SPOTS.length > 0 ? SOLVER_SPOTS : POSTFLOP_SEEDS;
+  const pool = opts.pool ?? (SOLVER_SPOTS.length > 0 ? SOLVER_SPOTS : POSTFLOP_SEEDS);
   const queryCanon = canonicalizeFlop(board);
 
   const filtered = pool.filter((s) => {
