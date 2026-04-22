@@ -135,7 +135,8 @@ export function ChartNavigator({
                 플랍 도달
               </h2>
               <p className="mt-2 text-[13px] text-fg-muted">
-                레이즈·콜이 끝났어요. 플랍 액션은 사전계산 차트에서 볼 수 있어요.
+                레이즈·콜이 끝났어요. 플랍 차트는 아직 커버리지가 부족해 곧
+                업데이트 예정입니다.
               </p>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <button
@@ -145,12 +146,15 @@ export function ChartNavigator({
                 >
                   새 핸드 ↻
                 </button>
-                <a
-                  href="/charts/postflop"
-                  className="inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] border-hair surface px-4 text-[13px] font-semibold text-fg active:scale-[0.98]"
+                <button
+                  type="button"
+                  disabled
+                  aria-disabled="true"
+                  title="곧 업데이트 예정"
+                  className="inline-flex h-11 cursor-not-allowed items-center justify-center rounded-[var(--radius-button)] border-hair surface px-4 text-[13px] font-semibold text-fg-muted opacity-50"
                 >
-                  포스트플랍 →
-                </a>
+                  포스트플랍 (준비 중)
+                </button>
               </div>
             </section>
           ) : (
