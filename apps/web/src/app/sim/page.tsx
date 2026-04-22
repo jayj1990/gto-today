@@ -17,6 +17,8 @@ import type { Position } from '@gto/poker-core';
 import { cn } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
 import { useLiveStore } from '@/lib/live-store';
+import { useMistakesStore } from '@/lib/mistakes-store';
+import { isoDateKR } from '@/lib/date';
 import { HandCard } from '@/components/today/hand-card';
 import { ActionBar } from '@/components/today/action-bar';
 import { ResultSheet } from '@/components/today/result-sheet';
@@ -68,9 +70,21 @@ export default function SimPage() {
     else setWrong((v) => v + 1);
   };
 
+  const recordMistake = useMistakesStore((s) => s.recordMistake);
+
   const handlePreflopAnswer = (action: GradedAction) => {
     if (!item || item.kind !== 'preflop') return;
     const grade = gradeAnswer(item.spot, action);
+    if (grade === 'wrong') {
+      recordMistake({
+        kind: 'preflop',
+        spotId: item.spot.id,
+        dateKey: isoDateKR(),
+        userAnswer: action,
+        grade,
+        spot: item.spot,
+      });
+    }
     setLastPreflopAnswer(action);
     setLastPostflopAnswer(null);
     recordGrade(grade);
@@ -79,6 +93,16 @@ export default function SimPage() {
   const handlePostflopAnswer = (action: PostflopAction) => {
     if (!item || item.kind !== 'postflop') return;
     const grade = gradePostflopAction(item.spot, action);
+    if (grade === 'wrong') {
+      recordMistake({
+        kind: 'postflop',
+        spotId: item.spot.id,
+        dateKey: isoDateKR(),
+        userAnswer: action,
+        grade,
+        spot: item.spot,
+      });
+    }
     setLastPostflopAnswer(action);
     setLastPreflopAnswer(null);
     recordGrade(grade);

@@ -23,6 +23,7 @@ import { DailyComplete } from '@/components/today/daily-complete';
 import { PostflopHand } from '@/components/today/postflop-hand';
 import { PostflopResult } from '@/components/today/postflop-result';
 import { useChallengeStore } from '@/lib/challenge-store';
+import { useMistakesStore } from '@/lib/mistakes-store';
 import { useLiveStore } from '@/lib/live-store';
 import { isoDateKR } from '@/lib/date';
 
@@ -47,6 +48,7 @@ export default function TodayPlayPage() {
   const completeDay = useChallengeStore((s) => s.completeDay);
 
   const gameType = useLiveStore((s) => s.config.gameType);
+  const recordMistake = useMistakesStore((s) => s.recordMistake);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,6 +79,16 @@ export default function TodayPlayPage() {
     if (!current || current.kind !== 'preflop') return;
     const grade = gradeAnswer(current.spot, action);
     submit(action, grade);
+    if (grade === 'wrong') {
+      recordMistake({
+        kind: 'preflop',
+        spotId: current.spot.id,
+        dateKey: dateKey || isoDateKR(),
+        userAnswer: action,
+        grade,
+        spot: current.spot,
+      });
+    }
     setLastPreflopAnswer(action);
     setLastPostflopAnswer(null);
     setLastGrade(grade);
@@ -89,6 +101,16 @@ export default function TodayPlayPage() {
     // Challenge-store schema only knows preflop grades — we still
     // record the grade to keep streak/accuracy running.
     submit('fold', grade); // action arg is unused for grade lookup
+    if (grade === 'wrong') {
+      recordMistake({
+        kind: 'postflop',
+        spotId: current.spot.id,
+        dateKey: dateKey || isoDateKR(),
+        userAnswer: action,
+        grade,
+        spot: current.spot,
+      });
+    }
     setLastPostflopAnswer(action);
     setLastPreflopAnswer(null);
     setLastGrade(grade);

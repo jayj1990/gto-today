@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { Logo, cn } from '@gto/ui';
 import { useAuthStore } from '@/lib/auth-store';
 import { useChallengeStore } from '@/lib/challenge-store';
+import { useMistakesStore } from '@/lib/mistakes-store';
 import { isoDateKR } from '@/lib/date';
 
 /**
@@ -29,6 +30,7 @@ export function HomeGate() {
   const challengeDate = useChallengeStore((s) => s.dateKey);
   const challengeCursor = useChallengeStore((s) => s.cursor);
   const currentStreak = useChallengeStore((s) => s.currentStreak);
+  const mistakeCount = useMistakesStore((s) => s.mistakes.length);
   const today = isoDateKR();
   const todayActive = challengeDate === today;
   const todayDone = todayActive && challengeCursor >= 10;
@@ -165,6 +167,16 @@ export function HomeGate() {
           variant="secondary"
           delay={0.12}
         />
+        {mistakeCount > 0 && (
+          <PrimaryCard
+            href="/review"
+            eyebrow={`Review · ${mistakeCount}개 오답`}
+            title="복습 모드"
+            description="틀렸던 스팟만 모아서 다시 풀기."
+            variant="secondary"
+            delay={0.18}
+          />
+        )}
       </div>
     </main>
   );
