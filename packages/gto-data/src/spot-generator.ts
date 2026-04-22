@@ -9,8 +9,31 @@ import {
   type DefensePairing,
 } from './bb-defense';
 import { listPostflopSpots, type PostflopSpot } from './postflop';
+import {
+  availableActionsFor,
+  collapseForCombo,
+  getQbTree,
+  parseNodeKey,
+  type ParsedNode,
+} from './qb-tree';
 
-export type AvailableAction = 'fold' | 'check' | 'call' | 'raise';
+export type AvailableAction = 'fold' | 'check' | 'call' | 'raise' | 'allin';
+
+export type Scenario =
+  | 'rfi'           // open-raise first in
+  | 'vs_open'       // defending vs opener (BB, SB, etc.)
+  | 'vs_3bet'       // opener facing a 3bet (4bet/call/fold decision)
+  | 'vs_4bet'       // 3bettor facing a 4bet (5bet/call/fold)
+  | 'vs_squeeze'    // caller facing a squeeze from a later seat
+  | 'vs_allin';     // facing an all-in shove (call/fold only)
+
+/** A single action taken before the hero's decision. Lets the UI
+ *  render a "CO 2.5bb · BTN 8.5bb" ribbon so 3bet/4bet pots read
+ *  coherently. */
+export interface PreAction {
+  readonly actor: Position;
+  readonly action: string; // "2.5bb" | "Call" | "8.5bb" | "AllIn" | "FOLD"
+}
 
 export interface TrainingSpot {
   readonly id: string;
@@ -19,15 +42,22 @@ export interface TrainingSpot {
   readonly position: Position;
   readonly format: TableFormat;
   readonly stackBB: number;
-  readonly scenario: 'rfi' | 'vs_open';
+  readonly scenario: Scenario;
   /** For vs_open scenarios: who opened, and to what size. */
   readonly opener?: Position;
   readonly openSize?: number;
+  /** Every action prior to hero's decision. Empty for RFI. */
+  readonly preActions?: readonly PreAction[];
+  /** Pot before hero acts (BB). Used by 3bet/4bet/allin scenarios
+   *  to show "pot 22BB · invest 19BB" style headers. */
+  readonly potBB?: number;
   readonly gtoRaise: number;
   readonly gtoFold: number;
-  /** For vs_open scenarios: call frequency (raise here = 3-bet). */
+  /** For vs_open and deeper scenarios: call frequency. */
   readonly gtoCall?: number;
-  readonly correctAnswer: 'raise' | 'call' | 'fold' | 'mixed';
+  /** Deeper reraise lines include a non-trivial all-in option. */
+  readonly gtoAllIn?: number;
+  readonly correctAnswer: 'raise' | 'call' | 'fold' | 'allin' | 'mixed';
   /** Which action buttons the UI should offer the user. */
   readonly availableActions: readonly AvailableAction[];
 }
@@ -285,12 +315,32 @@ export async function generateDailySpots(
   }
   const defenseKeys = Array.from(defenseCharts.keys());
 
+  // Pre-load qb tree — carries every 3bet / 4bet / squeeze / allin
+  // node for the same format + stack. Only applies to 6max 100bb
+  // (other formats don't ship a qb export).
+  const qbTree = format === '6max' ? await getQbTree(format, 100) : null;
+  const qbNodes: ParsedNode[] = qbTree
+    ? Object.keys(qbTree)
+        .map(parseNodeKey)
+        .filter((n): n is ParsedNode => !!n && n.scenario !== 'rfi' && n.scenario !== 'vs_open')
+    : [];
+
   const out: TrainingSpot[] = [];
   for (let i = 0; i < count; i++) {
-    // 60% defense / 40% RFI — defense spots cover more positional
-    // variety and are generally harder (3-way decisions), so they
-    // carry the bulk of the learning weight in hard mode.
-    const useDefense = defenseCharts.size > 0 && rng() < 0.6;
+    // Lineup mix:
+    //   25% RFI   (2-way fold/raise — baseline decision-making)
+    //   45% defense (BB/SB/BTN/CO/MP vs open — core study)
+    //   30% advanced (3bet/4bet/squeeze/allin) when qb tree loaded
+    const roll = rng();
+    const useAdvanced = qbNodes.length > 0 && roll < 0.3;
+    const useDefense = !useAdvanced && defenseCharts.size > 0 && roll < 0.75;
+
+    if (useAdvanced) {
+      const node = qbNodes[Math.floor(rng() * qbNodes.length)]!;
+      const spot = buildAdvancedSpot(qbTree!, node, dateKey, i, rng);
+      if (spot) out.push(spot);
+      continue;
+    }
 
     if (useDefense) {
       const key = defenseKeys[Math.floor(rng() * defenseKeys.length)]!;
@@ -339,6 +389,87 @@ export async function generateDailySpots(
   return out;
 }
 
+/** Build an advanced-scenario (3bet / 4bet / squeeze / allin)
+ *  TrainingSpot from a qb tree node. Picks an educational combo
+ *  (non-trivial mix), collapses the tree's raise-size breakdown
+ *  into our 5-way action space, and fills the pre-action trace so
+ *  the UI can render "CO 2.5bb · BTN 8.5bb → BB" style headers. */
+function buildAdvancedSpot(
+  qbTree: Record<string, Record<string, Record<string, number>>>,
+  node: ParsedNode,
+  dateKey: string,
+  idx: number,
+  rng: () => number,
+): TrainingSpot | null {
+  const raw = qbTree[node.nodeKey];
+  if (!raw) return null;
+
+  // Pool candidate combos whose decision is educational (top action
+  // frequency < 97%).
+  const pool: Array<{ combo: ComboKey; weight: number; mix: ReturnType<typeof collapseForCombo> }> = [];
+  for (const c of allCombos()) {
+    if (UNIVERSAL_RAISES.has(c)) continue;
+    const mix = collapseForCombo(raw, c);
+    if (!mix) continue;
+    const top = Math.max(mix.fold, mix.call, mix.raise, mix.allin);
+    if (top >= 0.97) continue;
+    const interesting = 1 - top;
+    pool.push({ combo: c, weight: 1 + interesting * 4, mix });
+  }
+  if (pool.length === 0) return null;
+
+  const total = pool.reduce((a, b) => a + b.weight, 0);
+  let roll = rng() * total;
+  let picked = pool[pool.length - 1]!;
+  for (const entry of pool) {
+    roll -= entry.weight;
+    if (roll <= 0) {
+      picked = entry;
+      break;
+    }
+  }
+  const mix = picked.mix!;
+  const hero = comboToCards(picked.combo, rng);
+
+  // Correct-answer classification — top action wins unless a close
+  // tie (≤5%) puts us in 'mixed'.
+  const entries: Array<['fold' | 'call' | 'raise' | 'allin', number]> = [
+    ['fold', mix.fold],
+    ['call', mix.call],
+    ['raise', mix.raise],
+    ['allin', mix.allin],
+  ];
+  entries.sort((a, b) => b[1] - a[1]);
+  const [topAction, topFreq] = entries[0]!;
+  const ties = entries.filter(([, v]) => Math.abs(v - topFreq) <= 0.05).length;
+  const correctAnswer: TrainingSpot['correctAnswer'] =
+    ties > 1 ? 'mixed' : topAction;
+
+  const openerPair = node.preActions[0];
+  const opener = openerPair?.actor as Position | undefined;
+  const openerSize = openerPair?.action.match(/^([\d.]+)bb$/)?.[1];
+
+  return {
+    id: `${dateKey}-${idx}-${picked.combo}-${node.nodeKey}`,
+    combo: picked.combo,
+    hero,
+    position: node.decider,
+    format: '6max',
+    stackBB: 100,
+    scenario: node.scenario,
+    ...(opener ? { opener } : {}),
+    ...(openerSize ? { openSize: parseFloat(openerSize) } : {}),
+    preActions: node.preActions,
+    potBB: node.potBB,
+    gtoRaise: mix.raise,
+    gtoFold: mix.fold,
+    gtoCall: mix.call,
+    gtoAllIn: mix.allin,
+    correctAnswer,
+    availableActions: availableActionsFor(node.scenario),
+  };
+}
+
 /**
  * Score a user's answer against the GTO ground truth.
  * - sharp: picked the dominant action (raise >= 0.75 or fold >= 0.75)
@@ -346,7 +477,7 @@ export async function generateDailySpots(
  * - wrong: picked the clearly wrong action
  */
 export type AnswerGrade = 'sharp' | 'acceptable' | 'wrong';
-export type GradedAction = 'fold' | 'call' | 'raise' | 'check';
+export type GradedAction = 'fold' | 'call' | 'raise' | 'check' | 'allin';
 
 /**
  * Grade the user's action against the spot's GTO mix.
@@ -361,26 +492,30 @@ export type GradedAction = 'fold' | 'call' | 'raise' | 'check';
  *   • Otherwise → 'wrong'
  */
 export function gradeAnswer(spot: TrainingSpot, answer: GradedAction): AnswerGrade {
-  if (spot.scenario === 'vs_open') {
-    const mix = {
-      fold: spot.gtoFold,
-      call: spot.gtoCall ?? 0,
-      raise: spot.gtoRaise,
-    };
-    const chosen = mix[answer as 'fold' | 'call' | 'raise'] ?? 0;
-    const max = Math.max(mix.fold, mix.call, mix.raise);
-    // Close ties (within 5%) are all acceptable answers.
-    if (Math.abs(chosen - max) <= 0.05) {
-      return chosen === max && chosen > 0.55 ? 'sharp' : 'acceptable';
-    }
-    return 'wrong';
+  // RFI (2-way fold / raise)
+  if (spot.scenario === 'rfi') {
+    const r = spot.gtoRaise;
+    if (Math.abs(r - 0.5) <= 0.05) return 'acceptable';
+    const dominant: 'raise' | 'fold' = r > 0.5 ? 'raise' : 'fold';
+    return answer === dominant ? 'sharp' : 'wrong';
   }
 
-  // RFI (2-way)
-  const r = spot.gtoRaise;
-  if (Math.abs(r - 0.5) <= 0.05) return 'acceptable';
-  const dominant: 'raise' | 'fold' = r > 0.5 ? 'raise' : 'fold';
-  return answer === dominant ? 'sharp' : 'wrong';
+  // All other scenarios share a freq-max-tie structure with a variable
+  // action space — just score against whichever actions exist.
+  const mix: Partial<Record<Exclude<GradedAction, 'check'>, number>> = {
+    fold: spot.gtoFold,
+    call: spot.gtoCall ?? 0,
+    raise: spot.gtoRaise,
+    allin: spot.gtoAllIn ?? 0,
+  };
+  const chosen =
+    answer === 'check' ? 0 : mix[answer as Exclude<GradedAction, 'check'>] ?? 0;
+  const max = Math.max(mix.fold ?? 0, mix.call ?? 0, mix.raise ?? 0, mix.allin ?? 0);
+  if (max === 0) return 'acceptable';
+  if (Math.abs(chosen - max) <= 0.05) {
+    return chosen === max && chosen > 0.55 ? 'sharp' : 'acceptable';
+  }
+  return 'wrong';
 }
 
 // Re-export so consumers don't need to import RANKS from poker-core separately.

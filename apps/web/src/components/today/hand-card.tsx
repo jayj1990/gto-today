@@ -107,9 +107,7 @@ export function HandCard({ spot, className, celebratePot = false }: HandCardProp
         <div className="flex items-center gap-1.5">
           <Pill>{spot.position}</Pill>
           <Pill>{spot.stackBB}BB</Pill>
-          <Pill tone="accent">
-            {spot.scenario === 'vs_open' ? `vs ${spot.opener}` : 'RFI'}
-          </Pill>
+          <Pill tone="accent">{scenarioPill(spot)}</Pill>
         </div>
       </div>
       <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-call)]">
@@ -137,12 +135,16 @@ export function HandCard({ spot, className, celebratePot = false }: HandCardProp
         />
       </div>
 
+      {/* Pre-action ribbon (3bet / 4bet / squeeze pots) */}
+      {spot.preActions && spot.preActions.length > 1 && (
+        <p className="mt-2 text-center font-mono text-[11px] text-[color:var(--color-gold)]">
+          {preActionRibbon(spot)} · 팟 {spot.potBB ?? '?'}BB
+        </p>
+      )}
+
       <p className="mt-4 text-center text-[13px] text-fg-muted">
         {spot.scenario === 'vs_open' ? (
-          <>
-            <span className="text-fg/80">{spot.opener}</span> 오픈 {spot.openSize}BB —{' '}
-            <span className="text-fg/80">{spot.position}</span> 디펜스 차례.
-          </>
+          <></>
         ) : foldedSeats.length === 0 ? (
           <>히어로가 먼저 액션합니다.</>
         ) : (
@@ -153,6 +155,39 @@ export function HandCard({ spot, className, celebratePot = false }: HandCardProp
       </p>
     </motion.div>
   );
+}
+
+function scenarioPill(spot: TrainingSpot): string {
+  switch (spot.scenario) {
+    case 'rfi':
+      return 'RFI';
+    case 'vs_open':
+      return `vs ${spot.opener}`;
+    case 'vs_3bet':
+      return '3벳 방어';
+    case 'vs_4bet':
+      return '4벳 방어';
+    case 'vs_squeeze':
+      return '스퀴즈';
+    case 'vs_allin':
+      return '올인 방어';
+    default:
+      return 'Spot';
+  }
+}
+
+function preActionRibbon(spot: TrainingSpot): string {
+  if (!spot.preActions || spot.preActions.length === 0) return '';
+  const parts = spot.preActions
+    .filter((p) => p.action !== 'FOLD')
+    .map((p) => {
+      if (p.action === 'Call') return `${p.actor} 콜`;
+      if (p.action === 'AllIn') return `${p.actor} 올인`;
+      const m = p.action.match(/^([\d.]+)bb$/);
+      if (m) return `${p.actor} ${m[1]}bb`;
+      return `${p.actor} ${p.action}`;
+    });
+  return parts.join(' · ');
 }
 
 function Pill({ children, tone }: { children: React.ReactNode; tone?: 'accent' }) {

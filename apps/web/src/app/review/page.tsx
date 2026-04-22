@@ -30,6 +30,7 @@ const PREFLOP_ACTION_LABEL: Record<GradedAction, string> = {
   check: '체크',
   call: '콜',
   raise: '레이즈',
+  allin: '올인',
 };
 
 type Phase =

@@ -6,7 +6,7 @@ import { pressScale } from '@gto/ui/motion';
 import type { AvailableAction } from '@gto/gto-data';
 import { useRipple } from '@/lib/use-ripple';
 
-export type ActionKind = 'fold' | 'check' | 'call' | 'raise';
+export type ActionKind = 'fold' | 'check' | 'call' | 'raise' | 'allin';
 
 export interface ActionBarProps {
   disabled?: boolean;
@@ -25,6 +25,7 @@ const LABELS: Record<ActionKind, string> = {
   check: '체크',
   call: '콜',
   raise: '레이즈',
+  allin: '올인',
 };
 
 // Every button fills with its action color (white bold text) so they
@@ -74,6 +75,11 @@ const TONE: Record<ActionKind, { cls: string }> = {
   },
   raise: {
     cls: 'bg-[color:var(--color-raise)] text-white font-bold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-raise)]',
+  },
+  allin: {
+    // AllIn button — deeper, darker red than a regular raise so the
+    // stake escalation reads visually. Gold ring to mark the jam.
+    cls: 'bg-[#7F0A1B] text-white font-bold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold)]',
   },
 };
 
