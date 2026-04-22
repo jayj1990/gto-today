@@ -47,4 +47,12 @@ else
   echo "[$(date +%H:%M:%S)] no data changes to commit" >> "$SELF_LOG"
 fi
 
+echo "[$(date +%H:%M:%S)] handing off to all-tiers.sh" >> "$SELF_LOG"
+# Kick the full-flop multi-pair chain in the background so the machine
+# keeps producing data overnight without Jay having to run anything.
+# Each pairing auto-commits + pushes on completion (all-tiers.log has
+# the full trace).
+nohup bash "$REPO/solver-run/all-tiers.sh" > "$REPO/solver-run/all-tiers.out" 2>&1 &
+echo "[$(date +%H:%M:%S)] all-tiers PID $!" >> "$SELF_LOG"
+
 echo "=== post-chain3 done $(date) ===" >> "$SELF_LOG"
