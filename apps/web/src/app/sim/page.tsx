@@ -26,6 +26,7 @@ import { ActionBar } from '@/components/today/action-bar';
 import { ResultSheet } from '@/components/today/result-sheet';
 import { PostflopHand } from '@/components/today/postflop-hand';
 import { PostflopResult } from '@/components/today/postflop-result';
+import { HandCardSkeleton } from '@/components/skeleton';
 
 const ALL_POSITIONS: Position[] = ['UTG', 'MP', 'CO', 'BTN', 'SB'];
 
@@ -163,11 +164,7 @@ export default function SimPage() {
           </dl>
         </header>
 
-        {loading && !item && (
-          <div className="flex flex-1 items-center justify-center">
-            <p className="font-mono text-[13px] text-fg-muted">불러오는 중…</p>
-          </div>
-        )}
+        {loading && !item && <HandCardSkeleton />}
 
         {item && (
           <AnimatePresence mode="wait">

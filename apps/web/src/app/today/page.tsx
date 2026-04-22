@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { SiteHeader } from '@/components/site-header';
 import { formatTodayKR } from '@/lib/date';
+import { StreakCalendar } from '@/components/streak-calendar';
 
 export const revalidate = 3600;
 
@@ -41,6 +42,8 @@ export default function TodayIntroPage() {
           <Summary label="구성" value="프리 6 · 플랍 4" />
           <Summary label="게임" value="캐시 · MTT" />
         </dl>
+
+        <StreakCalendar className="mt-6" />
 
         <div className="mt-8 rounded-[var(--radius-panel)] border-hair surface p-5">
           <h2 className="font-display text-[18px] font-semibold">오늘 연습할 것</h2>

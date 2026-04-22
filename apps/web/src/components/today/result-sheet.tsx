@@ -23,14 +23,25 @@ const ACTION_LABEL: Record<GradedAction, string> = {
 };
 
 /**
- * Return 이/가 based on the word's final Hangul syllable.
- * Hangul syllables span U+AC00–U+D7A3; a final consonant exists when
- * (code - 0xAC00) % 28 !== 0. Non-Hangul falls back to 가.
+ * Return 이/가 based on the word's final meaningful Hangul syllable.
+ *
+ * Walk backwards past decorative punctuation / whitespace — so labels
+ * like "레이즈 (스몰)" resolve on "몰" (batchim ㄹ → 이) instead of
+ * on the closing paren (non-Hangul → "가"). Stops at a digit or
+ * meaningful non-Hangul symbol and falls back to "가" then, since the
+ * reader voices the symbol itself (e.g. "33%가" is read "퍼센트가").
  */
+const DECOR_RE = /[\s()[\]{}.,;:!?·…'"`]/;
 function particleSubject(word: string): string {
-  const last = word.charCodeAt(word.length - 1);
-  if (last < 0xac00 || last > 0xd7a3) return '가';
-  return (last - 0xac00) % 28 === 0 ? '가' : '이';
+  for (let i = word.length - 1; i >= 0; i--) {
+    const ch = word.charAt(i);
+    const code = word.charCodeAt(i);
+    if (code >= 0xac00 && code <= 0xd7a3) {
+      return (code - 0xac00) % 28 === 0 ? '가' : '이';
+    }
+    if (!DECOR_RE.test(ch)) break;
+  }
+  return '가';
 }
 
 

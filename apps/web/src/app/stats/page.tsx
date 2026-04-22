@@ -16,6 +16,7 @@ export default function StatsPage() {
   const totals = useMemo(() => tallyTotals(lifetime), [lifetime]);
   const byDay = useMemo(() => groupByDay(lifetime, 7), [lifetime]);
   const byPosition = useMemo(() => groupByPosition(lifetime), [lifetime]);
+  const weakCombos = useMemo(() => topWeaknesses(lifetime, 5), [lifetime]);
 
   return (
     <>
@@ -90,6 +91,37 @@ export default function StatsPage() {
                 })}
               </div>
             </section>
+
+            {/* Top weakness combos — inferred from spotId prefix. */}
+            {weakCombos.length > 0 && (
+              <section className="mt-8">
+                <SectionHeader title="가장 많이 틀린 콤보" right="최근 기록 기준" />
+                <ul className="mt-3 space-y-1.5">
+                  {weakCombos.map((w) => (
+                    <li
+                      key={w.combo}
+                      className="flex items-center justify-between gap-3 rounded-[var(--radius-button)] border-hair surface px-3 py-2"
+                    >
+                      <span className="font-display text-[15px] font-bold tracking-[-0.02em]">
+                        {w.combo}
+                      </span>
+                      <span className="font-mono text-[11px] tabular-nums text-fg-muted">
+                        오답 {w.wrong}회 / 시도 {w.attempts}회
+                      </span>
+                      <span
+                        className="font-mono text-[12px] font-semibold tabular-nums"
+                        style={{ color: 'var(--color-raise)' }}
+                      >
+                        {Math.round((w.wrong / w.attempts) * 100)}%
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-[11px] text-fg-muted">
+                  복습 모드에서 이 콤보들을 우선적으로 다시 풀어보세요.
+                </p>
+              </section>
+            )}
 
             {/* Position breakdown */}
             {byPosition.length > 0 && (
@@ -298,6 +330,42 @@ interface PositionRow {
   acceptable: number;
   wrong: number;
   accuracy: number;
+}
+
+interface WeaknessRow {
+  combo: string;
+  attempts: number;
+  wrong: number;
+}
+
+/** Extract the preflop combo (e.g. "AKs", "76o", "QQ") from a spotId
+ *  like "2026-04-23-0-AKs-BB-vs-BTN". Returns null for postflop spot
+ *  ids — they use a different format. */
+function comboFromSpotId(spotId: string): string | null {
+  const m = spotId.match(/-(\d+)-([A-Z0-9]{2,3})-/i);
+  return m?.[2] ?? null;
+}
+
+function topWeaknesses(log: LifetimeAnswer[], limit: number): WeaknessRow[] {
+  const tally = new Map<string, WeaknessRow>();
+  for (const a of log) {
+    if (a.kind !== 'preflop') continue;
+    const combo = comboFromSpotId(a.spotId);
+    if (!combo) continue;
+    const row = tally.get(combo) ?? { combo, attempts: 0, wrong: 0 };
+    row.attempts += 1;
+    if (a.grade === 'wrong') row.wrong += 1;
+    tally.set(combo, row);
+  }
+  return [...tally.values()]
+    .filter((r) => r.wrong > 0 && r.attempts >= 2)
+    .sort((a, b) => {
+      const rateA = a.wrong / a.attempts;
+      const rateB = b.wrong / b.attempts;
+      if (rateA !== rateB) return rateB - rateA;
+      return b.wrong - a.wrong;
+    })
+    .slice(0, limit);
 }
 
 function groupByPosition(log: LifetimeAnswer[]): PositionRow[] {

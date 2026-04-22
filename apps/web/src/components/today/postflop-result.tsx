@@ -26,12 +26,20 @@ const STREET_LABEL: Record<PostflopSpot['street'], string> = {
   river: '리버',
 };
 
-// 이/가 selector based on whether the word's last Hangul syllable has
-// a jongseong (final consonant).
+// 이/가 selector — walks back past decorative punctuation so labels
+// like "레이즈 (스몰)" resolve on 몰 (batchim ㄹ → 이) rather than
+// on the closing paren. See result-sheet.tsx for the full doc.
+const DECOR_RE = /[\s()[\]{}.,;:!?·…'"`]/;
 function particleSubject(word: string): string {
-  const last = word.charCodeAt(word.length - 1);
-  if (last < 0xac00 || last > 0xd7a3) return '가';
-  return (last - 0xac00) % 28 === 0 ? '가' : '이';
+  for (let i = word.length - 1; i >= 0; i--) {
+    const ch = word.charAt(i);
+    const code = word.charCodeAt(i);
+    if (code >= 0xac00 && code <= 0xd7a3) {
+      return (code - 0xac00) % 28 === 0 ? '가' : '이';
+    }
+    if (!DECOR_RE.test(ch)) break;
+  }
+  return '가';
 }
 
 /**

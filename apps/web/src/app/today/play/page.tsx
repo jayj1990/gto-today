@@ -27,6 +27,7 @@ import { useMistakesStore } from '@/lib/mistakes-store';
 import { useLiveStore } from '@/lib/live-store';
 import { isoDateKR } from '@/lib/date';
 import { haptic } from '@/lib/haptic';
+import { HandCardSkeleton } from '@/components/skeleton';
 
 const TOTAL = 10;
 
@@ -155,11 +156,7 @@ export default function TodayPlayPage() {
     <>
       <SiteHeader />
       <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+32px)] pt-6">
-        {!items && (
-          <div className="flex flex-1 items-center justify-center">
-            <p className="font-mono text-[13px] text-fg-muted">오늘의 핸드 불러오는 중…</p>
-          </div>
-        )}
+        {!items && <HandCardSkeleton />}
 
         {items && !isComplete && current && (
           <>
