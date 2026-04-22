@@ -158,9 +158,21 @@ export function PokerTable({
         {Array.from({ length: 5 }).map((_, i) => {
           const code = board[i];
           if (code && renderCard) {
-            return <div key={i}>{renderCard(code, 'sm')}</div>;
+            // Stagger each dealt community card so flop lands 1→2→3
+            // and turn/river land one-by-one. `key` includes the card
+            // code so swapping turn/river remounts and re-animates.
+            const streetDelay = i < 3 ? i * 90 : 0;
+            return (
+              <div
+                key={`${i}-${code}`}
+                className="animate-board-deal-in"
+                style={{ animationDelay: `${streetDelay}ms` }}
+              >
+                {renderCard(code, 'sm')}
+              </div>
+            );
           }
-          return <BoardSlot key={i} street={i < 3 ? 'flop' : i === 3 ? 'turn' : 'river'} />;
+          return <BoardSlot key={`slot-${i}`} street={i < 3 ? 'flop' : i === 3 ? 'turn' : 'river'} />;
         })}
       </div>
 
@@ -249,21 +261,27 @@ export function PokerTable({
                 gap: 3,
               }}
             >
-              {/* Cards on top */}
+              {/* Cards on top. Hero cards stagger with a tiny delay
+                  so they land 1→2; villain cards share the same
+                  timing but no stagger (they're face-down anyway). */}
               {hasHeroCards && renderCard && (
                 <div style={{ display: 'flex', gap: 2 }}>
-                  {renderCard(heroCards![0], 'sm')}
-                  {renderCard(heroCards![1], 'sm')}
+                  <span className="animate-card-slide-in" style={{ animationDelay: '0ms' }}>
+                    {renderCard(heroCards![0], 'sm')}
+                  </span>
+                  <span className="animate-card-slide-in" style={{ animationDelay: '80ms' }}>
+                    {renderCard(heroCards![1], 'sm')}
+                  </span>
                 </div>
               )}
               {hasVillainCards && state.cards && renderCard && (
-                <div style={{ display: 'flex', gap: 2 }}>
+                <div className="animate-card-slide-in" style={{ display: 'flex', gap: 2 }}>
                   {renderCard(state.cards[0], 'xs')}
                   {renderCard(state.cards[1], 'xs')}
                 </div>
               )}
               {hasVillainCards && !state.cards && state.showBacks && (
-                <div style={{ display: 'flex', gap: 2 }}>
+                <div className="animate-card-slide-in" style={{ display: 'flex', gap: 2 }}>
                   <CardBack />
                   <CardBack />
                 </div>
@@ -278,14 +296,18 @@ export function PokerTable({
               />
             </div>
 
-            {/* Bet chip on the radial line between seat and center */}
+            {/* Bet chip on the radial line between seat and center.
+                `key` keyed on the action kind+size so changing the
+                action (e.g. raise → 3bet) remounts and replays the
+                spring-in animation. */}
             {state.action && state.action.kind !== 'fold' && (
               <div
+                key={`bet-${seat}-${actionKey(state.action)}`}
+                className="animate-chip-bet-in"
                 style={{
                   position: 'absolute',
                   left: `${betX}%`,
                   top: `${betY}%`,
-                  transform: 'translate(-50%, -50%)',
                 }}
               >
                 <BetChip action={state.action} />
@@ -440,6 +462,11 @@ function chipSrcFor(action: Exclude<SeatAction, { kind: 'fold' }>): string {
   if (bb <= 15) return '/ai-assets/chip-set-v4/gold-transparent.png';     // 3-bet (9-12 BB)
   if (bb <= 50) return '/ai-assets/chip-set-v4/purple-transparent.png';   // 4-bet / big postflop
   return '/ai-assets/chip-set-v4/black-transparent.png';                   // all-in territory
+}
+
+function actionKey(action: SeatAction): string {
+  if (action.kind === 'fold' || action.kind === 'check') return action.kind;
+  return `${action.kind}-${action.bb}`;
 }
 
 function BetChip({ action }: { action: SeatAction }) {

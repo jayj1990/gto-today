@@ -242,6 +242,84 @@
     box-shadow: var(--shadow-panel);
   }
 
+  /* ─────────────── Poker micro-animations ───────────────
+     Kept in CSS (not framer-motion) so PokerTable can stay
+     server-render-friendly. Respects prefers-reduced-motion
+     via a single media query at the bottom. */
+
+  @keyframes gto-chip-bet-in {
+    0% {
+      transform: translate(-50%, -50%) scale(0.35);
+      opacity: 0;
+    }
+    55% {
+      transform: translate(-50%, -50%) scale(1.12);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+  }
+  .animate-chip-bet-in {
+    animation: gto-chip-bet-in 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  @keyframes gto-board-deal-in {
+    0% {
+      transform: translateY(-14px) rotate(-6deg) scale(0.9);
+      opacity: 0;
+      filter: blur(2px);
+    }
+    60% {
+      transform: translateY(2px) rotate(1deg) scale(1.02);
+      opacity: 1;
+      filter: blur(0);
+    }
+    100% {
+      transform: translateY(0) rotate(0) scale(1);
+      opacity: 1;
+    }
+  }
+  .animate-board-deal-in {
+    animation: gto-board-deal-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes gto-card-slide-in {
+    0% {
+      transform: translateY(-18px) rotate(-4deg) scale(0.94);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0) rotate(0) scale(1);
+      opacity: 1;
+    }
+  }
+  .animate-card-slide-in {
+    animation: gto-card-slide-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes gto-pulse-ring {
+    0% {
+      box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.55);
+    }
+    100% {
+      box-shadow: 0 0 0 12px rgba(212, 175, 55, 0);
+    }
+  }
+  .animate-pulse-ring {
+    animation: gto-pulse-ring 1.6s ease-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-chip-bet-in,
+    .animate-board-deal-in,
+    .animate-card-slide-in,
+    .animate-pulse-ring {
+      animation: none !important;
+    }
+  }
+
   /* Film grain overlay for hero/landing sections */
   .grain::after {
     content: '';
