@@ -142,7 +142,7 @@ export function HomeGate() {
             todayDone
               ? '내일 공개되는 새 핸드 기다려요.'
               : todayActive
-                ? '이어서 풀기 — 오늘자 핸드 남은 스팟.'
+                ? '이어서 풀기'
                 : '매일 새로 공개되는 10핸드. 하루 5분.'
           }
           variant="primary"
@@ -153,7 +153,7 @@ export function HomeGate() {
           href="/sim"
           eyebrow="Infinite Drills"
           title="무한 GTO 훈련"
-          description="10핸드 끝났어요? 계속 풀어봐요."
+          description="10핸드 끝났다면 이어서 계속."
           variant="secondary"
           delay={0.06}
         />
@@ -161,7 +161,7 @@ export function HomeGate() {
           href="/live"
           eyebrow="Live Assist"
           title="실전 모드"
-          description="프리플랍 트리 · 포지션별 GTO 차트"
+          description="테이블 옆에서 열어보는 GTO 가이드."
           variant="secondary"
           delay={0.12}
         />

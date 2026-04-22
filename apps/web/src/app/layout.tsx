@@ -7,17 +7,17 @@ import { InstallPrompt } from '@/components/install-prompt';
 
 export const metadata: Metadata = {
   title: {
-    default: 'gto.today — GTO, Today.',
+    default: 'gto.today — 매일 쌓이는 실력, 후회 없는 액션',
     template: '%s · gto.today',
   },
-  description: '매일 쌓이는 실력, 후회 없는 액션. 포커 GTO 가이드와 일일 훈련, AI 해설.',
+  description: '하루 5분의 GTO 훈련. 오늘의 답을 내일의 감으로 바꾸는 포커 루틴.',
   applicationName: 'gto.today',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://gto.today'),
   openGraph: {
     type: 'website',
     siteName: 'gto.today',
-    title: 'gto.today — GTO, Today.',
-    description: '매일 쌓이는 실력, 후회 없는 액션. 포커 GTO 가이드와 일일 훈련, AI 해설.',
+    title: 'gto.today — 매일 쌓이는 실력, 후회 없는 액션',
+    description: '하루 5분의 GTO 훈련. 오늘의 답을 내일의 감으로 바꾸는 포커 루틴.',
     url: 'https://gto.today',
     locale: 'ko_KR',
     images: [
@@ -25,14 +25,14 @@ export const metadata: Metadata = {
         url: '/og.png',
         width: 1200,
         height: 630,
-        alt: 'gto.today — 매일 한 핸드, 감이 아닌 솔버의 답.',
+        alt: 'gto.today — GTO 훈련으로 후회없는 액션.',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'gto.today',
-    description: '매일 한 핸드, 더 나은 판단.',
+    title: 'gto.today — 매일 쌓이는 실력, 후회 없는 액션',
+    description: '하루 5분의 GTO 훈련. 오늘의 답을 내일의 감으로 바꾸는 포커 루틴.',
     images: ['/og.png'],
   },
   icons: {
