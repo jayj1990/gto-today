@@ -17,13 +17,30 @@ import { Ratelimit } from '@upstash/ratelimit';
  * always misses, rate-limit always allows. Production must set both
  * UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.
  */
+// Accept Upstash only when BOTH env vars are present AND the URL is
+// actually an https:// URL. Vercel's "Sensitive" flag can surface
+// placeholder strings (literal variable names or masks) at build time,
+// so a truthy check alone is not enough — Redis.fromEnv() throws a
+// `UrlError` when the URL is invalid and blows up the whole Next.js
+// build because /api/explain's module evaluates at collect-page-data.
+const upstashUrl = process.env['UPSTASH_REDIS_REST_URL'];
+const upstashToken = process.env['UPSTASH_REDIS_REST_TOKEN'];
 const hasUpstash =
-  !!process.env['UPSTASH_REDIS_REST_URL'] &&
-  !!process.env['UPSTASH_REDIS_REST_TOKEN'];
+  typeof upstashUrl === 'string' &&
+  upstashUrl.startsWith('https://') &&
+  typeof upstashToken === 'string' &&
+  upstashToken.length > 0;
 
-const redis = hasUpstash
-  ? Redis.fromEnv()
-  : null;
+let redis: Redis | null = null;
+if (hasUpstash) {
+  try {
+    redis = Redis.fromEnv();
+  } catch {
+    // Invalid env still makes fromEnv throw — fall back to disabled
+    // cache rather than taking the whole route down.
+    redis = null;
+  }
+}
 
 // 60 explanations per user per hour. Sliding window so a burst +
 // gradual decay reads as a single budget, not daily step-function.
