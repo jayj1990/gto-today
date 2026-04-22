@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   gradePostflopAction,
@@ -52,41 +51,9 @@ export function PostflopResult({
   onRetry,
   nextLabel = '다음 →',
 }: PostflopResultProps) {
-  const [explanation, setExplanation] = useState<string | null>(null);
-  const [explaining, setExplaining] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Reset the reveal state every time we land on a new spot.
-  useEffect(() => {
-    setExplanation(null);
-    setError(null);
-    setExplaining(false);
-  }, [spot?.id]);
-
-  const fetchExplanation = async () => {
-    if (!spot || explaining) return;
-    setExplaining(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/explain', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ spot, userAnswer, locale: 'ko', tone: 'beginner' }),
-      });
-      const data = (await res.json()) as { text?: string; error?: string };
-      if (!res.ok) {
-        setError(data.error ?? '해설을 불러오지 못했어요.');
-      } else if (data.text) {
-        setExplanation(data.text);
-      }
-    } catch {
-      setError('네트워크 오류로 해설을 불러오지 못했어요.');
-    } finally {
-      setExplaining(false);
-    }
-  };
-
   if (!open || !spot || !userAnswer) return null;
+
+  const teachingNote = spot.teachingNote;
 
   const grade = gradePostflopAction(spot, userAnswer);
   const total = Object.values(spot.mix).reduce((s, v) => s + (v ?? 0), 0);
@@ -225,44 +192,16 @@ export function PostflopResult({
           </div>
         </div>
 
-        {/* AI explanation — fetched on demand. Same pattern as preflop
-            ResultSheet so the two result screens feel identical. */}
-        <div className="mt-4">
-          {!explanation && !explaining && !error && (
-            <button
-              type="button"
-              onClick={fetchExplanation}
-              className="w-full rounded-[var(--radius-button)] border border-[color:var(--color-accent)]/40 bg-[color:var(--color-accent)]/10 px-4 py-3 font-medium text-[color:var(--color-accent)] active:scale-[0.98]"
-            >
-              해설 보기 →
-            </button>
-          )}
-          {explaining && (
-            <div className="rounded-[var(--radius-button)] border-hair surface px-4 py-3 text-center font-mono text-[12px] text-fg-muted">
-              AI 가 해설 작성 중…
-            </div>
-          )}
-          {error && (
-            <div className="rounded-[var(--radius-button)] border border-[color:var(--color-raise)]/40 bg-[color:var(--color-raise)]/5 px-4 py-3 text-[12px] text-[color:var(--color-raise)]">
-              {error}
-              <button
-                type="button"
-                onClick={fetchExplanation}
-                className="ml-2 underline underline-offset-2"
-              >
-                다시 시도
-              </button>
-            </div>
-          )}
-          {explanation && (
-            <div className="rounded-[var(--radius-button)] border-hair surface px-4 py-3 text-[13px] leading-[1.6] text-fg">
-              <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]">
-                왜 그런지
-              </p>
-              <p className="whitespace-pre-wrap">{explanation}</p>
-            </div>
-          )}
-        </div>
+        {/* Pre-computed teaching note (never a runtime API call — every
+            seed + solver spot ships with its own rationale). */}
+        {teachingNote && (
+          <div className="mt-4 rounded-[var(--radius-button)] border-hair surface px-4 py-3 text-[13px] leading-[1.6] text-fg">
+            <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]">
+              왜 그런지
+            </p>
+            <p className="whitespace-pre-wrap">{teachingNote}</p>
+          </div>
+        )}
 
         {/* Retry + next */}
         <div className="mt-5 mb-3 flex gap-2">
@@ -270,9 +209,13 @@ export function PostflopResult({
             <button
               type="button"
               onClick={onRetry}
-              className="h-14 flex-1 rounded-[var(--radius-button)] border-hair surface-raised font-medium active:scale-[0.98]"
+              aria-label="연습용 다시 풀어보기. 기록은 첫 답으로 유지됩니다."
+              className="flex h-14 flex-1 flex-col items-center justify-center rounded-[var(--radius-button)] border-hair surface-raised font-medium active:scale-[0.98]"
             >
-              다시 해보기
+              <span>다시 풀어보기</span>
+              <span className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-fg-muted">
+                연습용 · 기록 불변
+              </span>
             </button>
           )}
           <button

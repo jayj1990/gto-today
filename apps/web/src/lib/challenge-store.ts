@@ -67,12 +67,18 @@ export const useChallengeStore = create<ChallengeState>()(
         const { spots, cursor, answers } = get();
         const current = spots[cursor];
         if (!current) return;
+        // First answer is final — retrying the same spot is a learning
+        // aid only, not a grade override. Without this guard, a user
+        // who got it wrong and retried to sharp would rewrite the
+        // record and inflate their streak / accuracy.
+        if (answers.some((a) => a.spotId === current.id)) return;
         const record: AnswerRecord = { spotId: current.id, answer, grade, at: Date.now() };
         set({ answers: [...answers, record] });
       },
 
       popLastAnswer: () => {
-        set((s) => ({ answers: s.answers.slice(0, -1) }));
+        // Kept as a no-op for call-site compatibility. Retry no longer
+        // clears the recorded answer — the first submission is final.
       },
 
       advance: () => {
