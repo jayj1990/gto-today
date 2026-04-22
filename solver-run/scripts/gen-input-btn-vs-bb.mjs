@@ -1,0 +1,159 @@
+#!/usr/bin/env node
+// DRAFT — Tier 2 coverage expansion. Same board set as gen-input.mjs
+// but with BTN-open / BB-call ranges (OOP=BB, IP=BTN). Produces
+// ~50 inputs with `btn_vs_bb_*` prefix so they don't collide with
+// Tier 1 phase3/4/5/6 outputs.
+//
+// NOT WIRED UP YET — Jay reviews Tier 1 coverage (~450 spots from
+// chain3 phase 3-6) before deciding whether to kick off Tier 2.
+// See memory/gto_today_tier_plan.md.
+//
+// Usage (after Tier 1 review says "go"):
+//   node solver-run/scripts/gen-input-btn-vs-bb.mjs
+//   bash solver-run/run-btn-vs-bb.sh  # auto-generated runner
+import fs from 'node:fs';
+import path from 'node:path';
+
+const ROOT = 'C:/Users/Jay/poker-gto-guide';
+const OUT_DIR = path.join(ROOT, 'solver-run', 'inputs');
+fs.mkdirSync(OUT_DIR, { recursive: true });
+
+const bbVsBTN = JSON.parse(
+  fs.readFileSync(path.join(ROOT, 'apps/web/public/data/preflop/6max_100bb_bb_vs_BTN.json'), 'utf8'),
+);
+const btnRfi = JSON.parse(
+  fs.readFileSync(path.join(ROOT, 'apps/web/public/data/preflop/6max_100bb_rfi_BTN.json'), 'utf8'),
+);
+
+function rangeFromMix(mix, pick) {
+  const parts = [];
+  for (const [c, m] of Object.entries(mix)) {
+    const w = pick(m);
+    if (w > 0.005) parts.push(w >= 0.999 ? c : `${c}:${w.toFixed(3)}`);
+  }
+  return parts.join(',');
+}
+
+const OOP = rangeFromMix(bbVsBTN, (m) => m.call);
+const IP = rangeFromMix(btnRfi, (m) => m.raise);
+
+// Same board matrix as Tier 1 — so Tier 2 slots in the same texture
+// buckets and /charts/postflop gains parallel BTN-vs-BB rows.
+const BOARDS = [
+  ['btn_vs_bb_A_dry_A72', 'Ad,7h,2c'],
+  ['btn_vs_bb_A_dry_A83', 'As,8d,3c'],
+  ['btn_vs_bb_A_dry_AK4', 'As,Kd,4h'],
+  ['btn_vs_bb_A_dry_A95', 'Ah,9c,5d'],
+  ['btn_vs_bb_A_wet_AJT', 'As,Jh,Th'],
+  ['btn_vs_bb_A_wet_AKQ', 'Ad,Kh,Qc'],
+  ['btn_vs_bb_A_wet_A98', 'As,9h,8h'],
+  ['btn_vs_bb_A_wet_AT8', 'Ac,Th,8h'],
+  ['btn_vs_bb_A_paired_A77', 'Ac,7s,7d'],
+  ['btn_vs_bb_A_paired_A44', 'Ah,4c,4d'],
+  ['btn_vs_bb_K_dry_K72', 'Kh,7d,2c'],
+  ['btn_vs_bb_K_dry_K83', 'Ks,8d,3h'],
+  ['btn_vs_bb_K_dry_K95', 'Kc,9d,5s'],
+  ['btn_vs_bb_K_conn_KQJ', 'Ks,Qd,Jh'],
+  ['btn_vs_bb_K_conn_KT9', 'Kh,Tc,9d'],
+  ['btn_vs_bb_K_conn_K98', 'Kd,9h,8c'],
+  ['btn_vs_bb_K_paired_KK2', 'Ks,Kd,2c'],
+  ['btn_vs_bb_K_paired_KK7', 'Kh,Kc,7d'],
+  ['btn_vs_bb_Q_dry_Q83', 'Qs,8d,3c'],
+  ['btn_vs_bb_Q_dry_Q62', 'Qh,6c,2d'],
+  ['btn_vs_bb_Q_wet_QJT', 'Qd,Jh,Tc'],
+  ['btn_vs_bb_Q_monotone', 'Qh,Jh,9h'],
+  ['btn_vs_bb_Q_paired_Q66', 'Qc,6h,6d'],
+  ['btn_vs_bb_J_dry_J72', 'Jc,7h,2d'],
+  ['btn_vs_bb_J_wet_JT9', 'Jh,Th,9d'],
+  ['btn_vs_bb_J_wet_JT8', 'Js,Td,8h'],
+  ['btn_vs_bb_J_paired_J55', 'Jd,5c,5h'],
+  ['btn_vs_bb_T_dry_T52', 'Ts,5d,2h'],
+  ['btn_vs_bb_T_wet_T98', 'Th,9s,8d'],
+  ['btn_vs_bb_T_wet_T87', 'Tc,8h,7d'],
+  ['btn_vs_bb_M_dry_975', '9d,7c,5h'],
+  ['btn_vs_bb_M_wet_986', '9h,8h,6d'],
+  ['btn_vs_bb_M_wet_865', '8d,6c,5s'],
+  ['btn_vs_bb_M_dry_763', '7d,6c,3h'],
+  ['btn_vs_bb_M_wet_754', '7s,5h,4h'],
+  ['btn_vs_bb_M_dry_752', '7c,5d,2h'],
+  ['btn_vs_bb_L_dry_632', '6d,3c,2h'],
+  ['btn_vs_bb_L_wet_543', '5s,4h,3h'],
+  ['btn_vs_bb_L_wet_642', '6h,4h,2s'],
+  ['btn_vs_bb_P_mid_883', '8s,8d,3c'],
+  ['btn_vs_bb_P_mid_775', '7h,7c,5d'],
+  ['btn_vs_bb_P_low_664', '6s,6d,4h'],
+  ['btn_vs_bb_P_low_442', '4d,4c,2h'],
+  ['btn_vs_bb_P_low_332', '3s,3d,2c'],
+  ['btn_vs_bb_MT_T84_spade', 'Ts,8s,4s'],
+  ['btn_vs_bb_MT_963_heart', '9h,6h,3h'],
+  ['btn_vs_bb_MT_875_club', '8c,7c,5c'],
+  ['btn_vs_bb_TT_J98_h', 'Jh,9h,8d'],
+  ['btn_vs_bb_TT_KQT_s', 'Ks,Qs,Td'],
+  ['btn_vs_bb_TT_T76_d', 'Td,7d,6s'],
+];
+
+// BTN opens 2.5 → pot is 5.5BB same as CO-vs-BB. Effective stays 97.5.
+const POT = 5.5;
+const EFFECTIVE = 97.5;
+
+function scriptFor(name, board) {
+  return [
+    `set_pot ${POT}`,
+    `set_effective_stack ${EFFECTIVE}`,
+    `set_board ${board}`,
+    `set_range_ip ${IP}`,
+    `set_range_oop ${OOP}`,
+    'set_bet_sizes ip,flop,bet,33,75',
+    'set_bet_sizes ip,flop,raise,300',
+    'set_bet_sizes oop,flop,bet,33,75',
+    'set_bet_sizes oop,flop,donk,33',
+    'set_bet_sizes oop,flop,raise,300',
+    'set_bet_sizes ip,turn,bet,60,125',
+    'set_bet_sizes ip,turn,raise,300',
+    'set_bet_sizes oop,turn,bet,60,125',
+    'set_bet_sizes oop,turn,raise,300',
+    'set_bet_sizes ip,river,bet,60,125',
+    'set_bet_sizes ip,river,raise,300',
+    'set_bet_sizes oop,river,bet,60,125',
+    'set_bet_sizes oop,river,raise,300',
+    'set_allin_threshold 0.85',
+    'build_tree',
+    'set_thread_num 8',
+    'set_accuracy 0.25',
+    'set_max_iteration 200',
+    'set_print_interval 50',
+    'set_use_isomorphism 1',
+    'start_solve',
+    'set_dump_rounds 1',
+    `dump_result C:/Users/Jay/poker-gto-guide/solver-run/outputs/${name}.json`,
+  ].join('\n') + '\n';
+}
+
+for (const [name, board] of BOARDS) {
+  fs.writeFileSync(path.join(OUT_DIR, `${name}.txt`), scriptFor(name, board));
+}
+
+const runnerLines = [
+  '#!/bin/bash',
+  '# Tier 2 — BTN-vs-BB coverage. Auto-generated by gen-input-btn-vs-bb.mjs.',
+  'set -u',
+  'cd "C:/Users/Jay/Desktop/GTO-Today/TexasSolver-v0.2.0-Windows"',
+  'LOG="C:/Users/Jay/poker-gto-guide/solver-run/batch.log"',
+  'echo "=== btn-vs-bb batch start $(date) ===" >> "$LOG"',
+  ...BOARDS.map(([name]) => [
+    `if [ ! -s "C:/Users/Jay/poker-gto-guide/solver-run/outputs/${name}.json" ]; then`,
+    `  echo "[$(date +%H:%M:%S)] ${name} solving..." >> "$LOG"`,
+    `  ./console_solver.exe --input_file "C:/Users/Jay/poker-gto-guide/solver-run/inputs/${name}.txt" --resource_dir ./resources >> "$LOG" 2>&1`,
+    `  echo "[$(date +%H:%M:%S)] ${name} done" >> "$LOG"`,
+    `else`,
+    `  echo "[$(date +%H:%M:%S)] ${name} SKIPPED" >> "$LOG"`,
+    `fi`,
+  ].join('\n')),
+  'echo "=== btn-vs-bb batch done $(date) ===" >> "$LOG"',
+  '',
+].join('\n');
+
+fs.writeFileSync(path.join(ROOT, 'solver-run', 'run-btn-vs-bb.sh'), runnerLines);
+console.log(`wrote ${BOARDS.length} input scripts + run-btn-vs-bb.sh`);
+console.log(`OOP entries: ${OOP.split(',').length}, IP entries: ${IP.split(',').length}`);
+console.log(`estimated wall time: ~${Math.round(BOARDS.length * 5.5)}min`);
