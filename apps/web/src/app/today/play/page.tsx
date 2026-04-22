@@ -47,6 +47,7 @@ export default function TodayPlayPage() {
   const popLastAnswer = useChallengeStore((s) => s.popLastAnswer);
   const advance = useChallengeStore((s) => s.advance);
   const completeDay = useChallengeStore((s) => s.completeDay);
+  const logLifetime = useChallengeStore((s) => s.logLifetime);
 
   const gameType = useLiveStore((s) => s.config.gameType);
   const recordMistake = useMistakesStore((s) => s.recordMistake);
@@ -80,11 +81,20 @@ export default function TodayPlayPage() {
     if (!current || current.kind !== 'preflop') return;
     const grade = gradeAnswer(current.spot, action);
     submit(action, grade);
+    const today = dateKey || isoDateKR();
+    logLifetime({
+      kind: 'preflop',
+      spotId: current.spot.id,
+      grade,
+      dateKey: today,
+      position: current.spot.position,
+      ...(current.spot.opener ? { opener: current.spot.opener } : {}),
+    });
     if (grade === 'wrong') {
       recordMistake({
         kind: 'preflop',
         spotId: current.spot.id,
-        dateKey: dateKey || isoDateKR(),
+        dateKey: today,
         userAnswer: action,
         grade,
         spot: current.spot,
@@ -103,11 +113,19 @@ export default function TodayPlayPage() {
     // Challenge-store schema only knows preflop grades — we still
     // record the grade to keep streak/accuracy running.
     submit('fold', grade); // action arg is unused for grade lookup
+    const today = dateKey || isoDateKR();
+    logLifetime({
+      kind: 'postflop',
+      spotId: current.spot.id,
+      grade,
+      dateKey: today,
+      position: current.spot.context.heroPos,
+    });
     if (grade === 'wrong') {
       recordMistake({
         kind: 'postflop',
         spotId: current.spot.id,
-        dateKey: dateKey || isoDateKR(),
+        dateKey: today,
         userAnswer: action,
         grade,
         spot: current.spot,

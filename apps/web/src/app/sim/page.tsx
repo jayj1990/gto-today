@@ -17,6 +17,7 @@ import type { Position } from '@gto/poker-core';
 import { cn } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
 import { useLiveStore } from '@/lib/live-store';
+import { useChallengeStore } from '@/lib/challenge-store';
 import { useMistakesStore } from '@/lib/mistakes-store';
 import { isoDateKR } from '@/lib/date';
 import { haptic } from '@/lib/haptic';
@@ -77,11 +78,20 @@ export default function SimPage() {
   const handlePreflopAnswer = (action: GradedAction) => {
     if (!item || item.kind !== 'preflop') return;
     const grade = gradeAnswer(item.spot, action);
+    const today = isoDateKR();
+    useChallengeStore.getState().logLifetime({
+      kind: 'preflop',
+      spotId: item.spot.id,
+      grade,
+      dateKey: today,
+      position: item.spot.position,
+      ...(item.spot.opener ? { opener: item.spot.opener } : {}),
+    });
     if (grade === 'wrong') {
       recordMistake({
         kind: 'preflop',
         spotId: item.spot.id,
-        dateKey: isoDateKR(),
+        dateKey: today,
         userAnswer: action,
         grade,
         spot: item.spot,
@@ -95,11 +105,19 @@ export default function SimPage() {
   const handlePostflopAnswer = (action: PostflopAction) => {
     if (!item || item.kind !== 'postflop') return;
     const grade = gradePostflopAction(item.spot, action);
+    const today = isoDateKR();
+    useChallengeStore.getState().logLifetime({
+      kind: 'postflop',
+      spotId: item.spot.id,
+      grade,
+      dateKey: today,
+      position: item.spot.context.heroPos,
+    });
     if (grade === 'wrong') {
       recordMistake({
         kind: 'postflop',
         spotId: item.spot.id,
-        dateKey: isoDateKR(),
+        dateKey: today,
         userAnswer: action,
         grade,
         spot: item.spot,

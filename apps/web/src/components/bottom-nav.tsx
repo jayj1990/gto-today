@@ -47,10 +47,10 @@ const TABS: Tab[] = [
     icon: (a) => <IconReview active={a} />,
   },
   {
-    href: '/account',
-    label: '계정',
-    match: (p) => p.startsWith('/account'),
-    icon: (a) => <IconAccount active={a} />,
+    href: '/stats',
+    label: '통계',
+    match: (p) => p.startsWith('/stats'),
+    icon: (a) => <IconStats active={a} />,
   },
 ];
 
@@ -206,6 +206,41 @@ function IconAccount({ active }: IconProps) {
         stroke="currentColor"
         strokeWidth={active ? 2 : 1.6}
         strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+void IconAccount;
+
+function IconStats({ active }: IconProps) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect
+        x="3.5"
+        y="13"
+        width="3.5"
+        height="7"
+        rx="0.75"
+        stroke="currentColor"
+        strokeWidth={active ? 2 : 1.6}
+      />
+      <rect
+        x="10.25"
+        y="8"
+        width="3.5"
+        height="12"
+        rx="0.75"
+        stroke="currentColor"
+        strokeWidth={active ? 2 : 1.6}
+      />
+      <rect
+        x="17"
+        y="4"
+        width="3.5"
+        height="16"
+        rx="0.75"
+        stroke="currentColor"
+        strokeWidth={active ? 2 : 1.6}
       />
     </svg>
   );

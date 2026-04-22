@@ -11,6 +11,22 @@ export interface AnswerRecord {
   readonly at: number; // epoch ms
 }
 
+/** Cross-day append-only answer log. Feeds /stats. Capped at 500
+ *  entries so persisted state stays under a few hundred KB. */
+export interface LifetimeAnswer {
+  readonly spotId: string;
+  readonly kind: 'preflop' | 'postflop';
+  readonly grade: AnswerGrade;
+  readonly dateKey: string;
+  /** Hero's position (preflop) or heroPos (postflop). */
+  readonly position?: string;
+  /** Opener position if vs_open preflop spot. */
+  readonly opener?: string;
+  readonly at: number;
+}
+
+const LIFETIME_CAP = 500;
+
 interface ChallengeState {
   /** ISO date string this session belongs to (e.g. "2026-04-19"). */
   dateKey: string;
@@ -20,6 +36,8 @@ interface ChallengeState {
   cursor: number;
   /** Answers logged in order. */
   answers: AnswerRecord[];
+  /** Cross-day append-only log (newest first). */
+  lifetimeAnswers: LifetimeAnswer[];
   /** Longest ever streak (consecutive days completed). */
   bestStreak: number;
   /** Current streak — rolls over when user plays on consecutive days. */
@@ -31,6 +49,9 @@ interface ChallengeState {
   startDay: (dateKey: string, spots: TrainingSpot[]) => void;
   /** Submit an answer for the current spot. */
   submit: (answer: GradedAction, grade: AnswerGrade) => void;
+  /** Append to the cross-day lifetime log. Called explicitly (even for
+   *  postflop / sim, where daily `submit` semantics differ). */
+  logLifetime: (entry: Omit<LifetimeAnswer, 'at'>) => void;
   /** Remove the last submitted answer so the user can retry the same spot. */
   popLastAnswer: () => void;
   /** Advance past the current result modal to the next spot. */
@@ -53,6 +74,7 @@ export const useChallengeStore = create<ChallengeState>()(
       spots: [],
       cursor: 0,
       answers: [],
+      lifetimeAnswers: [],
       bestStreak: 0,
       currentStreak: 0,
       lastCompletedDate: null,
@@ -74,6 +96,22 @@ export const useChallengeStore = create<ChallengeState>()(
         if (answers.some((a) => a.spotId === current.id)) return;
         const record: AnswerRecord = { spotId: current.id, answer, grade, at: Date.now() };
         set({ answers: [...answers, record] });
+      },
+
+      logLifetime: (entry) => {
+        set((s) => {
+          // Dedup by (kind, spotId, dateKey) — retries shouldn't log
+          // twice, and the same daily spot should only count once.
+          const already = s.lifetimeAnswers.some(
+            (a) => a.kind === entry.kind && a.spotId === entry.spotId && a.dateKey === entry.dateKey,
+          );
+          if (already) return {};
+          const next = [{ ...entry, at: Date.now() }, ...s.lifetimeAnswers].slice(
+            0,
+            LIFETIME_CAP,
+          );
+          return { lifetimeAnswers: next };
+        });
       },
 
       popLastAnswer: () => {
@@ -115,11 +153,12 @@ export const useChallengeStore = create<ChallengeState>()(
         dateKey: state.dateKey,
         cursor: state.cursor,
         answers: state.answers,
+        lifetimeAnswers: state.lifetimeAnswers,
         bestStreak: state.bestStreak,
         currentStreak: state.currentStreak,
         lastCompletedDate: state.lastCompletedDate,
       }),
-      version: 1,
+      version: 2,
     },
   ),
 );
