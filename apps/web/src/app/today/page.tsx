@@ -37,9 +37,8 @@ export default function TodayIntroPage() {
           매일 새로 생성되는 10핸드. 세계 모든 gto.today 사용자가 오늘 같은 핸드를 풉니다.
         </p>
 
-        <dl className="mt-8 grid grid-cols-3 gap-3">
+        <dl className="mt-8 grid grid-cols-2 gap-3">
           <Summary label="포맷" value="6맥스 100BB" />
-          <Summary label="구성" value="프리 6 · 플랍 4" />
           <Summary label="게임" value="캐시 · MTT" />
         </dl>
 
