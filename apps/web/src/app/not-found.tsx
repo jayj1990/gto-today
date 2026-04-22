@@ -42,9 +42,6 @@ export default function NotFound() {
         <Link href="/charts" className="underline-offset-4 hover:underline">
           프리플랍 차트
         </Link>
-        <Link href="/charts/postflop" className="underline-offset-4 hover:underline">
-          포스트플랍 차트
-        </Link>
         <Link href="/live" className="underline-offset-4 hover:underline">
           실전 모드
         </Link>
