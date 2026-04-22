@@ -37,16 +37,17 @@ export default function TodayIntroPage() {
         </p>
 
         <dl className="mt-8 grid grid-cols-3 gap-3">
-          <Summary label="게임" value="MTT 6맥스" />
-          <Summary label="스택" value="100BB" />
-          <Summary label="시나리오" value="RFI · BB 디펜스" />
+          <Summary label="포맷" value="6맥스 100BB" />
+          <Summary label="구성" value="프리 6 · 플랍 4" />
+          <Summary label="게임" value="캐시 · MTT" />
         </dl>
 
         <div className="mt-8 rounded-[var(--radius-panel)] border-hair surface p-5">
           <h2 className="font-display text-[18px] font-semibold">오늘 연습할 것</h2>
           <ul className="mt-3 space-y-2 text-[14px] text-fg-muted">
-            <li>• 각 포지션의 오픈 레이즈 결정 (RFI)</li>
-            <li>• BB 포지션의 디펜스 — 콜 / 3벳 / 폴드</li>
+            <li>• 각 포지션의 오픈 레이즈 결정 (RFI) — UTG · MP · CO · BTN · SB</li>
+            <li>• BB 디펜스 — 모든 오프너에 대한 콜 / 3벳 / 폴드</li>
+            <li>• 플랍 의사결정 — 체크 / 벳 / 콜 / 폴드, 보드 텍스처별</li>
             <li>• 50/50 믹스부터 20/80 엣지 스팟까지 골고루</li>
           </ul>
         </div>
