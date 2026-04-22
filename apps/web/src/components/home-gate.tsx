@@ -137,9 +137,17 @@ export function HomeGate() {
           href="/live"
           eyebrow="Live Assist"
           title="실전 모드"
-          description="내 상황에서 GTO의 선택은?"
+          description="프리플랍 트리 · 포지션별 GTO 차트"
           variant="secondary"
           delay={0.12}
+        />
+        <PrimaryCard
+          href="/charts/postflop"
+          eyebrow="Postflop Charts"
+          title="포스트플랍 차트"
+          description="보드 텍스처별 사전계산 GTO 믹스"
+          variant="secondary"
+          delay={0.18}
         />
       </div>
     </main>

@@ -17,11 +17,14 @@ export default function ChartsPage() {
 
         <ChartNavigator />
 
-        <p className="mt-3 text-[11px] text-fg-muted">
+        <nav className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-fg-muted">
+          <Link href="/charts/postflop" className="underline-offset-4 hover:underline">
+            포스트플랍 차트 →
+          </Link>
           <Link href="/live/play" className="underline-offset-4 hover:underline">
             실전 모드로 →
           </Link>
-        </p>
+        </nav>
       </main>
     </>
   );
