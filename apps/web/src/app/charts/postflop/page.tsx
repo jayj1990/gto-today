@@ -20,8 +20,22 @@ import { CardView } from '@gto/ui';
 export default function PostflopChartPage() {
   const allSpots = useMemo(() => listPostflopSpots(), []);
   const grouped = useMemo(() => groupSpotsByTexture(allSpots), [allSpots]);
+  const totalBoards = useMemo(
+    () =>
+      new Set(
+        allSpots
+          .filter((s) => s.board.length === 3)
+          .map((s) => s.board.join(',')),
+      ).size,
+    [allSpots],
+  );
 
-  const [groupId, setGroupId] = useState(TEXTURE_GROUPS[0]!.id);
+  // Default to the first texture group that actually has data so
+  // first-paint isn't a "준비 중" empty screen.
+  const firstWithData =
+    TEXTURE_GROUPS.find((g) => (grouped[g.id] ?? []).length > 0)?.id ??
+    TEXTURE_GROUPS[0]!.id;
+  const [groupId, setGroupId] = useState(firstWithData);
   const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
 
   const groupSpots = grouped[groupId] ?? [];
@@ -47,11 +61,25 @@ export default function PostflopChartPage() {
             ← 프리플랍
           </Link>
         </header>
-        <p className="mb-3 rounded-[var(--radius-button)] border border-[color:var(--color-gold)]/30 bg-[color:var(--color-gold)]/10 px-3 py-2 text-[11px] leading-[1.5] text-[color:var(--color-gold)]">
-          사전계산 GTO · 6맥스 100BB · BB가 CO 오픈에 콜한 플랍. 텍스처별로
-          대표 보드 + 히어로 콤보별 액션 믹스. 커버리지 확장 중
-          (포지션·스택·프리플랍 라인 추가 예정).
-        </p>
+        <div className="mb-3 rounded-[var(--radius-button)] border border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 px-3 py-2.5 text-[color:var(--color-gold)]">
+          <div className="flex items-center gap-2">
+            <span
+              aria-hidden
+              className="inline-block h-2 w-2 animate-pulse rounded-full bg-[color:var(--color-gold)]"
+            />
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em]">
+              솔버 작동 중 · 실시간 업데이트
+            </p>
+            <span className="ml-auto font-mono text-[10px] tabular-nums">
+              {totalBoards}개 보드 수록
+            </span>
+          </div>
+          <p className="mt-1.5 text-[11px] leading-[1.55]">
+            사전계산 GTO · 6맥스 100BB · BB가 CO 2.5x 오픈에 콜한 플랍.
+            보드가 추가될 때마다 새로고침하면 더 많은 스팟을 볼 수 있어요.
+            빈 텍스처 탭은 아직 배치가 도달하지 않은 영역입니다.
+          </p>
+        </div>
 
         {/* Texture tabs */}
         <section className="mb-3 overflow-x-auto">
@@ -72,10 +100,15 @@ export default function PostflopChartPage() {
                     'rounded-[var(--radius-button)] border px-3 py-1.5 font-mono text-[11px] whitespace-nowrap',
                     active
                       ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/15 text-[color:var(--color-accent)]'
-                      : 'border-hair surface text-fg-muted disabled:opacity-40',
+                      : 'border-hair surface text-fg-muted disabled:opacity-40 disabled:cursor-not-allowed',
                   )}
                 >
-                  {g.label} · {count}
+                  {g.label}
+                  {count > 0 ? (
+                    <span className="ml-1 tabular-nums">· {count}</span>
+                  ) : (
+                    <span className="ml-1 text-[9px] uppercase tracking-[0.16em] opacity-70">· 준비 중</span>
+                  )}
                 </button>
               );
             })}
@@ -84,12 +117,15 @@ export default function PostflopChartPage() {
 
         {/* Board list for the active texture group */}
         {boards.length === 0 ? (
-          <div className="mt-4 rounded-[var(--radius-panel)] border-hair surface p-6 text-center">
-            <p className="font-mono text-[12px] text-fg-muted">
-              이 텍스처는 아직 솔빙된 보드가 없어요.
+          <div className="mt-4 rounded-[var(--radius-panel)] border border-[color:var(--color-gold)]/30 bg-[color:var(--color-gold)]/5 p-6 text-center">
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-gold)]">
+              아직 배치 도달 전
             </p>
-            <p className="mt-2 text-[11px] text-fg-muted">
-              다른 텍스처를 선택하거나, 솔버 배치가 끝난 후 다시 확인하세요.
+            <p className="mt-2 text-[13px] text-fg">
+              이 텍스처는 솔버가 곧 계산해서 채워 넣어요.
+            </p>
+            <p className="mt-1 text-[11px] text-fg-muted">
+              다른 텍스처 탭으로 먼저 확인하거나 나중에 다시 열어주세요.
             </p>
           </div>
         ) : (
