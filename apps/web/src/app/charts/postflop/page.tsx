@@ -38,7 +38,10 @@ export default function PostflopChartPage() {
   const [groupId, setGroupId] = useState(firstWithData);
   const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
 
-  const groupSpots = grouped[groupId] ?? [];
+  // Memoise groupSpots so downstream hooks have a stable array identity.
+  // `grouped[groupId] ?? []` allocates a fresh empty array on every
+  // render otherwise, invalidating the memo cache.
+  const groupSpots = useMemo(() => grouped[groupId] ?? [], [grouped, groupId]);
   const boards = useMemo(() => distinctBoards(groupSpots), [groupSpots]);
 
   const selectedSpots = useMemo(

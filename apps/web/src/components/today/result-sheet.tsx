@@ -34,14 +34,6 @@ function particleSubject(word: string): string {
   return (last - 0xac00) % 28 === 0 ? '가' : '이';
 }
 
-// Unified action palette — matches ActionBar buttons so the mix-bar
-// segments map visually to the button the user pressed.
-const ACTION_COLOR: Record<GradedAction, string> = {
-  fold: 'var(--color-fold)', // blue
-  check: 'var(--color-fg-muted)', // neutral
-  call: 'var(--color-call)', // green
-  raise: 'var(--color-raise)', // red
-};
 
 /** Pick the single highest-frequency GTO action for a spot. */
 function dominantAction(spot: TrainingSpot): GradedAction {

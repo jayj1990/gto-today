@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   generateRandomItem,
@@ -45,7 +45,7 @@ export default function SimPage() {
   const total = sharp + acceptable + wrong;
   const accuracy = total === 0 ? 0 : ((sharp + acceptable) / total) * 100;
 
-  const loadNext = async () => {
+  const loadNext = useCallback(async () => {
     setLoading(true);
     const next = await generateRandomItem({
       positions: ALL_POSITIONS,
@@ -54,11 +54,11 @@ export default function SimPage() {
     });
     if (next) setItem(next);
     setLoading(false);
-  };
+  }, [gameType]);
 
   useEffect(() => {
     void loadNext();
-  }, []);
+  }, [loadNext]);
 
   const recordGrade = (grade: AnswerGrade) => {
     setLastGrade(grade);

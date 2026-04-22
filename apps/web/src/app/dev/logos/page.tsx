@@ -361,8 +361,11 @@ function PreviewPanel({
         {background === 'dark' ? 'Tonight (기본 테마)' : 'Light (배경 대비용)'}
       </p>
       <div className="flex items-end gap-6">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt={alt} width={128} height={128} style={{ borderRadius: 18, objectFit: 'contain' }} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt="" width={72} height={72} style={{ borderRadius: 12, objectFit: 'contain' }} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt="" width={40} height={40} style={{ borderRadius: 8, objectFit: 'contain' }} />
       </div>
       <p
