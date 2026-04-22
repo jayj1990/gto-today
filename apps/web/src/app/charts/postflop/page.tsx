@@ -46,6 +46,11 @@ export default function PostflopChartPage() {
             ← 프리플랍
           </Link>
         </header>
+        <p className="mb-3 rounded-[var(--radius-button)] border border-[color:var(--color-gold)]/30 bg-[color:var(--color-gold)]/10 px-3 py-2 text-[11px] leading-[1.5] text-[color:var(--color-gold)]">
+          사전계산 GTO · 6맥스 100BB · BB가 CO 오픈에 콜한 플랍. 텍스처별로
+          대표 보드 + 히어로 콤보별 액션 믹스. 커버리지 확장 중
+          (포지션·스택·프리플랍 라인 추가 예정).
+        </p>
 
         {/* Texture tabs */}
         <section className="mb-3 overflow-x-auto">

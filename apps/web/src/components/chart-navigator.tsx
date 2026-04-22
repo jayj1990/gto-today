@@ -135,19 +135,23 @@ export function ChartNavigator({
                 플랍 도달
               </h2>
               <p className="mt-2 text-[13px] text-fg-muted">
-                레이즈·콜이 끝났어요. 포스트플랍 차트는 준비 중이라, 지금은
-                프리플랍 세션만 종료합니다.
+                레이즈·콜이 끝났어요. 플랍 액션은 사전계산 차트에서 볼 수 있어요.
               </p>
-              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-fg-muted">
-                새 핸드로 연습을 이어가세요
-              </p>
-              <button
-                type="button"
-                onClick={handleRestart}
-                className="mt-4 inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-gold-gradient px-5 font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
-              >
-                새 핸드 시작 ↻
-              </button>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={handleRestart}
+                  className="inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-gold-gradient px-4 font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+                >
+                  새 핸드 ↻
+                </button>
+                <a
+                  href="/charts/postflop"
+                  className="inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] border-hair surface px-4 text-[13px] font-semibold text-fg active:scale-[0.98]"
+                >
+                  포스트플랍 →
+                </a>
+              </div>
             </section>
           ) : (
             <>
