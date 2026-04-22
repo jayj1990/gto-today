@@ -165,7 +165,10 @@ function scriptFor(name, cards) {
     'set_print_interval 50',
     'set_use_isomorphism 1',
     'start_solve',
-    'set_dump_rounds 1',
+    // dump all 3 streets so the parser can pull turn + river spots
+    // too. File size jumps ~8-15x per output but disk is cheap; UX
+    // depth (3-street drill) is the whole point of Phase C.
+    'set_dump_rounds 3',
     `dump_result C:/Users/Jay/poker-gto-guide/solver-run/outputs/${name}.json`,
   ].join('\n') + '\n';
 }

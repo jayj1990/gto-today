@@ -204,6 +204,198 @@ function buildSpot(sourceName, board, root, { c, freqs }, meta) {
   };
 }
 
+/**
+ * Walk into a solver subtree and pull turn + river spots out, with
+ * sampling limits so we don't explode the output size.
+ *
+ *   • Per chance_node (turn / river deal), sample at most N dealt
+ *     cards — chosen deterministically so regen stays stable.
+ *   • Per action_node, emit one spot iff the position-to-act is the
+ *     hero (OOP preflop = BB in Tier 1 inputs; IP for Tier 3 BTN 3bet,
+ *     etc.). Short-circuit sample size so we don't end up with
+ *     50+ spots per flop.
+ *
+ *   set_dump_rounds 1  → this returns [] (no subtree dumped).
+ *   set_dump_rounds 2  → flop + turn spots.
+ *   set_dump_rounds 3  → flop + turn + river spots.
+ */
+const TURN_SAMPLE = 4;   // cards per turn chance
+const RIVER_SAMPLE = 3;  // cards per river chance
+const MAX_LINE_DEPTH = 6;
+
+function extractDeeperStreets(flopRoot, flopBoard, sourceName, meta) {
+  const out = [];
+  const seenHeroCombosAt = new Set(); // spotId dedup — same-hand-on-same-street only once
+
+  const seed = hashString(sourceName) >>> 0;
+  const rng = mulberry32(seed);
+
+  walk(flopRoot, flopBoard, [], 0);
+  return out;
+
+  function walk(node, board, lineTrace, depth) {
+    if (!node || depth > MAX_LINE_DEPTH) return;
+
+    if (node.node_type === 'chance_node') {
+      // dealcards may be absent (dump_rounds=1) — bail cleanly.
+      if (!node.dealcards) return;
+      const street = board.length === 3 ? 'turn' : 'river';
+      const limit = street === 'turn' ? TURN_SAMPLE : RIVER_SAMPLE;
+      const cards = Object.keys(node.dealcards);
+      const picked = sampleCards(cards, limit, rng);
+      for (const card of picked) {
+        const sub = node.dealcards[card];
+        walk(sub, [...board, card], lineTrace, depth + 1);
+      }
+      return;
+    }
+
+    if (node.node_type === 'action_node') {
+      // Emit a spot for this decision point if it's postflop (board
+      // length > 3 means turn/river already) AND strategy data is
+      // present.
+      if (board.length > 3 && node.strategy && node.strategy.strategy) {
+        const heroPicks = pickHeroCombos(node, board);
+        for (const pick of heroPicks) {
+          const spotId = `${sourceName}_${board.join('')}_${pick.c}`;
+          if (seenHeroCombosAt.has(spotId)) continue;
+          seenHeroCombosAt.add(spotId);
+          const street = board.length === 4 ? 'turn' : 'river';
+          out.push(buildDeeperSpot(sourceName, board, node, pick, meta, street, lineTrace));
+        }
+      }
+
+      // Recurse into chosen branches — we follow top-frequency paths
+      // to keep the spot tree coherent (a "check-check, bet, check"
+      // sequence rather than random noise).
+      if (node.childrens) {
+        const childActions = Object.keys(node.childrens);
+        // Take the two most-played branches so the trace stays thin.
+        const sorted = rankBranches(node, childActions);
+        const topBranches = sorted.slice(0, 2);
+        for (const action of topBranches) {
+          walk(node.childrens[action], board, [...lineTrace, action], depth + 1);
+        }
+      }
+    }
+  }
+}
+
+// Rank branches by their aggregate frequency across all hero combos.
+// Pure-fold lines sink to the bottom so we don't waste recursion on them.
+function rankBranches(node, actions) {
+  const strat = node.strategy?.strategy ?? {};
+  const actionList = node.strategy?.actions ?? node.actions ?? actions;
+  const totals = new Array(actionList.length).fill(0);
+  let count = 0;
+  for (const freqs of Object.values(strat)) {
+    for (let i = 0; i < actionList.length; i++) totals[i] += freqs[i] ?? 0;
+    count++;
+  }
+  const ranked = actions
+    .map((a) => {
+      const idx = actionList.indexOf(a);
+      return { a, freq: idx >= 0 && count > 0 ? totals[idx] / count : 0 };
+    })
+    .sort((a, b) => b.freq - a.freq)
+    .map((x) => x.a);
+  return ranked;
+}
+
+// Deterministic RNG from a seed — lets `pnpm typecheck` re-emit
+// SOLVER_SPOTS with the same sampled cards every run.
+function mulberry32(seed) {
+  let s = seed;
+  return () => {
+    s |= 0;
+    s = (s + 0x6d2b79f5) | 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function hashString(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h;
+}
+
+function sampleCards(cards, n, rng) {
+  if (cards.length <= n) return cards;
+  // Fisher-Yates partial shuffle on a copy.
+  const arr = [...cards];
+  for (let i = 0; i < n; i++) {
+    const j = i + Math.floor(rng() * (arr.length - i));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0, n);
+}
+
+function buildDeeperSpot(sourceName, board, node, { c, freqs }, meta, street, lineTrace) {
+  const actionList = node.strategy?.actions ?? node.actions ?? [];
+  const mix = {};
+  for (let i = 0; i < actionList.length; i++) {
+    const act = mapAction(actionList[i], meta.pot);
+    if (!act) continue;
+    mix[act] = (mix[act] ?? 0) + (freqs[i] ?? 0);
+  }
+  const available = Object.keys(mix).sort();
+  // Texture classification works on the first 3 cards (flop) since
+  // turn/river just add one card each — the flop-texture bucket is
+  // the relevant UX grouping either way.
+  const texture = classifyTexture(board.slice(0, 3));
+  const hero = heroCardsFromCombo(c);
+
+  const sortedMix = Object.entries(mix).sort((a, b) => b[1] - a[1]);
+  const [top, topFreq] = sortedMix[0] ?? ['check', 0];
+  const actionKR = {
+    check: '체크',
+    bet33: '1/3 벳',
+    bet50: '1/2 벳',
+    bet75: '3/4 벳',
+    bet_pot: '팟 벳',
+    bet_overbet: '오버벳',
+    call: '콜',
+    fold: '폴드',
+    raise_small: '레이즈',
+    raise_big: '올인급 레이즈',
+  };
+  const lineText = lineTrace.length > 0 ? ` · 라인: ${lineTrace.join(' → ')}` : '';
+  const teachingNote =
+    topFreq >= 0.85
+      ? `${street} 결정 · ${actionKR[top] ?? top}이 단독 정답에 가깝습니다.${lineText}`
+      : `혼합 전략 — ${actionKR[top] ?? top}이 가장 빈번${sortedMix[1] ? `, 대체는 ${actionKR[sortedMix[1][0]] ?? sortedMix[1][0]}` : ''}.${lineText}`;
+
+  const isMTT = meta.format === 'mtt';
+  const preflopSummary = isMTT ? 'CO 오픈 · BB 콜 (MTT · 1BB 앤티)' : 'CO 오픈 · BB 콜';
+
+  return {
+    id: `pf_${sourceName}_${street}_${board.join('')}_${c}`,
+    street,
+    board,
+    hero,
+    texture,
+    context: {
+      heroPos: 'BB',
+      villainPos: 'CO',
+      potType: isMTT ? 'mtt' : 'srp',
+      spr: meta.eff / meta.pot,
+      potBB: meta.pot,
+      effStackBB: meta.eff,
+      preflopSummary,
+    },
+    facingBetBB: 0,
+    mix,
+    availableActions: available,
+    teachingNote,
+  };
+}
+
 function main() {
   const files = fs.readdirSync(INPUT).filter((f) => f.endsWith('.json'));
   console.log(`found ${files.length} solver outputs`);
@@ -254,7 +446,17 @@ function main() {
     for (const pick of heroPicks) {
       spots.push(buildSpot(sourceName, board, root, pick, meta));
     }
-    console.log(`  ✓ ${f} → ${heroPicks.length} spots (${meta.format})`);
+    let streetCount = heroPicks.length;
+
+    // Extend into turn + river subtrees when the solver was asked to
+    // dump them (set_dump_rounds 3). For flop-only dumps the recursion
+    // short-circuits immediately at the first chance_node, so this is
+    // a no-op for legacy data.
+    const turnRiverSpots = extractDeeperStreets(root, board, sourceName, meta);
+    for (const s of turnRiverSpots) spots.push(s);
+    streetCount += turnRiverSpots.length;
+
+    console.log(`  ✓ ${f} → ${streetCount} spots (${meta.format})`);
   }
 
   fs.mkdirSync(path.dirname(OUT_JSON), { recursive: true });
