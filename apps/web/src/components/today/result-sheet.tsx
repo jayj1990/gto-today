@@ -181,7 +181,7 @@ export function ResultSheet({
 
             <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-fg-muted">
               {spot.scenario === 'vs_open'
-                ? `BB vs ${spot.opener} · ${spot.combo}`
+                ? `${spot.position} vs ${spot.opener} · ${spot.combo}`
                 : `${spot.position} · ${spot.combo}`}
             </p>
             <div className="relative">

@@ -52,14 +52,14 @@ export function StreakCalendar({ className, days = 7 }: StreakCalendarProps) {
           <li
             key={c.dateKey}
             className="flex flex-col items-center gap-1"
-            title={`${c.dateKey} · ${c.count}개 응답`}
+            title={`${c.dateKey} · ${c.count}개 응답 · 정확도 ${Math.round(c.accuracy * 100)}%`}
           >
             <div
               aria-hidden
               className="w-full rounded-sm"
               style={{
                 height: 34,
-                background: shadeFor(c.count),
+                background: shadeFor(c.count, c.accuracy),
                 border: c.isToday
                   ? '1.5px solid var(--color-accent)'
                   : '1px solid rgba(255,255,255,0.06)',
@@ -72,16 +72,21 @@ export function StreakCalendar({ className, days = 7 }: StreakCalendarProps) {
         ))}
       </ul>
       <div className="mt-2 flex items-center justify-end gap-1.5 text-[9px] text-fg-muted">
-        <span>적음</span>
-        {[0, 2, 5, 10].map((n) => (
+        <span>부정확</span>
+        {[
+          { c: 1, a: 0.1 },
+          { c: 1, a: 0.45 },
+          { c: 1, a: 0.7 },
+          { c: 1, a: 0.95 },
+        ].map((s, i) => (
           <span
-            key={n}
+            key={i}
             aria-hidden
             className="inline-block h-2.5 w-2.5 rounded-sm"
-            style={{ background: shadeFor(n) }}
+            style={{ background: shadeFor(s.c, s.a) }}
           />
         ))}
-        <span>많음</span>
+        <span>정확</span>
       </div>
     </section>
   );
@@ -91,14 +96,22 @@ interface Cell {
   dateKey: string;
   label: string;
   count: number;
+  accuracy: number; // 0..1, weighted (sharp = 1, acceptable = 0.5, wrong = 0)
   isToday: boolean;
 }
 
-function buildCells(log: { dateKey: string }[], days: number): Cell[] {
+function buildCells(
+  log: { dateKey: string; grade: 'sharp' | 'acceptable' | 'wrong' }[],
+  days: number,
+): Cell[] {
   const today = new Date();
-  const counts = new Map<string, number>();
+  const perDay = new Map<string, { total: number; score: number }>();
   for (const a of log) {
-    counts.set(a.dateKey, (counts.get(a.dateKey) ?? 0) + 1);
+    const rec = perDay.get(a.dateKey) ?? { total: 0, score: 0 };
+    rec.total += 1;
+    if (a.grade === 'sharp') rec.score += 1;
+    else if (a.grade === 'acceptable') rec.score += 0.5;
+    perDay.set(a.dateKey, rec);
   }
   const cells: Cell[] = [];
   const todayKey = iso(today);
@@ -106,21 +119,29 @@ function buildCells(log: { dateKey: string }[], days: number): Cell[] {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
     const key = iso(d);
+    const rec = perDay.get(key);
+    const count = rec?.total ?? 0;
+    const accuracy = count > 0 && rec ? rec.score / rec.total : 0;
     cells.push({
       dateKey: key,
       label: shortDay(d),
-      count: counts.get(key) ?? 0,
+      count,
+      accuracy,
       isToday: key === todayKey,
     });
   }
   return cells;
 }
 
-function shadeFor(count: number): string {
+/** Hybrid shade — empty days stay dim regardless of streak, active
+ *  days get intensity from weighted accuracy (sharp = 1, acceptable
+ *  = 0.5, wrong = 0). So "풀었다 × 잘했다" = darkest gold. */
+function shadeFor(count: number, accuracy: number): string {
   if (count === 0) return 'rgba(244, 239, 230, 0.05)';
-  if (count < 4) return 'rgba(212, 175, 55, 0.32)';
-  if (count < 8) return 'rgba(212, 175, 55, 0.6)';
-  return 'var(--gradient-gold, linear-gradient(135deg, #E8CC72, #D4AF37))';
+  if (accuracy < 0.3) return 'rgba(212, 175, 55, 0.22)';
+  if (accuracy < 0.55) return 'rgba(212, 175, 55, 0.4)';
+  if (accuracy < 0.8) return 'rgba(212, 175, 55, 0.65)';
+  return 'linear-gradient(135deg, #E8CC72, #D4AF37)';
 }
 
 function iso(d: Date): string {

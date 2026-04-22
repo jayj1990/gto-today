@@ -140,8 +140,8 @@ export function HandCard({ spot, className, celebratePot = false }: HandCardProp
       <p className="mt-4 text-center text-[13px] text-fg-muted">
         {spot.scenario === 'vs_open' ? (
           <>
-            <span className="text-fg/80">{spot.opener}</span> 오픈 {spot.openSize}BB —
-            BB 디펜스 차례.
+            <span className="text-fg/80">{spot.opener}</span> 오픈 {spot.openSize}BB —{' '}
+            <span className="text-fg/80">{spot.position}</span> 디펜스 차례.
           </>
         ) : foldedSeats.length === 0 ? (
           <>히어로가 먼저 액션합니다.</>

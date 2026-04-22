@@ -170,7 +170,11 @@ export function PokerTable({
             // flip animation; turn/river slide-in so they read as a
             // single new street rather than "three flops again".
             const isFlop = i < 3;
-            const streetDelay = isFlop ? i * 110 : 0;
+            // Bigger stagger so users see each flop card land one at a
+            // time rather than in a single blur. 180ms lands plainly
+            // readable without feeling slow (total flop sequence
+            // ~1.2s from first card → third card upright).
+            const streetDelay = isFlop ? i * 180 : 0;
             const animClass = isFlop ? 'animate-card-flip-in' : 'animate-board-deal-in';
             return (
               <div
@@ -281,7 +285,7 @@ export function PokerTable({
                   <span className="animate-card-slide-in" style={{ animationDelay: '0ms' }}>
                     {renderCard(heroCards![0], 'sm')}
                   </span>
-                  <span className="animate-card-slide-in" style={{ animationDelay: '80ms' }}>
+                  <span className="animate-card-slide-in" style={{ animationDelay: '140ms' }}>
                     {renderCard(heroCards![1], 'sm')}
                   </span>
                 </div>

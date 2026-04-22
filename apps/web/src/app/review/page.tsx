@@ -180,7 +180,7 @@ export default function ReviewPage() {
             {visibleCurrent.kind === 'preflop' && (
               <p className="mt-3 text-center text-[12px] text-fg-muted">
                 {visibleCurrent.spot.scenario === 'vs_open'
-                  ? `${visibleCurrent.spot.opener} 오픈 · BB 디펜스`
+                  ? `${visibleCurrent.spot.opener} 오픈 · ${visibleCurrent.spot.position} 디펜스`
                   : `${visibleCurrent.spot.position} RFI`}
               </p>
             )}

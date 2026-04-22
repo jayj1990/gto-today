@@ -280,7 +280,7 @@
     }
   }
   .animate-chip-bet-in {
-    animation: gto-chip-bet-in 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation: gto-chip-bet-in 620ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
   }
 
   @keyframes gto-board-deal-in {
@@ -300,7 +300,7 @@
     }
   }
   .animate-board-deal-in {
-    animation: gto-board-deal-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: gto-board-deal-in 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   @keyframes gto-card-slide-in {
@@ -314,7 +314,7 @@
     }
   }
   .animate-card-slide-in {
-    animation: gto-card-slide-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: gto-card-slide-in 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   @keyframes gto-pulse-ring {
@@ -346,7 +346,7 @@
     }
   }
   .animate-card-flip-in {
-    animation: gto-card-flip-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: gto-card-flip-in 820ms cubic-bezier(0.22, 1, 0.36, 1) both;
     backface-visibility: hidden;
   }
 
@@ -367,7 +367,7 @@
     }
   }
   .animate-pot-pulse {
-    animation: gto-pot-pulse 720ms cubic-bezier(0.22, 1, 0.36, 1);
+    animation: gto-pot-pulse 1100ms cubic-bezier(0.22, 1, 0.36, 1);
     display: inline-block;
     transform-origin: center;
   }
@@ -420,7 +420,7 @@
     }
   }
   .animate-chip-toss {
-    animation: gto-chip-toss 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: gto-chip-toss 1200ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   /* Shimmer skeleton — used by loading placeholders while a spot /
