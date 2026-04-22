@@ -3,9 +3,10 @@ import { RANKS, SUITS } from '@gto/poker-core';
 import { allCombos } from './combos';
 import { getPreflopChart, type PreflopStrategyJson } from './preflop';
 import {
-  getBbDefenseChart,
-  SUPPORTED_OPENERS,
+  DEFENSE_PAIRINGS,
+  getDefenseChart,
   type BbDefenseStrategyJson,
+  type DefensePairing,
 } from './bb-defense';
 import { listPostflopSpots, type PostflopSpot } from './postflop';
 
@@ -131,7 +132,11 @@ function mixedness(raise: number): number {
  * to feel monotone ("everything is always mixed"). Flat sampling exposes
  * the true shape of the range instead.
  */
-function pickCombo(chart: PreflopStrategyJson, rng: () => number): ComboKey {
+function pickCombo(
+  chart: PreflopStrategyJson,
+  rng: () => number,
+  difficulty: 'normal' | 'hard' = 'hard',
+): ComboKey {
   const scored: Array<{ combo: ComboKey; weight: number }> = [];
   for (const c of allCombos()) {
     if (UNIVERSAL_RAISES.has(c)) continue;
@@ -141,10 +146,12 @@ function pickCombo(chart: PreflopStrategyJson, rng: () => number): ComboKey {
     // Also skip near-100% combos that aren't universal but are still trivial
     // at this position (e.g. AQs UTG is 100% — nothing to learn).
     if (r >= 0.97) continue;
-    // Flat weight with a tiny mixed-ness nudge so truly fresh 50/50 spots
-    // don't vanish among the many 70/30 ones — 1.3× vs 1.0×.
     const m = mixedness(r);
-    scored.push({ combo: c, weight: 1 + m * 0.3 });
+    // Hard mode: strong bias toward genuinely mixed ratios (40–60%
+    // raise) where memorisation fails and you have to understand why.
+    // Normal mode: gentle 1.3× nudge so 50/50 spots don't get drowned.
+    const weight = difficulty === 'hard' ? 1 + m * 3 : 1 + m * 0.3;
+    scored.push({ combo: c, weight });
   }
   if (scored.length === 0) {
     const any = allCombos()[0]!;
@@ -188,14 +195,25 @@ function classifyDefense(mix: { call: number; raise: number; fold: number }): Tr
   return 'fold';
 }
 
-function pickBbCombo(chart: BbDefenseStrategyJson, rng: () => number): ComboKey {
+function pickDefenseCombo(
+  chart: BbDefenseStrategyJson,
+  rng: () => number,
+  difficulty: 'normal' | 'hard' = 'hard',
+): ComboKey {
   const pool: Array<{ combo: ComboKey; weight: number }> = [];
   for (const c of allCombos()) {
     const entry = chart[c];
-    if (!entry || entry.fold >= 0.97) continue;
-    // Slight preference for combos with non-trivial decisions.
-    const interesting = 1 - Math.max(entry.call, entry.raise, entry.fold);
-    pool.push({ combo: c, weight: 1 + interesting * 0.5 });
+    if (!entry) continue;
+    // Skip auto-folds (97%+ fold) — trivial.
+    if (entry.fold >= 0.97) continue;
+    // Skip auto-3bets (AA/KK) — already excluded elsewhere but gate here too.
+    if (UNIVERSAL_RAISES.has(c)) continue;
+    const top = Math.max(entry.call, entry.raise, entry.fold);
+    // "interesting" = lower top-action frequency → more balanced → harder.
+    const interesting = 1 - top;
+    // In hard mode bias much more strongly toward mixed decisions.
+    const weight = difficulty === 'hard' ? 1 + interesting * 4 : 1 + interesting * 0.5;
+    pool.push({ combo: c, weight });
   }
   if (pool.length === 0) return allCombos()[0]!;
   const total = pool.reduce((a, b) => a + b.weight, 0);
@@ -206,6 +224,13 @@ function pickBbCombo(chart: BbDefenseStrategyJson, rng: () => number): ComboKey 
   }
   return pool[pool.length - 1]!.combo;
 }
+
+// Legacy export kept so earlier call-sites (if any import from the
+// index) still resolve. pickBbCombo is now just a thin alias.
+function pickBbCombo(chart: BbDefenseStrategyJson, rng: () => number): ComboKey {
+  return pickDefenseCombo(chart, rng, 'hard');
+}
+void pickBbCombo;
 
 const OPENER_SIZE: Record<Position, number> = {
   UTG: 2.5,
@@ -247,34 +272,42 @@ export async function generateDailySpots(
     if (chart) rfiCharts.set(p, chart);
   }
 
-  // Pre-load BB-defense charts per supported opener.
-  const bbCharts = new Map<Position, BbDefenseStrategyJson>();
-  for (const opener of SUPPORTED_OPENERS) {
-    const chart = await getBbDefenseChart(opener, format, gameType);
-    if (chart) bbCharts.set(opener, chart);
+  // Pre-load every defender × opener defense chart we ship. The daily
+  // lineup samples uniformly across this matrix so the user sees BB
+  // defense, BTN 3bet, SB squeeze, CO flat etc. — not just BB.
+  const defenseCharts = new Map<string, { pairing: DefensePairing; chart: BbDefenseStrategyJson }>();
+  for (const pairing of DEFENSE_PAIRINGS) {
+    if (format !== '6max') continue; // 9max defense charts aren't shipped
+    const chart = await getDefenseChart(pairing.defender, pairing.opener, format, gameType);
+    if (chart) {
+      defenseCharts.set(`${pairing.defender}-${pairing.opener}`, { pairing, chart });
+    }
   }
+  const defenseKeys = Array.from(defenseCharts.keys());
 
   const out: TrainingSpot[] = [];
   for (let i = 0; i < count; i++) {
-    const useBbDefense = bbCharts.size > 0 && rng() < 0.4;
+    // 60% defense / 40% RFI — defense spots cover more positional
+    // variety and are generally harder (3-way decisions), so they
+    // carry the bulk of the learning weight in hard mode.
+    const useDefense = defenseCharts.size > 0 && rng() < 0.6;
 
-    if (useBbDefense) {
-      const openers = Array.from(bbCharts.keys());
-      const opener = openers[Math.floor(rng() * openers.length)]!;
-      const chart = bbCharts.get(opener)!;
-      const combo = pickBbCombo(chart, rng);
+    if (useDefense) {
+      const key = defenseKeys[Math.floor(rng() * defenseKeys.length)]!;
+      const { pairing, chart } = defenseCharts.get(key)!;
+      const combo = pickDefenseCombo(chart, rng, 'hard');
       const entry = chart[combo] ?? { call: 0, raise: 0, fold: 1 };
       const hero = comboToCards(combo, rng);
       out.push({
-        id: `${dateKey}-${i}-${combo}-BB-vs-${opener}`,
+        id: `${dateKey}-${i}-${combo}-${pairing.defender}-vs-${pairing.opener}`,
         combo,
         hero,
-        position: 'BB',
+        position: pairing.defender,
         format,
         stackBB: 100,
         scenario: 'vs_open',
-        opener,
-        openSize: OPENER_SIZE[opener],
+        opener: pairing.opener,
+        openSize: OPENER_SIZE[pairing.opener],
         gtoRaise: entry.raise,
         gtoFold: entry.fold,
         gtoCall: entry.call,
@@ -285,7 +318,7 @@ export async function generateDailySpots(
       const position = positions[i % positions.length]!;
       const chart = rfiCharts.get(position);
       if (!chart) continue;
-      const combo = pickCombo(chart, rng);
+      const combo = pickCombo(chart, rng, 'hard');
       const entry = chart[combo] ?? { raise: 0, fold: 1 };
       const hero = comboToCards(combo, rng);
       out.push({

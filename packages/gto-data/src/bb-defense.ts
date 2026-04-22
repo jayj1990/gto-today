@@ -50,6 +50,40 @@ async function load(key: string): Promise<BbDefenseStrategyJson | null> {
 /** Positions we currently have BB-defense data for. */
 export const SUPPORTED_OPENERS: Position[] = ['UTG', 'CO', 'BTN'];
 
+/**
+ * Every defender × opener pairing we ship preflop data for. Used by
+ * the daily generator to pick 3bet / defense spots beyond the BB-only
+ * slice. Ordered so the most "standard" lines come first; the generator
+ * samples uniformly so order doesn't bias output.
+ */
+export interface DefensePairing {
+  readonly defender: Position;
+  readonly opener: Position;
+}
+
+export const DEFENSE_PAIRINGS: readonly DefensePairing[] = [
+  // BB vs every 6max opener
+  { defender: 'BB', opener: 'UTG' },
+  { defender: 'BB', opener: 'MP' },
+  { defender: 'BB', opener: 'CO' },
+  { defender: 'BB', opener: 'BTN' },
+  { defender: 'BB', opener: 'SB' },
+  // SB vs later-position opens (3bet or call out of position)
+  { defender: 'SB', opener: 'UTG' },
+  { defender: 'SB', opener: 'MP' },
+  { defender: 'SB', opener: 'CO' },
+  { defender: 'SB', opener: 'BTN' },
+  // BTN in-position defense (most-raised 3bet frequency spots)
+  { defender: 'BTN', opener: 'UTG' },
+  { defender: 'BTN', opener: 'MP' },
+  { defender: 'BTN', opener: 'CO' },
+  // CO vs early-position opens
+  { defender: 'CO', opener: 'UTG' },
+  { defender: 'CO', opener: 'MP' },
+  // MP squeezing UTG open
+  { defender: 'MP', opener: 'UTG' },
+];
+
 export interface BbDefenseQuery {
   readonly combo: ComboKey;
   readonly opener: Position;
@@ -111,11 +145,26 @@ export async function getBbDefenseChart(
   format: TableFormat = '6max',
   gameType: 'cash' | 'mtt' = 'cash',
 ): Promise<BbDefenseStrategyJson | null> {
+  return getDefenseChart('BB', opener, format, gameType);
+}
+
+/**
+ * Generic defender-vs-opener chart loader. Supersedes `getBbDefenseChart`.
+ * Filename convention: `{format}_100bb_{defender_lower}_vs_{opener}.json`.
+ * Falls back to the cash variant when MTT isn't shipped for the pair.
+ */
+export async function getDefenseChart(
+  defender: Position,
+  opener: Position,
+  format: TableFormat = '6max',
+  gameType: 'cash' | 'mtt' = 'cash',
+): Promise<BbDefenseStrategyJson | null> {
   const prefix = gameType === 'mtt' ? 'mtt_' : '';
-  const key = `${prefix}${format}_100bb_bb_vs_${opener}`;
+  const defLower = defender.toLowerCase();
+  const key = `${prefix}${format}_100bb_${defLower}_vs_${opener}`;
   const data = await load(key);
   if (data || gameType !== 'mtt') return data;
-  return load(`${format}_100bb_bb_vs_${opener}`);
+  return load(`${format}_100bb_${defLower}_vs_${opener}`);
 }
 
 export function clearBbDefenseCache(): void {
