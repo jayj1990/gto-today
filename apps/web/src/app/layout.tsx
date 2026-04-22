@@ -84,8 +84,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Script>
       </head>
       <body className="min-h-dvh pb-14 antialiased md:pb-0">
-        <SessionSync>{children}</SessionSync>
-        <BottomNav />
+        <SessionSync>
+          {children}
+          <BottomNav />
+        </SessionSync>
         <InstallPrompt />
       </body>
     </html>
