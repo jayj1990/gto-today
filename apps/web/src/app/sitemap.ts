@@ -18,6 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/charts`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE}/review`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
     { url: `${BASE}/stats`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
+    { url: `${BASE}/mtt/push-fold`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/signin`, lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
     { url: `${BASE}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${BASE}/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },

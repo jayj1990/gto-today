@@ -47,16 +47,44 @@ function particleSubject(word: string): string {
 }
 
 
-/** Pick the single highest-frequency GTO action for a spot. */
+/** Pick the single highest-frequency GTO action for a spot. Handles
+ *  every scenario (rfi / vs_open / vs_3bet / vs_4bet / vs_squeeze /
+ *  vs_allin) by comparing whatever action frequencies are populated. */
 function dominantAction(spot: TrainingSpot): GradedAction {
-  if (spot.scenario === 'vs_open') {
-    const mix = { raise: spot.gtoRaise, call: spot.gtoCall ?? 0, fold: spot.gtoFold };
-    const max = Math.max(mix.raise, mix.call, mix.fold);
-    if (max === mix.raise) return 'raise';
-    if (max === mix.call) return 'call';
-    return 'fold';
+  if (spot.scenario === 'rfi') {
+    return spot.gtoRaise > 0.5 ? 'raise' : 'fold';
   }
-  return spot.gtoRaise > 0.5 ? 'raise' : 'fold';
+  const mix = {
+    fold: spot.gtoFold,
+    call: spot.gtoCall ?? 0,
+    raise: spot.gtoRaise,
+    allin: spot.gtoAllIn ?? 0,
+  };
+  const max = Math.max(mix.fold, mix.call, mix.raise, mix.allin);
+  if (max === mix.raise) return 'raise';
+  if (max === mix.call) return 'call';
+  if (max === mix.allin) return 'allin';
+  return 'fold';
+}
+
+/** Segment builder — picks the action set visible on this scenario
+ *  and drops actions with freq < 1% so the bar doesn't show "0.0%"
+ *  rows that carry no information. */
+function buildSegments(spot: TrainingSpot, top: GradedAction | null): MixBarSegment[] {
+  const raw: Array<{ label: string; value: number; color: string; action: GradedAction }> = [
+    { label: '레이즈', value: spot.gtoRaise * 100, color: 'var(--color-raise)', action: 'raise' },
+    { label: '콜', value: (spot.gtoCall ?? 0) * 100, color: 'var(--color-call)', action: 'call' },
+    { label: '폴드', value: spot.gtoFold * 100, color: 'var(--color-fold)', action: 'fold' },
+    { label: '올인', value: (spot.gtoAllIn ?? 0) * 100, color: '#7F0A1B', action: 'allin' },
+  ];
+  // RFI has no call/allin concept — mirror the legacy 2-row behaviour.
+  const visible =
+    spot.scenario === 'rfi'
+      ? raw.filter((s) => s.action === 'raise' || s.action === 'fold')
+      : spot.scenario === 'vs_allin'
+        ? raw.filter((s) => s.action === 'call' || s.action === 'fold')
+        : raw.filter((s) => s.value >= 1);
+  return visible.map(({ action, ...seg }) => ({ ...seg, dominant: top === action }));
 }
 
 export function ResultSheet({
@@ -100,44 +128,7 @@ export function ResultSheet({
       setExplaining(false);
     }
   };
-  const segments: MixBarSegment[] =
-    spot?.scenario === 'vs_open'
-      ? [
-          {
-            label: '레이즈',
-            value: spot.gtoRaise * 100,
-            color: 'var(--color-raise)',
-            dominant: top === 'raise',
-          },
-          {
-            label: '콜',
-            value: (spot.gtoCall ?? 0) * 100,
-            color: 'var(--color-call)',
-            dominant: top === 'call',
-          },
-          {
-            label: '폴드',
-            value: spot.gtoFold * 100,
-            color: 'var(--color-fold)',
-            dominant: top === 'fold',
-          },
-        ]
-      : spot
-        ? [
-            {
-              label: '레이즈',
-              value: spot.gtoRaise * 100,
-              color: 'var(--color-raise)',
-              dominant: top === 'raise',
-            },
-            {
-              label: '폴드',
-              value: spot.gtoFold * 100,
-              color: 'var(--color-fold)',
-              dominant: top === 'fold',
-            },
-          ]
-        : [];
+  const segments: MixBarSegment[] = spot ? buildSegments(spot, top) : [];
 
   // Build the headline based on grade. Colour is grade-bound (not
   // action-bound) so a wrong answer always reads RED even when the
