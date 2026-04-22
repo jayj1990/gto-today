@@ -48,6 +48,8 @@ next-env.d.ts
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.example.json
+.claude/settings.json
+.claude/settings.local.json
 
 # generated
 packages/gto-data/dist/
