@@ -45,6 +45,9 @@ export interface PokerTableProps extends HTMLAttributes<HTMLDivElement> {
   board?: readonly string[];
   renderCard?: (code: string, size: 'xs' | 'sm' | 'md') => ReactNode;
   showMarkers?: boolean;
+  /** When it flips true, the pot number runs a one-shot gold-pulse
+   *  so the result screen reads as "pot collected". */
+  pulsePot?: boolean;
 }
 
 const SEATS: Record<Format, Seat[]> = {
@@ -82,6 +85,7 @@ export function PokerTable({
   board = [],
   renderCard,
   showMarkers = true,
+  pulsePot = false,
   className,
   style,
   ...rest
@@ -143,7 +147,9 @@ export function PokerTable({
           it's already shown next to the hero seat chip. Leaving it here
           duplicated with the hero info. */}
 
-      {/* Community board — 5 slots, fills from left. Dead centre. */}
+      {/* Community board — 5 slots, fills from left. Dead centre.
+          `perspective` on the row parent makes the flip keyframes
+          read as a real 3D rotation rather than a flat skew. */}
       <div
         style={{
           position: 'absolute',
@@ -153,20 +159,24 @@ export function PokerTable({
           display: 'flex',
           gap: 4,
           pointerEvents: 'none',
+          perspective: '900px',
         }}
       >
         {Array.from({ length: 5 }).map((_, i) => {
           const code = board[i];
           if (code && renderCard) {
             // Stagger each dealt community card so flop lands 1→2→3
-            // and turn/river land one-by-one. `key` includes the card
-            // code so swapping turn/river remounts and re-animates.
-            const streetDelay = i < 3 ? i * 90 : 0;
+            // and turn/river land one-by-one. Flop cards use the 3D
+            // flip animation; turn/river slide-in so they read as a
+            // single new street rather than "three flops again".
+            const isFlop = i < 3;
+            const streetDelay = isFlop ? i * 110 : 0;
+            const animClass = isFlop ? 'animate-card-flip-in' : 'animate-board-deal-in';
             return (
               <div
                 key={`${i}-${code}`}
-                className="animate-board-deal-in"
-                style={{ animationDelay: `${streetDelay}ms` }}
+                className={animClass}
+                style={{ animationDelay: `${streetDelay}ms`, transformStyle: 'preserve-3d' }}
               >
                 {renderCard(code, 'sm')}
               </div>
@@ -203,6 +213,8 @@ export function PokerTable({
             pot
           </span>
           <span
+            key={pulsePot ? `pot-${pot}-pulse` : `pot-${pot}`}
+            className={pulsePot ? 'animate-pot-pulse' : undefined}
             style={{
               fontFamily: 'var(--font-mono, monospace)',
               fontSize: 22,

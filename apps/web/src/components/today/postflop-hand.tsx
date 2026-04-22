@@ -5,7 +5,11 @@ import { CardView, PokerTable, cn, type SeatState } from '@gto/ui';
 import type { Format, Seat } from '@gto/ui';
 import type { PostflopSpot } from '@gto/gto-data';
 
-export interface PostflopHandProps {
+export interface PostflopHandPropsWithCelebrate {
+  celebratePot?: boolean;
+}
+
+export interface PostflopHandProps extends PostflopHandPropsWithCelebrate {
   spot: PostflopSpot;
   className?: string;
 }
@@ -30,7 +34,7 @@ const POT_LABEL: Record<PostflopSpot['context']['potType'], string> = {
  * other seats folded, pot already built, effective stack reduced, board
  * cards rendered above the pot.
  */
-export function PostflopHand({ spot, className }: PostflopHandProps) {
+export function PostflopHand({ spot, className, celebratePot = false }: PostflopHandProps) {
   const format: Format = '6max';
   const hero = spot.context.heroPos as Seat;
   const villain = spot.context.villainPos as Seat;
@@ -96,6 +100,7 @@ export function PostflopHand({ spot, className }: PostflopHandProps) {
           pot={spot.context.potBB}
           effectiveStack={effStack}
           lastBet={spot.facingBetBB > 0 ? spot.facingBetBB : undefined}
+          pulsePot={celebratePot}
           renderCard={(code, size) => {
             const rank = code.charAt(0);
             const suit = code.charAt(1) as 's' | 'h' | 'd' | 'c';

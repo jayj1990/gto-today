@@ -8,7 +8,7 @@ import {
   type PostflopAction,
   type PostflopSpot,
 } from '@gto/gto-data';
-import { cn } from '@gto/ui';
+import { ChipToss, cn } from '@gto/ui';
 import { sheetUp } from '@gto/ui/motion';
 
 export interface PostflopResultProps {
@@ -133,12 +133,15 @@ export function PostflopResult({
         <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-fg-muted">
           {spot.context.heroPos} · {STREET_LABEL[spot.street]}
         </p>
-        <h2
-          className="mt-1 font-display text-[28px] font-bold leading-tight tracking-[-0.02em]"
-          style={{ color: gradeColor }}
-        >
-          {gradeLabel}
-        </h2>
+        <div className="relative">
+          <h2
+            className="mt-1 font-display text-[28px] font-bold leading-tight tracking-[-0.02em]"
+            style={{ color: gradeColor }}
+          >
+            {gradeLabel}
+          </h2>
+          <ChipToss show={grade === 'sharp'} />
+        </div>
         <p className="mt-2 text-[13px] text-fg-muted">{gradeSubtitle}</p>
         <p className="mt-1 text-[13px] text-fg-muted">
           내 선택:{' '}

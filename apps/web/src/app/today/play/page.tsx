@@ -184,9 +184,9 @@ export default function TodayPlayPage() {
                 transition={{ duration: 0.2 }}
               >
                 {current.kind === 'preflop' ? (
-                  <HandCard spot={current.spot} />
+                  <HandCard spot={current.spot} celebratePot={resultOpen && lastGrade === 'sharp'} />
                 ) : (
-                  <PostflopHand spot={current.spot} />
+                  <PostflopHand spot={current.spot} celebratePot={resultOpen && lastGrade === 'sharp'} />
                 )}
               </motion.div>
             </AnimatePresence>

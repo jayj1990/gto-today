@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { cn } from '@gto/ui';
 import { pressScale } from '@gto/ui/motion';
 import type { AvailableAction } from '@gto/gto-data';
+import { useRipple } from '@/lib/use-ripple';
 
 export type ActionKind = 'fold' | 'check' | 'call' | 'raise';
 
@@ -28,6 +29,39 @@ const LABELS: Record<ActionKind, string> = {
 
 // Every button fills with its action color (white bold text) so they
 // read as one coherent family — matches the chart-navigator buttons.
+function RippleActionButton({
+  kind,
+  label,
+  compact,
+  disabled,
+  onClick,
+}: {
+  kind: ActionKind;
+  label: string;
+  compact: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  const { onPointerDown, node } = useRipple();
+  return (
+    <motion.button
+      type="button"
+      disabled={disabled}
+      whileTap={pressScale}
+      onPointerDown={onPointerDown}
+      onClick={onClick}
+      className={cn(
+        'ripple-host select-none rounded-[var(--radius-button)] whitespace-nowrap px-1 transition-colors disabled:opacity-40',
+        compact ? 'h-11 text-[12px]' : 'h-12 text-[14px]',
+        TONE[kind].cls,
+      )}
+    >
+      <span className="relative z-10">{label}</span>
+      {node}
+    </motion.button>
+  );
+}
+
 const TONE: Record<ActionKind, { cls: string }> = {
   fold: {
     cls: 'bg-[color:var(--color-fold)] text-white font-bold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-fold)]',
@@ -75,22 +109,7 @@ export function ActionBar({
               ? `${LABELS[kind]} ${size}`
               : `${LABELS[kind]} ${size}BB`
             : LABELS[kind];
-        return (
-          <motion.button
-            key={kind}
-            type="button"
-            disabled={disabled}
-            whileTap={pressScale}
-            onClick={() => onAnswer(kind)}
-            className={cn(
-              'select-none rounded-[var(--radius-button)] whitespace-nowrap px-1 transition-colors disabled:opacity-40',
-              compact ? 'h-11 text-[12px]' : 'h-12 text-[14px]',
-              TONE[kind].cls,
-            )}
-          >
-            {label}
-          </motion.button>
-        );
+        return <RippleActionButton key={kind} kind={kind} label={label} compact={compact} disabled={disabled} onClick={() => onAnswer(kind)} />;
       })}
     </div>
   );

@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { MixBar, cn, type MixBarSegment } from '@gto/ui';
+import { ChipToss, MixBar, cn, type MixBarSegment } from '@gto/ui';
 import { sheetUp } from '@gto/ui/motion';
 import type { AnswerGrade, GradedAction, TrainingSpot } from '@gto/gto-data';
 
@@ -173,20 +173,23 @@ export function ResultSheet({
                 ? `BB vs ${spot.opener} · ${spot.combo}`
                 : `${spot.position} · ${spot.combo}`}
             </p>
-            <h2
-              id="result-title"
-              className="mt-1 font-display text-[30px] font-bold leading-tight tracking-[-0.02em]"
-              style={{
-                color:
-                  headline.tone === 'correct'
-                    ? 'var(--color-call)'
-                    : headline.tone === 'info'
-                      ? 'var(--color-info)'
-                      : 'var(--color-raise)',
-              }}
-            >
-              {headline.title}
-            </h2>
+            <div className="relative">
+              <h2
+                id="result-title"
+                className="mt-1 font-display text-[30px] font-bold leading-tight tracking-[-0.02em]"
+                style={{
+                  color:
+                    headline.tone === 'correct'
+                      ? 'var(--color-call)'
+                      : headline.tone === 'info'
+                        ? 'var(--color-info)'
+                        : 'var(--color-raise)',
+                }}
+              >
+                {headline.title}
+              </h2>
+              <ChipToss show={grade === 'sharp'} />
+            </div>
             <p className="mt-2 text-[13px] text-fg-muted">{headline.subtitle}</p>
 
             <div className="mt-6 rounded-[var(--radius-button)] border-hair surface p-4">

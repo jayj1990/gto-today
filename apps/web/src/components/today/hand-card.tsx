@@ -9,6 +9,8 @@ import { POSITIONS_BY_FORMAT } from '@gto/poker-core';
 export interface HandCardProps {
   spot: TrainingSpot;
   className?: string;
+  /** When true, the pot number runs its gold-pulse animation. */
+  celebratePot?: boolean;
 }
 
 function buildSeats(spot: TrainingSpot): {
@@ -80,7 +82,7 @@ function buildSeats(spot: TrainingSpot): {
   return { seats: out, foldedSeats, pot, lastBet };
 }
 
-export function HandCard({ spot, className }: HandCardProps) {
+export function HandCard({ spot, className, celebratePot = false }: HandCardProps) {
   const [c1, c2] = spot.hero;
   const hero = spot.position as Seat;
   const format = spot.format as Format;
@@ -124,6 +126,7 @@ export function HandCard({ spot, className }: HandCardProps) {
           pot={pot}
           effectiveStack={spot.stackBB}
           lastBet={spot.scenario === 'vs_open' ? lastBet : undefined}
+          pulsePot={celebratePot}
           renderCard={(code, size) => {
             const rank = code.charAt(0);
             const suit = code.charAt(1) as 's' | 'h' | 'd' | 'c';
