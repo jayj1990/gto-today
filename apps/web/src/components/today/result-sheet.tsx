@@ -116,6 +116,21 @@ export function ResultSheet({
     setExplaining(false);
   }, [spot?.id, userAnswer, grade]);
 
+  // Dialog-grade keyboard handling: ESC advances (same as a swipe-down
+  // dismiss) so power users aren't forced to reach for the CTA. Enter
+  // does the same since the sheet has one primary action.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || (e.key === 'Enter' && !e.repeat)) {
+        e.preventDefault();
+        onNext();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onNext]);
+
   const fetchExplanation = async () => {
     if (!spot || explaining) return;
     setExplaining(true);

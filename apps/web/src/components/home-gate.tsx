@@ -91,6 +91,18 @@ export function HomeGate() {
         paddingBottom: 'calc(env(safe-area-inset-bottom) + 28px)',
       }}
     >
+      {/* Warm the preflop cache while the user is on home. React 19
+          hoists bare <link> elements into <head>; browsers honor these
+          as idle-priority so they never compete with the current page.
+          Lands /today/play's first JSON request against a warm cache. */}
+      <link rel="prefetch" href="/data/preflop/manifest.json" as="fetch" crossOrigin="anonymous" />
+      <link
+        rel="prefetch"
+        href="/data/preflop/6max_100bb_qb_decisions.json"
+        as="fetch"
+        crossOrigin="anonymous"
+      />
+
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           {/* eslint-disable-next-line @next/next/no-img-element */}

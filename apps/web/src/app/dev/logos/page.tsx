@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { SiteHeader } from '@/components/site-header';
 
 export const metadata = { title: '로고 미리보기' };
@@ -355,24 +356,21 @@ function PreviewPanel({
         {background === 'dark' ? 'Tonight (기본 테마)' : 'Light (배경 대비용)'}
       </p>
       <div className="flex items-end gap-6">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={src}
           alt={alt}
           width={128}
           height={128}
           style={{ borderRadius: 18, objectFit: 'contain' }}
         />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={src}
           alt=""
           width={72}
           height={72}
           style={{ borderRadius: 12, objectFit: 'contain' }}
         />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={src}
           alt=""
           width={40}

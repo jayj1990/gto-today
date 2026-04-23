@@ -69,6 +69,19 @@ export function PostflopResult({
     setExplaining(false);
   }, [spot?.id, userAnswer]);
 
+  // ESC / Enter → advance (same as the CTA); matches ResultSheet.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || (e.key === 'Enter' && !e.repeat)) {
+        e.preventDefault();
+        onNext();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onNext]);
+
   const fetchExplanation = async () => {
     if (!spot || explaining) return;
     setExplaining(true);
