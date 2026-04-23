@@ -41,9 +41,7 @@ const QB_ROOT_DEFAULT =
 const POSITIONS: readonly string[] = ['UTG', 'MP', 'CO', 'BTN', 'SB'];
 
 /** Parse a `combo:weight,combo:weight,...` file into a Record. */
-async function parseRangeFile(
-  path: string,
-): Promise<Record<string, number> | null> {
+async function parseRangeFile(path: string): Promise<Record<string, number> | null> {
   if (!existsSync(path)) return null;
   const raw = (await readFile(path, 'utf8')).trim();
   const out: Record<string, number> = {};
@@ -138,8 +136,9 @@ async function extractDefence(
  */
 async function extractOpener(opener: string) {
   const openerDir = join(SOURCE, opener);
-  const sizeDirs = (await readdir(openerDir, { withFileTypes: true }))
-    .filter((e) => e.isDirectory() && e.name.endsWith('bb'));
+  const sizeDirs = (await readdir(openerDir, { withFileTypes: true })).filter(
+    (e) => e.isDirectory() && e.name.endsWith('bb'),
+  );
   if (sizeDirs.length === 0) throw new Error(`no open size for ${opener}`);
   const sizeDir = join(openerDir, sizeDirs[0].name);
 
@@ -147,7 +146,10 @@ async function extractOpener(opener: string) {
 
   // Every subdirectory of sizeDir that isn't a range file is a
   // defender (BB / SB / BTN / CO / MP depending on opener).
-  const defenceCharts: Record<string, Record<string, { call: number; raise: number; fold: number }>> = {};
+  const defenceCharts: Record<
+    string,
+    Record<string, { call: number; raise: number; fold: number }>
+  > = {};
   const entries = await readdir(sizeDir, { withFileTypes: true });
   for (const e of entries) {
     if (!e.isDirectory()) continue;
@@ -379,9 +381,7 @@ async function extractDefenseFromQb(qbRoot: string, opener: string, defender: st
     // 1 − call − raise (should equal the recorded fold exactly).
     const foldRaw = foldRange[combo];
     const fold =
-      foldRaw !== undefined
-        ? Math.max(0, Math.min(1, foldRaw))
-        : Math.max(0, 1 - call - raise);
+      foldRaw !== undefined ? Math.max(0, Math.min(1, foldRaw)) : Math.max(0, 1 - call - raise);
     mix[combo] = { call, raise, fold };
   }
   return mix;
@@ -424,9 +424,7 @@ async function main() {
   const decisions = await extractQbRanges(qbRoot);
   const qbOut = join(OUT_DIR, '6max_100bb_qb_decisions.json');
   await writeJson(qbOut, decisions);
-  console.log(
-    `  ✓ qb_ranges → ${qbOut} (${Object.keys(decisions).length} decision nodes)`,
-  );
+  console.log(`  ✓ qb_ranges → ${qbOut} (${Object.keys(decisions).length} decision nodes)`);
 }
 
 main().catch((err) => {

@@ -103,10 +103,7 @@ export function deriveRanges(
  * action but strips the 1-2% "noise" combos the preflop solver
  * occasionally emits.
  */
-export function freqsToRangeString(
-  freqs: Record<string, number>,
-  minFreq = 0.1,
-): string {
+export function freqsToRangeString(freqs: Record<string, number>, minFreq = 0.1): string {
   const parts: string[] = [];
   for (const [combo, freq] of Object.entries(freqs)) {
     if (freq < minFreq) continue;

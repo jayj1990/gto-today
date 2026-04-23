@@ -13,7 +13,7 @@ export default function Loading() {
       <main
         aria-busy
         aria-label="오늘의 훈련 불러오는 중"
-        className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+16px)] pt-6"
+        className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col pb-[calc(env(safe-area-inset-bottom)+16px)] pt-6"
       >
         <header className="mb-2 flex items-center justify-between">
           <Skeleton width={80} height={12} />

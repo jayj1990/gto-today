@@ -179,13 +179,14 @@ function WordmarkHTML({
       role="img"
       aria-label={label}
       className={cn(
-        'inline-flex items-baseline whitespace-nowrap align-middle font-display',
+        'font-display inline-flex items-baseline whitespace-nowrap align-middle',
         className,
       )}
       style={{
         ...merged,
         gap: `${fontSize * 0.11}px`,
-        height: height !== undefined ? (typeof height === 'number' ? `${height}px` : height) : 'auto',
+        height:
+          height !== undefined ? (typeof height === 'number' ? `${height}px` : height) : 'auto',
       }}
     >
       <span className="font-bold uppercase tracking-[-0.02em]">
@@ -202,9 +203,7 @@ function WordmarkHTML({
           boxShadow: '0 0 0 1px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.25)',
         }}
       />
-      <span className="font-light tracking-[-0.01em]">
-        {variant === 'full' ? 'today' : 'T'}
-      </span>
+      <span className="font-light tracking-[-0.01em]">{variant === 'full' ? 'today' : 'T'}</span>
     </span>
   );
 }

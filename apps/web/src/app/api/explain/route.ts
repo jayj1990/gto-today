@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { auth } from '@/lib/auth';
-import { CACHE_BACKEND, cacheGet, cacheSet, checkRateLimit, fingerprint } from '@/lib/explain-cache';
+import {
+  CACHE_BACKEND,
+  cacheGet,
+  cacheSet,
+  checkRateLimit,
+  fingerprint,
+} from '@/lib/explain-cache';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -46,7 +52,11 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'spot missing' }, { status: 400 });
   }
 
-  const fp = fingerprint({ spot: body.spot, userAnswer: body.userAnswer ?? null, locale: body.locale ?? 'ko' });
+  const fp = fingerprint({
+    spot: body.spot,
+    userAnswer: body.userAnswer ?? null,
+    locale: body.locale ?? 'ko',
+  });
 
   // 1) Cache check before rate-limit charge — a repeat question is
   //    free for the user, no reason to count it.

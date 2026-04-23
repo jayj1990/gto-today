@@ -18,10 +18,7 @@ import type { PreAction, Scenario, TrainingSpot } from './spot-generator';
  * by inspecting the last action in the prior trace.
  */
 
-export type QbStrategyJson = Record<
-  string,
-  Record<string, Record<string, number>>
->;
+export type QbStrategyJson = Record<string, Record<string, Record<string, number>>>;
 
 interface Loader {
   (key: string): Promise<QbStrategyJson | null>;

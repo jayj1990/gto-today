@@ -61,9 +61,9 @@ export function RangeDemo() {
               onClick={() => setPosition(p.id)}
               style={{ touchAction: 'manipulation' }}
               className={
-                'select-none rounded-full border-hair px-3 py-1.5 text-[13px] font-mono transition-colors active:scale-[0.96] ' +
+                'border-hair select-none rounded-full px-3 py-1.5 font-mono text-[13px] transition-colors active:scale-[0.96] ' +
                 (active
-                  ? 'bg-[color:var(--color-accent)] text-noir font-semibold'
+                  ? 'text-noir bg-[color:var(--color-accent)] font-semibold'
                   : 'text-fg-muted')
               }
             >
@@ -78,28 +78,28 @@ export function RangeDemo() {
         <RangeGrid mixes={mixes} highlight="AA" />
         <dl className="space-y-3 text-[13px]">
           <div>
-            <dt className="font-mono text-[11px] uppercase tracking-[0.16em] text-fg-muted">
+            <dt className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.16em]">
               포지션
             </dt>
             <dd className="font-display text-[24px] font-bold">{position}</dd>
           </div>
           <div>
-            <dt className="font-mono text-[11px] uppercase tracking-[0.16em] text-fg-muted">
+            <dt className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.16em]">
               플레이하는 핸드
             </dt>
             <dd className="font-mono text-[18px]">{playedCount} / 169</dd>
           </div>
           <div>
-            <dt className="font-mono text-[11px] uppercase tracking-[0.16em] text-fg-muted">
+            <dt className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.16em]">
               상태
             </dt>
             <dd className="text-fg-muted">
               {loading ? '불러오는 중…' : '실제 GTO 데이터 (/data/preflop)'}
             </dd>
           </div>
-          <p className="max-w-sm text-[12px] text-fg-muted">
-            칸이 밝을수록 레이즈 빈도가 높습니다. 진한 골드는 항상 레이즈, 회색은 항상 폴드,
-            그 중간은 믹스 전략입니다.
+          <p className="text-fg-muted max-w-sm text-[12px]">
+            칸이 밝을수록 레이즈 빈도가 높습니다. 진한 골드는 항상 레이즈, 회색은 항상 폴드, 그
+            중간은 믹스 전략입니다.
           </p>
         </dl>
       </div>

@@ -60,7 +60,10 @@ export function InstallPrompt() {
     }
     // Already installed / standalone display mode → nothing to show.
     if (window.matchMedia('(display-mode: standalone)').matches) return;
-    if ('standalone' in window.navigator && (window.navigator as { standalone?: boolean }).standalone) {
+    if (
+      'standalone' in window.navigator &&
+      (window.navigator as { standalone?: boolean }).standalone
+    ) {
       return;
     }
 
@@ -121,12 +124,12 @@ export function InstallPrompt() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}
           transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed bottom-0 left-0 right-0 z-40 safe-pad-x"
+          className="safe-pad-x fixed bottom-0 left-0 right-0 z-40"
           style={{
             paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
           }}
         >
-          <div className="mx-auto max-w-md rounded-[var(--radius-panel)] border-hair bg-[color:var(--color-surface-raised)]/95 p-3 shadow-[var(--shadow-card)] backdrop-blur">
+          <div className="border-hair bg-[color:var(--color-surface-raised)]/95 mx-auto max-w-md rounded-[var(--radius-panel)] p-3 shadow-[var(--shadow-card)] backdrop-blur">
             <div className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -140,7 +143,7 @@ export function InstallPrompt() {
                 <p className="font-display text-[14px] font-semibold leading-tight">
                   {isIOS ? '홈화면에 추가하기' : '앱으로 설치하기'}
                 </p>
-                <p className="mt-0.5 text-[11px] text-fg-muted">
+                <p className="text-fg-muted mt-0.5 text-[11px]">
                   {isIOS
                     ? '공유 버튼 → 홈 화면에 추가'
                     : '홈화면에 바로가기 · 오프라인 데이터 포함'}
@@ -150,7 +153,7 @@ export function InstallPrompt() {
                 <button
                   type="button"
                   onClick={install}
-                  className="rounded-[var(--radius-button)] bg-gold-gradient px-3 py-2 font-mono text-[11px] font-bold text-noir"
+                  className="bg-gold-gradient text-noir rounded-[var(--radius-button)] px-3 py-2 font-mono text-[11px] font-bold"
                 >
                   설치
                 </button>
@@ -159,7 +162,7 @@ export function InstallPrompt() {
                 type="button"
                 onClick={dismiss}
                 aria-label="닫기"
-                className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-button)] text-fg-muted"
+                className="text-fg-muted flex h-9 w-9 items-center justify-center rounded-[var(--radius-button)]"
               >
                 ✕
               </button>

@@ -25,21 +25,21 @@ export default function PushFoldPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4">
+      <main className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4">
         <header className="mb-3">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
             MTT · 20BB
           </p>
-          <h1 className="mt-1 font-display text-[24px] font-bold leading-[1.1] tracking-[-0.02em]">
+          <h1 className="font-display mt-1 text-[24px] font-bold leading-[1.1] tracking-[-0.02em]">
             올인/폴드
           </h1>
-          <p className="mt-2 text-[13px] leading-[1.55] text-fg-muted">
+          <p className="text-fg-muted mt-2 text-[13px] leading-[1.55]">
             숏스택 (~20BB 이하)에서는 레이즈 사이즈 의미가 사라져요.
             <span className="text-fg">올인 or 폴드</span> 두 결정만 남습니다.
           </p>
         </header>
 
-        <div className="mb-4 inline-flex self-start rounded-[var(--radius-button)] border-hair surface p-1">
+        <div className="border-hair surface mb-4 inline-flex self-start rounded-[var(--radius-button)] p-1">
           <button
             type="button"
             onClick={() => setMode('chart')}
@@ -73,7 +73,7 @@ export default function PushFoldPage() {
         <nav className="mt-8 flex justify-center">
           <Link
             href="/"
-            className="font-mono text-[11px] uppercase tracking-[0.2em] text-fg-muted underline-offset-4 hover:underline"
+            className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.2em] underline-offset-4 hover:underline"
           >
             ← 홈으로
           </Link>
@@ -96,15 +96,14 @@ function ChartView() {
   }, [pos]);
 
   const pushCount = useMemo(() => {
-    return (Object.values(PUSH_FOLD_20BB[pos]) as PushFoldEntry[]).filter(
-      (e) => e.push === 1,
-    ).length;
+    return (Object.values(PUSH_FOLD_20BB[pos]) as PushFoldEntry[]).filter((e) => e.push === 1)
+      .length;
   }, [pos]);
 
   return (
     <>
       <section className="mb-3 overflow-x-auto">
-        <div className="flex gap-1.5 min-w-max">
+        <div className="flex min-w-max gap-1.5">
           {PUSH_FOLD_POSITIONS.map((p: PushFoldPosition) => {
             const active = p === pos;
             const count = (Object.values(PUSH_FOLD_20BB[p]) as PushFoldEntry[]).filter(
@@ -118,9 +117,9 @@ function ChartView() {
                 aria-pressed={active}
                 aria-label={`${p} 포지션 푸시/폴드 차트`}
                 className={cn(
-                  'inline-flex h-11 items-center rounded-[var(--radius-button)] border px-3 font-mono text-[12px] whitespace-nowrap',
+                  'inline-flex h-11 items-center whitespace-nowrap rounded-[var(--radius-button)] border px-3 font-mono text-[12px]',
                   active
-                    ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/15 text-[color:var(--color-accent)]'
+                    ? 'bg-[color:var(--color-accent)]/15 border-[color:var(--color-accent)] text-[color:var(--color-accent)]'
                     : 'border-hair surface text-fg-muted',
                 )}
               >
@@ -132,7 +131,7 @@ function ChartView() {
         </div>
       </section>
 
-      <p className="mb-2 text-center font-mono text-[11px] text-fg-muted">
+      <p className="text-fg-muted mb-2 text-center font-mono text-[11px]">
         {pos} · 올인 <span className="text-fg font-semibold">{pushCount}</span>개 / 169
         <span className="mx-2">·</span>
         <span className="text-[color:var(--color-raise)]">올인</span> vs{' '}
@@ -141,17 +140,15 @@ function ChartView() {
 
       <RangeGrid mixes={mixes} />
 
-      <div className="mt-4 rounded-[var(--radius-button)] border-hair surface p-3 text-[12px] leading-[1.55] text-fg-muted">
+      <div className="border-hair surface text-fg-muted mt-4 rounded-[var(--radius-button)] p-3 text-[12px] leading-[1.55]">
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]">
           사용법
         </p>
         <p className="mt-1">
-          포지션 탭을 누르면 그 자리에서 올인해도 되는 핸드가 레드로 표시돼요.
-          블루는 폴드. 스택이 얕을수록 레인지가 넓어지고, SB가 가장 공격적.
+          포지션 탭을 누르면 그 자리에서 올인해도 되는 핸드가 레드로 표시돼요. 블루는 폴드. 스택이
+          얕을수록 레인지가 넓어지고, SB가 가장 공격적.
         </p>
-        <p className="mt-2 text-[11px]">
-          ※ BB 디펜스 / vs 올인 콜 레인지는 추후 업데이트 예정.
-        </p>
+        <p className="mt-2 text-[11px]">※ BB 디펜스 / vs 올인 콜 레인지는 추후 업데이트 예정.</p>
       </div>
     </>
   );
@@ -161,9 +158,7 @@ function ChartView() {
 
 function TrainView() {
   const [spot, setSpot] = useState<TrainingSpot | null>(null);
-  const [feedback, setFeedback] = useState<null | { correct: boolean; shouldPush: boolean }>(
-    null,
-  );
+  const [feedback, setFeedback] = useState<null | { correct: boolean; shouldPush: boolean }>(null);
   const [sharp, setSharp] = useState(0);
   const [wrong, setWrong] = useState(0);
 
@@ -182,8 +177,7 @@ function TrainView() {
     // to our binary correctness check.
     const user: 'allin' | 'fold' = action === 'allin' ? 'allin' : 'fold';
     const shouldPush = spot.gtoRaise === 1;
-    const correct =
-      (user === 'allin' && shouldPush) || (user === 'fold' && !shouldPush);
+    const correct = (user === 'allin' && shouldPush) || (user === 'fold' && !shouldPush);
     haptic(correct ? 'success' : 'error');
     if (correct) setSharp((v) => v + 1);
     else setWrong((v) => v + 1);
@@ -216,11 +210,7 @@ function TrainView() {
       </AnimatePresence>
 
       {!feedback ? (
-        <ActionBar
-          actions={spot.availableActions}
-          onAnswer={onAnswer}
-          className="mt-3"
-        />
+        <ActionBar actions={spot.availableActions} onAnswer={onAnswer} className="mt-3" />
       ) : (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -241,7 +231,7 @@ function TrainView() {
             {feedback.correct ? '정확해요' : '이번엔 아니었어요'}
           </p>
           <p
-            className="mt-1 font-display text-[22px] font-bold"
+            className="font-display mt-1 text-[22px] font-bold"
             style={{
               color: feedback.correct ? 'var(--color-call)' : 'var(--color-raise)',
             }}
@@ -251,7 +241,7 @@ function TrainView() {
           <button
             type="button"
             onClick={next}
-            className="mt-4 inline-flex h-12 items-center rounded-[var(--radius-button)] bg-gold-gradient px-5 font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+            className="bg-gold-gradient text-noir mt-4 inline-flex h-12 items-center rounded-[var(--radius-button)] px-5 font-semibold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
           >
             다음 →
           </button>
@@ -277,14 +267,9 @@ function Stat({
         ? 'var(--color-raise)'
         : 'var(--color-gold)';
   return (
-    <div className="rounded-[var(--radius-button)] border-hair surface px-3 py-2">
-      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-fg-muted">
-        {label}
-      </p>
-      <p
-        className="mt-0.5 font-display text-[20px] font-bold tabular-nums"
-        style={{ color }}
-      >
+    <div className="border-hair surface rounded-[var(--radius-button)] px-3 py-2">
+      <p className="text-fg-muted font-mono text-[10px] uppercase tracking-[0.18em]">{label}</p>
+      <p className="font-display mt-0.5 text-[20px] font-bold tabular-nums" style={{ color }}>
         {value}
       </p>
     </div>
@@ -298,9 +283,7 @@ function Stat({
  *  before the hero for RFI spots, which is exactly the short-stack
  *  "all fold to you" setup we want. */
 function makeSpot(): TrainingSpot {
-  const position = PUSH_FOLD_POSITIONS[
-    Math.floor(Math.random() * PUSH_FOLD_POSITIONS.length)
-  ]!;
+  const position = PUSH_FOLD_POSITIONS[Math.floor(Math.random() * PUSH_FOLD_POSITIONS.length)]!;
   const chart = PUSH_FOLD_20BB[position];
   const combos = Object.keys(chart);
   const combo = combos[Math.floor(Math.random() * combos.length)]! as ComboKey;

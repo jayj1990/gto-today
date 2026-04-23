@@ -70,7 +70,7 @@ export function PostflopHand({ spot, className, celebratePot = false }: Postflop
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.24 }}
       className={cn(
-        'rounded-[var(--radius-panel)] border-hair surface px-3 pt-4 pb-5 sm:px-5 sm:pt-5 sm:pb-6',
+        'border-hair surface rounded-[var(--radius-panel)] px-3 pb-5 pt-4 sm:px-5 sm:pb-6 sm:pt-5',
         className,
       )}
     >
@@ -86,7 +86,7 @@ export function PostflopHand({ spot, className, celebratePot = false }: Postflop
         </div>
       </div>
 
-      <p className="mt-2 text-[12px] text-fg-muted">{spot.context.preflopSummary}</p>
+      <p className="text-fg-muted mt-2 text-[12px]">{spot.context.preflopSummary}</p>
 
       {/* Table with heads-up layout + community board centred inside */}
       <div className="mt-4">
@@ -110,10 +110,11 @@ export function PostflopHand({ spot, className, celebratePot = false }: Postflop
       </div>
 
       {/* Facing-action hint */}
-      <p className="mt-4 text-center text-[13px] text-fg-muted">
+      <p className="text-fg-muted mt-4 text-center text-[13px]">
         {spot.facingBetBB > 0 ? (
           <>
-            <span className="text-fg/80">{villain}</span> {spot.facingBetBB.toFixed(1)}BB 벳 — 당신 차례.
+            <span className="text-fg/80">{villain}</span> {spot.facingBetBB.toFixed(1)}BB 벳 — 당신
+            차례.
           </>
         ) : (
           <>체크가 돌아왔어요 — 당신 차례.</>
@@ -130,7 +131,7 @@ function Pill({ children, tone }: { children: React.ReactNode; tone?: 'accent' }
         'rounded-full border px-2.5 py-[3px] font-mono text-[11px] tracking-[0.06em]',
         tone === 'accent'
           ? 'border-[color:var(--color-accent)]/50 bg-[color:var(--color-accent)]/10 text-[color:var(--color-accent)]'
-          : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-raised)] text-fg',
+          : 'text-fg border-[color:var(--color-border)] bg-[color:var(--color-surface-raised)]',
       )}
     >
       {children}

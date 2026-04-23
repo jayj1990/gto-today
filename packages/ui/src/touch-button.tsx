@@ -6,8 +6,10 @@ import { motion } from 'framer-motion';
 import { cn } from './cn';
 import { pressScale } from './motion';
 
-export interface TouchButtonProps
-  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onAnimationStart' | 'onAnimationEnd' | 'onDragStart' | 'onDragEnd' | 'onDrag'> {
+export interface TouchButtonProps extends Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  'onAnimationStart' | 'onAnimationEnd' | 'onDragStart' | 'onDragEnd' | 'onDrag'
+> {
   /** Visual variant. Primary = gold CTA, secondary = outline, ghost = bare. */
   variant?: 'primary' | 'secondary' | 'ghost';
   /** Size, matches the brand scale. CTA=56px, regular=44px (min touch target). */
@@ -38,7 +40,17 @@ const SIZE: Record<NonNullable<TouchButtonProps['size']>, string> = {
  *  - Preserves focus-visible ring for keyboards
  */
 export const TouchButton = forwardRef<HTMLButtonElement, TouchButtonProps>(function TouchButton(
-  { variant = 'primary', size = 'regular', touchDebounceMs = 180, onClick, className, children, disabled, type, ...rest },
+  {
+    variant = 'primary',
+    size = 'regular',
+    touchDebounceMs = 180,
+    onClick,
+    className,
+    children,
+    disabled,
+    type,
+    ...rest
+  },
   ref,
 ) {
   const lastFireRef = useRef(0);

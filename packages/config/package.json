@@ -11,7 +11,11 @@
     "./tokens": "./tailwind/tokens.ts",
     "./eslint": "./eslint/index.js"
   },
-  "files": ["tsconfig", "tailwind", "eslint"],
+  "files": [
+    "tsconfig",
+    "tailwind",
+    "eslint"
+  ],
   "dependencies": {
     "tailwindcss": "^4.0.0"
   },

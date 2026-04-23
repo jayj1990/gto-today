@@ -136,9 +136,7 @@ describe('buildSeats', () => {
   });
 
   it('hero seat never shows card backs', () => {
-    const { seats } = buildSeats(
-      baseSpot({ position: 'BTN', scenario: 'rfi' }),
-    );
+    const { seats } = buildSeats(baseSpot({ position: 'BTN', scenario: 'rfi' }));
     expect(seats.BTN?.showBacks).toBe(false);
   });
 

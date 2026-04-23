@@ -96,7 +96,9 @@ function normalizeKey(
  * 10/11-max positions that don't have native data (e.g. UTG2, UTG3) are
  * resolved via `POSITION_FALLBACK` — the caller learns via `approximated`.
  */
-export async function getPreflopStrategy(query: PreflopQuery): Promise<PreflopMixedStrategy | null> {
+export async function getPreflopStrategy(
+  query: PreflopQuery,
+): Promise<PreflopMixedStrategy | null> {
   const scenario = query.scenario ?? 'rfi';
   const stack = stackBucketFor(query.stackBB ?? 100);
   const format = query.format ?? '6max';
@@ -149,8 +151,7 @@ export async function getPreflopChart(
   position: Position,
   opts: { stackBB?: number; scenario?: 'rfi'; gameType?: 'cash' | 'mtt' } = {},
 ): Promise<PreflopStrategyJson | null> {
-  const tableFormat: TableFormat =
-    format === '10max' || format === '11max' ? '9max' : format;
+  const tableFormat: TableFormat = format === '10max' || format === '11max' ? '9max' : format;
   const fallback = POSITION_FALLBACK[position];
   const resolvedPos = fallback ?? position;
   const scenario = opts.scenario ?? 'rfi';

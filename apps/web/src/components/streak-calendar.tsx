@@ -27,19 +27,16 @@ export function StreakCalendar({ className, days = 7 }: StreakCalendarProps) {
 
   return (
     <section
-      className={cn(
-        'rounded-[var(--radius-panel)] border-hair surface px-4 py-3.5',
-        className,
-      )}
+      className={cn('border-hair surface rounded-[var(--radius-panel)] px-4 py-3.5', className)}
     >
       <div className="flex items-baseline justify-between gap-3">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-fg-muted">
+          <p className="text-fg-muted font-mono text-[10px] uppercase tracking-[0.2em]">
             최근 {days}일
           </p>
-          <p className="mt-0.5 font-display text-[15px] font-semibold">
+          <p className="font-display mt-0.5 text-[15px] font-semibold">
             {currentStreak}일 연속 ·{' '}
-            <span className="font-mono font-normal text-fg-muted">{total}개 응답</span>
+            <span className="text-fg-muted font-mono font-normal">{total}개 응답</span>
           </p>
         </div>
       </div>
@@ -65,13 +62,11 @@ export function StreakCalendar({ className, days = 7 }: StreakCalendarProps) {
                   : '1px solid rgba(255,255,255,0.06)',
               }}
             />
-            <span className="font-mono text-[9px] tabular-nums text-fg-muted">
-              {c.label}
-            </span>
+            <span className="text-fg-muted font-mono text-[9px] tabular-nums">{c.label}</span>
           </li>
         ))}
       </ul>
-      <div className="mt-2 flex items-center justify-end gap-1.5 text-[9px] text-fg-muted">
+      <div className="text-fg-muted mt-2 flex items-center justify-end gap-1.5 text-[9px]">
         <span>부정확</span>
         {[
           { c: 1, a: 0.1 },

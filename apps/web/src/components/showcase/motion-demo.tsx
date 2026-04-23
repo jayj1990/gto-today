@@ -3,13 +3,7 @@
 import { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CardView, Chip, CountUp, MixBar } from '@gto/ui';
-import {
-  chipToss,
-  dealContainer,
-  duration as d,
-  easeQuart,
-  fadeUp,
-} from '@gto/ui/motion';
+import { chipToss, dealContainer, duration as d, easeQuart, fadeUp } from '@gto/ui/motion';
 
 /**
  * Interactive motion playground for /dev/showcase.
@@ -59,7 +53,7 @@ export function MotionDemo() {
           <button
             onClick={() => setDealKey((k) => k + 1)}
             style={{ touchAction: 'manipulation' }}
-            className="select-none rounded-[var(--radius-button)] border-hair px-4 py-2 text-[13px] font-semibold active:scale-[0.97]"
+            className="border-hair select-none rounded-[var(--radius-button)] px-4 py-2 text-[13px] font-semibold active:scale-[0.97]"
           >
             Deal again
           </button>
@@ -79,7 +73,7 @@ export function MotionDemo() {
             style={{ touchAction: 'manipulation' }}
             onClick={handleFlip}
           />
-          <p className="text-[13px] text-fg-muted">
+          <p className="text-fg-muted text-[13px]">
             카드를 탭하면 뒤집힙니다.
             <br />
             <code className="font-mono text-[12px]">flipVariants</code> + 3D <em>preserve-3d</em>.
@@ -90,7 +84,7 @@ export function MotionDemo() {
       {/* Count up ---------------------------------------------------- */}
       <Section title="Count up (EV)">
         <div className="flex items-center gap-6">
-          <p className="font-mono text-mono-lg font-semibold text-[color:var(--color-accent)]">
+          <p className="text-mono-lg font-mono font-semibold text-[color:var(--color-accent)]">
             +<CountUp value={evTarget} decimals={2} /> BB
           </p>
           <div className="flex gap-2">
@@ -99,7 +93,7 @@ export function MotionDemo() {
                 key={v}
                 onClick={() => setEvTarget(v)}
                 style={{ touchAction: 'manipulation' }}
-                className="select-none rounded-[var(--radius-button)] border-hair px-3 py-1.5 text-[13px] active:scale-[0.97]"
+                className="border-hair select-none rounded-[var(--radius-button)] px-3 py-1.5 text-[13px] active:scale-[0.97]"
               >
                 {v > 0 ? '+' : ''}
                 {v}
@@ -122,21 +116,21 @@ export function MotionDemo() {
             <button
               onClick={() => setMixPct({ bet: 68, check: 32 })}
               style={{ touchAction: 'manipulation' }}
-                className="select-none rounded-[var(--radius-button)] border-hair px-3 py-1.5 text-[13px] active:scale-[0.97]"
+              className="border-hair select-none rounded-[var(--radius-button)] px-3 py-1.5 text-[13px] active:scale-[0.97]"
             >
               BTN vs BB (68/32)
             </button>
             <button
               onClick={() => setMixPct({ bet: 22, check: 78 })}
               style={{ touchAction: 'manipulation' }}
-                className="select-none rounded-[var(--radius-button)] border-hair px-3 py-1.5 text-[13px] active:scale-[0.97]"
+              className="border-hair select-none rounded-[var(--radius-button)] px-3 py-1.5 text-[13px] active:scale-[0.97]"
             >
               OOP wet (22/78)
             </button>
             <button
               onClick={() => setMixPct({ bet: 100, check: 0 })}
               style={{ touchAction: 'manipulation' }}
-                className="select-none rounded-[var(--radius-button)] border-hair px-3 py-1.5 text-[13px] active:scale-[0.97]"
+              className="border-hair select-none rounded-[var(--radius-button)] px-3 py-1.5 text-[13px] active:scale-[0.97]"
             >
               All-in (100/0)
             </button>
@@ -154,14 +148,12 @@ export function MotionDemo() {
                 className="absolute inset-0 flex items-end justify-center gap-1"
               >
                 {[0, 1, 2, 3, 4].map((i) => (
-                  <motion.div
-                    key={i}
-                    custom={i}
-                    variants={chipToss}
-                    initial="rest"
-                    animate="toss"
-                  >
-                    <Chip value={i === 2 ? 'GT' : i * 5} tone={i % 2 ? 'raise' : 'gold'} size="md" />
+                  <motion.div key={i} custom={i} variants={chipToss} initial="rest" animate="toss">
+                    <Chip
+                      value={i === 2 ? 'GT' : i * 5}
+                      tone={i % 2 ? 'raise' : 'gold'}
+                      size="md"
+                    />
                   </motion.div>
                 ))}
               </motion.div>
@@ -170,7 +162,7 @@ export function MotionDemo() {
           <button
             onClick={() => setTossKey((k) => k + 1)}
             style={{ touchAction: 'manipulation' }}
-            className="select-none rounded-[var(--radius-button)] bg-gold-gradient px-4 py-2 text-[13px] font-semibold text-noir active:scale-[0.97]"
+            className="bg-gold-gradient text-noir select-none rounded-[var(--radius-button)] px-4 py-2 text-[13px] font-semibold active:scale-[0.97]"
           >
             정확해요
           </button>
@@ -185,7 +177,7 @@ export function MotionDemo() {
           viewport={{ once: false, amount: 0.5 }}
           variants={fadeUp}
           transition={{ duration: d.base, ease: easeQuart }}
-          className="rounded-[var(--radius-panel)] surface border-hair p-4 text-[14px] text-fg-muted"
+          className="surface border-hair text-fg-muted rounded-[var(--radius-panel)] p-4 text-[14px]"
         >
           스크롤해 보세요 — 뷰에 들어올 때 위로 페이드인합니다. 240ms, ease-out-quart.
         </motion.div>
@@ -196,8 +188,8 @@ export function MotionDemo() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-[var(--radius-panel)] surface border-hair p-6">
-      <h3 className="font-mono text-[12px] uppercase tracking-[0.2em] text-fg-muted">{title}</h3>
+    <div className="surface border-hair rounded-[var(--radius-panel)] p-6">
+      <h3 className="text-fg-muted font-mono text-[12px] uppercase tracking-[0.2em]">{title}</h3>
       <div className="mt-4">{children}</div>
     </div>
   );

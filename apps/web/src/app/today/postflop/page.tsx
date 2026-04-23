@@ -54,7 +54,7 @@ export default function TodayPostflopPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+32px)] pt-6">
+      <main className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col pb-[calc(env(safe-area-inset-bottom)+32px)] pt-6">
         {!isDone && spot && (
           <>
             <header className="mb-5">
@@ -82,7 +82,7 @@ export default function TodayPostflopPage() {
                     onClick={() => handleAnswer(a)}
                     disabled={resultOpen}
                     className={cn(
-                      'rounded-[var(--radius-button)] font-bold text-white whitespace-nowrap px-1 shadow-[var(--shadow-card)] active:scale-[0.98] disabled:opacity-50',
+                      'whitespace-nowrap rounded-[var(--radius-button)] px-1 font-bold text-white shadow-[var(--shadow-card)] active:scale-[0.98] disabled:opacity-50',
                       compact ? 'h-12 text-[12px]' : 'h-14 text-[14px]',
                     )}
                     style={{ background: POSTFLOP_ACTION_COLOR[a] }}
@@ -100,16 +100,16 @@ export default function TodayPostflopPage() {
             <p className="font-mono text-[12px] uppercase tracking-[0.24em] text-[color:var(--color-accent)]">
               포스트플랍 훈련 완료
             </p>
-            <h1 className="mt-3 font-display text-[36px] font-bold tracking-[-0.02em]">
+            <h1 className="font-display mt-3 text-[36px] font-bold tracking-[-0.02em]">
               오늘도 한 걸음
             </h1>
-            <p className="mt-3 text-body text-fg-muted">
+            <p className="text-body text-fg-muted mt-3">
               5개 스팟 모두 풀었어요. 자주 나오는 결정 타입을 한 바퀴 돌았습니다.
             </p>
             <button
               type="button"
               onClick={handleRestart}
-              className="mt-8 h-12 rounded-[var(--radius-button)] bg-gold-gradient px-6 font-semibold text-noir"
+              className="bg-gold-gradient text-noir mt-8 h-12 rounded-[var(--radius-button)] px-6 font-semibold"
             >
               다시 돌기
             </button>

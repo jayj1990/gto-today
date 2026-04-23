@@ -39,15 +39,15 @@ export type Street = 'flop' | 'turn' | 'river';
 
 /** Broad board-texture label used for grouping & explanation hints. */
 export type BoardTexture =
-  | 'dry_high'      // K72r, A83r — static, one overcard, no draws
-  | 'dry_mid'       // 865r, 974r — low-mid, rainbow
-  | 'semi_wet'      // JT5hh, Q98ss — one two-tone / straight-draw heavy
-  | 'wet_draw'      // 987ss, T98hh — connected + flush-draw
-  | 'paired'        // KK4, 773 — paired board
-  | 'monotone'      // 9h7h3h — all one suit
-  | 'ace_high'      // A72r, A84r — ace-high static
+  | 'dry_high' // K72r, A83r — static, one overcard, no draws
+  | 'dry_mid' // 865r, 974r — low-mid, rainbow
+  | 'semi_wet' // JT5hh, Q98ss — one two-tone / straight-draw heavy
+  | 'wet_draw' // 987ss, T98hh — connected + flush-draw
+  | 'paired' // KK4, 773 — paired board
+  | 'monotone' // 9h7h3h — all one suit
+  | 'ace_high' // A72r, A84r — ace-high static
   | 'low_connected' // 765r, 543r
-  | 'broadway';     // KQJ / QJT
+  | 'broadway'; // KQJ / QJT
 
 /** A frequency distribution over postflop actions. Sums to ~1.0. */
 export type PostflopMix = Partial<Record<PostflopAction, number>>;
@@ -102,9 +102,7 @@ export interface PostflopSpot {
  *  potTypes) or MTT. If the requested format has no spots yet (the
  *  MTT batch is still solving), we fall back to the other format
  *  rather than returning an empty list. */
-export function listPostflopSpots(
-  options: { gameType?: 'cash' | 'mtt' } = {},
-): PostflopSpot[] {
+export function listPostflopSpots(options: { gameType?: 'cash' | 'mtt' } = {}): PostflopSpot[] {
   const pool = SOLVER_SPOTS.length > 0 ? SOLVER_SPOTS : POSTFLOP_SEEDS;
   const gameType = options.gameType;
   if (!gameType) return pool.map((s) => ({ ...s, board: [...s.board] }));
@@ -223,7 +221,9 @@ export function gradePostflopAction(
   action: PostflopAction,
 ): 'sharp' | 'acceptable' | 'wrong' {
   const userFreq = spot.mix[action] ?? 0;
-  const maxFreq = Math.max(...Object.values(spot.mix).filter((v): v is number => typeof v === 'number'));
+  const maxFreq = Math.max(
+    ...Object.values(spot.mix).filter((v): v is number => typeof v === 'number'),
+  );
   if (maxFreq === 0) return 'wrong';
   const ratio = userFreq / maxFreq;
   if (ratio >= 0.8) return 'sharp';

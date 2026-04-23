@@ -103,13 +103,11 @@ export const useChallengeStore = create<ChallengeState>()(
           // Dedup by (kind, spotId, dateKey) — retries shouldn't log
           // twice, and the same daily spot should only count once.
           const already = s.lifetimeAnswers.some(
-            (a) => a.kind === entry.kind && a.spotId === entry.spotId && a.dateKey === entry.dateKey,
+            (a) =>
+              a.kind === entry.kind && a.spotId === entry.spotId && a.dateKey === entry.dateKey,
           );
           if (already) return {};
-          const next = [{ ...entry, at: Date.now() }, ...s.lifetimeAnswers].slice(
-            0,
-            LIFETIME_CAP,
-          );
+          const next = [{ ...entry, at: Date.now() }, ...s.lifetimeAnswers].slice(0, LIFETIME_CAP);
           return { lifetimeAnswers: next };
         });
       },

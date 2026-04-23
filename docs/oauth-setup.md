@@ -38,6 +38,7 @@ KAKAO_CLIENT_SECRET=
    - `NAVER_CLIENT_SECRET`
 
 ### 네이버 콜백 주의사항
+
 - Callback URL 은 **정확히 일치**해야 함 (trailing slash 주의)
 - 서비스 URL 과 Callback URL 의 도메인이 일치해야 함
 - localhost 는 포트 번호까지 정확히
@@ -54,14 +55,17 @@ KAKAO_CLIENT_SECRET=
 4. 생성된 앱 클릭 → 왼쪽 메뉴에서:
 
 ### 4-1. **앱 키** 확인
+
 - **REST API 키** 를 복사 → 이게 `KAKAO_CLIENT_ID`
 
 ### 4-2. **플랫폼** → Web 플랫폼 등록
+
 - **사이트 도메인**:
   - `https://gto.today`
   - `http://localhost:3010`
 
 ### 4-3. **카카오 로그인** 활성화
+
 - 좌측 메뉴 → `제품 설정` → `카카오 로그인`
 - **활성화 설정** ON
 - **Redirect URI** 추가:
@@ -69,6 +73,7 @@ KAKAO_CLIENT_SECRET=
   - `http://localhost:3010/api/auth/callback/kakao`
 
 ### 4-4. **동의 항목** 설정
+
 - 좌측 메뉴 → `카카오 로그인` → `동의항목`
 - 다음 3개를 **필수 동의** 로 설정:
   - 닉네임 (`profile_nickname`)
@@ -76,16 +81,19 @@ KAKAO_CLIENT_SECRET=
   - 카카오계정(이메일) (`account_email`)
 
 ### 4-5. **Client Secret** 생성
+
 - 좌측 메뉴 → `카카오 로그인` → `보안`
 - **"코드 생성"** 클릭
 - **활성화** ON
 - 생성된 코드 복사 → 이게 `KAKAO_CLIENT_SECRET`
 
 ### 4-6. Vercel 환경변수 입력
+
 - `KAKAO_CLIENT_ID` = REST API 키 (4-1)
 - `KAKAO_CLIENT_SECRET` = 보안에서 생성한 코드 (4-5)
 
 ### 카카오 콜백 주의사항
+
 - 카카오는 **Client Secret 을 따로 켜지 않으면 동작 안 함** — 4-5 단계 빼먹지 말 것
 - 이메일 동의는 **필수 동의** 로 해야 Auth.js 에서 유저 식별 가능
 
@@ -102,12 +110,12 @@ KAKAO_CLIENT_SECRET=
 
 ## 트러블슈팅
 
-| 증상 | 원인 | 해결 |
-|---|---|---|
-| `OAuthCallback` 500 | Callback URL 불일치 | 콘솔에서 정확한 URL 재확인 (trailing slash) |
-| 카카오 로그인 후 `Configuration` 에러 | Client Secret 누락 | 4-5 단계 확인, Vercel 에 `KAKAO_CLIENT_SECRET` 값 정확한지 확인 |
-| 네이버 로그인 후 이메일이 null | 이메일 동의 안 받음 | 4-4 에서 이메일을 **필수 동의** 로 변경 |
-| 유저 이름이 undefined | 닉네임 동의 안 받음 | 동의항목 재설정 |
+| 증상                                  | 원인                | 해결                                                            |
+| ------------------------------------- | ------------------- | --------------------------------------------------------------- |
+| `OAuthCallback` 500                   | Callback URL 불일치 | 콘솔에서 정확한 URL 재확인 (trailing slash)                     |
+| 카카오 로그인 후 `Configuration` 에러 | Client Secret 누락  | 4-5 단계 확인, Vercel 에 `KAKAO_CLIENT_SECRET` 값 정확한지 확인 |
+| 네이버 로그인 후 이메일이 null        | 이메일 동의 안 받음 | 4-4 에서 이메일을 **필수 동의** 로 변경                         |
+| 유저 이름이 undefined                 | 닉네임 동의 안 받음 | 동의항목 재설정                                                 |
 
 ---
 

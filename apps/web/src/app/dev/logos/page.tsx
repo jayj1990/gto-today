@@ -213,18 +213,17 @@ export default function LogosPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto max-w-4xl safe-pad-x pb-24 pt-10">
+      <main className="safe-pad-x mx-auto max-w-4xl pb-24 pt-10">
         <header className="mb-8">
           <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
             /dev/logos
           </p>
-          <h1 className="mt-2 font-display text-[36px] font-bold tracking-[-0.02em]">
-            로고 후보
-          </h1>
-          <p className="mt-2 text-fg-muted">
-            네 가지 방향 · 총 15개 후보. A(코딩) · B(타이포) · C(AI v1) · D(AI v2 — 고퀄리티 재생성).
+          <h1 className="font-display mt-2 text-[36px] font-bold tracking-[-0.02em]">로고 후보</h1>
+          <p className="text-fg-muted mt-2">
+            네 가지 방향 · 총 15개 후보. A(코딩) · B(타이포) · C(AI v1) · D(AI v2 — 고퀄리티
+            재생성).
           </p>
-          <p className="mt-2 text-[12px] font-mono text-[color:var(--color-accent)]">
+          <p className="mt-2 font-mono text-[12px] text-[color:var(--color-accent)]">
             현재 앱 아이콘(favicon / 192 / 512 / apple / maskable) 전부 C2 chip-stack 적용 중.
           </p>
         </header>
@@ -278,10 +277,13 @@ export default function LogosPage() {
           marks={CHIP_WORDMARK}
         />
 
-        <section className="mt-12 rounded-[var(--radius-panel)] border-hair surface p-6">
+        <section className="border-hair surface mt-12 rounded-[var(--radius-panel)] p-6">
           <h2 className="font-display text-[18px] font-bold">선택 방법</h2>
-          <ul className="mt-3 space-y-1 text-[13px] text-fg-muted">
-            <li>• 마음에 드는 후보 번호(A2, B1, C4 등)를 알려주시면 최종 산출물(favicon / 192 / 512 / maskable / Open Graph) 전부 재생성</li>
+          <ul className="text-fg-muted mt-3 space-y-1 text-[13px]">
+            <li>
+              • 마음에 드는 후보 번호(A2, B1, C4 등)를 알려주시면 최종 산출물(favicon / 192 / 512 /
+              maskable / Open Graph) 전부 재생성
+            </li>
             <li>• 조합도 가능 — 예: C1 아이콘 + B1 워드마크 = 앱 마크 + 로고 세트</li>
             <li>• 색상·디테일 튜닝은 선택 후 바로 작업</li>
             <li>• AI 후보(C)는 PNG — 확정 시 SVG로 트레이스하거나 더 고해상도로 재생성</li>
@@ -306,22 +308,19 @@ function Family({
   return (
     <section className="mb-12">
       <div className="mb-4 flex items-baseline gap-3">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[color:var(--color-accent)] font-mono text-[13px] font-bold text-noir">
+        <span className="text-noir inline-flex h-7 w-7 items-center justify-center rounded-full bg-[color:var(--color-accent)] font-mono text-[13px] font-bold">
           {badge}
         </span>
         <h2 className="font-display text-[24px] font-bold tracking-[-0.02em]">{title}</h2>
       </div>
-      <p className="mb-5 text-[13px] text-fg-muted">{subtitle}</p>
+      <p className="text-fg-muted mb-5 text-[13px]">{subtitle}</p>
 
       <ul className="space-y-6">
         {marks.map((m) => (
-          <li
-            key={m.key}
-            className="rounded-[var(--radius-panel)] border-hair surface p-6"
-          >
+          <li key={m.key} className="border-hair surface rounded-[var(--radius-panel)] p-6">
             <div className="mb-5">
               <h3 className="font-display text-[20px] font-bold">{m.title}</h3>
-              <p className="mt-1 text-[13px] text-fg-muted">{m.desc}</p>
+              <p className="text-fg-muted mt-1 text-[13px]">{m.desc}</p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -329,9 +328,7 @@ function Family({
               <PreviewPanel src={m.src} alt={m.title} background="light" />
             </div>
 
-            <p className="mt-4 font-mono text-[11px] text-fg-muted">
-              파일: {m.src}
-            </p>
+            <p className="text-fg-muted mt-4 font-mono text-[11px]">파일: {m.src}</p>
           </li>
         ))}
       </ul>
@@ -350,10 +347,7 @@ function PreviewPanel({
 }) {
   const bg = background === 'dark' ? '#08120E' : '#F4EFE6';
   return (
-    <div
-      className="rounded-[var(--radius-button)] border-hair p-6"
-      style={{ background: bg }}
-    >
+    <div className="border-hair rounded-[var(--radius-button)] p-6" style={{ background: bg }}>
       <p
         className="mb-4 font-mono text-[10px] uppercase tracking-[0.2em]"
         style={{ color: background === 'dark' ? 'rgba(244,239,230,0.5)' : 'rgba(10,10,10,0.5)' }}
@@ -362,11 +356,29 @@ function PreviewPanel({
       </p>
       <div className="flex items-end gap-6">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} width={128} height={128} style={{ borderRadius: 18, objectFit: 'contain' }} />
+        <img
+          src={src}
+          alt={alt}
+          width={128}
+          height={128}
+          style={{ borderRadius: 18, objectFit: 'contain' }}
+        />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt="" width={72} height={72} style={{ borderRadius: 12, objectFit: 'contain' }} />
+        <img
+          src={src}
+          alt=""
+          width={72}
+          height={72}
+          style={{ borderRadius: 12, objectFit: 'contain' }}
+        />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt="" width={40} height={40} style={{ borderRadius: 8, objectFit: 'contain' }} />
+        <img
+          src={src}
+          alt=""
+          width={40}
+          height={40}
+          style={{ borderRadius: 8, objectFit: 'contain' }}
+        />
       </div>
       <p
         className="mt-4 font-mono text-[10px]"

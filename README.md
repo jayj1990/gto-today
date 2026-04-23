@@ -17,13 +17,13 @@ Node.js ≥22, pnpm ≥10.
 
 ## Monorepo
 
-| Workspace | Role |
-|---|---|
-| `apps/web` | Next.js App Router PWA (the whole product) |
-| `packages/poker-core` | Typed cards/board/equity primitives |
-| `packages/gto-data` | Pre-computed strategies + query API |
-| `packages/ui` | Shared components (Logo, Card, Chip) |
-| `packages/config` | Shared tsconfig, ESLint, Tailwind preset, tokens |
+| Workspace             | Role                                             |
+| --------------------- | ------------------------------------------------ |
+| `apps/web`            | Next.js App Router PWA (the whole product)       |
+| `packages/poker-core` | Typed cards/board/equity primitives              |
+| `packages/gto-data`   | Pre-computed strategies + query API              |
+| `packages/ui`         | Shared components (Logo, Card, Chip)             |
+| `packages/config`     | Shared tsconfig, ESLint, Tailwind preset, tokens |
 
 ## Tech
 

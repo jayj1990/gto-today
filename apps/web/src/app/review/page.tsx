@@ -33,9 +33,7 @@ const PREFLOP_ACTION_LABEL: Record<GradedAction, string> = {
   allin: '올인',
 };
 
-type Phase =
-  | { kind: 'quiz' }
-  | { kind: 'feedback'; grade: AnswerGrade };
+type Phase = { kind: 'quiz' } | { kind: 'feedback'; grade: AnswerGrade };
 
 export default function ReviewPage() {
   const mistakes = useMistakesStore((s) => s.mistakes);
@@ -44,10 +42,7 @@ export default function ReviewPage() {
 
   // Sort newest-first. Remove mistakes as they resolve so the head
   // of the queue is always the next thing to answer.
-  const queue = useMemo(
-    () => [...mistakes].sort((a, b) => b.at - a.at),
-    [mistakes],
-  );
+  const queue = useMemo(() => [...mistakes].sort((a, b) => b.at - a.at), [mistakes]);
 
   const [phase, setPhase] = useState<Phase>({ kind: 'quiz' });
   const [answered, setAnswered] = useState(0); // session-scoped counter
@@ -124,31 +119,32 @@ export default function ReviewPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4">
+      <main className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4">
         <header className="mb-3 flex items-baseline justify-between gap-3">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
               Review
             </p>
-            <h1 className="mt-1 font-display text-[22px] font-bold leading-[1.1] tracking-[-0.02em]">
+            <h1 className="font-display mt-1 text-[22px] font-bold leading-[1.1] tracking-[-0.02em]">
               복습 모드
             </h1>
           </div>
           <div className="text-right">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-fg-muted">
+            <p className="text-fg-muted font-mono text-[10px] uppercase tracking-[0.18em]">
               남은 오답
             </p>
-            <p className="font-display text-[18px] font-bold tabular-nums">
-              {visibleQueue.length}
-            </p>
+            <p className="font-display text-[18px] font-bold tabular-nums">{visibleQueue.length}</p>
           </div>
         </header>
 
         {visibleCurrent === null ? (
-          <EmptyState hadQueue={mistakes.length > 0} onResetSkips={() => {
-            skipIds.clear();
-            setSkipTick((t) => t + 1);
-          }} />
+          <EmptyState
+            hadQueue={mistakes.length > 0}
+            onResetSkips={() => {
+              skipIds.clear();
+              setSkipTick((t) => t + 1);
+            }}
+          />
         ) : (
           <>
             <AnimatePresence mode="wait">
@@ -162,16 +158,12 @@ export default function ReviewPage() {
                 {visibleCurrent.kind === 'preflop' ? (
                   <HandCard
                     spot={visibleCurrent.spot}
-                    celebratePot={
-                      phase.kind === 'feedback' && phase.grade === 'sharp'
-                    }
+                    celebratePot={phase.kind === 'feedback' && phase.grade === 'sharp'}
                   />
                 ) : (
                   <PostflopHand
                     spot={visibleCurrent.spot}
-                    celebratePot={
-                      phase.kind === 'feedback' && phase.grade === 'sharp'
-                    }
+                    celebratePot={phase.kind === 'feedback' && phase.grade === 'sharp'}
                   />
                 )}
               </motion.div>
@@ -179,7 +171,7 @@ export default function ReviewPage() {
 
             {/* Facing hint — mirrors today/play layout */}
             {visibleCurrent.kind === 'preflop' && (
-              <p className="mt-3 text-center text-[12px] text-fg-muted">
+              <p className="text-fg-muted mt-3 text-center text-[12px]">
                 {visibleCurrent.spot.scenario === 'vs_open'
                   ? `${visibleCurrent.spot.opener} 오픈 · ${visibleCurrent.spot.position} 디펜스`
                   : `${visibleCurrent.spot.position} RFI`}
@@ -212,7 +204,7 @@ export default function ReviewPage() {
                         type="button"
                         onClick={() => onAnswerPostflop(a)}
                         className={cn(
-                          'select-none rounded-[var(--radius-button)] font-bold text-white whitespace-nowrap px-1 shadow-[var(--shadow-card)] active:scale-[0.98]',
+                          'select-none whitespace-nowrap rounded-[var(--radius-button)] px-1 font-bold text-white shadow-[var(--shadow-card)] active:scale-[0.98]',
                           compact ? 'h-12 text-[12px]' : 'h-14 text-[14px]',
                         )}
                         style={{ background: POSTFLOP_ACTION_COLOR[a] }}
@@ -234,7 +226,7 @@ export default function ReviewPage() {
             )}
 
             {/* Session progress footer */}
-            <p className="mt-4 text-center font-mono text-[11px] text-fg-muted">
+            <p className="text-fg-muted mt-4 text-center font-mono text-[11px]">
               이번 세션 · {answered}개 풀었어요
             </p>
           </>
@@ -244,17 +236,16 @@ export default function ReviewPage() {
           <div className="mt-8 flex justify-between">
             <Link
               href="/"
-              className="font-mono text-[11px] uppercase tracking-[0.2em] text-fg-muted underline-offset-4 hover:underline"
+              className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.2em] underline-offset-4 hover:underline"
             >
               ← 홈으로
             </Link>
             <button
               type="button"
               onClick={() => {
-                if (confirm('모든 오답 기록을 지울까요? 되돌릴 수 없어요.'))
-                  clearAll();
+                if (confirm('모든 오답 기록을 지울까요? 되돌릴 수 없어요.')) clearAll();
               }}
-              className="inline-flex h-11 items-center px-3 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted active:scale-[0.96]"
+              className="text-fg-muted inline-flex h-11 items-center px-3 font-mono text-[11px] uppercase tracking-[0.18em] active:scale-[0.96]"
             >
               전체 비우기
             </button>
@@ -265,22 +256,16 @@ export default function ReviewPage() {
   );
 }
 
-function EmptyState({
-  hadQueue,
-  onResetSkips,
-}: {
-  hadQueue: boolean;
-  onResetSkips: () => void;
-}) {
+function EmptyState({ hadQueue, onResetSkips }: { hadQueue: boolean; onResetSkips: () => void }) {
   return (
-    <section className="mt-6 rounded-[var(--radius-panel)] border-hair surface p-8 text-center">
+    <section className="border-hair surface mt-6 rounded-[var(--radius-panel)] p-8 text-center">
       <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
         Clean slate
       </p>
-      <h2 className="mt-2 font-display text-[22px] font-bold tracking-[-0.015em]">
+      <h2 className="font-display mt-2 text-[22px] font-bold tracking-[-0.015em]">
         {hadQueue ? '이번 세션 복습 완료' : '복습할 오답이 없어요'}
       </h2>
-      <p className="mt-2 text-[13px] text-fg-muted">
+      <p className="text-fg-muted mt-2 text-[13px]">
         {hadQueue
           ? '건너뛴 오답은 다음 세션에서 다시 보여요.'
           : '오늘의 훈련이나 무한 훈련에서 새 스팟을 풀어보세요.'}
@@ -290,14 +275,14 @@ function EmptyState({
           <button
             type="button"
             onClick={onResetSkips}
-            className="inline-flex h-12 items-center justify-center rounded-[var(--radius-button)] border-hair surface-raised px-4 text-[14px] font-medium active:scale-[0.98]"
+            className="border-hair surface-raised inline-flex h-12 items-center justify-center rounded-[var(--radius-button)] px-4 text-[14px] font-medium active:scale-[0.98]"
           >
             건너뛴 항목 다시 풀기
           </button>
         )}
         <Link
           href="/today"
-          className="inline-flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-gold-gradient px-4 text-[14px] font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+          className="bg-gold-gradient text-noir inline-flex h-12 items-center justify-center rounded-[var(--radius-button)] px-4 text-[14px] font-semibold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
         >
           오늘의 훈련
         </Link>
@@ -324,12 +309,12 @@ function FeedbackPanel({
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mt-4 rounded-[var(--radius-panel)] border border-[color:var(--color-call)]/40 bg-[color:var(--color-call)]/10 p-5 text-center"
+        className="border-[color:var(--color-call)]/40 bg-[color:var(--color-call)]/10 mt-4 rounded-[var(--radius-panel)] border p-5 text-center"
       >
         <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[color:var(--color-call)]">
           정확해요
         </p>
-        <h2 className="mt-1 font-display text-[22px] font-bold text-[color:var(--color-call)]">
+        <h2 className="font-display mt-1 text-[22px] font-bold text-[color:var(--color-call)]">
           복습 완료 · 다음 오답으로
         </h2>
       </motion.div>
@@ -337,33 +322,27 @@ function FeedbackPanel({
   }
 
   const gto =
-    mistake.kind === 'preflop'
-      ? dominantPreflopLabel(mistake)
-      : dominantPostflopLabel(mistake);
-  const tone =
-    grade === 'acceptable' ? 'var(--color-info)' : 'var(--color-raise)';
+    mistake.kind === 'preflop' ? dominantPreflopLabel(mistake) : dominantPostflopLabel(mistake);
+  const tone = grade === 'acceptable' ? 'var(--color-info)' : 'var(--color-raise)';
   const headline = grade === 'acceptable' ? '괜찮아요' : '다음엔 이쪽이에요';
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mt-4 rounded-[var(--radius-panel)] border-hair surface p-4"
+      className="border-hair surface mt-4 rounded-[var(--radius-panel)] p-4"
     >
-      <p
-        className="font-mono text-[11px] uppercase tracking-[0.24em]"
-        style={{ color: tone }}
-      >
+      <p className="font-mono text-[11px] uppercase tracking-[0.24em]" style={{ color: tone }}>
         {headline}
       </p>
       <h2
-        className="mt-1 font-display text-[22px] font-bold tracking-[-0.02em]"
+        className="font-display mt-1 text-[22px] font-bold tracking-[-0.02em]"
         style={{ color: tone }}
       >
         GTO: {gto}
       </h2>
       {mistake.kind === 'postflop' && mistake.spot.teachingNote && (
-        <p className="mt-3 rounded-[var(--radius-button)] border border-[color:var(--color-accent)]/30 bg-[color:var(--color-accent)]/8 p-3 text-[12px] leading-[1.55] text-fg">
+        <p className="border-[color:var(--color-accent)]/30 bg-[color:var(--color-accent)]/8 text-fg mt-3 rounded-[var(--radius-button)] border p-3 text-[12px] leading-[1.55]">
           <span className="mb-1 block font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]">
             왜 그런지
           </span>
@@ -374,21 +353,21 @@ function FeedbackPanel({
         <button
           type="button"
           onClick={onRetry}
-          className="h-12 rounded-[var(--radius-button)] border-hair surface-raised text-[13px] font-medium active:scale-[0.98]"
+          className="border-hair surface-raised h-12 rounded-[var(--radius-button)] text-[13px] font-medium active:scale-[0.98]"
         >
           다시 시도
         </button>
         <button
           type="button"
           onClick={onSkip}
-          className="h-12 rounded-[var(--radius-button)] border-hair surface-raised text-[13px] font-medium active:scale-[0.98]"
+          className="border-hair surface-raised h-12 rounded-[var(--radius-button)] text-[13px] font-medium active:scale-[0.98]"
         >
           건너뛰기
         </button>
         <button
           type="button"
           onClick={onResolveManual}
-          className="h-12 rounded-[var(--radius-button)] bg-gold-gradient text-[13px] font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+          className="bg-gold-gradient text-noir h-12 rounded-[var(--radius-button)] text-[13px] font-semibold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
         >
           이해했어요
         </button>
@@ -417,9 +396,6 @@ function dominantPreflopLabel(m: PreflopMistake): string {
 
 function dominantPostflopLabel(m: PostflopMistake): string {
   const entries = Object.entries(m.spot.mix) as [PostflopAction, number][];
-  const top = entries.reduce(
-    (a, b) => ((b[1] ?? 0) > (a[1] ?? 0) ? b : a),
-    entries[0]!,
-  );
+  const top = entries.reduce((a, b) => ((b[1] ?? 0) > (a[1] ?? 0) ? b : a), entries[0]!);
   return POSTFLOP_ACTION_LABEL[top[0]];
 }

@@ -119,14 +119,14 @@ export function ChartNavigator({
           <SeatRibbon state={seatState} />
 
           {node.bbWins || node.showdown ? (
-            <section className="rounded-[var(--radius-panel)] border border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 p-5 text-center">
+            <section className="border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 rounded-[var(--radius-panel)] border p-5 text-center">
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-gold)]">
                 결과
               </p>
-              <h2 className="mt-1 font-display text-[24px] font-bold text-[color:var(--color-gold)]">
+              <h2 className="font-display mt-1 text-[24px] font-bold text-[color:var(--color-gold)]">
                 {node.bbWins ? 'BB 승리' : '쇼다운'}
               </h2>
-              <p className="mt-2 text-[12px] text-fg-muted">
+              <p className="text-fg-muted mt-2 text-[12px]">
                 {node.bbWins
                   ? '모두 폴드 → BB가 블라인드를 가져갑니다.'
                   : '모두 액션 완료 → 보드 오픈.'}
@@ -134,28 +134,27 @@ export function ChartNavigator({
               <button
                 type="button"
                 onClick={handleRestart}
-                className="mt-4 inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-gold-gradient px-5 font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+                className="bg-gold-gradient text-noir mt-4 inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] px-5 font-semibold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
               >
                 새 핸드 시작 ↻
               </button>
             </section>
           ) : flopReached ? (
-            <section className="rounded-[var(--radius-panel)] border border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 p-6 text-center">
+            <section className="border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 rounded-[var(--radius-panel)] border p-6 text-center">
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-gold)]">
                 프리플랍 종료
               </p>
-              <h2 className="mt-1 font-display text-[22px] font-bold text-[color:var(--color-gold)]">
+              <h2 className="font-display mt-1 text-[22px] font-bold text-[color:var(--color-gold)]">
                 플랍 도달
               </h2>
-              <p className="mt-2 text-[13px] text-fg-muted">
-                레이즈·콜이 끝났어요. 플랍 차트는 아직 커버리지가 부족해 곧
-                업데이트 예정입니다.
+              <p className="text-fg-muted mt-2 text-[13px]">
+                레이즈·콜이 끝났어요. 플랍 차트는 아직 커버리지가 부족해 곧 업데이트 예정입니다.
               </p>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={handleRestart}
-                  className="inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-gold-gradient px-4 font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+                  className="bg-gold-gradient text-noir inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] px-4 font-semibold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
                 >
                   새 핸드 ↻
                 </button>
@@ -164,7 +163,7 @@ export function ChartNavigator({
                   disabled
                   aria-disabled="true"
                   title="곧 업데이트 예정"
-                  className="inline-flex h-11 cursor-not-allowed items-center justify-center rounded-[var(--radius-button)] border-hair surface px-4 text-[13px] font-semibold text-fg-muted opacity-50"
+                  className="border-hair surface text-fg-muted inline-flex h-11 cursor-not-allowed items-center justify-center rounded-[var(--radius-button)] px-4 text-[13px] font-semibold opacity-50"
                 >
                   포스트플랍 (준비 중)
                 </button>
@@ -172,12 +171,12 @@ export function ChartNavigator({
             </section>
           ) : (
             <>
-              <section className="mb-3 rounded-[var(--radius-panel)] border border-[color:var(--color-accent)]/40 bg-[color:var(--color-accent)]/5 p-3">
+              <section className="border-[color:var(--color-accent)]/40 bg-[color:var(--color-accent)]/5 mb-3 rounded-[var(--radius-panel)] border p-3">
                 <div className="flex items-baseline gap-2">
                   <span className="font-display text-[20px] font-bold text-[color:var(--color-accent)]">
                     {node.actor}
                   </span>
-                  <span className="text-[12px] text-fg-muted">차례</span>
+                  <span className="text-fg-muted text-[12px]">차례</span>
                 </div>
 
                 {node.legal.length > 0 ? (
@@ -192,8 +191,8 @@ export function ChartNavigator({
                       const compact = node.legal.length >= 3;
                       const isAllIn = act === 'AllIn';
                       const cls = cn(
-                        'rounded-[var(--radius-button)] border font-mono font-bold text-white whitespace-nowrap shadow-[var(--shadow-card)] active:scale-[0.98]',
-                        compact ? 'h-11 text-[11px] px-1' : 'h-12 text-[13px] px-2',
+                        'whitespace-nowrap rounded-[var(--radius-button)] border font-mono font-bold text-white shadow-[var(--shadow-card)] active:scale-[0.98]',
+                        compact ? 'h-11 px-1 text-[11px]' : 'h-12 px-2 text-[13px]',
                       );
                       const style = {
                         background: color,
@@ -233,21 +232,19 @@ export function ChartNavigator({
                     })}
                   </div>
                 ) : (
-                  <p className="mt-3 text-[12px] text-fg-muted">
-                    이 스팟은 선택지가 없어요.
-                  </p>
+                  <p className="text-fg-muted mt-3 text-[12px]">이 스팟은 선택지가 없어요.</p>
                 )}
               </section>
 
               {node.postAllIn ? (
-                <section className="mb-3 rounded-[var(--radius-panel)] border border-[color:var(--color-gold)]/30 bg-[color:var(--color-gold)]/5 p-3 text-center">
+                <section className="border-[color:var(--color-gold)]/30 bg-[color:var(--color-gold)]/5 mb-3 rounded-[var(--radius-panel)] border p-3 text-center">
                   <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-gold)]">
                     올인 상황
                   </p>
-                  <p className="mt-1 text-[12px] text-fg">
+                  <p className="text-fg mt-1 text-[12px]">
                     남은 액션은{' '}
                     <span className="font-semibold text-[color:var(--color-call)]">콜</span> 또는{' '}
-                    <span className="font-semibold text-fg-muted">폴드</span>.
+                    <span className="text-fg-muted font-semibold">폴드</span>.
                   </p>
                 </section>
               ) : (
@@ -260,15 +257,15 @@ export function ChartNavigator({
                         className="w-full"
                       />
                     ) : (
-                      <div className="rounded-[var(--radius-panel)] border-hair surface p-4 text-center">
-                        <p className="font-mono text-[12px] text-fg-muted">
+                      <div className="border-hair surface rounded-[var(--radius-panel)] p-4 text-center">
+                        <p className="text-fg-muted font-mono text-[12px]">
                           솔버 데이터가 없는 스팟이에요.
                         </p>
                       </div>
                     )}
                   </section>
 
-                  <section className="mb-3 flex flex-wrap justify-center gap-x-3 gap-y-0.5 text-[11px] text-fg-muted">
+                  <section className="text-fg-muted mb-3 flex flex-wrap justify-center gap-x-3 gap-y-0.5 text-[11px]">
                     <LegendDot color="var(--color-raise)" label="레이즈" />
                     <LegendDot color="var(--color-call)" label="콜" />
                     <LegendDot color="var(--color-fold)" label="폴드" />
@@ -283,7 +280,7 @@ export function ChartNavigator({
               type="button"
               onClick={handleBack}
               disabled={path.length === 0}
-              className="h-10 rounded-[var(--radius-button)] border-hair surface font-mono text-[12px] text-fg-muted disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.98]"
+              className="border-hair surface text-fg-muted h-10 rounded-[var(--radius-button)] font-mono text-[12px] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
             >
               ← 뒤로
             </button>
@@ -291,7 +288,7 @@ export function ChartNavigator({
               type="button"
               onClick={handleRestart}
               disabled={path.length === 0}
-              className="h-10 rounded-[var(--radius-button)] border-hair surface font-mono text-[12px] text-fg-muted disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.98]"
+              className="border-hair surface text-fg-muted h-10 rounded-[var(--radius-button)] font-mono text-[12px] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
             >
               ↻ 처음부터
             </button>
@@ -356,17 +353,17 @@ function SeatRibbon({ state }: { state: SeatRow[] }) {
           className={cn(
             'flex flex-col items-center rounded-[var(--radius-button)] border px-0.5 py-1 font-mono text-[10px] transition-colors',
             row.status === 'active' &&
-              'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/15 text-[color:var(--color-accent)]',
+              'bg-[color:var(--color-accent)]/15 border-[color:var(--color-accent)] text-[color:var(--color-accent)]',
             row.status === 'waiting' &&
-              'border-[color:var(--color-border)] bg-[color:var(--color-surface-raised)] text-fg-muted opacity-60',
+              'text-fg-muted border-[color:var(--color-border)] bg-[color:var(--color-surface-raised)] opacity-60',
             row.status === 'folded' &&
-              'border-[color:var(--color-border)] bg-[color:var(--color-surface-raised)] text-fg-muted line-through opacity-70',
+              'text-fg-muted border-[color:var(--color-border)] bg-[color:var(--color-surface-raised)] line-through opacity-70',
             row.status === 'acted' &&
               'border-[color:var(--color-gold)]/50 bg-[color:var(--color-gold)]/10 text-[color:var(--color-gold)]',
           )}
         >
           <span className="font-display text-[12px] font-bold leading-none">{row.pos}</span>
-          <span className="mt-0.5 leading-none truncate max-w-full">{row.label}</span>
+          <span className="mt-0.5 max-w-full truncate leading-none">{row.label}</span>
         </div>
       ))}
     </section>
@@ -500,4 +497,3 @@ function prettyAction(a: string, compact = false): string {
 function cn(...parts: (string | false | undefined)[]) {
   return parts.filter(Boolean).join(' ');
 }
-

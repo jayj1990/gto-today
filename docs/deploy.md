@@ -1,6 +1,7 @@
 # Deploy — gto.today
 
 ## Prerequisites
+
 - Node 22+, pnpm 10+
 - Vercel account (logged in via `pnpm vercel login`)
 - GoDaddy access for gto.today (domain)
@@ -22,6 +23,7 @@ Vercel needs to know the Next.js app lives in `apps/web`, not the monorepo root.
 ### Recommended: connect GitHub
 
 On the same settings page, scroll to **Git** → click **Connect Git Repository** → select `jayj1990/gto-today`. This enables:
+
 - Auto-deploy on every push to `main` (= production)
 - Preview deploys on every PR / branch
 - `vercel --prod` from CLI

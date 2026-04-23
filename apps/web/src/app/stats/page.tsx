@@ -21,38 +21,52 @@ export default function StatsPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4">
+      <main className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4">
         <header className="mb-5">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
             Stats
           </p>
-          <h1 className="mt-1 font-display text-[26px] font-bold leading-[1.1] tracking-[-0.02em]">
+          <h1 className="font-display mt-1 text-[26px] font-bold leading-[1.1] tracking-[-0.02em]">
             내 훈련 기록
           </h1>
         </header>
 
         {/* Top-line KPIs */}
         <section className="grid grid-cols-2 gap-2">
-          <Kpi label="연속 기록" value={`${currentStreak}일`} sub={`최고 ${bestStreak}일`} tone="gold" />
-          <Kpi label="총 응답" value={String(totals.total)} sub={`${totals.accuracy}% 정확`} tone="accent" />
+          <Kpi
+            label="연속 기록"
+            value={`${currentStreak}일`}
+            sub={`최고 ${bestStreak}일`}
+            tone="gold"
+          />
+          <Kpi
+            label="총 응답"
+            value={String(totals.total)}
+            sub={`${totals.accuracy}% 정확`}
+            tone="accent"
+          />
           <Kpi label="정답" value={String(totals.sharp)} sub="완벽한 판단" tone="call" />
-          <Kpi label="복습 대기" value={String(mistakeCount)} sub="오답 큐" tone="raise" link="/review" />
+          <Kpi
+            label="복습 대기"
+            value={String(mistakeCount)}
+            sub="오답 큐"
+            tone="raise"
+            link="/review"
+          />
         </section>
 
         {totals.total === 0 ? (
-          <section className="mt-8 rounded-[var(--radius-panel)] border-hair surface p-6 text-center">
+          <section className="border-hair surface mt-8 rounded-[var(--radius-panel)] p-6 text-center">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
               No data yet
             </p>
-            <h2 className="mt-2 font-display text-[18px] font-semibold">
-              아직 답한 스팟이 없어요
-            </h2>
-            <p className="mt-1 text-[12px] text-fg-muted">
+            <h2 className="font-display mt-2 text-[18px] font-semibold">아직 답한 스팟이 없어요</h2>
+            <p className="text-fg-muted mt-1 text-[12px]">
               오늘의 훈련을 한 번이라도 풀면 여기 기록이 쌓여요.
             </p>
             <Link
               href="/today"
-              className="mt-4 inline-flex h-11 items-center rounded-[var(--radius-button)] bg-gold-gradient px-4 text-[14px] font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+              className="bg-gold-gradient text-noir mt-4 inline-flex h-11 items-center rounded-[var(--radius-button)] px-4 text-[14px] font-semibold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
             >
               오늘의 훈련 →
             </Link>
@@ -61,7 +75,10 @@ export default function StatsPage() {
           <>
             {/* Last-7-day accuracy */}
             <section className="mt-6">
-              <SectionHeader title="최근 7일 정확도" right={`${byDay.summary.accuracy}% · ${byDay.summary.total}개 응답`} />
+              <SectionHeader
+                title="최근 7일 정확도"
+                right={`${byDay.summary.accuracy}% · ${byDay.summary.total}개 응답`}
+              />
               <div className="mt-3 flex items-end gap-1.5">
                 {byDay.rows.map((d) => {
                   const pct = d.total > 0 ? Math.round((d.sharp / d.total) * 100) : 0;
@@ -69,7 +86,7 @@ export default function StatsPage() {
                   return (
                     <div key={d.dateKey} className="flex flex-1 flex-col items-center gap-1">
                       <div
-                        className="w-full rounded-sm bg-[color:var(--color-accent)]/25 transition-all"
+                        className="bg-[color:var(--color-accent)]/25 w-full rounded-sm transition-all"
                         style={{
                           height: 96,
                           position: 'relative',
@@ -80,10 +97,10 @@ export default function StatsPage() {
                           style={{ height: `${heightPx}px` }}
                         />
                       </div>
-                      <span className="font-mono text-[9px] tabular-nums text-fg-muted">
+                      <span className="text-fg-muted font-mono text-[9px] tabular-nums">
                         {d.label}
                       </span>
-                      <span className="font-mono text-[10px] font-semibold tabular-nums text-fg">
+                      <span className="text-fg font-mono text-[10px] font-semibold tabular-nums">
                         {d.total > 0 ? `${pct}%` : '·'}
                       </span>
                     </div>
@@ -100,12 +117,12 @@ export default function StatsPage() {
                   {weakCombos.map((w) => (
                     <li
                       key={w.combo}
-                      className="flex items-center justify-between gap-3 rounded-[var(--radius-button)] border-hair surface px-3 py-2"
+                      className="border-hair surface flex items-center justify-between gap-3 rounded-[var(--radius-button)] px-3 py-2"
                     >
                       <span className="font-display text-[15px] font-bold tracking-[-0.02em]">
                         {w.combo}
                       </span>
-                      <span className="font-mono text-[11px] tabular-nums text-fg-muted">
+                      <span className="text-fg-muted font-mono text-[11px] tabular-nums">
                         오답 {w.wrong}회 / 시도 {w.attempts}회
                       </span>
                       <span
@@ -117,7 +134,7 @@ export default function StatsPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-2 text-[11px] text-fg-muted">
+                <p className="text-fg-muted mt-2 text-[11px]">
                   복습 모드에서 이 콤보들을 우선적으로 다시 풀어보세요.
                 </p>
               </section>
@@ -131,13 +148,13 @@ export default function StatsPage() {
                   {byPosition.map((row) => (
                     <li
                       key={row.position}
-                      className="rounded-[var(--radius-button)] border-hair surface px-3 py-2.5"
+                      className="border-hair surface rounded-[var(--radius-button)] px-3 py-2.5"
                     >
                       <div className="flex items-baseline justify-between gap-3">
                         <span className="font-display text-[14px] font-semibold">
                           {row.position}
                         </span>
-                        <span className="font-mono text-[11px] tabular-nums text-fg-muted">
+                        <span className="text-fg-muted font-mono text-[11px] tabular-nums">
                           {row.total}개 · {row.accuracy}%
                         </span>
                       </div>
@@ -158,7 +175,7 @@ export default function StatsPage() {
                     </li>
                   ))}
                 </ul>
-                <div className="mt-2 flex justify-end gap-3 text-[10px] text-fg-muted">
+                <div className="text-fg-muted mt-2 flex justify-end gap-3 text-[10px]">
                   <LegendDot color="var(--color-call)" label="정답" />
                   <LegendDot color="var(--color-info)" label="차선" />
                   <LegendDot color="var(--color-raise)" label="오답" />
@@ -171,7 +188,7 @@ export default function StatsPage() {
         <nav className="mt-10 flex justify-center">
           <Link
             href="/"
-            className="font-mono text-[11px] uppercase tracking-[0.2em] text-fg-muted underline-offset-4 hover:underline"
+            className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.2em] underline-offset-4 hover:underline"
           >
             ← 홈으로
           </Link>
@@ -203,17 +220,15 @@ function Kpi({
           ? 'var(--color-call)'
           : 'var(--color-raise)';
   const inner = (
-    <div className="rounded-[var(--radius-panel)] border-hair surface px-4 py-3">
-      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-fg-muted">
-        {label}
-      </p>
+    <div className="border-hair surface rounded-[var(--radius-panel)] px-4 py-3">
+      <p className="text-fg-muted font-mono text-[10px] uppercase tracking-[0.18em]">{label}</p>
       <p
-        className="mt-1 font-display text-[24px] font-bold leading-none tracking-[-0.02em] tabular-nums"
+        className="font-display mt-1 text-[24px] font-bold tabular-nums leading-none tracking-[-0.02em]"
         style={{ color }}
       >
         {value}
       </p>
-      <p className="mt-1 font-mono text-[10px] tabular-nums text-fg-muted">{sub}</p>
+      <p className="text-fg-muted mt-1 font-mono text-[10px] tabular-nums">{sub}</p>
     </div>
   );
   if (link) {
@@ -231,7 +246,7 @@ function SectionHeader({ title, right }: { title: string; right?: string }) {
     <div className="flex items-baseline justify-between gap-3">
       <h2 className="font-display text-[16px] font-semibold tracking-[-0.01em]">{title}</h2>
       {right && (
-        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-fg-muted">
+        <span className="text-fg-muted font-mono text-[10px] uppercase tracking-[0.16em]">
           {right}
         </span>
       )}
@@ -242,11 +257,7 @@ function SectionHeader({ title, right }: { title: string; right?: string }) {
 function LegendDot({ color, label }: { color: string; label: string }) {
   return (
     <span className="inline-flex items-center gap-1">
-      <span
-        aria-hidden
-        className="inline-block h-2 w-2 rounded-sm"
-        style={{ background: color }}
-      />
+      <span aria-hidden className="inline-block h-2 w-2 rounded-sm" style={{ background: color }} />
       {label}
     </span>
   );
@@ -388,9 +399,7 @@ function groupByPosition(log: LifetimeAnswer[]): PositionRow[] {
   }
   for (const row of map.values()) {
     row.accuracy =
-      row.total === 0
-        ? 0
-        : Math.round(((row.sharp + row.acceptable * 0.5) / row.total) * 100);
+      row.total === 0 ? 0 : Math.round(((row.sharp + row.acceptable * 0.5) / row.total) * 100);
   }
   // Fixed order so the list is stable.
   const order = ['UTG', 'UTG1', 'MP', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'];

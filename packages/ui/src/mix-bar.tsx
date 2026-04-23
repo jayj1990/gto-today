@@ -60,11 +60,7 @@ export function MixBar({
                 )}
               >
                 {dom && (
-                  <span
-                    aria-hidden
-                    className="mr-1"
-                    style={{ color: highlightColor }}
-                  >
+                  <span aria-hidden className="mr-1" style={{ color: highlightColor }}>
                     ★
                   </span>
                 )}
@@ -83,7 +79,7 @@ export function MixBar({
             {labeled && (
               <span
                 className={cn(
-                  'text-right font-mono tabular-nums text-[13px]',
+                  'text-right font-mono text-[13px] tabular-nums',
                   dom ? 'font-bold text-white' : 'font-semibold',
                 )}
               >

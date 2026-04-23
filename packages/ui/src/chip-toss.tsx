@@ -51,26 +51,28 @@ export function ChipToss({ show, count = 5, className, style }: ChipTossProps) {
         <span
           key={`${id}-${i}`}
           className="animate-chip-toss"
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            width: 14,
-            height: 14,
-            marginLeft: -7,
-            marginTop: -7,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle at 35% 30%, #F0C857, #D4AF37 60%, #8C6F1F)',
-            boxShadow:
-              'inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(0,0,0,0.25), 0 2px 6px rgba(0,0,0,0.35)',
-            outline: '2px dashed rgba(255,255,255,0.22)',
-            outlineOffset: '-3px',
-            animationDelay: `${i * 35}ms`,
-            // Tell the keyframes where this chip flies to.
-            ['--tx' as keyof CSSProperties]: t.tx,
-            ['--ty' as keyof CSSProperties]: t.ty,
-            ['--tr' as keyof CSSProperties]: t.tr,
-          } as CSSProperties}
+          style={
+            {
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              width: 14,
+              height: 14,
+              marginLeft: -7,
+              marginTop: -7,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle at 35% 30%, #F0C857, #D4AF37 60%, #8C6F1F)',
+              boxShadow:
+                'inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(0,0,0,0.25), 0 2px 6px rgba(0,0,0,0.35)',
+              outline: '2px dashed rgba(255,255,255,0.22)',
+              outlineOffset: '-3px',
+              animationDelay: `${i * 35}ms`,
+              // Tell the keyframes where this chip flies to.
+              ['--tx' as keyof CSSProperties]: t.tx,
+              ['--ty' as keyof CSSProperties]: t.ty,
+              ['--tr' as keyof CSSProperties]: t.tr,
+            } as CSSProperties
+          }
         />
       ))}
     </div>

@@ -6,7 +6,10 @@ export const THEME_STORAGE_KEY = 'gto.theme';
  * Derive the concrete theme to apply given a mode and a Date.
  * Tonight is 22:00–04:59 local; daytime 06:00–17:59 = light; evening fallback = dark.
  */
-export function resolveTheme(mode: ThemeMode, now: Date = new Date()): 'dark' | 'light' | 'tonight' {
+export function resolveTheme(
+  mode: ThemeMode,
+  now: Date = new Date(),
+): 'dark' | 'light' | 'tonight' {
   if (mode !== 'auto') return mode;
   const hour = now.getHours();
   if (hour >= 22 || hour < 5) return 'tonight';

@@ -75,7 +75,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="주요 메뉴"
-      className="fixed inset-x-0 bottom-0 z-30 bg-[color:var(--color-bg)]/85 backdrop-blur-md md:hidden"
+      className="bg-[color:var(--color-bg)]/85 fixed inset-x-0 bottom-0 z-30 backdrop-blur-md md:hidden"
       style={{
         paddingBottom: 'env(safe-area-inset-bottom)',
         // Subtle upward shadow instead of a hard hairline border —
@@ -94,7 +94,7 @@ export function BottomNav() {
                 href={t.href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'relative flex h-full w-full flex-col items-center justify-center gap-0.5 active:scale-[0.96] transition-colors',
+                  'relative flex h-full w-full flex-col items-center justify-center gap-0.5 transition-colors active:scale-[0.96]',
                   active ? 'text-[color:var(--color-accent)]' : 'text-fg-muted',
                 )}
               >

@@ -19,12 +19,7 @@ export interface ComboDetailSheetProps {
  * Slide down / drag down below a small threshold to dismiss —
  * matches iOS sheet behaviour, no explicit close button needed.
  */
-export function ComboDetailSheet({
-  open,
-  combo,
-  mix,
-  onClose,
-}: ComboDetailSheetProps) {
+export function ComboDetailSheet({ open, combo, mix, onClose }: ComboDetailSheetProps) {
   const rows = mix ? buildRows(mix) : [];
   const top = rows.reduce((a, b) => (b.value > a.value ? b : a), rows[0]!);
 
@@ -59,8 +54,8 @@ export function ComboDetailSheet({
             }}
             className={cn(
               'fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-lg',
-              'rounded-t-[var(--radius-panel)] surface-raised border-hair border-t',
-              'safe-sticky-bottom px-5 pt-5 pb-6 shadow-[var(--shadow-panel)]',
+              'surface-raised border-hair rounded-t-[var(--radius-panel)] border-t',
+              'safe-sticky-bottom px-5 pb-6 pt-5 shadow-[var(--shadow-panel)]',
               'touch-pan-y',
             )}
           >
@@ -74,7 +69,7 @@ export function ComboDetailSheet({
             </h2>
 
             {rows.length === 0 ? (
-              <p className="mt-4 rounded-[var(--radius-button)] border-hair surface p-4 text-center text-[12px] text-fg-muted">
+              <p className="border-hair surface text-fg-muted mt-4 rounded-[var(--radius-button)] p-4 text-center text-[12px]">
                 이 스팟의 데이터가 없어요.
               </p>
             ) : (
@@ -103,7 +98,7 @@ export function ComboDetailSheet({
                       </div>
                       <span
                         className={cn(
-                          'text-right font-mono tabular-nums text-[13px]',
+                          'text-right font-mono text-[13px] tabular-nums',
                           isTop ? 'font-bold text-white' : 'font-semibold',
                         )}
                       >
@@ -131,9 +126,7 @@ function buildRows(mix: ComboMix): Row[] {
   const total = (mix.raise || 0) + (mix.call || 0) + (mix.fold || 0);
   // Normalise: if the mix is a fraction (<=1), scale to 0..100.
   const scale = total > 1.5 ? 1 : 100;
-  const rows: Row[] = [
-    { label: '레이즈', value: (mix.raise ?? 0) * scale, color: '#C8102E' },
-  ];
+  const rows: Row[] = [{ label: '레이즈', value: (mix.raise ?? 0) * scale, color: '#C8102E' }];
   if (mix.call !== undefined) {
     rows.push({ label: '콜', value: mix.call * scale, color: '#1F9D55' });
   }

@@ -18,19 +18,20 @@ export default function LiveSetupPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+32px)] pt-8">
+      <main className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col pb-[calc(env(safe-area-inset-bottom)+32px)] pt-8">
         <header>
-          <Link href="/" className="font-mono text-[11px] uppercase tracking-[0.2em] text-fg-muted">
+          <Link href="/" className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.2em]">
             ← 홈으로
           </Link>
           <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--color-accent)]">
             실전 모드 · 설정
           </p>
-          <h1 className="mt-2 font-display text-[30px] font-bold tracking-[-0.02em]">
+          <h1 className="font-display mt-2 text-[30px] font-bold tracking-[-0.02em]">
             GTO 데이터 선택
           </h1>
-          <p className="mt-3 text-[13px] text-fg-muted">
-            6맥스 100BB · 캐시(앤티 없음) 와 토너먼트(1BB 앤티) 지원. 추가 스택·오픈 사이즈는 추후 업데이트.
+          <p className="text-fg-muted mt-3 text-[13px]">
+            6맥스 100BB · 캐시(앤티 없음) 와 토너먼트(1BB 앤티) 지원. 추가 스택·오픈 사이즈는 추후
+            업데이트.
           </p>
         </header>
 
@@ -51,14 +52,14 @@ export default function LiveSetupPage() {
                   className={cn(
                     'rounded-[var(--radius-panel)] border p-4 text-left transition-colors active:scale-[0.99]',
                     config.gameType === k
-                      ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/10'
+                      ? 'bg-[color:var(--color-accent)]/10 border-[color:var(--color-accent)]'
                       : 'border-hair surface hover:bg-[color:var(--color-surface-raised)]',
                   )}
                 >
                   <p className="font-display text-[18px] font-bold">
                     {k === 'cash' ? '캐시 게임' : '토너먼트'}
                   </p>
-                  <p className="mt-1 text-[12px] text-fg-muted">
+                  <p className="text-fg-muted mt-1 text-[12px]">
                     {k === 'cash' ? '앤티 없음 · NL cash 기준' : '1BB 앤티 · ChipEV (근사)'}
                   </p>
                 </button>
@@ -82,20 +83,22 @@ export default function LiveSetupPage() {
 
         <Link
           href="/live/play"
-          className="mt-10 inline-flex h-14 items-center justify-center rounded-[var(--radius-button)] bg-gold-gradient text-center font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+          className="bg-gold-gradient text-noir mt-10 inline-flex h-14 items-center justify-center rounded-[var(--radius-button)] text-center font-semibold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
           style={{ touchAction: 'manipulation' }}
         >
           실전 시작 →
         </Link>
 
         {config.gameType === 'mtt' && (
-          <div className="mt-4 rounded-[var(--radius-button)] border border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 px-4 py-3 text-[12px] text-[color:var(--color-gold)]">
-            토너먼트 데이터는 캐시 범위를 앤티 효과로 보정한 <strong>근사값</strong>이에요. 정확한 ChipEV 솔브는 추후 업데이트.
+          <div className="border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 mt-4 rounded-[var(--radius-button)] border px-4 py-3 text-[12px] text-[color:var(--color-gold)]">
+            토너먼트 데이터는 캐시 범위를 앤티 효과로 보정한 <strong>근사값</strong>이에요. 정확한
+            ChipEV 솔브는 추후 업데이트.
           </div>
         )}
 
-        <div className="mt-4 rounded-[var(--radius-button)] border border-[color:var(--color-info)]/40 bg-[color:var(--color-info)]/10 px-4 py-3 text-[12px] text-[color:var(--color-info)]">
-          추후 업데이트: 다양한 스택 뎁스 (50BB / 200BB), 추가 오픈 사이즈 (2.25x / 3x), ICM 버블 모드.
+        <div className="border-[color:var(--color-info)]/40 bg-[color:var(--color-info)]/10 mt-4 rounded-[var(--radius-button)] border px-4 py-3 text-[12px] text-[color:var(--color-info)]">
+          추후 업데이트: 다양한 스택 뎁스 (50BB / 200BB), 추가 오픈 사이즈 (2.25x / 3x), ICM 버블
+          모드.
         </div>
       </main>
     </>
@@ -105,7 +108,7 @@ export default function LiveSetupPage() {
 function FieldSet({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <section>
-      <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted">
+      <p className="text-fg-muted mb-2 font-mono text-[11px] uppercase tracking-[0.18em]">
         {label}
       </p>
       {children}
@@ -125,17 +128,15 @@ function InfoRow({
   valueClass?: string;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-[var(--radius-button)] border-hair surface px-4 py-3">
+    <div className="border-hair surface flex items-center justify-between rounded-[var(--radius-button)] px-4 py-3">
       <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-fg-muted">
-          {label}
-        </p>
+        <p className="text-fg-muted font-mono text-[10px] uppercase tracking-[0.18em]">{label}</p>
         <p className={cn('mt-0.5 font-mono text-[14px] font-semibold', valueClass ?? 'text-fg')}>
           {value}
         </p>
       </div>
       {locked && (
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-fg-muted/70">
+        <span className="text-fg-muted/70 font-mono text-[10px] uppercase tracking-[0.18em]">
           고정
         </span>
       )}

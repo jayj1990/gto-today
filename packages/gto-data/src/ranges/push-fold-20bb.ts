@@ -26,46 +26,95 @@ function entry(push: 0 | 1): PushFoldEntry {
 
 // UTG (tightest) — premium pairs + AK + AQs.
 const UTG_PUSH: Set<string> = new Set([
-  'AA', 'KK', 'QQ', 'JJ', 'TT', '99',
-  'AKs', 'AKo', 'AQs', 'AQo', 'AJs',
+  'AA',
+  'KK',
+  'QQ',
+  'JJ',
+  'TT',
+  '99',
+  'AKs',
+  'AKo',
+  'AQs',
+  'AQo',
+  'AJs',
   'KQs',
 ]);
 
 // MP — add mid pairs + more broadway.
-const MP_PUSH: Set<string> = new Set([
-  ...UTG_PUSH,
-  '88', '77',
-  'AJo', 'ATs', 'ATo', 'KJs', 'KQo',
-]);
+const MP_PUSH: Set<string> = new Set([...UTG_PUSH, '88', '77', 'AJo', 'ATs', 'ATo', 'KJs', 'KQo']);
 
 // CO — open up with suited aces + connectors.
 const CO_PUSH: Set<string> = new Set([
   ...MP_PUSH,
-  '66', '55',
-  'A9s', 'A8s', 'A7s', 'A5s',
-  'KTs', 'KJo', 'QJs', 'QJo', 'JTs',
+  '66',
+  '55',
+  'A9s',
+  'A8s',
+  'A7s',
+  'A5s',
+  'KTs',
+  'KJo',
+  'QJs',
+  'QJo',
+  'JTs',
 ]);
 
 // BTN — widest late-position push range.
 const BTN_PUSH: Set<string> = new Set([
   ...CO_PUSH,
-  '44', '33', '22',
-  'A9o', 'A8o', 'A6s', 'A5o', 'A4s', 'A3s', 'A2s',
-  'K9s', 'KTo', 'K8s',
-  'QTs', 'Q9s', 'QTo',
-  'J9s', 'T9s', '98s', '87s', '76s', '65s', '54s',
+  '44',
+  '33',
+  '22',
+  'A9o',
+  'A8o',
+  'A6s',
+  'A5o',
+  'A4s',
+  'A3s',
+  'A2s',
+  'K9s',
+  'KTo',
+  'K8s',
+  'QTs',
+  'Q9s',
+  'QTo',
+  'J9s',
+  'T9s',
+  '98s',
+  '87s',
+  '76s',
+  '65s',
+  '54s',
 ]);
 
 // SB — push very wide when it folds to you; 100% of 22+, most Ax.
 const SB_PUSH: Set<string> = new Set([
   ...BTN_PUSH,
-  'A4o', 'A3o', 'A2o',
-  'K7s', 'K6s', 'K5s', 'K4s', 'K3s', 'K2s',
-  'K9o', 'K8o',
-  'Q8s', 'Q7s', 'Q9o',
-  'J8s', 'JTo', 'J9o',
-  'T8s', 'T9o',
-  '97s', '86s', '75s', '64s', '53s', '43s',
+  'A4o',
+  'A3o',
+  'A2o',
+  'K7s',
+  'K6s',
+  'K5s',
+  'K4s',
+  'K3s',
+  'K2s',
+  'K9o',
+  'K8o',
+  'Q8s',
+  'Q7s',
+  'Q9o',
+  'J8s',
+  'JTo',
+  'J9o',
+  'T8s',
+  'T9o',
+  '97s',
+  '86s',
+  '75s',
+  '64s',
+  '53s',
+  '43s',
 ]);
 
 function buildChart(pushSet: Set<string>): PushFoldChart {

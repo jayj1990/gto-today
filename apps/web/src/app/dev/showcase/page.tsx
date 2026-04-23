@@ -9,15 +9,15 @@ export default function ShowcasePage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto max-w-5xl safe-pad-x pb-[calc(env(safe-area-inset-bottom)+96px)] pt-10">
+      <main className="safe-pad-x mx-auto max-w-5xl pb-[calc(env(safe-area-inset-bottom)+96px)] pt-10">
         <header className="mb-10">
           <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
             /dev/showcase
           </p>
-          <h1 className="mt-2 font-display text-[40px] font-bold tracking-[-0.02em]">
+          <h1 className="font-display mt-2 text-[40px] font-bold tracking-[-0.02em]">
             Design system
           </h1>
-          <p className="mt-2 text-fg-muted">
+          <p className="text-fg-muted mt-2">
             모든 컴포넌트가 여기 모여 있습니다. 아래 섹션에서 직접 만져보세요.
           </p>
         </header>
@@ -26,19 +26,19 @@ export default function ShowcasePage() {
           <div className="flex flex-wrap items-end gap-10">
             <div className="flex flex-col items-start gap-1">
               <Logo variant="full" width={200} />
-              <span className="font-mono text-[11px] text-fg-muted">variant=&quot;full&quot;</span>
+              <span className="text-fg-muted font-mono text-[11px]">variant=&quot;full&quot;</span>
             </div>
             <div className="flex flex-col items-start gap-1">
               <Logo variant="short" width={72} />
-              <span className="font-mono text-[11px] text-fg-muted">variant=&quot;short&quot;</span>
+              <span className="text-fg-muted font-mono text-[11px]">variant=&quot;short&quot;</span>
             </div>
             <div className="flex flex-col items-start gap-1">
               <Logo variant="dot" width={32} height={32} />
-              <span className="font-mono text-[11px] text-fg-muted">variant=&quot;dot&quot;</span>
+              <span className="text-fg-muted font-mono text-[11px]">variant=&quot;dot&quot;</span>
             </div>
             <div className="flex flex-col items-start gap-1">
               <Logo variant="mark" width={64} height={64} />
-              <span className="font-mono text-[11px] text-fg-muted">variant=&quot;mark&quot;</span>
+              <span className="text-fg-muted font-mono text-[11px]">variant=&quot;mark&quot;</span>
             </div>
           </div>
         </Section>
@@ -69,7 +69,7 @@ export default function ShowcasePage() {
             <CardView face="down" size="md" />
             <CardView rank="T" suit="h" size="lg" deckScheme="two-color" />
           </div>
-          <p className="mt-3 font-mono text-[11px] text-fg-muted">
+          <p className="text-fg-muted mt-3 font-mono text-[11px]">
             Left: four-color deck · Right: two-color (traditional)
           </p>
         </Section>
@@ -89,7 +89,7 @@ export default function ShowcasePage() {
         <Section title="05 · Poker table (overhead)">
           <div className="grid gap-6 sm:grid-cols-2">
             <div>
-              <p className="mb-2 font-mono text-[11px] text-fg-muted">6-max · BTN (RFI)</p>
+              <p className="text-fg-muted mb-2 font-mono text-[11px]">6-max · BTN (RFI)</p>
               <PokerTable
                 format="6max"
                 hero="BTN"
@@ -116,7 +116,7 @@ export default function ShowcasePage() {
               />
             </div>
             <div>
-              <p className="mb-2 font-mono text-[11px] text-fg-muted">6-max · BB facing raise</p>
+              <p className="text-fg-muted mb-2 font-mono text-[11px]">6-max · BB facing raise</p>
               <PokerTable
                 format="6max"
                 hero="BB"
@@ -164,7 +164,7 @@ export default function ShowcasePage() {
 
         <Section title="09 · Typography">
           <div className="space-y-4">
-            <p className="font-display text-[56px] font-bold tracking-[-0.02em] leading-[1]">
+            <p className="font-display text-[56px] font-bold leading-[1] tracking-[-0.02em]">
               Display XL — GTO, Today.
             </p>
             <p className="font-display text-[40px] font-bold tracking-[-0.02em]">
@@ -175,10 +175,10 @@ export default function ShowcasePage() {
             <p className="text-body-lg">
               Body LG — &quot;정확해요&quot; / &quot;해설 보기&quot; 정답/오답 대신 설명을 드립니다.
             </p>
-            <p className="font-mono text-mono-lg font-semibold">EV +2.14 BB</p>
-            <p className="font-mono text-mono">Bet 75% · 68%</p>
+            <p className="text-mono-lg font-mono font-semibold">EV +2.14 BB</p>
+            <p className="text-mono font-mono">Bet 75% · 68%</p>
             <p
-              className="font-mono text-caption uppercase tracking-[0.18em] text-fg-muted"
+              className="text-caption text-fg-muted font-mono uppercase tracking-[0.18em]"
               style={{ fontFamily: 'var(--font-serif)' }}
             >
               Serif accent (Fraunces) — Today awaits.
@@ -192,7 +192,7 @@ export default function ShowcasePage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="mt-10 rounded-[var(--radius-panel)] border-hair surface p-6">
+    <section className="border-hair surface mt-10 rounded-[var(--radius-panel)] p-6">
       <h2 className="font-mono text-[12px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
         {title}
       </h2>
@@ -203,11 +203,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Swatch({ name, varName }: { name: string; varName: string }) {
   return (
-    <div className="rounded-[var(--radius-button)] border-hair overflow-hidden">
+    <div className="border-hair overflow-hidden rounded-[var(--radius-button)]">
       <div className="h-16 w-full" style={{ background: `var(${varName})` }} />
       <div className="px-3 py-2">
         <p className="text-[13px] font-medium">{name}</p>
-        <p className="font-mono text-[11px] text-fg-muted">{varName}</p>
+        <p className="text-fg-muted font-mono text-[11px]">{varName}</p>
       </div>
     </div>
   );

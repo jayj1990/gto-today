@@ -60,7 +60,7 @@ export function HomeGate() {
       <main
         aria-busy
         aria-label="불러오는 중"
-        className="relative mx-auto flex min-h-dvh max-w-lg flex-col safe-pad-x"
+        className="safe-pad-x relative mx-auto flex min-h-dvh max-w-lg flex-col"
         style={{
           paddingTop: 'calc(env(safe-area-inset-top) + 20px)',
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 28px)',
@@ -85,7 +85,7 @@ export function HomeGate() {
 
   return (
     <main
-      className="relative mx-auto flex min-h-dvh max-w-lg flex-col safe-pad-x"
+      className="safe-pad-x relative mx-auto flex min-h-dvh max-w-lg flex-col"
       style={{
         paddingTop: 'calc(env(safe-area-inset-top) + 20px)',
         paddingBottom: 'calc(env(safe-area-inset-bottom) + 28px)',
@@ -110,7 +110,7 @@ export function HomeGate() {
         </div>
         <Link
           href="/account"
-          className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-fg-muted active:scale-[0.96]"
+          className="text-fg-muted flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] active:scale-[0.96]"
           aria-label="내 계정"
         >
           <span className="hidden sm:inline">{user?.name ?? '게스트'}</span>
@@ -262,7 +262,7 @@ function PrimaryCard({
         >
           {eyebrow}
         </p>
-        <h2 className="mt-2 font-display text-[22px] font-bold leading-tight tracking-[-0.015em]">
+        <h2 className="font-display mt-2 text-[22px] font-bold leading-tight tracking-[-0.015em]">
           {title}
         </h2>
         <p
@@ -274,9 +274,9 @@ function PrimaryCard({
           {description}
         </p>
         {progress !== undefined && progress > 0 && progress < 1 && (
-          <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-noir/15">
+          <div className="bg-noir/15 mt-3 h-1 w-full overflow-hidden rounded-full">
             <div
-              className="h-full rounded-full bg-noir/70 transition-[width] duration-500"
+              className="bg-noir/70 h-full rounded-full transition-[width] duration-500"
               style={{ width: `${Math.round(progress * 100)}%` }}
             />
           </div>

@@ -23,16 +23,7 @@ export interface RandomSpotOptions {
   readonly gameType?: 'cash' | 'mtt';
 }
 
-const POSITIONS_9MAX: readonly Position[] = [
-  'UTG',
-  'UTG1',
-  'MP',
-  'LJ',
-  'HJ',
-  'CO',
-  'BTN',
-  'SB',
-];
+const POSITIONS_9MAX: readonly Position[] = ['UTG', 'UTG1', 'MP', 'LJ', 'HJ', 'CO', 'BTN', 'SB'];
 const POSITIONS_6MAX: readonly Position[] = ['UTG', 'MP', 'CO', 'BTN', 'SB'];
 
 function comboCards(combo: ComboKey): readonly [CardCode, CardCode] {
@@ -57,12 +48,24 @@ function comboCards(combo: ComboKey): readonly [CardCode, CardCode] {
 }
 
 const OPENER_SIZE: Record<string, number> = {
-  UTG: 2.5, UTG1: 2.5, UTG2: 2.5, UTG3: 2.5,
-  MP: 2.5, LJ: 2.5, HJ: 2.5, CO: 2.5, BTN: 2.5,
-  SB: 3, BB: 0,
+  UTG: 2.5,
+  UTG1: 2.5,
+  UTG2: 2.5,
+  UTG3: 2.5,
+  MP: 2.5,
+  LJ: 2.5,
+  HJ: 2.5,
+  CO: 2.5,
+  BTN: 2.5,
+  SB: 3,
+  BB: 0,
 };
 
-function classifyDefense(mix: { call: number; raise: number; fold: number }): TrainingSpot['correctAnswer'] {
+function classifyDefense(mix: {
+  call: number;
+  raise: number;
+  fold: number;
+}): TrainingSpot['correctAnswer'] {
   const max = Math.max(mix.call, mix.raise, mix.fold);
   const ties = [mix.call, mix.raise, mix.fold].filter((v) => Math.abs(v - max) <= 0.05).length;
   if (ties > 1) return 'mixed';
@@ -75,7 +78,9 @@ function comboCardsRand(combo: ComboKey): readonly [CardCode, CardCode] {
   return comboCards(combo);
 }
 
-export async function generateRandomSpot(opts: RandomSpotOptions = {}): Promise<TrainingSpot | null> {
+export async function generateRandomSpot(
+  opts: RandomSpotOptions = {},
+): Promise<TrainingSpot | null> {
   const format: TableFormat = opts.format ?? '6max';
   const defaults = format === '6max' ? POSITIONS_6MAX : POSITIONS_9MAX;
   const positions = opts.positions ?? defaults;
@@ -164,9 +169,7 @@ export type RandomItem =
   | { readonly kind: 'preflop'; readonly spot: TrainingSpot }
   | { readonly kind: 'postflop'; readonly spot: PostflopSpot };
 
-export async function generateRandomItem(
-  opts: RandomSpotOptions = {},
-): Promise<RandomItem | null> {
+export async function generateRandomItem(opts: RandomSpotOptions = {}): Promise<RandomItem | null> {
   // 35% chance of a postflop drill. Preflop still dominates because our
   // postflop pool is only 5 seeds and would feel repetitive at 50/50.
   if (Math.random() < 0.35) {

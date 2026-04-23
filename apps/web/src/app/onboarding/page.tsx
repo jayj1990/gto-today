@@ -74,7 +74,7 @@ export default function OnboardingPage() {
 
   return (
     <main
-      className="relative mx-auto flex min-h-dvh max-w-lg flex-col safe-pad-x"
+      className="safe-pad-x relative mx-auto flex min-h-dvh max-w-lg flex-col"
       style={{
         paddingTop: 'calc(env(safe-area-inset-top) + 20px)',
         paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)',
@@ -87,7 +87,7 @@ export default function OnboardingPage() {
           <button
             type="button"
             onClick={() => setIndex((i) => Math.max(0, i - 1))}
-            className="flex h-10 w-10 items-center justify-center rounded-full border-hair surface-raised text-fg active:scale-[0.95]"
+            className="border-hair surface-raised text-fg flex h-10 w-10 items-center justify-center rounded-full active:scale-[0.95]"
             aria-label="이전"
           >
             ←
@@ -108,7 +108,7 @@ export default function OnboardingPage() {
         <button
           type="button"
           onClick={skip}
-          className="font-mono text-[12px] uppercase tracking-[0.2em] text-fg-muted"
+          className="text-fg-muted font-mono text-[12px] uppercase tracking-[0.2em]"
         >
           건너뛰기
         </button>
@@ -138,10 +138,8 @@ export default function OnboardingPage() {
                 height: 'auto',
                 aspectRatio: '1 / 1',
                 objectFit: 'contain',
-                WebkitMaskImage:
-                  'radial-gradient(ellipse at center, black 45%, transparent 92%)',
-                maskImage:
-                  'radial-gradient(ellipse at center, black 45%, transparent 92%)',
+                WebkitMaskImage: 'radial-gradient(ellipse at center, black 45%, transparent 92%)',
+                maskImage: 'radial-gradient(ellipse at center, black 45%, transparent 92%)',
               }}
             />
           </motion.div>
@@ -161,10 +159,12 @@ export default function OnboardingPage() {
           <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[color:var(--color-accent)]">
             {slide.eyebrow}
           </p>
-          <h1 className="mt-3 whitespace-pre-line font-display text-[32px] font-bold leading-[1.15] tracking-[-0.02em]">
+          <h1 className="font-display mt-3 whitespace-pre-line text-[32px] font-bold leading-[1.15] tracking-[-0.02em]">
             {slide.title}
           </h1>
-          <p className="mx-auto mt-4 max-w-xs whitespace-pre-line text-body text-fg-muted">{slide.body}</p>
+          <p className="text-body text-fg-muted mx-auto mt-4 max-w-xs whitespace-pre-line">
+            {slide.body}
+          </p>
         </motion.div>
       </AnimatePresence>
 
@@ -175,7 +175,9 @@ export default function OnboardingPage() {
             key={i}
             className={cn(
               'h-1.5 rounded-full transition-all duration-[var(--dur-base)]',
-              i === index ? 'w-6 bg-[color:var(--color-accent)]' : 'w-1.5 bg-[color:var(--color-border)]',
+              i === index
+                ? 'w-6 bg-[color:var(--color-accent)]'
+                : 'w-1.5 bg-[color:var(--color-border)]',
             )}
           />
         ))}
@@ -186,18 +188,20 @@ export default function OnboardingPage() {
         type="button"
         onClick={goNext}
         style={{ touchAction: 'manipulation' }}
-        className="mt-6 h-14 w-full rounded-[var(--radius-button)] bg-gold-gradient text-center font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+        className="bg-gold-gradient text-noir mt-6 h-14 w-full rounded-[var(--radius-button)] text-center font-semibold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
       >
         {last ? '시작하기' : '다음'}
       </button>
 
-      <p className="mt-4 text-center text-[12px] text-fg-muted">
+      <p className="text-fg-muted mt-4 text-center text-[12px]">
         이미 계정이 있나요?{' '}
-        <Link href="/signin" className="text-[color:var(--color-accent)] underline-offset-4 hover:underline">
+        <Link
+          href="/signin"
+          className="text-[color:var(--color-accent)] underline-offset-4 hover:underline"
+        >
           로그인
         </Link>
       </p>
     </main>
   );
 }
-

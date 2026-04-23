@@ -5,20 +5,7 @@ import { forwardRef, type HTMLAttributes } from 'react';
 export type CardFace = 'up' | 'down';
 export type DeckScheme = 'two-color' | 'four-color';
 type CardSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-type Rank =
-  | '2'
-  | '3'
-  | '4'
-  | '5'
-  | '6'
-  | '7'
-  | '8'
-  | '9'
-  | 'T'
-  | 'J'
-  | 'Q'
-  | 'K'
-  | 'A';
+type Rank = '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | 'T' | 'J' | 'Q' | 'K' | 'A';
 type Suit = 's' | 'h' | 'd' | 'c';
 
 export interface CardViewProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
@@ -45,10 +32,7 @@ export interface CardViewProps extends Omit<HTMLAttributes<HTMLDivElement>, 'chi
  * This replaces the previous "tiny corner suit + subtle center watermark"
  * layout that was hard to parse on small mobile cards.
  */
-const SIZE: Record<
-  CardSize,
-  { w: number; h: number; radius: number; rank: number }
-> = {
+const SIZE: Record<CardSize, { w: number; h: number; radius: number; rank: number }> = {
   xs: { w: 30, h: 42, radius: 5, rank: 20 },
   sm: { w: 42, h: 60, radius: 6, rank: 28 },
   md: { w: 68, h: 96, radius: 10, rank: 44 },

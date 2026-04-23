@@ -91,7 +91,6 @@ export function PostflopResult({
 
   if (!open || !spot || !userAnswer) return null;
 
-
   const grade = gradePostflopAction(spot, userAnswer);
   const total = Object.values(spot.mix).reduce((s, v) => s + (v ?? 0), 0);
 
@@ -102,8 +101,9 @@ export function PostflopResult({
   const orderedMix = spot.availableActions.map(
     (a) => [a, spot.mix[a] ?? 0] as [PostflopAction, number],
   );
-  const topAction = (Object.entries(spot.mix) as [PostflopAction, number][])
-    .sort(([, a], [, b]) => (b ?? 0) - (a ?? 0))[0]?.[0];
+  const topAction = (Object.entries(spot.mix) as [PostflopAction, number][]).sort(
+    ([, a], [, b]) => (b ?? 0) - (a ?? 0),
+  )[0]?.[0];
   const topLabel = topAction ? POSTFLOP_ACTION_LABEL[topAction] : '';
 
   const gradeLabel =
@@ -157,7 +157,7 @@ export function PostflopResult({
         }}
         className={cn(
           'fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-lg',
-          'rounded-t-[var(--radius-panel)] surface-raised border-hair border-t',
+          'surface-raised border-hair rounded-t-[var(--radius-panel)] border-t',
           'safe-sticky-bottom px-6 pt-6 shadow-[var(--shadow-panel)]',
           'touch-pan-y',
         )}
@@ -167,26 +167,25 @@ export function PostflopResult({
           aria-hidden
         />
 
-        <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-fg-muted">
+        <p className="text-fg-muted font-mono text-[12px] uppercase tracking-[0.2em]">
           {spot.context.heroPos} · {STREET_LABEL[spot.street]}
         </p>
         <div className="relative">
           <h2
-            className="mt-1 font-display text-[28px] font-bold leading-tight tracking-[-0.02em]"
+            className="font-display mt-1 text-[28px] font-bold leading-tight tracking-[-0.02em]"
             style={{ color: gradeColor }}
           >
             {gradeLabel}
           </h2>
           <ChipToss show={grade === 'sharp'} />
         </div>
-        <p className="mt-2 text-[13px] text-fg-muted">{gradeSubtitle}</p>
-        <p className="mt-1 text-[13px] text-fg-muted">
-          내 선택:{' '}
-          <span className="text-fg">{POSTFLOP_ACTION_LABEL[userAnswer]}</span>
+        <p className="text-fg-muted mt-2 text-[13px]">{gradeSubtitle}</p>
+        <p className="text-fg-muted mt-1 text-[13px]">
+          내 선택: <span className="text-fg">{POSTFLOP_ACTION_LABEL[userAnswer]}</span>
         </p>
 
-        <div className="mt-5 rounded-[var(--radius-button)] border-hair surface p-4">
-          <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted">
+        <div className="border-hair surface mt-5 rounded-[var(--radius-button)] p-4">
+          <p className="text-fg-muted mb-3 font-mono text-[11px] uppercase tracking-[0.18em]">
             GTO 믹스 (합계 {Math.round(total * 100)}%)
           </p>
           <div className="space-y-2">
@@ -202,7 +201,7 @@ export function PostflopResult({
                   <span
                     className={cn(
                       'text-right font-mono',
-                      isTop ? 'text-[13px] font-bold text-white' : 'text-[12px] text-fg-muted',
+                      isTop ? 'text-[13px] font-bold text-white' : 'text-fg-muted text-[12px]',
                     )}
                   >
                     {POSTFLOP_ACTION_LABEL[action]}
@@ -221,7 +220,7 @@ export function PostflopResult({
                       'text-right font-mono tabular-nums',
                       isTop
                         ? 'text-[13px] font-bold text-white'
-                        : 'text-[12px] font-semibold text-fg-muted',
+                        : 'text-fg-muted text-[12px] font-semibold',
                     )}
                   >
                     {((freq ?? 0) * 100).toFixed(1)}%
@@ -240,18 +239,18 @@ export function PostflopResult({
             <button
               type="button"
               onClick={fetchExplanation}
-              className="w-full rounded-[var(--radius-button)] border border-[color:var(--color-accent)]/30 bg-[color:var(--color-accent)]/8 px-3 py-2.5 text-[12px] font-medium text-[color:var(--color-accent)] active:scale-[0.98]"
+              className="border-[color:var(--color-accent)]/30 bg-[color:var(--color-accent)]/8 w-full rounded-[var(--radius-button)] border px-3 py-2.5 text-[12px] font-medium text-[color:var(--color-accent)] active:scale-[0.98]"
             >
               AI 코치의 해설 보기
             </button>
           )}
           {explaining && (
-            <div className="rounded-[var(--radius-button)] border-hair surface px-3 py-2.5 text-center font-mono text-[11px] text-fg-muted">
+            <div className="border-hair surface text-fg-muted rounded-[var(--radius-button)] px-3 py-2.5 text-center font-mono text-[11px]">
               해설 작성 중…
             </div>
           )}
           {explainError && (
-            <div className="flex items-center justify-between gap-2 rounded-[var(--radius-button)] border border-[color:var(--color-raise)]/40 bg-[color:var(--color-raise)]/5 px-3 py-2 text-[11px] text-[color:var(--color-raise)]">
+            <div className="border-[color:var(--color-raise)]/40 bg-[color:var(--color-raise)]/5 flex items-center justify-between gap-2 rounded-[var(--radius-button)] border px-3 py-2 text-[11px] text-[color:var(--color-raise)]">
               <span className="min-w-0 flex-1 truncate">{explainError}</span>
               <button
                 type="button"
@@ -263,7 +262,7 @@ export function PostflopResult({
             </div>
           )}
           {explanation && (
-            <div className="rounded-[var(--radius-button)] border-hair surface px-3 py-2.5 text-[13px] leading-[1.6] text-fg">
+            <div className="border-hair surface text-fg rounded-[var(--radius-button)] px-3 py-2.5 text-[13px] leading-[1.6]">
               <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]">
                 AI 해설
               </p>
@@ -273,16 +272,16 @@ export function PostflopResult({
         </div>
 
         {/* Retry + next */}
-        <div className="mt-5 mb-3 flex gap-2">
+        <div className="mb-3 mt-5 flex gap-2">
           {onRetry && (
             <button
               type="button"
               onClick={onRetry}
               aria-label="연습용 다시 풀어보기. 기록은 첫 답으로 유지됩니다."
-              className="flex h-14 flex-1 flex-col items-center justify-center rounded-[var(--radius-button)] border-hair surface-raised font-medium active:scale-[0.98]"
+              className="border-hair surface-raised flex h-14 flex-1 flex-col items-center justify-center rounded-[var(--radius-button)] font-medium active:scale-[0.98]"
             >
               <span>다시 풀어보기</span>
-              <span className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-fg-muted">
+              <span className="text-fg-muted mt-0.5 font-mono text-[9px] uppercase tracking-[0.18em]">
                 연습용 · 기록 불변
               </span>
             </button>
@@ -291,7 +290,7 @@ export function PostflopResult({
             type="button"
             onClick={onNext}
             className={cn(
-              'h-14 rounded-[var(--radius-button)] bg-gold-gradient font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98] select-none',
+              'bg-gold-gradient text-noir h-14 select-none rounded-[var(--radius-button)] font-semibold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]',
               onRetry ? 'flex-[2]' : 'flex-1',
             )}
           >

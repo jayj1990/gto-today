@@ -37,27 +37,27 @@ const RFI_WIDEN: Record<string, number> = {
   MP: 0.08,
   CO: 0.12,
   BTN: 0.06, // already ~40% in cash; less room to grow
-  SB: 0.18,  // biggest ante benefit — steal more often
+  SB: 0.18, // biggest ante benefit — steal more often
 };
 
 /** Per-opener BB defense adjustment. MTT pot has extra dead money so
  *  BB calls a bit wider and 3bets a touch more aggressively. */
 const BB_DEF_ADJ: Record<string, { callMul: number; raiseMul: number }> = {
   UTG: { callMul: 1.15, raiseMul: 1.05 },
-  MP:  { callMul: 1.18, raiseMul: 1.05 },
-  CO:  { callMul: 1.20, raiseMul: 1.08 },
-  BTN: { callMul: 1.20, raiseMul: 1.10 },
-  SB:  { callMul: 1.25, raiseMul: 1.10 },
+  MP: { callMul: 1.18, raiseMul: 1.05 },
+  CO: { callMul: 1.2, raiseMul: 1.08 },
+  BTN: { callMul: 1.2, raiseMul: 1.1 },
+  SB: { callMul: 1.25, raiseMul: 1.1 },
 };
 
 /** Non-BB defenders (SB vs UTG, BTN vs CO, etc.) get a smaller bump —
  *  they're not getting the full ante-pot discount BB does. */
 const DEF_ADJ: Record<string, { callMul: number; raiseMul: number }> = {
   UTG: { callMul: 1.08, raiseMul: 1.03 },
-  MP:  { callMul: 1.10, raiseMul: 1.03 },
-  CO:  { callMul: 1.12, raiseMul: 1.05 },
+  MP: { callMul: 1.1, raiseMul: 1.03 },
+  CO: { callMul: 1.12, raiseMul: 1.05 },
   BTN: { callMul: 1.15, raiseMul: 1.08 },
-  SB:  { callMul: 1.18, raiseMul: 1.08 },
+  SB: { callMul: 1.18, raiseMul: 1.08 },
 };
 
 function clamp01(x: number): number {
@@ -84,8 +84,7 @@ async function buildRfi(pos: string) {
     // pure fold — trash like K2s / Q3o shouldn't suddenly open in MTT.
     // An earlier version injected new hands via a marginal-bonus helper;
     // that produced false 3-6% opens on real trash which Jay caught.
-    const raise =
-      v.raise > 0 ? clamp01(v.raise + bump * (1 - v.raise)) : 0;
+    const raise = v.raise > 0 ? clamp01(v.raise + bump * (1 - v.raise)) : 0;
     out[combo] = { raise, fold: clamp01(1 - raise) };
   }
   await writeJson(outputPath, out);

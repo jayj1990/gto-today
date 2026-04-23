@@ -22,12 +22,12 @@ import {
 export type AvailableAction = 'fold' | 'check' | 'call' | 'raise' | 'allin';
 
 export type Scenario =
-  | 'rfi'           // open-raise first in
-  | 'vs_open'       // defending vs opener (BB, SB, etc.)
-  | 'vs_3bet'       // opener facing a 3bet (4bet/call/fold decision)
-  | 'vs_4bet'       // 3bettor facing a 4bet (5bet/call/fold)
-  | 'vs_squeeze'    // caller facing a squeeze from a later seat
-  | 'vs_allin';     // facing an all-in shove (call/fold only)
+  | 'rfi' // open-raise first in
+  | 'vs_open' // defending vs opener (BB, SB, etc.)
+  | 'vs_3bet' // opener facing a 3bet (4bet/call/fold decision)
+  | 'vs_4bet' // 3bettor facing a 4bet (5bet/call/fold)
+  | 'vs_squeeze' // caller facing a squeeze from a later seat
+  | 'vs_allin'; // facing an all-in shove (call/fold only)
 
 /** A single action taken before the hero's decision. Lets the UI
  *  render a "CO 2.5bb · BTN 8.5bb" ribbon so 3bet/4bet pots read
@@ -140,14 +140,7 @@ export function classifyAnswer(raise: number): 'raise' | 'fold' | 'mixed' {
  * raises these from any position. Excluded from the daily lineup because
  * they teach nothing.
  */
-const UNIVERSAL_RAISES: ReadonlySet<string> = new Set([
-  'AA',
-  'KK',
-  'QQ',
-  'JJ',
-  'AKs',
-  'AKo',
-]);
+const UNIVERSAL_RAISES: ReadonlySet<string> = new Set(['AA', 'KK', 'QQ', 'JJ', 'AKs', 'AKo']);
 
 /**
  * "Mixedness" score — how close is the raise frequency to a 50/50 coin flip?
@@ -223,7 +216,11 @@ export interface GenerateOptions {
 }
 
 /** Classify a 3-way BB-defense mix into a dominant action. */
-function classifyDefense(mix: { call: number; raise: number; fold: number }): TrainingSpot['correctAnswer'] {
+function classifyDefense(mix: {
+  call: number;
+  raise: number;
+  fold: number;
+}): TrainingSpot['correctAnswer'] {
   const max = Math.max(mix.call, mix.raise, mix.fold);
   const ties = [mix.call, mix.raise, mix.fold].filter((v) => Math.abs(v - max) <= 0.05).length;
   if (ties > 1) return 'mixed';
@@ -291,9 +288,7 @@ const OPENER_SIZE: Record<Position, number> = {
  *
  * Deterministic: same date on any device → same 10 spots.
  */
-export async function generateDailySpots(
-  opts: GenerateOptions = {},
-): Promise<TrainingSpot[]> {
+export async function generateDailySpots(opts: GenerateOptions = {}): Promise<TrainingSpot[]> {
   const count = opts.count ?? 10;
   const format: TableFormat = opts.format ?? '6max';
   const dateKey = opts.dateSeed ?? new Date().toISOString().slice(0, 10);
@@ -312,7 +307,10 @@ export async function generateDailySpots(
   // Pre-load every defender × opener defense chart we ship. The daily
   // lineup samples uniformly across this matrix so the user sees BB
   // defense, BTN 3bet, SB squeeze, CO flat etc. — not just BB.
-  const defenseCharts = new Map<string, { pairing: DefensePairing; chart: BbDefenseStrategyJson }>();
+  const defenseCharts = new Map<
+    string,
+    { pairing: DefensePairing; chart: BbDefenseStrategyJson }
+  >();
   for (const pairing of DEFENSE_PAIRINGS) {
     if (format !== '6max') continue; // 9max defense charts aren't shipped
     const chart = await getDefenseChart(pairing.defender, pairing.opener, format, gameType);
@@ -413,7 +411,8 @@ function buildAdvancedSpot(
 
   // Pool candidate combos whose decision is educational (top action
   // frequency < 97%).
-  const pool: Array<{ combo: ComboKey; weight: number; mix: ReturnType<typeof collapseForCombo> }> = [];
+  const pool: Array<{ combo: ComboKey; weight: number; mix: ReturnType<typeof collapseForCombo> }> =
+    [];
   for (const c of allCombos()) {
     if (UNIVERSAL_RAISES.has(c)) continue;
     const mix = collapseForCombo(raw, c);
@@ -449,8 +448,7 @@ function buildAdvancedSpot(
   entries.sort((a, b) => b[1] - a[1]);
   const [topAction, topFreq] = entries[0]!;
   const ties = entries.filter(([, v]) => Math.abs(v - topFreq) <= 0.05).length;
-  const correctAnswer: TrainingSpot['correctAnswer'] =
-    ties > 1 ? 'mixed' : topAction;
+  const correctAnswer: TrainingSpot['correctAnswer'] = ties > 1 ? 'mixed' : topAction;
 
   const openerPair = node.preActions[0];
   const opener = openerPair?.actor as Position | undefined;
@@ -522,8 +520,7 @@ export function gradeAnswer(spot: TrainingSpot, answer: GradedAction): AnswerGra
     raise: spot.gtoRaise,
     allin: spot.gtoAllIn ?? 0,
   };
-  const chosen =
-    answer === 'check' ? 0 : mix[answer as Exclude<GradedAction, 'check'>] ?? 0;
+  const chosen = answer === 'check' ? 0 : (mix[answer as Exclude<GradedAction, 'check'>] ?? 0);
   const max = Math.max(mix.fold ?? 0, mix.call ?? 0, mix.raise ?? 0, mix.allin ?? 0);
   if (max === 0) return 'acceptable';
   if (Math.abs(chosen - max) <= 0.05) {

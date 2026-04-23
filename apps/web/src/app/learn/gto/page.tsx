@@ -13,7 +13,7 @@ export default function LearnGtoPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto max-w-lg safe-pad-x pb-[calc(env(safe-area-inset-bottom)+48px)] pt-4">
+      <main className="safe-pad-x mx-auto max-w-lg pb-[calc(env(safe-area-inset-bottom)+48px)] pt-4">
         <Hero />
         <Section
           eyebrow="WHAT"
@@ -81,17 +81,17 @@ function Hero() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="mt-2 mb-8 text-center"
+      className="mb-8 mt-2 text-center"
     >
       <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[color:var(--color-accent)]">
         GTO 입문
       </p>
-      <h1 className="mt-3 font-display text-[36px] font-bold leading-[1.1] tracking-[-0.02em]">
+      <h1 className="font-display mt-3 text-[36px] font-bold leading-[1.1] tracking-[-0.02em]">
         포커의 정답,
         <br />
         <span className="text-[color:var(--color-accent)]">균형</span>입니다
       </h1>
-      <p className="mx-auto mt-4 max-w-xs text-[14px] leading-[1.65] text-fg-muted">
+      <p className="text-fg-muted mx-auto mt-4 max-w-xs text-[14px] leading-[1.65]">
         운이 아니라 전략. 1분이면 GTO가 뭔지 감이 옵니다.
       </p>
     </motion.div>
@@ -117,15 +117,15 @@ function Section({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-80px' }}
       transition={{ duration: 0.4, delay, ease: [0.22, 1, 0.36, 1] }}
-      className="mt-10 rounded-[var(--radius-panel)] border-hair surface px-5 py-6"
+      className="border-hair surface mt-10 rounded-[var(--radius-panel)] px-5 py-6"
     >
       <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[color:var(--color-accent)]">
         {eyebrow}
       </p>
-      <h2 className="mt-2 font-display text-[22px] font-bold leading-tight tracking-[-0.015em]">
+      <h2 className="font-display mt-2 text-[22px] font-bold leading-tight tracking-[-0.015em]">
         {title}
       </h2>
-      <p className="mt-2 text-[14px] leading-[1.65] text-fg-muted">{body}</p>
+      <p className="text-fg-muted mt-2 text-[14px] leading-[1.65]">{body}</p>
       <div className="mt-5">{children}</div>
     </motion.section>
   );
@@ -144,10 +144,24 @@ function BalanceVisual() {
         <ellipse cx="180" cy="60" rx="28" ry="7" fill="var(--color-gold)" opacity="0.85" />
         <circle cx="110" cy="20" r="4" fill="var(--color-gold)" />
         <rect x="90" y="95" width="40" height="6" rx="2" fill="var(--color-gold)" opacity="0.6" />
-        <text x="40" y="85" textAnchor="middle" fontSize="11" fill="var(--color-fg-muted)" fontFamily="monospace">
+        <text
+          x="40"
+          y="85"
+          textAnchor="middle"
+          fontSize="11"
+          fill="var(--color-fg-muted)"
+          fontFamily="monospace"
+        >
           공격
         </text>
-        <text x="180" y="85" textAnchor="middle" fontSize="11" fill="var(--color-fg-muted)" fontFamily="monospace">
+        <text
+          x="180"
+          y="85"
+          textAnchor="middle"
+          fontSize="11"
+          fill="var(--color-fg-muted)"
+          fontFamily="monospace"
+        >
           수비
         </text>
       </svg>
@@ -158,21 +172,21 @@ function BalanceVisual() {
 function IntuitionVsGtoVisual() {
   return (
     <div className="grid grid-cols-2 gap-3">
-      <div className="rounded-[var(--radius-button)] border border-[color:var(--color-raise)]/30 bg-[color:var(--color-raise)]/5 p-4">
+      <div className="border-[color:var(--color-raise)]/30 bg-[color:var(--color-raise)]/5 rounded-[var(--radius-button)] border p-4">
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-raise)]">
           감으로
         </p>
-        <p className="mt-2 text-[13px] leading-[1.55] text-fg">
+        <p className="text-fg mt-2 text-[13px] leading-[1.55]">
           기분 따라 플레이
           <br />→ 패턴 읽힘
           <br />→ <span className="text-[color:var(--color-raise)]">이용당함</span>
         </p>
       </div>
-      <div className="rounded-[var(--radius-button)] border border-[color:var(--color-call)]/40 bg-[color:var(--color-call)]/5 p-4">
+      <div className="border-[color:var(--color-call)]/40 bg-[color:var(--color-call)]/5 rounded-[var(--radius-button)] border p-4">
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-call)]">
           GTO로
         </p>
-        <p className="mt-2 text-[13px] leading-[1.55] text-fg">
+        <p className="text-fg mt-2 text-[13px] leading-[1.55]">
           균형 잡힌 믹스
           <br />→ 예측 불가
           <br />→ <span className="text-[color:var(--color-call)]">손해 없음</span>
@@ -184,8 +198,8 @@ function IntuitionVsGtoVisual() {
 
 function MixExample() {
   return (
-    <div className="rounded-[var(--radius-button)] surface-raised p-4">
-      <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted">
+    <div className="surface-raised rounded-[var(--radius-button)] p-4">
+      <p className="text-fg-muted mb-3 font-mono text-[11px] uppercase tracking-[0.18em]">
         예: BTN에서 AKo를 받았을 때
       </p>
       <MixBar
@@ -196,7 +210,7 @@ function MixExample() {
         ]}
         highlightColor="var(--color-gold)"
       />
-      <p className="mt-3 text-[12px] leading-[1.5] text-fg-muted">
+      <p className="text-fg-muted mt-3 text-[12px] leading-[1.5]">
         100번 중 75번은 레이즈, 20번은 콜, 5번은 폴드. 상대는 내 다음 액션을 맞출 수 없습니다.
       </p>
     </div>
@@ -229,9 +243,22 @@ function PositionVisual() {
   return (
     <div>
       <div className="flex items-center justify-center">
-        <svg width="220" height="180" viewBox="0 0 220 180" role="img" aria-label="6인 테이블 포지션">
+        <svg
+          width="220"
+          height="180"
+          viewBox="0 0 220 180"
+          role="img"
+          aria-label="6인 테이블 포지션"
+        >
           <ellipse cx={cx} cy={cy} rx={rx + 8} ry={ry + 8} fill="var(--color-noir)" />
-          <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="var(--color-felt)" stroke="color-mix(in oklab, var(--color-gold) 20%, transparent)" />
+          <ellipse
+            cx={cx}
+            cy={cy}
+            rx={rx}
+            ry={ry}
+            fill="var(--color-felt)"
+            stroke="color-mix(in oklab, var(--color-gold) 20%, transparent)"
+          />
           {seats.map((s) => {
             const rad = (s.angle * Math.PI) / 180;
             const x = cx + rx * Math.cos(rad);
@@ -255,13 +282,19 @@ function PositionVisual() {
           })}
         </svg>
       </div>
-      <div className="mt-4 flex justify-center gap-4 text-[11px] text-fg-muted">
+      <div className="text-fg-muted mt-4 flex justify-center gap-4 text-[11px]">
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: 'var(--color-raise)' }} />
+          <span
+            className="inline-block h-2.5 w-2.5 rounded-full"
+            style={{ background: 'var(--color-raise)' }}
+          />
           좁게 (UTG)
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: 'var(--color-call)' }} />
+          <span
+            className="inline-block h-2.5 w-2.5 rounded-full"
+            style={{ background: 'var(--color-call)' }}
+          />
           넓게 (BTN)
         </span>
       </div>
@@ -297,14 +330,16 @@ function TermsGrid() {
       {terms.map((t) => (
         <li
           key={t.label}
-          className="flex gap-3 rounded-[var(--radius-button)] surface-raised px-3 py-2.5"
+          className="surface-raised flex gap-3 rounded-[var(--radius-button)] px-3 py-2.5"
         >
-          <span className="shrink-0 font-mono text-[13px] font-bold text-[color:var(--color-accent)] min-w-[44px]">
+          <span className="min-w-[44px] shrink-0 font-mono text-[13px] font-bold text-[color:var(--color-accent)]">
             {t.label}
           </span>
           <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-fg">{t.ko}</p>
-            <p className="mt-0.5 whitespace-pre-line text-[12px] leading-[1.5] text-fg-muted">{t.desc}</p>
+            <p className="text-fg text-[13px] font-semibold">{t.ko}</p>
+            <p className="text-fg-muted mt-0.5 whitespace-pre-line text-[12px] leading-[1.5]">
+              {t.desc}
+            </p>
           </div>
         </li>
       ))}
@@ -321,13 +356,18 @@ function AppFlow() {
   return (
     <ol className="space-y-2">
       {steps.map((s) => (
-        <li key={s.n} className="flex gap-3 rounded-[var(--radius-button)] surface-raised px-3 py-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold-gradient font-mono text-[13px] font-bold text-noir">
+        <li
+          key={s.n}
+          className="surface-raised flex gap-3 rounded-[var(--radius-button)] px-3 py-2.5"
+        >
+          <span className="bg-gold-gradient text-noir flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-mono text-[13px] font-bold">
             {s.n}
           </span>
           <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-fg">{s.title}</p>
-            <p className="mt-0.5 whitespace-pre-line text-[12px] leading-[1.5] text-fg-muted">{s.body}</p>
+            <p className="text-fg text-[13px] font-semibold">{s.title}</p>
+            <p className="text-fg-muted mt-0.5 whitespace-pre-line text-[12px] leading-[1.5]">
+              {s.body}
+            </p>
           </div>
         </li>
       ))}
@@ -347,11 +387,11 @@ function Cta() {
       <Link
         href="/today"
         style={{ touchAction: 'manipulation' }}
-        className="block w-full rounded-[var(--radius-button)] bg-gold-gradient py-4 text-center font-semibold text-noir shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+        className="bg-gold-gradient text-noir block w-full rounded-[var(--radius-button)] py-4 text-center font-semibold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
       >
         오늘의 훈련 시작
       </Link>
-      <p className="mt-3 text-center text-[12px] text-fg-muted">
+      <p className="text-fg-muted mt-3 text-center text-[12px]">
         혹은{' '}
         <Link href="/" className="text-[color:var(--color-accent)] underline underline-offset-4">
           홈으로

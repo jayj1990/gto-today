@@ -186,7 +186,9 @@ export function PokerTable({
               </div>
             );
           }
-          return <BoardSlot key={`slot-${i}`} street={i < 3 ? 'flop' : i === 3 ? 'turn' : 'river'} />;
+          return (
+            <BoardSlot key={`slot-${i}`} street={i < 3 ? 'flop' : i === 3 ? 'turn' : 'river'} />
+          );
         })}
       </div>
 
@@ -471,13 +473,13 @@ function chipSrcFor(action: Exclude<SeatAction, { kind: 'fold' }>): string {
     return '/ai-assets/chip-set-v4/grey-transparent.png';
   }
   const bb = action.bb;
-  if (bb <= 0.5) return '/ai-assets/chip-set-v4/green-transparent.png';   // SB
-  if (bb <= 1) return '/ai-assets/chip-set-v4/red-transparent.png';       // BB
-  if (bb <= 3) return '/ai-assets/chip-set-v4/blue-transparent.png';      // std open 2-2.5-3
-  if (bb <= 6) return '/ai-assets/chip-set-v4/emerald-transparent.png';   // small raise / call of raise
-  if (bb <= 15) return '/ai-assets/chip-set-v4/gold-transparent.png';     // 3-bet (9-12 BB)
-  if (bb <= 50) return '/ai-assets/chip-set-v4/purple-transparent.png';   // 4-bet / big postflop
-  return '/ai-assets/chip-set-v4/black-transparent.png';                   // all-in territory
+  if (bb <= 0.5) return '/ai-assets/chip-set-v4/green-transparent.png'; // SB
+  if (bb <= 1) return '/ai-assets/chip-set-v4/red-transparent.png'; // BB
+  if (bb <= 3) return '/ai-assets/chip-set-v4/blue-transparent.png'; // std open 2-2.5-3
+  if (bb <= 6) return '/ai-assets/chip-set-v4/emerald-transparent.png'; // small raise / call of raise
+  if (bb <= 15) return '/ai-assets/chip-set-v4/gold-transparent.png'; // 3-bet (9-12 BB)
+  if (bb <= 50) return '/ai-assets/chip-set-v4/purple-transparent.png'; // 4-bet / big postflop
+  return '/ai-assets/chip-set-v4/black-transparent.png'; // all-in territory
 }
 
 function actionKey(action: SeatAction): string {

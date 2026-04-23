@@ -5,10 +5,7 @@
     "elapsedMs": 2215431,
     "exploitability": 87.41569519042969,
     "iterations": 200,
-    "actions": [
-      "check",
-      "bet50"
-    ],
+    "actions": ["check", "bet50"],
     "combos": 0,
     "topActionCount": {}
   },

@@ -15,10 +15,8 @@ export default function AccountPage() {
   const storeUser = useAuthStore((s) => s.user);
   const signOutStore = useAuthStore((s) => s.signOut);
 
-  const displayName =
-    session?.user?.name ?? storeUser?.name ?? '이름 없음';
-  const displayEmail =
-    session?.user?.email ?? storeUser?.email ?? '';
+  const displayName = session?.user?.name ?? storeUser?.name ?? '이름 없음';
+  const displayEmail = session?.user?.email ?? storeUser?.email ?? '';
   const avatarUrl = session?.user?.image ?? null;
 
   const loading = status === 'loading';
@@ -32,7 +30,7 @@ export default function AccountPage() {
 
   return (
     <main
-      className="relative mx-auto max-w-lg safe-pad-x"
+      className="safe-pad-x relative mx-auto max-w-lg"
       style={{
         paddingTop: 'calc(env(safe-area-inset-top) + 24px)',
         paddingBottom: 'calc(env(safe-area-inset-bottom) + 48px)',
@@ -41,12 +39,12 @@ export default function AccountPage() {
       <header className="flex items-center justify-between">
         <Link
           href="/"
-          className="font-mono text-[12px] uppercase tracking-[0.2em] text-fg-muted"
+          className="text-fg-muted font-mono text-[12px] uppercase tracking-[0.2em]"
           aria-label="홈으로"
         >
           ← 홈
         </Link>
-        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-fg-muted/70">
+        <p className="text-fg-muted/70 font-mono text-[10px] uppercase tracking-[0.24em]">
           My Account
         </p>
       </header>
@@ -55,12 +53,12 @@ export default function AccountPage() {
         <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[color:var(--color-accent)]">
           Profile
         </p>
-        <h1 className="mt-3 font-display text-[32px] font-bold leading-[1.15] tracking-[-0.02em]">
+        <h1 className="font-display mt-3 text-[32px] font-bold leading-[1.15] tracking-[-0.02em]">
           내 계정 정보
         </h1>
-        <p className="mt-3 text-body text-fg-muted">
-          소셜 로그인으로 전달받은 기본 정보입니다. 이 값들은 학습 기록을 기기 간 동기화하고,
-          AI 해설 요청 한도를 관리하는 용도로만 쓰입니다.
+        <p className="text-body text-fg-muted mt-3">
+          소셜 로그인으로 전달받은 기본 정보입니다. 이 값들은 학습 기록을 기기 간 동기화하고, AI
+          해설 요청 한도를 관리하는 용도로만 쓰입니다.
         </p>
       </section>
 
@@ -68,7 +66,7 @@ export default function AccountPage() {
         <section
           aria-busy
           aria-label="불러오는 중"
-          className="mt-8 flex items-center gap-4 rounded-[var(--radius-panel)] border-hair p-5"
+          className="border-hair mt-8 flex items-center gap-4 rounded-[var(--radius-panel)] p-5"
         >
           <Skeleton width={56} height={56} rounded="full" />
           <div className="flex-1 space-y-2">
@@ -77,18 +75,18 @@ export default function AccountPage() {
           </div>
         </section>
       ) : !authed ? (
-        <div className="mt-10 rounded-[var(--radius-panel)] border-hair p-5 text-center">
+        <div className="border-hair mt-10 rounded-[var(--radius-panel)] p-5 text-center">
           <p className="text-body text-fg-muted">로그인이 필요합니다.</p>
           <Link
             href="/signin"
-            className="mt-4 inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] border-hair bg-[color:var(--color-accent)] px-5 font-semibold text-noir"
+            className="border-hair text-noir mt-4 inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-[color:var(--color-accent)] px-5 font-semibold"
           >
             로그인 하러 가기
           </Link>
         </div>
       ) : (
         <>
-          <section className="mt-8 flex items-center gap-4 rounded-[var(--radius-panel)] border-hair p-5">
+          <section className="border-hair mt-8 flex items-center gap-4 rounded-[var(--radius-panel)] p-5">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -123,20 +121,20 @@ export default function AccountPage() {
               </span>
             )}
             <div className="min-w-0 flex-1">
-              <p className="truncate font-display text-[18px] font-semibold tracking-[-0.01em]">
+              <p className="font-display truncate text-[18px] font-semibold tracking-[-0.01em]">
                 {displayName}
               </p>
-              <p className="truncate font-mono text-[12px] text-fg-muted">
+              <p className="text-fg-muted truncate font-mono text-[12px]">
                 {displayEmail || '이메일 미제공'}
               </p>
             </div>
           </section>
 
           <section className="mt-8">
-            <h2 className="font-mono text-[11px] uppercase tracking-[0.22em] text-fg-muted">
+            <h2 className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.22em]">
               제공받은 정보 · 활용처
             </h2>
-            <dl className="mt-3 divide-y divide-[color:var(--color-hair)] overflow-hidden rounded-[var(--radius-panel)] border-hair">
+            <dl className="border-hair mt-3 divide-y divide-[color:var(--color-hair)] overflow-hidden rounded-[var(--radius-panel)]">
               <InfoRow
                 label="이름"
                 value={displayName}
@@ -156,10 +154,10 @@ export default function AccountPage() {
           </section>
 
           <section className="mt-8">
-            <h2 className="font-mono text-[11px] uppercase tracking-[0.22em] text-fg-muted">
+            <h2 className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.22em]">
               쓰지 않는 곳
             </h2>
-            <ul className="mt-3 space-y-1.5 text-[13px] text-fg-muted">
+            <ul className="text-fg-muted mt-3 space-y-1.5 text-[13px]">
               <li>— 마케팅·광고 전송에 사용하지 않습니다.</li>
               <li>— 외부 기관에 판매·제공하지 않습니다.</li>
               <li>— AI 해설 생성 시 이메일·이름을 모델에 전송하지 않습니다.</li>
@@ -169,22 +167,22 @@ export default function AccountPage() {
           <section className="mt-10 grid gap-2">
             <Link
               href="/privacy"
-              className="flex h-12 w-full items-center justify-between rounded-[var(--radius-button)] border-hair px-4 text-[14px] font-medium"
+              className="border-hair flex h-12 w-full items-center justify-between rounded-[var(--radius-button)] px-4 text-[14px] font-medium"
             >
               <span>개인정보처리방침</span>
-              <span className="font-mono text-[11px] text-fg-muted">→</span>
+              <span className="text-fg-muted font-mono text-[11px]">→</span>
             </Link>
             <Link
               href="/terms"
-              className="flex h-12 w-full items-center justify-between rounded-[var(--radius-button)] border-hair px-4 text-[14px] font-medium"
+              className="border-hair flex h-12 w-full items-center justify-between rounded-[var(--radius-button)] px-4 text-[14px] font-medium"
             >
               <span>이용약관</span>
-              <span className="font-mono text-[11px] text-fg-muted">→</span>
+              <span className="text-fg-muted font-mono text-[11px]">→</span>
             </Link>
             <button
               type="button"
               onClick={handleLogout}
-              className="mt-2 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] border-hair bg-bg-elevated text-[14px] font-medium text-fg-muted active:scale-[0.98]"
+              className="border-hair bg-bg-elevated text-fg-muted mt-2 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] text-[14px] font-medium active:scale-[0.98]"
             >
               로그아웃
             </button>
@@ -195,23 +193,13 @@ export default function AccountPage() {
   );
 }
 
-function InfoRow({
-  label,
-  value,
-  usage,
-}: {
-  label: string;
-  value: string;
-  usage: string;
-}) {
+function InfoRow({ label, value, usage }: { label: string; value: string; usage: string }) {
   return (
     <div className="grid grid-cols-[80px_1fr] gap-3 px-4 py-3">
-      <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted">
-        {label}
-      </div>
+      <div className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.18em]">{label}</div>
       <div>
         <p className="truncate font-mono text-[13px]">{value}</p>
-        <p className="mt-0.5 text-[12px] text-fg-muted">{usage}</p>
+        <p className="text-fg-muted mt-0.5 text-[12px]">{usage}</p>
       </div>
     </div>
   );

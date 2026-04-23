@@ -27,7 +27,7 @@ export function HandCard({ spot, className, celebratePot = false }: HandCardProp
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.24 }}
       className={cn(
-        'rounded-[var(--radius-panel)] border-hair surface px-3 pt-4 pb-5 sm:px-5 sm:pt-5 sm:pb-6',
+        'border-hair surface rounded-[var(--radius-panel)] px-3 pb-5 pt-4 sm:px-5 sm:pb-6 sm:pt-5',
         className,
       )}
     >
@@ -59,9 +59,7 @@ export function HandCard({ spot, className, celebratePot = false }: HandCardProp
           renderCard={(code, size) => {
             const rank = code.charAt(0);
             const suit = code.charAt(1) as 's' | 'h' | 'd' | 'c';
-            return (
-              <CardView rank={rank} suit={suit} size={size} deckScheme="four-color" />
-            );
+            return <CardView rank={rank} suit={suit} size={size} deckScheme="four-color" />;
           }}
         />
       </div>
@@ -73,7 +71,7 @@ export function HandCard({ spot, className, celebratePot = false }: HandCardProp
         </p>
       )}
 
-      <p className="mt-4 text-center text-[13px] text-fg-muted">
+      <p className="text-fg-muted mt-4 text-center text-[13px]">
         {spot.scenario === 'vs_open' ? (
           <></>
         ) : foldedSeats.length === 0 ? (
@@ -128,7 +126,7 @@ function Pill({ children, tone }: { children: React.ReactNode; tone?: 'accent' }
         'rounded-full border px-2.5 py-[3px] font-mono text-[11px] tracking-[0.06em]',
         tone === 'accent'
           ? 'border-[color:var(--color-accent)]/50 bg-[color:var(--color-accent)]/10 text-[color:var(--color-accent)]'
-          : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-raised)] text-fg',
+          : 'text-fg border-[color:var(--color-border)] bg-[color:var(--color-surface-raised)]',
       )}
     >
       {children}

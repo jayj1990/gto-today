@@ -15,51 +15,51 @@ export default function SuitsPreviewPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto max-w-5xl safe-pad-x pb-24 pt-10">
+      <main className="safe-pad-x mx-auto max-w-5xl pb-24 pt-10">
         <header className="mb-8">
           <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
             /dev/suits
           </p>
-          <h1 className="mt-2 font-display text-[32px] font-bold tracking-[-0.02em]">
+          <h1 className="font-display mt-2 text-[32px] font-bold tracking-[-0.02em]">
             카드 수트 프리뷰
           </h1>
-          <p className="mt-2 text-fg-muted">
-            4 suit × 5 size × 8 rank 로 실제 렌더링 결과 확인. 내부 동심 타원 패턴이
-            모든 suit에 동일하게 적용되어 있는지 체크용.
+          <p className="text-fg-muted mt-2">
+            4 suit × 5 size × 8 rank 로 실제 렌더링 결과 확인. 내부 동심 타원 패턴이 모든 suit에
+            동일하게 적용되어 있는지 체크용.
           </p>
         </header>
 
         {/* Side-by-side comparison at lg size, all 4 suits */}
         <section className="mb-10">
-          <h2 className="mb-4 font-mono text-[11px] uppercase tracking-[0.22em] text-fg-muted">
+          <h2 className="text-fg-muted mb-4 font-mono text-[11px] uppercase tracking-[0.22em]">
             Large (96×134) · 테마 일관성 체크
           </h2>
           <div className="flex flex-wrap gap-4">
             {SUITS.map((s) => (
               <div key={s.key} className="flex flex-col items-center gap-2">
                 <CardView rank="A" suit={s.key as 's' | 'h' | 'd' | 'c'} size="lg" />
-                <span className="font-mono text-[11px] text-fg-muted">{s.name}</span>
+                <span className="text-fg-muted font-mono text-[11px]">{s.name}</span>
               </div>
             ))}
           </div>
         </section>
 
         <section className="mb-10">
-          <h2 className="mb-4 font-mono text-[11px] uppercase tracking-[0.22em] text-fg-muted">
+          <h2 className="text-fg-muted mb-4 font-mono text-[11px] uppercase tracking-[0.22em]">
             Extra Large (114×160) · 디테일 체크
           </h2>
           <div className="flex flex-wrap gap-4">
             {SUITS.map((s) => (
               <div key={s.key} className="flex flex-col items-center gap-2">
                 <CardView rank="K" suit={s.key as 's' | 'h' | 'd' | 'c'} size="xl" />
-                <span className="font-mono text-[11px] text-fg-muted">{s.name}</span>
+                <span className="text-fg-muted font-mono text-[11px]">{s.name}</span>
               </div>
             ))}
           </div>
         </section>
 
         <section className="mb-10">
-          <h2 className="mb-4 font-mono text-[11px] uppercase tracking-[0.22em] text-fg-muted">
+          <h2 className="text-fg-muted mb-4 font-mono text-[11px] uppercase tracking-[0.22em]">
             Medium (68×96) · 모바일 실전 사이즈
           </h2>
           <div className="grid grid-cols-4 gap-3">
@@ -67,7 +67,7 @@ export default function SuitsPreviewPage() {
               RANKS.slice(0, 4).map((r) => (
                 <div key={`${r}${s.key}`} className="flex flex-col items-center gap-1.5">
                   <CardView rank={r} suit={s.key as 's' | 'h' | 'd' | 'c'} size="md" />
-                  <span className="font-mono text-[10px] text-fg-muted">
+                  <span className="text-fg-muted font-mono text-[10px]">
                     {r}
                     {s.key}
                   </span>
@@ -78,7 +78,7 @@ export default function SuitsPreviewPage() {
         </section>
 
         <section className="mb-10">
-          <h2 className="mb-4 font-mono text-[11px] uppercase tracking-[0.22em] text-fg-muted">
+          <h2 className="text-fg-muted mb-4 font-mono text-[11px] uppercase tracking-[0.22em]">
             Small (42×60) · 포커 테이블 사이즈
           </h2>
           <div className="flex flex-wrap gap-2">
@@ -95,7 +95,7 @@ export default function SuitsPreviewPage() {
           </div>
         </section>
 
-        <section className="rounded-[var(--radius-panel)] border-hair surface p-5 text-[13px] text-fg-muted">
+        <section className="border-hair surface text-fg-muted rounded-[var(--radius-panel)] p-5 text-[13px]">
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]">
             체크리스트
           </p>

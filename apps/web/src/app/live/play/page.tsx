@@ -25,19 +25,15 @@ export default function LivePlayPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-3xl flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3">
+      <main className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-3xl flex-col pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3">
         <header className="mb-3 flex items-baseline justify-between gap-3">
           <div>
-            <h1 className="font-display text-[20px] font-bold tracking-[-0.015em]">
-              실전 모드
-            </h1>
-            <p className="mt-0.5 text-[11px] text-fg-muted">
-              {typeLabel} · 6맥스 · 100BB · 2.5x
-            </p>
+            <h1 className="font-display text-[20px] font-bold tracking-[-0.015em]">실전 모드</h1>
+            <p className="text-fg-muted mt-0.5 text-[11px]">{typeLabel} · 6맥스 · 100BB · 2.5x</p>
           </div>
           <Link
             href="/live"
-            className="font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted"
+            className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.18em]"
           >
             설정
           </Link>

@@ -92,7 +92,7 @@ export function classifyBoardTexture(flop: FlopCards): BoardTexture {
   const aceHigh = r1 === 'A';
   const allLow = v1 <= 8;
   const connected3 = v1 - v3 <= 4 && !paired;
-  const connected2 = (rankValue(r1) - rankValue(r2) <= 2) || (rankValue(r2) - rankValue(r3) <= 2);
+  const connected2 = rankValue(r1) - rankValue(r2) <= 2 || rankValue(r2) - rankValue(r3) <= 2;
 
   if (c.pattern === 'mono') return 'monotone';
   if (paired) return 'paired';

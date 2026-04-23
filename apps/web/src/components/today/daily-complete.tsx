@@ -17,7 +17,12 @@ export interface DailyCompleteProps {
  * Shown after all 10 hands are answered. Accuracy + streak update +
  * chip-toss celebration. Invites the user back tomorrow.
  */
-export function DailyComplete({ answers, currentStreak, bestStreak, className }: DailyCompleteProps) {
+export function DailyComplete({
+  answers,
+  currentStreak,
+  bestStreak,
+  className,
+}: DailyCompleteProps) {
   const sharp = answers.filter((a) => a.grade === 'sharp').length;
   const acceptable = answers.filter((a) => a.grade === 'acceptable').length;
   const wrong = answers.filter((a) => a.grade === 'wrong').length;
@@ -49,10 +54,10 @@ export function DailyComplete({ answers, currentStreak, bestStreak, className }:
       <p className="font-mono text-[12px] uppercase tracking-[0.24em] text-[color:var(--color-accent)]">
         오늘의 훈련 완료
       </p>
-      <h1 className="mt-3 font-display text-[42px] font-bold leading-none tracking-[-0.02em]">
+      <h1 className="font-display mt-3 text-[42px] font-bold leading-none tracking-[-0.02em]">
         오늘도 한 걸음
       </h1>
-      <p className="mt-3 text-body text-fg-muted">
+      <p className="text-body text-fg-muted mt-3">
         {currentStreak === 1 ? '연속 훈련을 시작했어요.' : `${currentStreak}일 연속, 꾸준합니다.`}
       </p>
 
@@ -62,7 +67,7 @@ export function DailyComplete({ answers, currentStreak, bestStreak, className }:
         <Stat label="최장" value={`${bestStreak}일`} />
       </dl>
 
-      <ul className="mt-8 flex justify-center gap-3 text-[13px] font-mono text-fg-muted">
+      <ul className="text-fg-muted mt-8 flex justify-center gap-3 font-mono text-[13px]">
         <li>
           <span className="text-[color:var(--color-gold)]">●</span> 정답 <CountUp value={sharp} />
         </li>
@@ -78,28 +83,28 @@ export function DailyComplete({ answers, currentStreak, bestStreak, className }:
       <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center">
         <Link
           href="/sim"
-          className="h-12 rounded-[var(--radius-button)] bg-gold-gradient px-5 py-3 font-semibold text-noir select-none active:scale-[0.98]"
+          className="bg-gold-gradient text-noir h-12 select-none rounded-[var(--radius-button)] px-5 py-3 font-semibold active:scale-[0.98]"
         >
           자유 연습 이어서
         </Link>
         <Link
           href="/"
-          className="h-12 rounded-[var(--radius-button)] border-hair px-5 py-3 font-medium select-none active:scale-[0.98]"
+          className="border-hair h-12 select-none rounded-[var(--radius-button)] px-5 py-3 font-medium active:scale-[0.98]"
         >
           홈으로
         </Link>
       </div>
 
-      <p className="mt-8 text-[13px] text-fg-muted">내일 자정, 새 10핸드가 공개돼요.</p>
+      <p className="text-fg-muted mt-8 text-[13px]">내일 자정, 새 10핸드가 공개돼요.</p>
     </motion.div>
   );
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[var(--radius-button)] surface border-hair p-4 text-center">
-      <dd className="font-mono text-mono-lg font-semibold">{value}</dd>
-      <dt className="mt-1 font-mono text-[11px] uppercase tracking-[0.16em] text-fg-muted">
+    <div className="surface border-hair rounded-[var(--radius-button)] p-4 text-center">
+      <dd className="text-mono-lg font-mono font-semibold">{value}</dd>
+      <dt className="text-fg-muted mt-1 font-mono text-[11px] uppercase tracking-[0.16em]">
         {label}
       </dt>
     </div>

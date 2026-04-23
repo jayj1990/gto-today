@@ -51,6 +51,7 @@ const result = solve_flop({
 ## Bet tree
 
 The flop tree is fixed at:
+
 - Flop: Check / Bet 33% / Bet 75% → face-bet: Call / Raise 3x / Fold
 - Turn: Check / Bet 60% / Bet 125% → face-bet: Call / Raise 3x / Fold
 - River: same as turn

@@ -21,20 +21,14 @@ export default function PostflopChartPage() {
   const allSpots = useMemo(() => listPostflopSpots(), []);
   const grouped = useMemo(() => groupSpotsByTexture(allSpots), [allSpots]);
   const totalBoards = useMemo(
-    () =>
-      new Set(
-        allSpots
-          .filter((s) => s.board.length === 3)
-          .map((s) => s.board.join(',')),
-      ).size,
+    () => new Set(allSpots.filter((s) => s.board.length === 3).map((s) => s.board.join(','))).size,
     [allSpots],
   );
 
   // Default to the first texture group that actually has data so
   // first-paint isn't a "준비 중" empty screen.
   const firstWithData =
-    TEXTURE_GROUPS.find((g) => (grouped[g.id] ?? []).length > 0)?.id ??
-    TEXTURE_GROUPS[0]!.id;
+    TEXTURE_GROUPS.find((g) => (grouped[g.id] ?? []).length > 0)?.id ?? TEXTURE_GROUPS[0]!.id;
   const [groupId, setGroupId] = useState(firstWithData);
   const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
 
@@ -52,19 +46,19 @@ export default function PostflopChartPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-3xl flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3">
+      <main className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-3xl flex-col pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3">
         <header className="mb-3 flex items-baseline justify-between">
           <h1 className="font-display text-[20px] font-bold tracking-[-0.015em]">
             포스트플랍 차트
           </h1>
           <Link
             href="/charts"
-            className="font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted"
+            className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.18em]"
           >
             ← 프리플랍
           </Link>
         </header>
-        <div className="mb-3 rounded-[var(--radius-button)] border border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 px-3 py-2.5 text-[color:var(--color-gold)]">
+        <div className="border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 mb-3 rounded-[var(--radius-button)] border px-3 py-2.5 text-[color:var(--color-gold)]">
           <div className="flex items-center gap-2">
             <span
               aria-hidden
@@ -78,15 +72,15 @@ export default function PostflopChartPage() {
             </span>
           </div>
           <p className="mt-1.5 text-[11px] leading-[1.55]">
-            사전계산 GTO · 6맥스 100BB · BB가 CO 2.5x 오픈에 콜한 플랍.
-            보드가 추가될 때마다 새로고침하면 더 많은 스팟을 볼 수 있어요.
-            빈 텍스처 탭은 아직 배치가 도달하지 않은 영역입니다.
+            사전계산 GTO · 6맥스 100BB · BB가 CO 2.5x 오픈에 콜한 플랍. 보드가 추가될 때마다
+            새로고침하면 더 많은 스팟을 볼 수 있어요. 빈 텍스처 탭은 아직 배치가 도달하지 않은
+            영역입니다.
           </p>
         </div>
 
         {/* Texture tabs */}
         <section className="mb-3 overflow-x-auto">
-          <div className="flex gap-1.5 min-w-max">
+          <div className="flex min-w-max gap-1.5">
             {TEXTURE_GROUPS.map((g) => {
               const count = (grouped[g.id] ?? []).length;
               const active = g.id === groupId;
@@ -100,17 +94,19 @@ export default function PostflopChartPage() {
                   }}
                   disabled={count === 0}
                   className={cn(
-                    'rounded-[var(--radius-button)] border px-3 py-1.5 font-mono text-[11px] whitespace-nowrap',
+                    'whitespace-nowrap rounded-[var(--radius-button)] border px-3 py-1.5 font-mono text-[11px]',
                     active
-                      ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/15 text-[color:var(--color-accent)]'
-                      : 'border-hair surface text-fg-muted disabled:opacity-40 disabled:cursor-not-allowed',
+                      ? 'bg-[color:var(--color-accent)]/15 border-[color:var(--color-accent)] text-[color:var(--color-accent)]'
+                      : 'border-hair surface text-fg-muted disabled:cursor-not-allowed disabled:opacity-40',
                   )}
                 >
                   {g.label}
                   {count > 0 ? (
                     <span className="ml-1 tabular-nums">· {count}</span>
                   ) : (
-                    <span className="ml-1 text-[9px] uppercase tracking-[0.16em] opacity-70">· 준비 중</span>
+                    <span className="ml-1 text-[9px] uppercase tracking-[0.16em] opacity-70">
+                      · 준비 중
+                    </span>
                   )}
                 </button>
               );
@@ -120,29 +116,25 @@ export default function PostflopChartPage() {
 
         {/* Board list for the active texture group */}
         {boards.length === 0 ? (
-          <div className="mt-4 rounded-[var(--radius-panel)] border border-[color:var(--color-gold)]/30 bg-[color:var(--color-gold)]/5 p-6 text-center">
+          <div className="border-[color:var(--color-gold)]/30 bg-[color:var(--color-gold)]/5 mt-4 rounded-[var(--radius-panel)] border p-6 text-center">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-gold)]">
               아직 배치 도달 전
             </p>
-            <p className="mt-2 text-[13px] text-fg">
-              이 텍스처는 솔버가 곧 계산해서 채워 넣어요.
-            </p>
+            <p className="text-fg mt-2 text-[13px]">이 텍스처는 솔버가 곧 계산해서 채워 넣어요.</p>
             <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-              {TEXTURE_GROUPS.filter((g) => (grouped[g.id] ?? []).length > 0).map(
-                (g) => (
-                  <button
-                    key={g.id}
-                    type="button"
-                    onClick={() => {
-                      setGroupId(g.id);
-                      setSelectedBoard(null);
-                    }}
-                    className="inline-flex h-11 items-center rounded-[var(--radius-button)] border-hair surface px-3 font-mono text-[11px] text-fg-muted active:scale-[0.98]"
-                  >
-                    {g.label} →
-                  </button>
-                ),
-              )}
+              {TEXTURE_GROUPS.filter((g) => (grouped[g.id] ?? []).length > 0).map((g) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => {
+                    setGroupId(g.id);
+                    setSelectedBoard(null);
+                  }}
+                  className="border-hair surface text-fg-muted inline-flex h-11 items-center rounded-[var(--radius-button)] px-3 font-mono text-[11px] active:scale-[0.98]"
+                >
+                  {g.label} →
+                </button>
+              ))}
             </div>
           </div>
         ) : (
@@ -160,15 +152,15 @@ export default function PostflopChartPage() {
                     className={cn(
                       'flex flex-col items-start gap-1 rounded-[var(--radius-button)] border p-1.5 active:scale-[0.98]',
                       active
-                        ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/10'
+                        ? 'bg-[color:var(--color-accent)]/10 border-[color:var(--color-accent)]'
                         : 'border-hair surface',
                     )}
                   >
                     <div className="flex w-full items-center justify-between gap-1">
-                      <span className="font-mono text-[10px] font-semibold tabular-nums text-fg">
+                      <span className="text-fg font-mono text-[10px] font-semibold tabular-nums">
                         {canon.key}
                       </span>
-                      <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-fg-muted">
+                      <span className="text-fg-muted font-mono text-[9px] uppercase tracking-[0.14em]">
                         {suitPatternLabel(canon.pattern)}
                       </span>
                     </div>
@@ -188,9 +180,7 @@ export default function PostflopChartPage() {
               })}
             </section>
 
-            {selectedBoard && (
-              <BoardMixPanel key={selectedBoard} spots={selectedSpots} />
-            )}
+            {selectedBoard && <BoardMixPanel key={selectedBoard} spots={selectedSpots} />}
           </>
         )}
       </main>
@@ -208,7 +198,10 @@ function toPostflopMix(spot: PostflopSpot): ComboMix {
   let raise = 0;
   let call = 0;
   let fold = 0;
-  for (const [action, rawFreq] of Object.entries(spot.mix) as [PostflopAction, number | undefined][]) {
+  for (const [action, rawFreq] of Object.entries(spot.mix) as [
+    PostflopAction,
+    number | undefined,
+  ][]) {
     const freq = rawFreq ?? 0;
     if (freq <= 0) continue;
     if (action === 'fold') fold += freq;
@@ -260,26 +253,30 @@ function BoardMixPanel({ spots }: { spots: readonly PostflopSpot[] }) {
     : [];
 
   return (
-    <section className="mt-3 rounded-[var(--radius-panel)] border-hair surface p-4">
-      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted">
+    <section className="border-hair surface mt-3 rounded-[var(--radius-panel)] p-4">
+      <p className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.18em]">
         {ctx.preflopSummary} · {ctx.heroPos} (OOP) 플랍 차례
       </p>
-      <p className="mt-0.5 text-[12px] text-fg-muted">
+      <p className="text-fg-muted mt-0.5 text-[12px]">
         히어로 레인지 169 콤보의 액션 차트. 셀 탭 시 해당 콤보 상세.
       </p>
 
       <div className="mt-3">
-        <RangeGrid mixes={mixes} onCellClick={setPickedCombo} highlight={pickedCombo ?? undefined} />
+        <RangeGrid
+          mixes={mixes}
+          onCellClick={setPickedCombo}
+          highlight={pickedCombo ?? undefined}
+        />
       </div>
 
-      <section className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-0.5 text-[11px] text-fg-muted">
+      <section className="text-fg-muted mt-2 flex flex-wrap justify-center gap-x-3 gap-y-0.5 text-[11px]">
         <LegendDot color="var(--color-raise)" label="벳·레이즈" />
         <LegendDot color="var(--color-call)" label="체크·콜" />
         <LegendDot color="var(--color-fold)" label="폴드" />
       </section>
 
       {pickedCombo && pickedSpots.length > 0 ? (
-        <div className="mt-4 rounded-[var(--radius-button)] border border-[color:var(--color-accent)]/30 bg-[color:var(--color-accent)]/8 p-3">
+        <div className="border-[color:var(--color-accent)]/30 bg-[color:var(--color-accent)]/8 mt-4 rounded-[var(--radius-button)] border p-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               {pickedSpots[0]!.hero.map((c) => (
@@ -296,7 +293,7 @@ function BoardMixPanel({ spots }: { spots: readonly PostflopSpot[] }) {
             <button
               type="button"
               onClick={() => setPickedCombo(null)}
-              className="font-mono text-[10px] uppercase tracking-[0.18em] text-fg-muted active:scale-[0.96]"
+              className="text-fg-muted font-mono text-[10px] uppercase tracking-[0.18em] active:scale-[0.96]"
               aria-label="콤보 선택 해제"
             >
               ✕
@@ -311,7 +308,7 @@ function BoardMixPanel({ spots }: { spots: readonly PostflopSpot[] }) {
               return (
                 <li
                   key={spot.id}
-                  className="border-t border-hair/50 pt-3 first:border-t-0 first:pt-0"
+                  className="border-hair/50 border-t pt-3 first:border-t-0 first:pt-0"
                 >
                   <ul className="space-y-1.5">
                     {entries.map(([act, freq]) => {
@@ -355,7 +352,7 @@ function BoardMixPanel({ spots }: { spots: readonly PostflopSpot[] }) {
           </ul>
         </div>
       ) : (
-        <p className="mt-3 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-fg-muted">
+        <p className="text-fg-muted mt-3 text-center font-mono text-[10px] uppercase tracking-[0.18em]">
           셀을 탭해 콤보 상세 보기
         </p>
       )}

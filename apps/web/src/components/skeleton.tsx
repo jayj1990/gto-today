@@ -43,7 +43,7 @@ export function Skeleton({
  *  area + hero cards + action bar. Used while daily items load. */
 export function HandCardSkeleton() {
   return (
-    <div className="mt-6 rounded-[var(--radius-panel)] border-hair surface p-5">
+    <div className="border-hair surface mt-6 rounded-[var(--radius-panel)] p-5">
       <div className="flex items-center justify-between gap-3">
         <Skeleton width={90} height={14} />
         <div className="flex gap-1.5">

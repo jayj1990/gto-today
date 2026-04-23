@@ -8,7 +8,7 @@ export default function Loading() {
       <main
         aria-busy
         aria-label="복습 모드 불러오는 중"
-        className="mx-auto max-w-lg safe-pad-x pb-8 pt-4"
+        className="safe-pad-x mx-auto max-w-lg pb-8 pt-4"
       >
         <Skeleton width={96} height={12} />
         <Skeleton className="mt-2" width="55%" height={28} />

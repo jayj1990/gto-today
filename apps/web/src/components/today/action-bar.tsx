@@ -52,7 +52,7 @@ function RippleActionButton({
       onPointerDown={onPointerDown}
       onClick={onClick}
       className={cn(
-        'ripple-host select-none rounded-[var(--radius-button)] whitespace-nowrap px-1 transition-colors disabled:opacity-40',
+        'ripple-host select-none whitespace-nowrap rounded-[var(--radius-button)] px-1 transition-colors disabled:opacity-40',
         compact ? 'h-11 text-[12px]' : 'h-12 text-[14px]',
         TONE[kind].cls,
       )}
@@ -115,7 +115,16 @@ export function ActionBar({
               ? `${LABELS[kind]} ${size}`
               : `${LABELS[kind]} ${size}BB`
             : LABELS[kind];
-        return <RippleActionButton key={kind} kind={kind} label={label} compact={compact} disabled={disabled} onClick={() => onAnswer(kind)} />;
+        return (
+          <RippleActionButton
+            key={kind}
+            kind={kind}
+            label={label}
+            compact={compact}
+            disabled={disabled}
+            onClick={() => onAnswer(kind)}
+          />
+        );
       })}
     </div>
   );

@@ -36,7 +36,7 @@ export default function SignInPage() {
 
   return (
     <main
-      className="relative mx-auto flex min-h-dvh max-w-lg flex-col safe-pad-x"
+      className="safe-pad-x relative mx-auto flex min-h-dvh max-w-lg flex-col"
       style={{
         paddingTop: 'calc(env(safe-area-inset-top) + 24px)',
         paddingBottom: 'calc(env(safe-area-inset-bottom) + 32px)',
@@ -57,7 +57,7 @@ export default function SignInPage() {
         <button
           type="button"
           onClick={handleLater}
-          className="font-mono text-[12px] uppercase tracking-[0.2em] text-fg-muted"
+          className="text-fg-muted font-mono text-[12px] uppercase tracking-[0.2em]"
         >
           나중에
         </button>
@@ -67,12 +67,12 @@ export default function SignInPage() {
         <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[color:var(--color-accent)]">
           로그인
         </p>
-        <h1 className="mt-3 font-display text-[34px] font-bold leading-[1.1] tracking-[-0.02em]">
+        <h1 className="font-display mt-3 text-[34px] font-bold leading-[1.1] tracking-[-0.02em]">
           로그인하고
           <br />
           오늘의 훈련을.
         </h1>
-        <p className="mt-3 text-body text-fg-muted">
+        <p className="text-body text-fg-muted mt-3">
           연속 훈련 기록과 AI 해설 요청 횟수가 기기 간에 동기화됩니다.
         </p>
       </section>
@@ -82,7 +82,7 @@ export default function SignInPage() {
           type="button"
           onClick={handleGoogle}
           style={{ touchAction: 'manipulation' }}
-          className="flex h-14 w-full items-center justify-center gap-3 rounded-[var(--radius-button)] border-hair bg-ivory font-semibold text-noir shadow-[var(--shadow-card)] active:scale-[0.98]"
+          className="border-hair bg-ivory text-noir flex h-14 w-full items-center justify-center gap-3 rounded-[var(--radius-button)] font-semibold shadow-[var(--shadow-card)] active:scale-[0.98]"
         >
           <GoogleGlyph />
           Google로 계속하기
@@ -92,9 +92,11 @@ export default function SignInPage() {
           type="button"
           onClick={handleNaver}
           style={{ background: '#03C75A', color: '#FFFFFF', touchAction: 'manipulation' }}
-          className="flex h-14 w-full items-center justify-center gap-3 rounded-[var(--radius-button)] border-hair font-semibold shadow-[var(--shadow-card)] active:scale-[0.98]"
+          className="border-hair flex h-14 w-full items-center justify-center gap-3 rounded-[var(--radius-button)] font-semibold shadow-[var(--shadow-card)] active:scale-[0.98]"
         >
-          <span aria-hidden className="font-display text-[20px] font-bold">N</span>
+          <span aria-hidden className="font-display text-[20px] font-bold">
+            N
+          </span>
           네이버로 계속하기
         </button>
 
@@ -110,23 +112,23 @@ export default function SignInPage() {
             opacity: 0.4,
             cursor: 'not-allowed',
           }}
-          className="flex h-14 w-full items-center justify-center gap-3 rounded-[var(--radius-button)] border-hair font-semibold shadow-[var(--shadow-card)]"
+          className="border-hair flex h-14 w-full items-center justify-center gap-3 rounded-[var(--radius-button)] font-semibold shadow-[var(--shadow-card)]"
         >
           <KakaoGlyph />
           <span>카카오로 계속하기</span>
-          <span className="ml-1 rounded-full bg-noir/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em]">
+          <span className="bg-noir/10 ml-1 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em]">
             곧 지원
           </span>
         </button>
       </div>
 
       <div className="mt-auto pt-10">
-        <p className="text-center text-[11px] text-fg-muted/70">
+        <p className="text-fg-muted/70 text-center text-[11px]">
           계속 진행하면{' '}
           <Link href="/terms" className="underline-offset-2 hover:underline">
             이용약관
-          </Link>
-          {' '}및{' '}
+          </Link>{' '}
+          및{' '}
           <Link href="/privacy" className="underline-offset-2 hover:underline">
             개인정보 처리방침
           </Link>
@@ -140,10 +142,22 @@ export default function SignInPage() {
 function GoogleGlyph() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
-      <path d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.08-1.79 2.72v2.26h2.9c1.69-1.56 2.67-3.86 2.67-6.62z" fill="#4285F4" />
-      <path d="M9 18c2.43 0 4.46-.81 5.95-2.18l-2.9-2.26c-.8.54-1.84.86-3.05.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A8.997 8.997 0 0 0 9 18z" fill="#34A853" />
-      <path d="M3.95 10.7c-.18-.54-.28-1.12-.28-1.7s.1-1.16.28-1.7V4.97H.95A8.994 8.994 0 0 0 0 9c0 1.45.35 2.82.95 4.03l3-2.33z" fill="#FBBC05" />
-      <path d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A8.997 8.997 0 0 0 .95 4.97L3.95 7.3C4.66 5.17 6.65 3.58 9 3.58z" fill="#EA4335" />
+      <path
+        d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.08-1.79 2.72v2.26h2.9c1.69-1.56 2.67-3.86 2.67-6.62z"
+        fill="#4285F4"
+      />
+      <path
+        d="M9 18c2.43 0 4.46-.81 5.95-2.18l-2.9-2.26c-.8.54-1.84.86-3.05.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A8.997 8.997 0 0 0 9 18z"
+        fill="#34A853"
+      />
+      <path
+        d="M3.95 10.7c-.18-.54-.28-1.12-.28-1.7s.1-1.16.28-1.7V4.97H.95A8.994 8.994 0 0 0 0 9c0 1.45.35 2.82.95 4.03l3-2.33z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A8.997 8.997 0 0 0 .95 4.97L3.95 7.3C4.66 5.17 6.65 3.58 9 3.58z"
+        fill="#EA4335"
+      />
     </svg>
   );
 }

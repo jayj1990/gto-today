@@ -11,27 +11,27 @@
 
 ## 1. 스택 (확정)
 
-| 영역 | 선택 |
-|---|---|
-| Runtime | Node.js 22+ (목표 25 LTS) |
-| Framework | Next.js 15.x App Router (16 업그레이드는 `vercel:next-upgrade` 스킬로) |
-| Language | TypeScript 5.7+, `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` |
-| Package mgr | pnpm 10 |
-| Monorepo | Turborepo |
-| Styling | Tailwind CSS 4 + CSS Custom Properties + shadcn/ui (커스텀) |
-| 상태 | Zustand (persist middleware) |
-| 모션 | Framer Motion |
-| 차트 | Recharts + visx (히트맵) |
-| Forms | React Hook Form + Zod |
-| DB | Prisma + Neon Postgres |
-| 캐시 | Upstash Redis |
-| Auth | Auth.js v5 (Google + Email Magic Link) |
-| AI | Anthropic SDK (Claude Haiku 4.5, 한/영 prompt 분기) |
-| 포커 엔진 | pokersolver + 자체 Monte Carlo (Web Worker) |
-| PWA | next-pwa (Serwist) |
-| 배포 | Vercel + Neon + Upstash |
-| 테스트 | Vitest + Testing Library + Playwright (E2E 핵심 플로우) |
-| 모니터링 | Vercel Analytics + Sentry |
+| 영역        | 선택                                                                                |
+| ----------- | ----------------------------------------------------------------------------------- |
+| Runtime     | Node.js 22+ (목표 25 LTS)                                                           |
+| Framework   | Next.js 15.x App Router (16 업그레이드는 `vercel:next-upgrade` 스킬로)              |
+| Language    | TypeScript 5.7+, `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` |
+| Package mgr | pnpm 10                                                                             |
+| Monorepo    | Turborepo                                                                           |
+| Styling     | Tailwind CSS 4 + CSS Custom Properties + shadcn/ui (커스텀)                         |
+| 상태        | Zustand (persist middleware)                                                        |
+| 모션        | Framer Motion                                                                       |
+| 차트        | Recharts + visx (히트맵)                                                            |
+| Forms       | React Hook Form + Zod                                                               |
+| DB          | Prisma + Neon Postgres                                                              |
+| 캐시        | Upstash Redis                                                                       |
+| Auth        | Auth.js v5 (Google + Email Magic Link)                                              |
+| AI          | Anthropic SDK (Claude Haiku 4.5, 한/영 prompt 분기)                                 |
+| 포커 엔진   | pokersolver + 자체 Monte Carlo (Web Worker)                                         |
+| PWA         | next-pwa (Serwist)                                                                  |
+| 배포        | Vercel + Neon + Upstash                                                             |
+| 테스트      | Vitest + Testing Library + Playwright (E2E 핵심 플로우)                             |
+| 모니터링    | Vercel Analytics + Sentry                                                           |
 
 ## 2. 모노레포 구조
 
@@ -56,6 +56,7 @@ gto-today/
 ```
 
 **파일 네이밍**
+
 - React 컴포넌트: `kebab-case.tsx` (예: `theme-toggle.tsx`) — export는 PascalCase
 - 순수 로직: `kebab-case.ts`
 - 테스트: 구현 옆에 `foo.test.ts`
@@ -65,6 +66,7 @@ gto-today/
 **로고**: `GTO·today` — 대문자 볼드 GTO + 소문자 today + 가운데 골드 `·` (브랜드의 심장). 축약 `G·T`, 아이콘 `·` 단독. 컴포넌트는 `@gto/ui`의 `<Logo variant="full|short|dot"/>`만 사용.
 
 **컬러 토큰** (tokens.css와 packages/config/tailwind/tokens.ts 이중 소스 — 항상 동기)
+
 - Brand: `felt #0E3B2E`, `felt-deep #082018`, `felt-night #051612`, `gold #D4AF37`, `gold-soft #E8CC72`, `gold-cool #C9A635`
 - Neutral: `noir #0A0A0A`, `charcoal #1C1C1E`, `graphite #2E2E30`, `ivory #F4EFE6`, `cream #EDE5D3`
 - Semantic: `raise #C8102E`, `raise-deep #7F0A1B` (all-in), `call #1F9D55`, `fold #2B5F8F` (blue — matches in-app chart fold), `warning #E6A817`, `info #4A9EFF`
@@ -79,6 +81,7 @@ gto-today/
 **테마 모드**: 4개 — `light`, `dark`, `tonight`(22–04:59 local), `auto`(시간대 연동). `<html data-theme="…">`로 스왑, `themeInitScript`가 hydration 전에 적용해 FOUC 방지.
 
 **Voice & Tone**
+
 - Sharp. (정답) / Here's why. (오답) · 정확해요. / 이유를 볼까요.
 - 짧게. 단호하게. 판단하지 않고 설명한다.
 - 이모지 금지. 느낌표 최소.

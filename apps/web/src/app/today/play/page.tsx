@@ -155,7 +155,7 @@ export default function TodayPlayPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+32px)] pt-6">
+      <main className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col pb-[calc(env(safe-area-inset-bottom)+32px)] pt-6">
         {!items && <HandCardSkeleton />}
 
         {items && !isComplete && current && (
@@ -181,9 +181,15 @@ export default function TodayPlayPage() {
                 transition={{ duration: 0.2 }}
               >
                 {current.kind === 'preflop' ? (
-                  <HandCard spot={current.spot} celebratePot={resultOpen && lastGrade === 'sharp'} />
+                  <HandCard
+                    spot={current.spot}
+                    celebratePot={resultOpen && lastGrade === 'sharp'}
+                  />
                 ) : (
-                  <PostflopHand spot={current.spot} celebratePot={resultOpen && lastGrade === 'sharp'} />
+                  <PostflopHand
+                    spot={current.spot}
+                    celebratePot={resultOpen && lastGrade === 'sharp'}
+                  />
                 )}
               </motion.div>
             </AnimatePresence>
@@ -214,7 +220,7 @@ export default function TodayPlayPage() {
                       onClick={() => handlePostflopAnswer(a)}
                       disabled={resultOpen}
                       className={cn(
-                        'select-none rounded-[var(--radius-button)] font-bold text-white whitespace-nowrap px-1 shadow-[var(--shadow-card)] transition-colors disabled:opacity-40 active:scale-[0.98]',
+                        'select-none whitespace-nowrap rounded-[var(--radius-button)] px-1 font-bold text-white shadow-[var(--shadow-card)] transition-colors active:scale-[0.98] disabled:opacity-40',
                         compact ? 'h-12 text-[12px]' : 'h-14 text-[14px]',
                       )}
                       style={{ background: POSTFLOP_ACTION_COLOR[a] }}
@@ -229,11 +235,7 @@ export default function TodayPlayPage() {
         )}
 
         {isComplete && (
-          <DailyComplete
-            answers={answers}
-            currentStreak={currentStreak}
-            bestStreak={bestStreak}
-          />
+          <DailyComplete answers={answers} currentStreak={currentStreak} bestStreak={bestStreak} />
         )}
 
         <ResultSheet

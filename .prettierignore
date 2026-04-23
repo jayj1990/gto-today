@@ -8,3 +8,7 @@ coverage
 pnpm-lock.yaml
 **/generated/**
 **/public/data/**
+# Solver-produced data (Windows PC auto-regenerates + auto-commits).
+# Formatting these fights parse-outputs.mjs output style on every sync.
+packages/gto-data/src/ranges/solver-spots.ts
+packages/gto-data/data/postflop-solver-spots.json

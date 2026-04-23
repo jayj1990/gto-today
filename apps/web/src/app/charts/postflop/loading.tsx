@@ -13,7 +13,7 @@ export default function Loading() {
       <main
         aria-busy
         aria-label="플랍 차트 불러오는 중"
-        className="mx-auto max-w-lg safe-pad-x pb-8 pt-4"
+        className="safe-pad-x mx-auto max-w-lg pb-8 pt-4"
       >
         <Skeleton width={140} height={12} />
         <Skeleton className="mt-2" width="70%" height={28} />

@@ -57,31 +57,14 @@ describe('evaluateHand', () => {
 
   it('works with 7 cards (hole + board)', () => {
     // Hero holds AA, board completes top set
-    const r = evaluateHand([
-      c('As'),
-      c('Ah'),
-      c('Ad'),
-      c('Kc'),
-      c('7s'),
-      c('2h'),
-      c('3d'),
-    ]);
+    const r = evaluateHand([c('As'), c('Ah'), c('Ad'), c('Kc'), c('7s'), c('2h'), c('3d')]);
     expect(r.category).toBe('three-of-a-kind');
   });
 
   it('throws on invalid length', () => {
     expect(() => evaluateHand([c('As'), c('Ks')])).toThrow();
     expect(() =>
-      evaluateHand([
-        c('As'),
-        c('Ks'),
-        c('Qs'),
-        c('Js'),
-        c('Ts'),
-        c('9s'),
-        c('8s'),
-        c('7s'),
-      ]),
+      evaluateHand([c('As'), c('Ks'), c('Qs'), c('Js'), c('Ts'), c('9s'), c('8s'), c('7s')]),
     ).toThrow();
   });
 });

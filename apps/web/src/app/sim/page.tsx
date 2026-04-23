@@ -147,13 +147,13 @@ export default function SimPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col safe-pad-x pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3">
+      <main className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3">
         <header className="mb-3">
           <div className="flex items-baseline justify-between">
             <h1 className="font-display text-[20px] font-bold tracking-[-0.015em]">
               무한 GTO 훈련
             </h1>
-            <p className="font-mono text-[11px] text-fg-muted">
+            <p className="text-fg-muted font-mono text-[11px]">
               {total} · 정확도 {Math.round(accuracy)}%
             </p>
           </div>
@@ -189,9 +189,7 @@ export default function SimPage() {
             disabled={resultOpen || loading}
             actions={item.spot.availableActions}
             callSize={item.spot.openSize}
-            raiseSize={
-              item.spot.raiseSize ?? (item.spot.scenario === 'vs_open' ? 9 : 2.5)
-            }
+            raiseSize={item.spot.raiseSize ?? (item.spot.scenario === 'vs_open' ? 9 : 2.5)}
             onAnswer={handlePreflopAnswer}
           />
         )}
@@ -212,7 +210,7 @@ export default function SimPage() {
                   disabled={resultOpen || loading}
                   onClick={() => handlePostflopAnswer(a)}
                   className={cn(
-                    'select-none rounded-[var(--radius-button)] font-bold text-white whitespace-nowrap px-1 shadow-[var(--shadow-card)] transition-colors disabled:opacity-40 active:scale-[0.98]',
+                    'select-none whitespace-nowrap rounded-[var(--radius-button)] px-1 font-bold text-white shadow-[var(--shadow-card)] transition-colors active:scale-[0.98] disabled:opacity-40',
                     compact ? 'h-12 text-[12px]' : 'h-14 text-[14px]',
                   )}
                   style={{ background: POSTFLOP_ACTION_COLOR[a] }}
@@ -263,11 +261,9 @@ function Stat({
           ? 'text-[color:var(--color-raise)]'
           : 'text-fg';
   return (
-    <div className="rounded-[var(--radius-button)] surface border-hair p-2">
+    <div className="surface border-hair rounded-[var(--radius-button)] p-2">
       <div className={`font-mono text-[17px] font-semibold ${color}`}>{value}</div>
-      <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-fg-muted">
-        {label}
-      </div>
+      <div className="text-fg-muted font-mono text-[10px] uppercase tracking-[0.14em]">{label}</div>
     </div>
   );
 }

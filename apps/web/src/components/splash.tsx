@@ -40,7 +40,7 @@ export function Splash() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.35 }}
-          className="fixed inset-0 z-50 bg-felt-gradient"
+          className="bg-felt-gradient fixed inset-0 z-50"
           aria-hidden
         >
           <div className="grid h-full w-full place-items-center">
@@ -65,7 +65,7 @@ export function Splash() {
                     'drop-shadow(0 4px 18px color-mix(in oklab, var(--color-gold) 35%, transparent))',
                 }}
               />
-              <h1 className="mt-6 text-ivory">
+              <h1 className="text-ivory mt-6">
                 <Logo variant="full" width={200} title="gto.today" />
               </h1>
               <p className="mt-3 text-center font-mono text-[11px] tracking-[0.2em] text-[color:var(--color-gold)]">
