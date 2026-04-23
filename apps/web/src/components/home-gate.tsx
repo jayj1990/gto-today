@@ -185,6 +185,14 @@ export function HomeGate() {
             delay={0.18}
           />
         )}
+        <PrimaryCard
+          href="/learn/gto"
+          eyebrow="Intro · 1분"
+          title="GTO 입문"
+          description="처음이신가요? 1분이면 감이 옵니다."
+          variant="secondary"
+          delay={0.21}
+        />
       </div>
     </main>
   );
