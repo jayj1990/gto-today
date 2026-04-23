@@ -13,7 +13,6 @@
     "./spot-generator": "./src/spot-generator.ts"
   },
   "scripts": {
-    "lint": "eslint src",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "build": "tsx scripts/build-preflop.ts",

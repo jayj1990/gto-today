@@ -80,7 +80,7 @@ export function PokerTable({
   toAct,
   heroCards,
   pot,
-  effectiveStack,
+  effectiveStack: _effectiveStack,
   lastBet,
   board = [],
   renderCard,
@@ -491,7 +491,6 @@ function BetChip({ action }: { action: SeatAction }) {
   const src = chipSrcFor(action);
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt=""

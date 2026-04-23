@@ -1,3 +1,7 @@
+// Triple-slash needed so consumer packages (gto-data, web) see the ambient
+// module declaration — pokersolver has no @types package, and an ES import
+// of the .d.ts would lose its `declare module` semantics.
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference
 /// <reference path="./pokersolver.d.ts" />
 import { Hand } from 'pokersolver';
 import type { CardCode } from './types';

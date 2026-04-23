@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import { cn } from './cn';
 
 export interface ComboMix {
   /** Raise frequency 0..1. */

@@ -19,7 +19,6 @@
     "./motion": "./src/motion.ts"
   },
   "scripts": {
-    "lint": "eslint src",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "clean": "rimraf dist .turbo"
   },

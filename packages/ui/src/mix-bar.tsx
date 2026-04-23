@@ -32,7 +32,7 @@ export function MixBar({
   segments,
   labeled = true,
   className,
-  highlightColor = 'var(--color-gold)',
+  highlightColor: _highlightColor = 'var(--color-gold)',
 }: MixBarProps) {
   // Each segment is its own flex row. Fixed-width label + fixed-width
   // value column keep bar-start/bar-end aligned across rows, while
