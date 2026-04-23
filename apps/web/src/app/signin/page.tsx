@@ -1,21 +1,37 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { signIn as nextAuthSignIn } from 'next-auth/react';
 import { Logo } from '@gto/ui';
+import { useAuthStore } from '@/lib/auth-store';
 
 /**
  * Sign-in screen. All three providers (Google / Kakao / Naver) are
  * wired up — Kakao & Naver only succeed when their client-id/secret
  * env vars are present on the deployment (see docs/oauth-setup.md).
  * If a key is missing, Auth.js redirects to its generic error page.
+ *
+ * "나중에" (skip) registers a guest session in zustand so HomeGate lets
+ * the user through without bouncing them back here. Streaks won't sync
+ * across devices until they upgrade to a real OAuth login.
  */
 export default function SignInPage() {
+  const router = useRouter();
+  const guestSignIn = useAuthStore((s) => s.signIn);
   const handleGoogle = () => {
     void nextAuthSignIn('google', { callbackUrl: '/' });
   };
   const handleNaver = () => {
     void nextAuthSignIn('naver', { callbackUrl: '/' });
+  };
+  const handleLater = () => {
+    guestSignIn({
+      method: 'guest',
+      name: '게스트',
+      signedInAt: Date.now(),
+    });
+    router.push('/');
   };
 
   return (
@@ -38,12 +54,13 @@ export default function SignInPage() {
           />
           <Logo variant="full" width={88} aria-hidden />
         </div>
-        <Link
-          href="/"
+        <button
+          type="button"
+          onClick={handleLater}
           className="font-mono text-[12px] uppercase tracking-[0.2em] text-fg-muted"
         >
           나중에
-        </Link>
+        </button>
       </header>
 
       <section className="mt-12">

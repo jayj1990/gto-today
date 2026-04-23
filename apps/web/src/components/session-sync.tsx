@@ -26,7 +26,13 @@ function SessionBridge({ children }: { children: React.ReactNode }) {
         signedInAt: Date.now(),
       });
     } else if (status === 'unauthenticated') {
-      setSignedOut();
+      // Only mirror the unauth state when the local session is also OAuth.
+      // A guest "나중에" login is Auth.js-invisible, so clearing it here
+      // would loop the user straight back to /signin via HomeGate.
+      const user = useAuthStore.getState().user;
+      if (user?.method !== 'guest') {
+        setSignedOut();
+      }
     }
   }, [status, data, setSignedIn, setSignedOut]);
 
