@@ -18,7 +18,7 @@ export default function LearnGtoPage() {
         <Section
           eyebrow="WHAT"
           title="GTO가 뭐예요?"
-          body="Game Theory Optimal — 게임 이론 최적 전략. 상대가 어떤 플레이를 해도 장기적으로 손해 보지 않는 완벽한 균형입니다."
+          body="포커는 운이 아니라 실력이 더 중요한 게임입니다. 균형잡힌 GTO 전략이 장기적으로 더 높은 수익률을 가져다줍니다."
           delay={0.05}
         >
           <BalanceVisual />
@@ -63,7 +63,7 @@ export default function LearnGtoPage() {
         <Section
           eyebrow="HOW"
           title="이 앱은 어떻게 써요?"
-          body="매일 10핸드 풀고, 틀린 건 복습, 실전 땐 옆에서 열어보세요. 하루 5분이면 충분."
+          body="매일 10핸드 퀴즈 풀고 GTO 감을 익혀보세요. 실전에서 힌트가 필요할 때도 적극 활용해 보세요."
           delay={0.3}
         >
           <AppFlow />
@@ -283,12 +283,12 @@ function TermsGrid() {
     },
     {
       label: '4벳',
-      ko: '3벳에 재재레이즈',
+      ko: '3벳에 리리레이즈',
       desc: '3벳에 또 레이즈. 보통 매우 강한 패거나 블러프.',
     },
     {
       label: '팟 오즈',
-      ko: '판 배율',
+      ko: '배당',
       desc: '내가 콜해야 할 금액 대비 팟 크기의 비율. 승률 기준점.',
     },
   ];
@@ -314,9 +314,9 @@ function TermsGrid() {
 
 function AppFlow() {
   const steps = [
-    { n: '1', title: '오늘의 훈련', body: '매일 새로 공개되는 10핸드. 3분이면 끝.' },
+    { n: '1', title: '매일 10핸드 퀴즈', body: 'GTO 감을 매일 조금씩 익혀요. 하루 3~5분.' },
     { n: '2', title: '복습', body: '틀린 스팟만 모아 다시 풀기. 약점 집중 공략.' },
-    { n: '3', title: '실전 모드', body: '게임 중 옆에 띄워놓고 결정에 힘 받기.' },
+    { n: '3', title: '실전에서 활용', body: '게임 중 GTO Today 켜두고 힌트를 얻어보세요.' },
   ];
   return (
     <ol className="space-y-2">

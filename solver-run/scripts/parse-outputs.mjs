@@ -89,8 +89,24 @@ function classifyTexture(board) {
   return 'semi_wet';
 }
 
-function preflopSummaryKR() {
-  return 'CO 오픈 · BB 콜';
+/**
+ * Derive (heroPos, villainPos, preflopSummary) from the solver input
+ * filename. `all-tiers.sh` writes each pairing's inputs as
+ * `full_{defender}_vs_{opener}_{flopKey}.txt`, so the prefix tells us
+ * who's at the table. Legacy Tier 1 outputs (no prefix) stay BB-vs-CO.
+ *
+ * The defender is the hero — they called the open and now decide
+ * postflop. The opener is the villain.
+ */
+function pairingFromFilename(name) {
+  const m = name.match(/^full_([A-Z]{2,3})_vs_([A-Z]{2,3})_/);
+  if (!m) return { heroPos: 'BB', villainPos: 'CO' };
+  return { heroPos: m[1], villainPos: m[2] };
+}
+
+function preflopSummaryKR(heroPos, villainPos, isMTT) {
+  const suffix = isMTT ? ' (MTT · 1BB 앤티)' : '';
+  return `${villainPos} 오픈 · ${heroPos} 콜${suffix}`;
 }
 
 // Walk the solver JSON down to the root-node's strategy block and
@@ -180,7 +196,8 @@ function buildSpot(sourceName, board, root, { c, freqs }, meta) {
     : `혼합 전략 — ${actionKR[top] ?? top}이 가장 빈번하지만 ${sortedMix[1] ? actionKR[sortedMix[1][0]] ?? sortedMix[1][0] : '대체 액션'}도 충분한 비중.`;
 
   const isMTT = meta.format === 'mtt';
-  const preflopSummary = isMTT ? 'CO 오픈 · BB 콜 (MTT · 1BB 앤티)' : 'CO 오픈 · BB 콜';
+  const { heroPos, villainPos } = meta;
+  const preflopSummary = preflopSummaryKR(heroPos, villainPos, isMTT);
 
   return {
     id: `pf_${sourceName}_${c}`,
@@ -189,8 +206,8 @@ function buildSpot(sourceName, board, root, { c, freqs }, meta) {
     hero,
     texture,
     context: {
-      heroPos: 'BB',
-      villainPos: 'CO',
+      heroPos,
+      villainPos,
       potType: isMTT ? 'mtt' : 'srp',
       spr: meta.eff / meta.pot,
       potBB: meta.pot,
@@ -372,7 +389,8 @@ function buildDeeperSpot(sourceName, board, node, { c, freqs }, meta, street, li
       : `혼합 전략 — ${actionKR[top] ?? top}이 가장 빈번${sortedMix[1] ? `, 대체는 ${actionKR[sortedMix[1][0]] ?? sortedMix[1][0]}` : ''}.${lineText}`;
 
   const isMTT = meta.format === 'mtt';
-  const preflopSummary = isMTT ? 'CO 오픈 · BB 콜 (MTT · 1BB 앤티)' : 'CO 오픈 · BB 콜';
+  const { heroPos, villainPos } = meta;
+  const preflopSummary = preflopSummaryKR(heroPos, villainPos, isMTT);
 
   return {
     id: `pf_${sourceName}_${street}_${board.join('')}_${c}`,
@@ -381,8 +399,8 @@ function buildDeeperSpot(sourceName, board, node, { c, freqs }, meta, street, li
     hero,
     texture,
     context: {
-      heroPos: 'BB',
-      villainPos: 'CO',
+      heroPos,
+      villainPos,
       potType: isMTT ? 'mtt' : 'srp',
       spr: meta.eff / meta.pot,
       potBB: meta.pot,
@@ -432,7 +450,15 @@ function main() {
     }
     // MTT trees carry the 1BB big-blind ante in their pot (6.5 vs 5.5).
     const isMTT = pot > 6.0 || f.startsWith('mtt_');
-    const meta = { pot, eff, format: isMTT ? 'mtt' : 'cash' };
+    const sourceName = f.replace(/\.json$/, '');
+    const { heroPos, villainPos } = pairingFromFilename(sourceName);
+    const meta = {
+      pot,
+      eff,
+      format: isMTT ? 'mtt' : 'cash',
+      heroPos,
+      villainPos,
+    };
 
     const root = tree;
     const extracted = extractRootStrategy(root, pot);
@@ -442,7 +468,6 @@ function main() {
     }
 
     const heroPicks = pickHeroCombos(root, board);
-    const sourceName = f.replace(/\.json$/, '');
     for (const pick of heroPicks) {
       spots.push(buildSpot(sourceName, board, root, pick, meta));
     }
