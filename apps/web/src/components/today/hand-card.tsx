@@ -34,16 +34,73 @@ function buildSeats(spot: TrainingSpot): {
   let pot = 1.5;
   let lastBet = 1;
 
-  if (spot.scenario === 'vs_open' && spot.opener) {
+  const heroIdx = order.indexOf(spot.position);
+
+  if (spot.preActions && spot.preActions.length > 0) {
+    // Generic replay — walk every pre-action and apply it to the
+    // matching seat. Handles vs_open, vs_3bet, vs_4bet, vs_squeeze
+    // and vs_allin uniformly (no per-scenario special-case).
+    const acted = new Set<string>();
+    let runningPot = 1.5;
+    let facing = 1; // BB post is the initial "facing" bet for the first voluntary actor
+
+    for (const pre of spot.preActions) {
+      const seat = pre.actor as Seat;
+      acted.add(seat);
+      if (pre.action === 'FOLD') {
+        out[seat] = { stack, action: { kind: 'fold' }, showBacks: false };
+        foldedSeats.push(seat);
+        continue;
+      }
+      if (pre.action === 'Call') {
+        out[seat] = {
+          stack: stack - facing,
+          action: { kind: 'call', bb: facing },
+          showBacks: true,
+        };
+        runningPot += facing;
+        continue;
+      }
+      if (pre.action === 'AllIn') {
+        out[seat] = {
+          stack: 0,
+          action: { kind: 'raise', bb: stack },
+          showBacks: true,
+        };
+        runningPot += stack - facing;
+        facing = stack;
+        continue;
+      }
+      const m = pre.action.match(/^([\d.]+)bb$/);
+      if (m) {
+        const size = parseFloat(m[1]!);
+        out[seat] = {
+          stack: stack - size,
+          action: { kind: 'raise', bb: size },
+          showBacks: true,
+        };
+        runningPot += size - facing;
+        facing = size;
+      }
+    }
+
+    // Anyone before hero who didn't act ends up folding at this node.
+    // Skip SB/BB — their posts are already rendered.
+    for (let i = 0; i < heroIdx; i++) {
+      const seat = order[i] as Seat;
+      if (acted.has(seat)) continue;
+      if (seat === 'SB' || seat === 'BB') continue;
+      out[seat] = { stack, action: { kind: 'fold' }, showBacks: false };
+      foldedSeats.push(seat);
+    }
+    pot = runningPot;
+    lastBet = facing;
+  } else if (spot.scenario === 'vs_open' && spot.opener) {
+    // Legacy path for defense charts (bb_vs_CO.json etc.) that don't
+    // carry preActions — fall back to a single-raise reconstruction.
     const openSize = spot.openSize ?? 2.5;
     const openerIdx = order.indexOf(spot.opener);
-    const heroIdx = order.indexOf(spot.position);
 
-    // Everyone before the opener folds (they're behind the action).
-    // BB stays as hero (handled below). SB folds unless they're the
-    // opener or the hero — showing SB as still alive with a 0.5 post
-    // when the pot is already 2.5 to go is misleading; SB couldn't
-    // be "alive" without having matched the raise.
     for (let i = 0; i < openerIdx; i++) {
       const seat = order[i] as Seat;
       if (seat === 'BB') continue;
@@ -58,7 +115,6 @@ function buildSeats(spot: TrainingSpot): {
     };
     pot = 1.5 + openSize;
     lastBet = openSize;
-    // Everyone between opener and hero also folded (didn't 3-bet, didn't call).
     for (let i = openerIdx + 1; i < heroIdx; i++) {
       const seat = order[i] as Seat;
       if (seat === 'BB') continue;
@@ -67,7 +123,6 @@ function buildSeats(spot: TrainingSpot): {
     }
   } else {
     // RFI — every seat before hero folded.
-    const heroIdx = order.indexOf(spot.position);
     for (let i = 0; i < heroIdx; i++) {
       const seat = order[i] as Seat;
       if (seat === 'SB' || seat === 'BB') continue;

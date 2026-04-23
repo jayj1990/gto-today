@@ -67,7 +67,7 @@ export function PostflopResult({
     setExplanation(null);
     setExplainError(null);
     setExplaining(false);
-  }, [spot?.id]);
+  }, [spot?.id, userAnswer]);
 
   const fetchExplanation = async () => {
     if (!spot || explaining) return;

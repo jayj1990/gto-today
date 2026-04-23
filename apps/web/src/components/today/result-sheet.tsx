@@ -103,11 +103,14 @@ export function ResultSheet({
   const [explaining, setExplaining] = useState(false);
   const [explanation, setExplanation] = useState<string | null>(null);
   const [explainError, setExplainError] = useState<string | null>(null);
+  // Reset not just on spot change but also when userAnswer or grade
+  // flips — retry keeps spot.id stable and the prior answer's AI
+  // explanation must disappear the moment the user picks again.
   useEffect(() => {
     setExplanation(null);
     setExplainError(null);
     setExplaining(false);
-  }, [spot?.id]);
+  }, [spot?.id, userAnswer, grade]);
 
   const fetchExplanation = async () => {
     if (!spot || explaining) return;
