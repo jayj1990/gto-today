@@ -89,7 +89,7 @@ export default function AccountPage() {
                   width: 56,
                   height: 56,
                   borderRadius: '50%',
-                  border: '1.5px solid rgba(212,175,55,0.6)',
+                  border: '1.5px solid color-mix(in oklab, var(--color-gold) 60%, transparent)',
                 }}
               />
             ) : (

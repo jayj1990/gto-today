@@ -231,7 +231,7 @@ function PositionVisual() {
       <div className="flex items-center justify-center">
         <svg width="220" height="180" viewBox="0 0 220 180" role="img" aria-label="6인 테이블 포지션">
           <ellipse cx={cx} cy={cy} rx={rx + 8} ry={ry + 8} fill="var(--color-noir)" />
-          <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="var(--color-felt)" stroke="rgba(212,175,55,0.2)" />
+          <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="var(--color-felt)" stroke="color-mix(in oklab, var(--color-gold) 20%, transparent)" />
           {seats.map((s) => {
             const rad = (s.angle * Math.PI) / 180;
             const x = cx + rx * Math.cos(rad);

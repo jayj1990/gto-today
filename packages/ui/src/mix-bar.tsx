@@ -32,7 +32,7 @@ export function MixBar({
   segments,
   labeled = true,
   className,
-  highlightColor: _highlightColor = 'var(--color-gold)',
+  highlightColor = 'var(--color-gold)',
 }: MixBarProps) {
   // Each segment is its own flex row. Fixed-width label + fixed-width
   // value column keep bar-start/bar-end aligned across rows, while
@@ -59,6 +59,15 @@ export function MixBar({
                   dom ? 'font-bold text-white' : 'text-fg-muted',
                 )}
               >
+                {dom && (
+                  <span
+                    aria-hidden
+                    className="mr-1"
+                    style={{ color: highlightColor }}
+                  >
+                    ★
+                  </span>
+                )}
                 {seg.label}
               </span>
             )}

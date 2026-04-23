@@ -254,7 +254,7 @@ export default function ReviewPage() {
                 if (confirm('모든 오답 기록을 지울까요? 되돌릴 수 없어요.'))
                   clearAll();
               }}
-              className="font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted active:scale-[0.96]"
+              className="inline-flex h-11 items-center px-3 font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted active:scale-[0.96]"
             >
               전체 비우기
             </button>

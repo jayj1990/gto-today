@@ -61,7 +61,8 @@ export function Splash() {
                   width: 140,
                   height: 140,
                   objectFit: 'contain',
-                  filter: 'drop-shadow(0 4px 18px rgba(212,175,55,0.35))',
+                  filter:
+                    'drop-shadow(0 4px 18px color-mix(in oklab, var(--color-gold) 35%, transparent))',
                 }}
               />
               <h1 className="mt-6 text-ivory">

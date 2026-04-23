@@ -47,6 +47,7 @@ export default function LiveSetupPage() {
                   key={k}
                   type="button"
                   onClick={() => setGameType(k)}
+                  aria-pressed={config.gameType === k}
                   className={cn(
                     'rounded-[var(--radius-panel)] border p-4 text-left transition-colors active:scale-[0.99]',
                     config.gameType === k
