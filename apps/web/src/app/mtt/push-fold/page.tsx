@@ -8,9 +8,13 @@ import {
   PUSH_FOLD_POSITIONS,
   type PushFoldEntry,
   type PushFoldPosition,
+  type TrainingSpot,
 } from '@gto/gto-data';
-import { CardView, RangeGrid, cn, type ComboMix } from '@gto/ui';
+import type { CardCode, ComboKey, Position } from '@gto/poker-core';
+import { RangeGrid, cn, type ComboMix } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
+import { HandCard } from '@/components/today/hand-card';
+import { ActionBar, type ActionKind } from '@/components/today/action-bar';
 import { haptic } from '@/lib/haptic';
 
 type Mode = 'chart' | 'train';
@@ -149,25 +153,18 @@ function ChartView() {
   );
 }
 
-/* ─────────── Training mode ─────────── */
-
-interface Quiz {
-  position: PushFoldPosition;
-  combo: string;
-  heroCards: readonly [string, string];
-  shouldPush: boolean;
-}
+/* ─────────── Training mode — same UI as daily quiz (HandCard) ─────────── */
 
 function TrainView() {
-  const [quiz, setQuiz] = useState<Quiz | null>(null);
-  const [sharp, setSharp] = useState(0);
-  const [wrong, setWrong] = useState(0);
-  const [feedback, setFeedback] = useState<null | { correct: boolean; label: string }>(
+  const [spot, setSpot] = useState<TrainingSpot | null>(null);
+  const [feedback, setFeedback] = useState<null | { correct: boolean; shouldPush: boolean }>(
     null,
   );
+  const [sharp, setSharp] = useState(0);
+  const [wrong, setWrong] = useState(0);
 
   const next = useCallback(() => {
-    setQuiz(makeQuiz());
+    setSpot(makeSpot());
     setFeedback(null);
   }, []);
 
@@ -175,23 +172,24 @@ function TrainView() {
     next();
   }, [next]);
 
-  const answer = (user: 'push' | 'fold') => {
-    if (!quiz || feedback) return;
+  const onAnswer = (action: ActionKind) => {
+    if (!spot || feedback) return;
+    // Only allin / fold are legal in push-fold. Map the button press
+    // to our binary correctness check.
+    const user: 'allin' | 'fold' = action === 'allin' ? 'allin' : 'fold';
+    const shouldPush = spot.gtoRaise === 1;
     const correct =
-      (user === 'push' && quiz.shouldPush) || (user === 'fold' && !quiz.shouldPush);
+      (user === 'allin' && shouldPush) || (user === 'fold' && !shouldPush);
     haptic(correct ? 'success' : 'error');
     if (correct) setSharp((v) => v + 1);
     else setWrong((v) => v + 1);
-    setFeedback({
-      correct,
-      label: quiz.shouldPush ? '올인' : '폴드',
-    });
+    setFeedback({ correct, shouldPush });
   };
 
   const total = sharp + wrong;
   const accuracy = total === 0 ? 0 : Math.round((sharp / total) * 100);
 
-  if (!quiz) return null;
+  if (!spot) return null;
 
   return (
     <div>
@@ -202,58 +200,23 @@ function TrainView() {
       </dl>
 
       <AnimatePresence mode="wait">
-        <motion.section
-          key={`${quiz.position}-${quiz.combo}`}
+        <motion.div
+          key={spot.id}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -6 }}
+          exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.26 }}
-          className="rounded-[var(--radius-panel)] border-hair surface p-5 text-center"
         >
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--color-accent)]">
-            {quiz.position} · 20BB
-          </p>
-          <p className="mt-1 text-[13px] text-fg-muted">
-            모두 폴드 · 히어로 차례. 올인 or 폴드?
-          </p>
-
-          <div className="mt-5 flex items-center justify-center gap-2">
-            <CardView
-              rank={quiz.heroCards[0][0]!}
-              suit={quiz.heroCards[0][1] as 's' | 'h' | 'd' | 'c'}
-              size="lg"
-              deckScheme="four-color"
-            />
-            <CardView
-              rank={quiz.heroCards[1][0]!}
-              suit={quiz.heroCards[1][1] as 's' | 'h' | 'd' | 'c'}
-              size="lg"
-              deckScheme="four-color"
-            />
-          </div>
-          <p className="mt-3 font-display text-[20px] font-bold tabular-nums">
-            {quiz.combo}
-          </p>
-        </motion.section>
+          <HandCard spot={spot} celebratePot={feedback?.correct === true} />
+        </motion.div>
       </AnimatePresence>
 
       {!feedback ? (
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => answer('push')}
-            className="h-14 rounded-[var(--radius-button)] bg-[#7F0A1B] text-[15px] font-bold text-white shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold)] active:scale-[0.98]"
-          >
-            올인
-          </button>
-          <button
-            type="button"
-            onClick={() => answer('fold')}
-            className="h-14 rounded-[var(--radius-button)] bg-[color:var(--color-fold)] text-[15px] font-bold text-white shadow-[var(--shadow-card)] active:scale-[0.98]"
-          >
-            폴드
-          </button>
-        </div>
+        <ActionBar
+          actions={spot.availableActions}
+          onAnswer={onAnswer}
+          className="mt-3"
+        />
       ) : (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -279,7 +242,7 @@ function TrainView() {
               color: feedback.correct ? 'var(--color-call)' : 'var(--color-raise)',
             }}
           >
-            GTO: {feedback.label}
+            GTO: {feedback.shouldPush ? '올인' : '폴드'}
           </p>
           <button
             type="button"
@@ -324,38 +287,49 @@ function Stat({
   );
 }
 
-function makeQuiz(): Quiz {
+/** Build a TrainingSpot that the regular HandCard / ActionBar happily
+ *  accept. Push-fold is binary, so we piggyback on the 'rfi' scenario
+ *  (fold/raise) and swap the raise button for 'allin' via
+ *  availableActions. HandCard's PokerTable auto-folds every seat
+ *  before the hero for RFI spots, which is exactly the short-stack
+ *  "all fold to you" setup we want. */
+function makeSpot(): TrainingSpot {
   const position = PUSH_FOLD_POSITIONS[
     Math.floor(Math.random() * PUSH_FOLD_POSITIONS.length)
   ]!;
   const chart = PUSH_FOLD_20BB[position];
   const combos = Object.keys(chart);
-  const combo = combos[Math.floor(Math.random() * combos.length)]!;
+  const combo = combos[Math.floor(Math.random() * combos.length)]! as ComboKey;
   const entry = chart[combo] as PushFoldEntry;
+  const hero = comboToCards(combo);
+  const rnd = Math.random().toString(36).slice(2, 8);
   return {
-    position,
+    id: `pushfold-${position}-${combo}-${rnd}`,
     combo,
-    heroCards: comboToCards(combo),
-    shouldPush: entry.push === 1,
+    hero,
+    position: position as Position,
+    format: '6max',
+    stackBB: 20,
+    scenario: 'rfi',
+    gtoRaise: entry.push,
+    gtoFold: entry.fold,
+    correctAnswer: entry.push === 1 ? 'raise' : 'fold',
+    availableActions: ['fold', 'allin'],
   };
 }
 
 const SUITS = ['s', 'h', 'd', 'c'] as const;
 
-/** Pick a representative card pair for a 169-style combo label. */
-function comboToCards(combo: string): readonly [string, string] {
+function comboToCards(combo: string): readonly [CardCode, CardCode] {
   const hi = combo[0]!;
   const lo = combo[1]!;
-  const kind = combo[2]; // undefined (pair), 's', or 'o'
+  const kind = combo[2];
   if (!kind) {
-    // Pair — two different suits
-    return [`${hi}s`, `${lo}h`];
+    return [`${hi}s`, `${lo}h`] as unknown as readonly [CardCode, CardCode];
   }
   if (kind === 's') {
-    // Suited — same suit
     const suit = SUITS[Math.floor(Math.random() * SUITS.length)]!;
-    return [`${hi}${suit}`, `${lo}${suit}`];
+    return [`${hi}${suit}`, `${lo}${suit}`] as unknown as readonly [CardCode, CardCode];
   }
-  // Offsuit — different suits
-  return [`${hi}s`, `${lo}h`];
+  return [`${hi}s`, `${lo}h`] as unknown as readonly [CardCode, CardCode];
 }
