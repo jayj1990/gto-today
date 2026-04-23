@@ -153,7 +153,7 @@ export function InstallPrompt() {
                 <button
                   type="button"
                   onClick={install}
-                  className="bg-gold-gradient text-noir rounded-[var(--radius-button)] px-3 py-2 font-mono text-[11px] font-bold"
+                  className="bg-gold-gradient text-noir inline-flex h-11 items-center rounded-[var(--radius-button)] px-3 font-mono text-[11px] font-bold"
                 >
                   설치
                 </button>
@@ -162,7 +162,7 @@ export function InstallPrompt() {
                 type="button"
                 onClick={dismiss}
                 aria-label="닫기"
-                className="text-fg-muted flex h-9 w-9 items-center justify-center rounded-[var(--radius-button)]"
+                className="text-fg-muted flex h-11 w-11 items-center justify-center rounded-[var(--radius-button)]"
               >
                 ✕
               </button>
