@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ComboDetailSheet, RangeGrid, type ComboMix } from '@gto/ui';
+import { Skeleton } from './skeleton';
 
 type DecisionsJson = Record<string, Record<string, Record<string, number>>>;
 
@@ -93,7 +94,19 @@ export function ChartNavigator({
 
   return (
     <div className={className}>
-      {loading && <p className="font-mono text-[13px] text-fg-muted">차트 불러오는 중…</p>}
+      {loading && (
+        <div aria-busy aria-label="차트 불러오는 중" className="space-y-2">
+          <Skeleton width={120} height={14} />
+          <div
+            className="grid aspect-square gap-[2px]"
+            style={{ gridTemplateColumns: 'repeat(13, minmax(0, 1fr))' }}
+          >
+            {Array.from({ length: 169 }).map((_, i) => (
+              <Skeleton key={i} width="100%" height="100%" rounded="sm" />
+            ))}
+          </div>
+        </div>
+      )}
 
       {!loading && !decisions && (
         <p className="text-[13px] text-[color:var(--color-raise)]">

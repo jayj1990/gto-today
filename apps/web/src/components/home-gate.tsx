@@ -10,6 +10,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import { useChallengeStore } from '@/lib/challenge-store';
 import { useMistakesStore } from '@/lib/mistakes-store';
 import { isoDateKR } from '@/lib/date';
+import { Skeleton } from '@/components/skeleton';
 
 /**
  * Client-only landing component that gates the home screen behind:
@@ -53,9 +54,31 @@ export function HomeGate() {
   }, [onboarded, authed, sessionResolved, router]);
 
   if (!sessionResolved || !onboarded || !authed) {
+    // Branded placeholder that matches the home silhouette so the
+    // post-hydration swap doesn't reflow the page.
     return (
-      <main className="flex min-h-dvh items-center justify-center">
-        <p className="font-mono text-[12px] text-fg-muted">불러오는 중…</p>
+      <main
+        aria-busy
+        aria-label="불러오는 중"
+        className="relative mx-auto flex min-h-dvh max-w-lg flex-col safe-pad-x"
+        style={{
+          paddingTop: 'calc(env(safe-area-inset-top) + 20px)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 28px)',
+        }}
+      >
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Skeleton width={36} height={36} rounded="full" />
+            <Skeleton width={96} height={18} />
+          </div>
+          <Skeleton width={28} height={28} rounded="full" />
+        </header>
+        <div className="mt-6 grid gap-3">
+          <Skeleton height={116} rounded="lg" />
+          <Skeleton height={96} rounded="lg" />
+          <Skeleton height={96} rounded="lg" />
+          <Skeleton height={96} rounded="lg" />
+        </div>
       </main>
     );
   }

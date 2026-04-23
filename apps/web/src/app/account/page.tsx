@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useSession, signOut as nextAuthSignOut } from 'next-auth/react';
 import { useAuthStore } from '@/lib/auth-store';
+import { Skeleton } from '@/components/skeleton';
 
 /**
  * 마이페이지 — 로그인 계정이 제공한 정보(이메일·이름)를 한 곳에서 보여
@@ -64,7 +65,17 @@ export default function AccountPage() {
       </section>
 
       {loading ? (
-        <p className="mt-10 font-mono text-[12px] text-fg-muted">불러오는 중…</p>
+        <section
+          aria-busy
+          aria-label="불러오는 중"
+          className="mt-8 flex items-center gap-4 rounded-[var(--radius-panel)] border-hair p-5"
+        >
+          <Skeleton width={56} height={56} rounded="full" />
+          <div className="flex-1 space-y-2">
+            <Skeleton width="60%" height={16} />
+            <Skeleton width="80%" height={12} />
+          </div>
+        </section>
       ) : !authed ? (
         <div className="mt-10 rounded-[var(--radius-panel)] border-hair p-5 text-center">
           <p className="text-body text-fg-muted">로그인이 필요합니다.</p>
