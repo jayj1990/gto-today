@@ -37806,6 +37806,181 @@ export const SOLVER_SPOTS = ([
     "teachingNote": "이 보드 · 이 핸드에서는 체크이 단독 정답에 가깝습니다."
   },
   {
+    "id": "pf_phase4_CO_as2s2s_2d2c",
+    "street": "flop",
+    "board": [
+      "As",
+      "2s",
+      "2s"
+    ],
+    "hero": [
+      "2d",
+      "2c"
+    ],
+    "texture": "paired",
+    "context": {
+      "heroPos": "BB",
+      "villainPos": "CO",
+      "potType": "srp",
+      "spr": 17.727272727272727,
+      "potBB": 5.5,
+      "effStackBB": 97.5,
+      "preflopSummary": "CO 오픈 · BB 콜"
+    },
+    "facingBetBB": 0,
+    "mix": {
+      "check": 0.832963228225708,
+      "bet33": 0.16703654825687408,
+      "bet75": 1.619240634909147e-7
+    },
+    "availableActions": [
+      "bet33",
+      "bet75",
+      "check"
+    ],
+    "teachingNote": "혼합 전략 — 체크이 가장 빈번하지만 1/3 벳도 충분한 비중."
+  },
+  {
+    "id": "pf_phase4_CO_as2s2s_2h2c",
+    "street": "flop",
+    "board": [
+      "As",
+      "2s",
+      "2s"
+    ],
+    "hero": [
+      "2h",
+      "2c"
+    ],
+    "texture": "paired",
+    "context": {
+      "heroPos": "BB",
+      "villainPos": "CO",
+      "potType": "srp",
+      "spr": 17.727272727272727,
+      "potBB": 5.5,
+      "effStackBB": 97.5,
+      "preflopSummary": "CO 오픈 · BB 콜"
+    },
+    "facingBetBB": 0,
+    "mix": {
+      "check": 0.8345218300819397,
+      "bet33": 0.1654779016971588,
+      "bet75": 1.663437956267444e-7
+    },
+    "availableActions": [
+      "bet33",
+      "bet75",
+      "check"
+    ],
+    "teachingNote": "혼합 전략 — 체크이 가장 빈번하지만 1/3 벳도 충분한 비중."
+  },
+  {
+    "id": "pf_phase4_CO_as2s2s_2h2d",
+    "street": "flop",
+    "board": [
+      "As",
+      "2s",
+      "2s"
+    ],
+    "hero": [
+      "2h",
+      "2d"
+    ],
+    "texture": "paired",
+    "context": {
+      "heroPos": "BB",
+      "villainPos": "CO",
+      "potType": "srp",
+      "spr": 17.727272727272727,
+      "potBB": 5.5,
+      "effStackBB": 97.5,
+      "preflopSummary": "CO 오픈 · BB 콜"
+    },
+    "facingBetBB": 0,
+    "mix": {
+      "check": 0.7620611786842346,
+      "bet33": 0.23793846368789673,
+      "bet75": 2.65675595301218e-7
+    },
+    "availableActions": [
+      "bet33",
+      "bet75",
+      "check"
+    ],
+    "teachingNote": "혼합 전략 — 체크이 가장 빈번하지만 1/3 벳도 충분한 비중."
+  },
+  {
+    "id": "pf_phase4_CO_as2s2s_3s3d",
+    "street": "flop",
+    "board": [
+      "As",
+      "2s",
+      "2s"
+    ],
+    "hero": [
+      "3s",
+      "3d"
+    ],
+    "texture": "paired",
+    "context": {
+      "heroPos": "BB",
+      "villainPos": "CO",
+      "potType": "srp",
+      "spr": 17.727272727272727,
+      "potBB": 5.5,
+      "effStackBB": 97.5,
+      "preflopSummary": "CO 오픈 · BB 콜"
+    },
+    "facingBetBB": 0,
+    "mix": {
+      "check": 0.9189244508743286,
+      "bet33": 0.08107416331768036,
+      "bet75": 0.0000014482922097158735
+    },
+    "availableActions": [
+      "bet33",
+      "bet75",
+      "check"
+    ],
+    "teachingNote": "이 보드 · 이 핸드에서는 체크이 단독 정답에 가깝습니다."
+  },
+  {
+    "id": "pf_phase4_CO_as2s2s_3s3h",
+    "street": "flop",
+    "board": [
+      "As",
+      "2s",
+      "2s"
+    ],
+    "hero": [
+      "3s",
+      "3h"
+    ],
+    "texture": "paired",
+    "context": {
+      "heroPos": "BB",
+      "villainPos": "CO",
+      "potType": "srp",
+      "spr": 17.727272727272727,
+      "potBB": 5.5,
+      "effStackBB": 97.5,
+      "preflopSummary": "CO 오픈 · BB 콜"
+    },
+    "facingBetBB": 0,
+    "mix": {
+      "check": 0.9171467423439026,
+      "bet33": 0.08285175263881683,
+      "bet75": 0.0000014531212855217746
+    },
+    "availableActions": [
+      "bet33",
+      "bet75",
+      "check"
+    ],
+    "teachingNote": "이 보드 · 이 핸드에서는 체크이 단독 정답에 가깝습니다."
+  },
+  {
     "id": "pf_phase4_CO_as3h2d_2h2c",
     "street": "flop",
     "board": [
@@ -38504,6 +38679,181 @@ export const SOLVER_SPOTS = ([
       "check"
     ],
     "teachingNote": "이 보드 · 이 핸드에서는 1/3 벳이 단독 정답에 가깝습니다."
+  },
+  {
+    "id": "pf_phase4_CO_as3s3d_2d2c",
+    "street": "flop",
+    "board": [
+      "As",
+      "3s",
+      "3d"
+    ],
+    "hero": [
+      "2d",
+      "2c"
+    ],
+    "texture": "paired",
+    "context": {
+      "heroPos": "BB",
+      "villainPos": "CO",
+      "potType": "srp",
+      "spr": 17.727272727272727,
+      "potBB": 5.5,
+      "effStackBB": 97.5,
+      "preflopSummary": "CO 오픈 · BB 콜"
+    },
+    "facingBetBB": 0,
+    "mix": {
+      "check": 0.704552173614502,
+      "bet33": 0.2731255292892456,
+      "bet75": 0.02232230268418789
+    },
+    "availableActions": [
+      "bet33",
+      "bet75",
+      "check"
+    ],
+    "teachingNote": "혼합 전략 — 체크이 가장 빈번하지만 1/3 벳도 충분한 비중."
+  },
+  {
+    "id": "pf_phase4_CO_as3s3d_2h2c",
+    "street": "flop",
+    "board": [
+      "As",
+      "3s",
+      "3d"
+    ],
+    "hero": [
+      "2h",
+      "2c"
+    ],
+    "texture": "paired",
+    "context": {
+      "heroPos": "BB",
+      "villainPos": "CO",
+      "potType": "srp",
+      "spr": 17.727272727272727,
+      "potBB": 5.5,
+      "effStackBB": 97.5,
+      "preflopSummary": "CO 오픈 · BB 콜"
+    },
+    "facingBetBB": 0,
+    "mix": {
+      "check": 0.7114712595939636,
+      "bet33": 0.2706024944782257,
+      "bet75": 0.017926238477230072
+    },
+    "availableActions": [
+      "bet33",
+      "bet75",
+      "check"
+    ],
+    "teachingNote": "혼합 전략 — 체크이 가장 빈번하지만 1/3 벳도 충분한 비중."
+  },
+  {
+    "id": "pf_phase4_CO_as3s3d_2h2d",
+    "street": "flop",
+    "board": [
+      "As",
+      "3s",
+      "3d"
+    ],
+    "hero": [
+      "2h",
+      "2d"
+    ],
+    "texture": "paired",
+    "context": {
+      "heroPos": "BB",
+      "villainPos": "CO",
+      "potType": "srp",
+      "spr": 17.727272727272727,
+      "potBB": 5.5,
+      "effStackBB": 97.5,
+      "preflopSummary": "CO 오픈 · BB 콜"
+    },
+    "facingBetBB": 0,
+    "mix": {
+      "check": 0.7046548128128052,
+      "bet33": 0.27303898334503174,
+      "bet75": 0.022306280210614204
+    },
+    "availableActions": [
+      "bet33",
+      "bet75",
+      "check"
+    ],
+    "teachingNote": "혼합 전략 — 체크이 가장 빈번하지만 1/3 벳도 충분한 비중."
+  },
+  {
+    "id": "pf_phase4_CO_as3s3d_2s2c",
+    "street": "flop",
+    "board": [
+      "As",
+      "3s",
+      "3d"
+    ],
+    "hero": [
+      "2s",
+      "2c"
+    ],
+    "texture": "paired",
+    "context": {
+      "heroPos": "BB",
+      "villainPos": "CO",
+      "potType": "srp",
+      "spr": 17.727272727272727,
+      "potBB": 5.5,
+      "effStackBB": 97.5,
+      "preflopSummary": "CO 오픈 · BB 콜"
+    },
+    "facingBetBB": 0,
+    "mix": {
+      "check": 0.9176944494247437,
+      "bet33": 0.07313399016857147,
+      "bet75": 0.009171562269330025
+    },
+    "availableActions": [
+      "bet33",
+      "bet75",
+      "check"
+    ],
+    "teachingNote": "이 보드 · 이 핸드에서는 체크이 단독 정답에 가깝습니다."
+  },
+  {
+    "id": "pf_phase4_CO_as3s3d_2s2d",
+    "street": "flop",
+    "board": [
+      "As",
+      "3s",
+      "3d"
+    ],
+    "hero": [
+      "2s",
+      "2d"
+    ],
+    "texture": "paired",
+    "context": {
+      "heroPos": "BB",
+      "villainPos": "CO",
+      "potType": "srp",
+      "spr": 17.727272727272727,
+      "potBB": 5.5,
+      "effStackBB": 97.5,
+      "preflopSummary": "CO 오픈 · BB 콜"
+    },
+    "facingBetBB": 0,
+    "mix": {
+      "check": 0.8724375367164612,
+      "bet33": 0.09712202101945877,
+      "bet75": 0.030440431088209152
+    },
+    "availableActions": [
+      "bet33",
+      "bet75",
+      "check"
+    ],
+    "teachingNote": "이 보드 · 이 핸드에서는 체크이 단독 정답에 가깝습니다."
   },
   {
     "id": "pf_phase4_CO_as3s3s_2h2d",
