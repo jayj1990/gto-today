@@ -67,7 +67,7 @@ gto-today/
 **컬러 토큰** (tokens.css와 packages/config/tailwind/tokens.ts 이중 소스 — 항상 동기)
 - Brand: `felt #0E3B2E`, `felt-deep #082018`, `felt-night #051612`, `gold #D4AF37`, `gold-soft #E8CC72`, `gold-cool #C9A635`
 - Neutral: `noir #0A0A0A`, `charcoal #1C1C1E`, `graphite #2E2E30`, `ivory #F4EFE6`, `cream #EDE5D3`
-- Semantic: `raise #C8102E`, `call #1F9D55`, `fold #6B6B70`, `warning #E6A817`, `info #4A9EFF`
+- Semantic: `raise #C8102E`, `raise-deep #7F0A1B` (all-in), `call #1F9D55`, `fold #2B5F8F` (blue — matches in-app chart fold), `warning #E6A817`, `info #4A9EFF`
 - Suits (4-color default): spade noir, heart #D63B3B, diamond #2B6CB0, club #1F6F3F
 
 **타이포**: Inter(영문/display) + Pretendard Variable(한글) + JetBrains Mono(숫자·EV·확률) + Fraunces Variable(선택적 serif accent). 모두 `/apps/web/public/fonts/` self-hosted, `font-display: swap`.

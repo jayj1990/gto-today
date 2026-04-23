@@ -25,8 +25,9 @@ export const colors = {
 
   // Semantic
   raise: '#C8102E',
+  raiseDeep: '#7F0A1B', // all-in escalation — deeper than raise
   call: '#1F9D55',
-  fold: '#6B6B70',
+  fold: '#2B5F8F', // blue — matches in-app chart fold color for consistency
   warning: '#E6A817',
   info: '#4A9EFF',
 

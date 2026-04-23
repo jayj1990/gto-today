@@ -79,7 +79,7 @@ const TONE: Record<ActionKind, { cls: string }> = {
   allin: {
     // AllIn button — deeper, darker red than a regular raise so the
     // stake escalation reads visually. Gold ring to mark the jam.
-    cls: 'bg-[#7F0A1B] text-white font-bold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold)]',
+    cls: 'bg-[color:var(--color-raise-deep)] text-white font-bold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold)]',
   },
 };
 

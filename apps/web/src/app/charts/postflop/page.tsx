@@ -137,7 +137,7 @@ export default function PostflopChartPage() {
                       setGroupId(g.id);
                       setSelectedBoard(null);
                     }}
-                    className="rounded-[var(--radius-button)] border-hair surface px-3 py-1.5 font-mono text-[11px] text-fg-muted active:scale-[0.98]"
+                    className="inline-flex h-11 items-center rounded-[var(--radius-button)] border-hair surface px-3 font-mono text-[11px] text-fg-muted active:scale-[0.98]"
                   >
                     {g.label} →
                   </button>
@@ -273,9 +273,9 @@ function BoardMixPanel({ spots }: { spots: readonly PostflopSpot[] }) {
       </div>
 
       <section className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-0.5 text-[11px] text-fg-muted">
-        <LegendDot color="#C8102E" label="벳·레이즈" />
-        <LegendDot color="#1F9D55" label="체크·콜" />
-        <LegendDot color="#2B5F8F" label="폴드" />
+        <LegendDot color="var(--color-raise)" label="벳·레이즈" />
+        <LegendDot color="var(--color-call)" label="체크·콜" />
+        <LegendDot color="var(--color-fold)" label="폴드" />
       </section>
 
       {pickedCombo && pickedSpots.length > 0 ? (

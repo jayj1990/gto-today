@@ -26,7 +26,7 @@ const SLIDES: Slide[] = [
   {
     eyebrow: 'GTO',
     title: '포커의 정답은 GTO',
-    body: '포커는 운이 아니라 균형의 싸움. GTO 훈련으로 늘리는 승률.',
+    body: '포커는 운이 아니라 균형의 싸움.\nGTO 훈련으로 늘리는 승률.',
     image: '/ai-assets/onboarding-v2/gto-mix.png',
     alt: '레이즈·콜·폴드 세 결정을 시각화한 빨강·초록·파랑 리본',
   },
@@ -164,7 +164,7 @@ export default function OnboardingPage() {
           <h1 className="mt-3 whitespace-pre-line font-display text-[32px] font-bold leading-[1.15] tracking-[-0.02em]">
             {slide.title}
           </h1>
-          <p className="mx-auto mt-4 max-w-xs text-body text-fg-muted">{slide.body}</p>
+          <p className="mx-auto mt-4 max-w-xs whitespace-pre-line text-body text-fg-muted">{slide.body}</p>
         </motion.div>
       </AnimatePresence>
 

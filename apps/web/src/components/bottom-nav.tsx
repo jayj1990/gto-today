@@ -11,7 +11,7 @@ import { cn } from '@gto/ui';
  * Mobile-first bottom tab bar. Only renders once the user is past
  * onboarding + signin (same gate as the home screen) and stays hidden
  * on auth / onboarding surfaces. Items:
- *   홈 / 오늘 / 실전 / 복습 (badge when > 0) / 계정
+ *   홈 / 오늘 / 실전 / 복습 (badge when > 0) / 통계
  */
 
 interface Tab {
@@ -200,27 +200,6 @@ function IconReview({ active }: IconProps) {
     </svg>
   );
 }
-
-function IconAccount({ active }: IconProps) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle
-        cx="12"
-        cy="8.5"
-        r="4"
-        stroke="currentColor"
-        strokeWidth={active ? 2 : 1.6}
-      />
-      <path
-        d="M4 20c0-4 3.6-7 8-7s8 3 8 7"
-        stroke="currentColor"
-        strokeWidth={active ? 2 : 1.6}
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-void IconAccount;
 
 function IconStats({ active }: IconProps) {
   return (

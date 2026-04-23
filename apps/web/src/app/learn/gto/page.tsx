@@ -230,8 +230,8 @@ function PositionVisual() {
     <div>
       <div className="flex items-center justify-center">
         <svg width="220" height="180" viewBox="0 0 220 180" role="img" aria-label="6인 테이블 포지션">
-          <ellipse cx={cx} cy={cy} rx={rx + 8} ry={ry + 8} fill="#080808" />
-          <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="#0E3B2E" stroke="rgba(212,175,55,0.2)" />
+          <ellipse cx={cx} cy={cy} rx={rx + 8} ry={ry + 8} fill="var(--color-noir)" />
+          <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="var(--color-felt)" stroke="rgba(212,175,55,0.2)" />
           {seats.map((s) => {
             const rad = (s.angle * Math.PI) / 180;
             const x = cx + rx * Math.cos(rad);
@@ -244,7 +244,7 @@ function PositionVisual() {
                   y={y + 3}
                   textAnchor="middle"
                   fontSize="9"
-                  fill="#fff"
+                  fill="var(--color-ivory)"
                   fontFamily="monospace"
                   fontWeight="bold"
                 >
@@ -284,12 +284,12 @@ function TermsGrid() {
     {
       label: '4벳',
       ko: '3벳에 리리레이즈',
-      desc: '3벳에 또 레이즈. 보통 매우 강한 패거나 블러프.',
+      desc: '3벳에 또 레이즈.\n보통 매우 강한 패거나 블러프.',
     },
     {
       label: '팟 오즈',
       ko: '배당',
-      desc: '내가 콜해야 할 금액 대비 팟 크기의 비율. 승률 기준점.',
+      desc: '내가 콜해야 할 금액 대비 팟 크기의 비율.\n승률 기준점.',
     },
   ];
   return (
@@ -304,7 +304,7 @@ function TermsGrid() {
           </span>
           <div className="min-w-0">
             <p className="text-[13px] font-semibold text-fg">{t.ko}</p>
-            <p className="mt-0.5 text-[12px] leading-[1.5] text-fg-muted">{t.desc}</p>
+            <p className="mt-0.5 whitespace-pre-line text-[12px] leading-[1.5] text-fg-muted">{t.desc}</p>
           </div>
         </li>
       ))}
@@ -314,8 +314,8 @@ function TermsGrid() {
 
 function AppFlow() {
   const steps = [
-    { n: '1', title: '매일 10핸드 퀴즈', body: 'GTO 감을 매일 조금씩 익혀요. 하루 3~5분.' },
-    { n: '2', title: '복습', body: '틀린 스팟만 모아 다시 풀기. 약점 집중 공략.' },
+    { n: '1', title: '매일 10핸드 퀴즈', body: 'GTO 감을 매일 조금씩 익혀요.\n하루 3~5분.' },
+    { n: '2', title: '복습', body: '틀린 스팟만 모아 다시 풀기.\n약점 집중 공략.' },
     { n: '3', title: '실전에서 활용', body: '게임 중 GTO Today 켜두고 힌트를 얻어보세요.' },
   ];
   return (
@@ -327,7 +327,7 @@ function AppFlow() {
           </span>
           <div className="min-w-0">
             <p className="text-[13px] font-semibold text-fg">{s.title}</p>
-            <p className="mt-0.5 text-[12px] leading-[1.5] text-fg-muted">{s.body}</p>
+            <p className="mt-0.5 whitespace-pre-line text-[12px] leading-[1.5] text-fg-muted">{s.body}</p>
           </div>
         </li>
       ))}

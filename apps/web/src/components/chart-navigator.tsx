@@ -185,7 +185,6 @@ export function ChartNavigator({
                       const style = {
                         background: color,
                         borderColor: color,
-                        color: '#ffffff',
                       };
                       if (isAllIn) {
                         return (
@@ -257,9 +256,9 @@ export function ChartNavigator({
                   </section>
 
                   <section className="mb-3 flex flex-wrap justify-center gap-x-3 gap-y-0.5 text-[11px] text-fg-muted">
-                    <LegendDot color="#C8102E" label="레이즈" />
-                    <LegendDot color="#1F9D55" label="콜" />
-                    <LegendDot color="#2B5F8F" label="폴드" />
+                    <LegendDot color="var(--color-raise)" label="레이즈" />
+                    <LegendDot color="var(--color-call)" label="콜" />
+                    <LegendDot color="var(--color-fold)" label="폴드" />
                   </section>
                 </>
               )}
@@ -470,11 +469,11 @@ function actionSortKey(a: string, b: string): number {
 }
 
 function actionColour(a: string): string {
-  if (a === 'FOLD') return '#2B5F8F';
-  if (a === 'Call') return '#1F9D55';
-  if (a === 'AllIn') return '#D4AF37';
-  if (a.endsWith('bb')) return '#C8102E';
-  return '#888';
+  if (a === 'FOLD') return 'var(--color-fold)';
+  if (a === 'Call') return 'var(--color-call)';
+  if (a === 'AllIn') return 'var(--color-gold)';
+  if (a.endsWith('bb')) return 'var(--color-raise)';
+  return 'var(--color-fg-muted)';
 }
 
 function prettyAction(a: string, compact = false): string {

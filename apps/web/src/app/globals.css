@@ -22,6 +22,7 @@
   --color-ivory: #f4efe6;
   --color-cream: #ede5d3;
   --color-raise: #c8102e;
+  --color-raise-deep: #7f0a1b;
   --color-call: #1f9d55;
   --color-fold: #2b5f8f;
   --color-warning: #e6a817;
@@ -165,10 +166,22 @@
     }
   }
 
-  /* Korean word-break safety */
+  /* Korean word-break safety.
+     keep-all — never break inside a Korean 어절; split only at spaces.
+     line-break: strict — enforce Korean punctuation rules at line edges.
+     text-wrap: pretty — modern look-ahead wrapper that avoids orphans
+     and biases toward balanced lines; fixes "GTO 훈련으로 / 늘리는 승률"
+     type mid-phrase breaks across the app. */
   :lang(ko) {
     word-break: keep-all;
     line-break: strict;
+    text-wrap: pretty;
+  }
+
+  /* Headings get full line-balancing since they are short and benefit
+     more from equal line lengths than from orphan avoidance. */
+  :lang(ko) :is(h1, h2, h3, h4) {
+    text-wrap: balance;
   }
 
   /* Selection */

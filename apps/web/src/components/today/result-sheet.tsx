@@ -75,7 +75,7 @@ function buildSegments(spot: TrainingSpot, top: GradedAction | null): MixBarSegm
     { label: '레이즈', value: spot.gtoRaise * 100, color: 'var(--color-raise)', action: 'raise' },
     { label: '콜', value: (spot.gtoCall ?? 0) * 100, color: 'var(--color-call)', action: 'call' },
     { label: '폴드', value: spot.gtoFold * 100, color: 'var(--color-fold)', action: 'fold' },
-    { label: '올인', value: (spot.gtoAllIn ?? 0) * 100, color: '#7F0A1B', action: 'allin' },
+    { label: '올인', value: (spot.gtoAllIn ?? 0) * 100, color: 'var(--color-raise-deep)', action: 'allin' },
   ];
   // RFI has no call/allin concept — mirror the legacy 2-row behaviour.
   const visible =
@@ -292,7 +292,7 @@ export function ResultSheet({
                 <button
                   type="button"
                   onClick={onRetry}
-                  aria-label="연습용 다시 풀어보기. 기록은 첫 답으로 유지됩니다."
+                  aria-label="다시 풀어보기"
                   className="flex h-14 flex-1 flex-col items-center justify-center rounded-[var(--radius-button)] border-hair surface-raised font-medium active:scale-[0.98]"
                 >
                   <span>다시 풀어보기</span>

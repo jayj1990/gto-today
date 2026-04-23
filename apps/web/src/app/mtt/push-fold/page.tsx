@@ -43,8 +43,9 @@ export default function PushFoldPage() {
           <button
             type="button"
             onClick={() => setMode('chart')}
+            aria-pressed={mode === 'chart'}
             className={cn(
-              'rounded-[calc(var(--radius-button)-2px)] px-4 py-1.5 font-mono text-[12px] transition-colors',
+              'inline-flex h-10 items-center rounded-[calc(var(--radius-button)-2px)] px-4 font-mono text-[12px] transition-colors',
               mode === 'chart'
                 ? 'bg-[color:var(--color-accent)]/20 text-[color:var(--color-accent)]'
                 : 'text-fg-muted',
@@ -55,8 +56,9 @@ export default function PushFoldPage() {
           <button
             type="button"
             onClick={() => setMode('train')}
+            aria-pressed={mode === 'train'}
             className={cn(
-              'rounded-[calc(var(--radius-button)-2px)] px-4 py-1.5 font-mono text-[12px] transition-colors',
+              'inline-flex h-10 items-center rounded-[calc(var(--radius-button)-2px)] px-4 font-mono text-[12px] transition-colors',
               mode === 'train'
                 ? 'bg-[color:var(--color-accent)]/20 text-[color:var(--color-accent)]'
                 : 'text-fg-muted',
@@ -113,8 +115,10 @@ function ChartView() {
                 key={p}
                 type="button"
                 onClick={() => setPos(p)}
+                aria-pressed={active}
+                aria-label={`${p} 포지션 푸시/폴드 차트`}
                 className={cn(
-                  'rounded-[var(--radius-button)] border px-3 py-1.5 font-mono text-[12px] whitespace-nowrap',
+                  'inline-flex h-11 items-center rounded-[var(--radius-button)] border px-3 font-mono text-[12px] whitespace-nowrap',
                   active
                     ? 'border-[color:var(--color-accent)] bg-[color:var(--color-accent)]/15 text-[color:var(--color-accent)]'
                     : 'border-hair surface text-fg-muted',

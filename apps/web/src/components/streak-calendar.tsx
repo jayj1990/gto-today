@@ -141,7 +141,7 @@ function shadeFor(count: number, accuracy: number): string {
   if (accuracy < 0.3) return 'rgba(212, 175, 55, 0.22)';
   if (accuracy < 0.55) return 'rgba(212, 175, 55, 0.4)';
   if (accuracy < 0.8) return 'rgba(212, 175, 55, 0.65)';
-  return 'linear-gradient(135deg, #E8CC72, #D4AF37)';
+  return 'linear-gradient(135deg, var(--color-gold-soft), var(--color-gold))';
 }
 
 function iso(d: Date): string {
