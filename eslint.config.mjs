@@ -1,17 +1,28 @@
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import { FlatCompat } from '@eslint/eslintrc';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const compat = new FlatCompat({ baseDirectory: __dirname });
 
 /**
- * Root ESLint config — covers the shared packages (poker-core, gto-data, ui, config).
+ * Root ESLint config — single source for the whole monorepo.
  *
- * apps/web keeps its own flat config (apps/web/eslint.config.mjs) because it
- * needs Next.js-specific rules via `next lint`. When Next 16 drops `next lint`
- * we'll migrate apps/web here too; until then the two configs coexist.
+ * Why one root config (post Next 15.5): `next lint` is deprecated for
+ * removal in Next 16, and the flat-config ESLint CLI can consume
+ * `eslint-config-next` via FlatCompat. Running `eslint .` from the
+ * workspace root now covers apps/web + every shared package with one
+ * pipeline, no turbo fan-out needed.
  *
- * Rules here mirror the non-negotiables in the project-root CLAUDE.md:
- *   - no `any`
- *   - no `console.log` (warn/error allowed)
- *   - unused variables / args must be explicitly underscored
+ * Rule groups:
+ *   - packages/**: generic TS rules + CLAUDE.md non-negotiables
+ *     (no-any, no-console except warn/error, unused vars underscored)
+ *   - apps/web/**: Next.js core-web-vitals + typescript presets on top
+ *     of the same shared rules
+ *   - test files: relaxed (tests assert with console + any)
  */
 export default tseslint.config(
   {
@@ -21,19 +32,21 @@ export default tseslint.config(
       '**/.next/**',
       '**/.turbo/**',
       '**/coverage/**',
-      'apps/**',
       'solver-run/**',
       'solver-wasm/**',
       'prisma/migrations/**',
       // Node build/parse tools: legit process/console, different lint profile
       'packages/*/scripts/**',
       'scripts/**',
+      'apps/*/scripts/**',
+      // Next auto-generated
+      'apps/web/next-env.d.ts',
     ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['packages/**/*.{ts,tsx}'],
+    files: ['packages/**/*.{ts,tsx}', 'apps/**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2024,
       sourceType: 'module',
@@ -47,8 +60,23 @@ export default tseslint.config(
       'no-console': ['error', { allow: ['warn', 'error'] }],
     },
   },
+  // Next.js core-web-vitals (next/image, next/script, etc.) for apps/web.
+  // 'next/typescript' intentionally omitted — it pulls @typescript-eslint
+  // which conflicts with our already-applied tseslint.configs.recommended.
+  ...compat.extends('next/core-web-vitals').map((cfg) => ({
+    ...cfg,
+    files: ['apps/web/**/*.{ts,tsx,js,jsx}'],
+  })),
   {
-    files: ['packages/**/*.test.{ts,tsx}'],
+    files: ['apps/web/**/*.{ts,tsx,js,jsx}'],
+    rules: {
+      // App Router only — the Pages-directory link rule emits a noisy
+      // "Pages directory cannot be found" info line on every run.
+      '@next/next/no-html-link-for-pages': 'off',
+    },
+  },
+  {
+    files: ['**/*.test.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',

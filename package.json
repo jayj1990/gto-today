@@ -11,7 +11,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "eslint packages && turbo run lint --filter=@gto/web",
+    "lint": "eslint .",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "clean": "turbo run clean && rimraf node_modules .turbo",
@@ -21,9 +21,11 @@
     "postinstall": "prisma generate --schema prisma/schema.prisma"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^10.0.1",
     "@types/node": "^22.10.5",
     "eslint": "^9.39.4",
+    "eslint-config-next": "^15.5.15",
     "husky": "^9.1.7",
     "lint-staged": "^15.4.3",
     "openai": "^6.34.0",
