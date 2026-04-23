@@ -170,7 +170,7 @@ export function HomeGate() {
         <PrimaryCard
           href="/mtt/push-fold"
           eyebrow="MTT · 20BB"
-          title="푸시/폴드 차트"
+          title="올인/폴드 차트"
           description="숏스택 Nash 균형. 포지션별 올인 레인지."
           variant="secondary"
           delay={0.15}

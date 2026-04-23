@@ -27,7 +27,7 @@ export default function PushFoldPage() {
             MTT · 20BB
           </p>
           <h1 className="mt-1 font-display text-[24px] font-bold leading-[1.1] tracking-[-0.02em]">
-            푸시/폴드
+            올인/폴드
           </h1>
           <p className="mt-2 text-[13px] leading-[1.55] text-fg-muted">
             숏스택 (~20BB 이하)에서는 레이즈 사이즈 의미가 사라져요.
@@ -125,7 +125,7 @@ function ChartView() {
       </section>
 
       <p className="mb-2 text-center font-mono text-[11px] text-fg-muted">
-        {pos} · 푸시 <span className="text-fg font-semibold">{pushCount}</span>개 / 169
+        {pos} · 올인 <span className="text-fg font-semibold">{pushCount}</span>개 / 169
         <span className="mx-2">·</span>
         <span className="text-[color:var(--color-raise)]">올인</span> vs{' '}
         <span className="text-[color:var(--color-fold)]">폴드</span>
@@ -138,11 +138,11 @@ function ChartView() {
           사용법
         </p>
         <p className="mt-1">
-          포지션 탭을 누르면 그 자리에서 푸시해도 되는 핸드가 레드로 표시돼요.
+          포지션 탭을 누르면 그 자리에서 올인해도 되는 핸드가 레드로 표시돼요.
           블루는 폴드. 스택이 얕을수록 레인지가 넓어지고, SB가 가장 공격적.
         </p>
         <p className="mt-2 text-[11px]">
-          ※ BB 디펜스 / vs 푸시 콜 레인지는 추후 업데이트 예정.
+          ※ BB 디펜스 / vs 올인 콜 레인지는 추후 업데이트 예정.
         </p>
       </div>
     </>

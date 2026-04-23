@@ -67,12 +67,22 @@ export function BottomNav() {
   // Gate: same rule as HomeGate + hide on the auth/onboarding paths.
   if (!onboarded || !authed) return null;
   if (SUPPRESSED.some((p) => pathname.startsWith(p))) return null;
+  // Hide on the home route — the big primary cards already cover
+  // every tab target, so a duplicate strip at the bottom is just
+  // visual noise.
+  if (pathname === '/') return null;
 
   return (
     <nav
       aria-label="주요 메뉴"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-hair bg-[color:var(--color-bg)]/85 backdrop-blur-md md:hidden"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="fixed inset-x-0 bottom-0 z-30 bg-[color:var(--color-bg)]/85 backdrop-blur-md md:hidden"
+      style={{
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        // Subtle upward shadow instead of a hard hairline border —
+        // separates the nav from scrolling content without the gold
+        // accent line reading as an intentional accent.
+        boxShadow: '0 -8px 18px -12px rgba(0, 0, 0, 0.45)',
+      }}
     >
       <ul className="mx-auto flex h-14 max-w-lg items-stretch justify-between px-2">
         {TABS.map((t) => {
