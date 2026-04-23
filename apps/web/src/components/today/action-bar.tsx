@@ -65,21 +65,21 @@ function RippleActionButton({
 
 const TONE: Record<ActionKind, { cls: string }> = {
   fold: {
-    cls: 'bg-[color:var(--color-fold)] text-white font-bold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-fold)]',
+    cls: 'bg-[color:var(--color-fold)] text-on-primary font-bold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-fold)]',
   },
   check: {
-    cls: 'bg-[color:var(--color-graphite)] text-white font-bold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-border)]',
+    cls: 'bg-[color:var(--color-graphite)] text-on-primary font-bold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-border)]',
   },
   call: {
-    cls: 'bg-[color:var(--color-call)] text-white font-bold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-call)]',
+    cls: 'bg-[color:var(--color-call)] text-on-primary font-bold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-call)]',
   },
   raise: {
-    cls: 'bg-[color:var(--color-raise)] text-white font-bold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-raise)]',
+    cls: 'bg-[color:var(--color-raise)] text-on-primary font-bold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-raise)]',
   },
   allin: {
     // AllIn button — deeper, darker red than a regular raise so the
     // stake escalation reads visually. Gold ring to mark the jam.
-    cls: 'bg-[color:var(--color-raise-deep)] text-white font-bold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold)]',
+    cls: 'bg-[color:var(--color-raise-deep)] text-on-primary font-bold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold)]',
   },
 };
 

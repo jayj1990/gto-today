@@ -23,6 +23,12 @@
   --color-ivory: #f4efe6;
   --color-cream: #ede5d3;
 
+  /* Max-contrast foreground used on saturated action surfaces
+     (raise / call / fold / all-in buttons, dominant mix-bar rows).
+     Intentionally pure #fff, not ivory — sits on bold colors where
+     warm off-white would read as yellow/beige. */
+  --color-on-primary: #ffffff;
+
   /* Semantic */
   --color-raise: #c8102e;
   --color-raise-deep: #7f0a1b; /* all-in escalation — deeper than raise */

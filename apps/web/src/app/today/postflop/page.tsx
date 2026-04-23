@@ -82,7 +82,7 @@ export default function TodayPostflopPage() {
                     onClick={() => handleAnswer(a)}
                     disabled={resultOpen}
                     className={cn(
-                      'whitespace-nowrap rounded-[var(--radius-button)] px-1 font-bold text-white shadow-[var(--shadow-card)] active:scale-[0.98] disabled:opacity-50',
+                      'text-on-primary whitespace-nowrap rounded-[var(--radius-button)] px-1 font-bold shadow-[var(--shadow-card)] active:scale-[0.98] disabled:opacity-50',
                       compact ? 'h-12 text-[12px]' : 'h-14 text-[14px]',
                     )}
                     style={{ background: POSTFLOP_ACTION_COLOR[a] }}

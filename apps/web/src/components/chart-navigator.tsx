@@ -191,7 +191,7 @@ export function ChartNavigator({
                       const compact = node.legal.length >= 3;
                       const isAllIn = act === 'AllIn';
                       const cls = cn(
-                        'whitespace-nowrap rounded-[var(--radius-button)] border font-mono font-bold text-white shadow-[var(--shadow-card)] active:scale-[0.98]',
+                        'text-on-primary whitespace-nowrap rounded-[var(--radius-button)] border font-mono font-bold shadow-[var(--shadow-card)] active:scale-[0.98]',
                         compact ? 'h-11 px-1 text-[11px]' : 'h-12 px-2 text-[13px]',
                       );
                       const style = {

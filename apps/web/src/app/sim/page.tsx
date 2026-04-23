@@ -210,7 +210,7 @@ export default function SimPage() {
                   disabled={resultOpen || loading}
                   onClick={() => handlePostflopAnswer(a)}
                   className={cn(
-                    'select-none whitespace-nowrap rounded-[var(--radius-button)] px-1 font-bold text-white shadow-[var(--shadow-card)] transition-colors active:scale-[0.98] disabled:opacity-40',
+                    'text-on-primary select-none whitespace-nowrap rounded-[var(--radius-button)] px-1 font-bold shadow-[var(--shadow-card)] transition-colors active:scale-[0.98] disabled:opacity-40',
                     compact ? 'h-12 text-[12px]' : 'h-14 text-[14px]',
                   )}
                   style={{ background: POSTFLOP_ACTION_COLOR[a] }}

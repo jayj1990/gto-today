@@ -201,7 +201,7 @@ export function PostflopResult({
                   <span
                     className={cn(
                       'text-right font-mono',
-                      isTop ? 'text-[13px] font-bold text-white' : 'text-fg-muted text-[12px]',
+                      isTop ? 'text-on-primary text-[13px] font-bold' : 'text-fg-muted text-[12px]',
                     )}
                   >
                     {POSTFLOP_ACTION_LABEL[action]}
@@ -219,7 +219,7 @@ export function PostflopResult({
                     className={cn(
                       'text-right font-mono tabular-nums',
                       isTop
-                        ? 'text-[13px] font-bold text-white'
+                        ? 'text-on-primary text-[13px] font-bold'
                         : 'text-fg-muted text-[12px] font-semibold',
                     )}
                   >

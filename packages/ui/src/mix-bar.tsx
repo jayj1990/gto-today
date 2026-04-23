@@ -56,7 +56,7 @@ export function MixBar({
               <span
                 className={cn(
                   'text-right font-mono text-[13px]',
-                  dom ? 'font-bold text-white' : 'text-fg-muted',
+                  dom ? 'text-on-primary font-bold' : 'text-fg-muted',
                 )}
               >
                 {dom && (
@@ -80,7 +80,7 @@ export function MixBar({
               <span
                 className={cn(
                   'text-right font-mono text-[13px] tabular-nums',
-                  dom ? 'font-bold text-white' : 'font-semibold',
+                  dom ? 'text-on-primary font-bold' : 'font-semibold',
                 )}
               >
                 {seg.value.toFixed(1)}%

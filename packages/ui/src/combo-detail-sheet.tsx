@@ -85,7 +85,7 @@ export function ComboDetailSheet({ open, combo, mix, onClose }: ComboDetailSheet
                       <span
                         className={cn(
                           'text-right font-mono text-[13px]',
-                          isTop ? 'font-bold text-white' : 'text-fg-muted',
+                          isTop ? 'text-on-primary font-bold' : 'text-fg-muted',
                         )}
                       >
                         {r.label}
@@ -99,7 +99,7 @@ export function ComboDetailSheet({ open, combo, mix, onClose }: ComboDetailSheet
                       <span
                         className={cn(
                           'text-right font-mono text-[13px] tabular-nums',
-                          isTop ? 'font-bold text-white' : 'font-semibold',
+                          isTop ? 'text-on-primary font-bold' : 'font-semibold',
                         )}
                       >
                         {r.value.toFixed(1)}%

@@ -22,6 +22,7 @@ export const colors = {
   graphite: '#2E2E30',
   ivory: '#F4EFE6',
   cream: '#EDE5D3',
+  onPrimary: '#FFFFFF', // max-contrast text on saturated action surfaces
 
   // Semantic
   raise: '#C8102E',

@@ -103,7 +103,7 @@ export function BottomNav() {
                   {t.label}
                 </span>
                 {showBadge && (
-                  <span className="absolute right-[28%] top-1.5 min-w-[16px] rounded-full bg-[color:var(--color-raise)] px-1 text-center font-mono text-[9px] font-bold leading-[16px] text-white">
+                  <span className="text-on-primary absolute right-[28%] top-1.5 min-w-[16px] rounded-full bg-[color:var(--color-raise)] px-1 text-center font-mono text-[9px] font-bold leading-[16px]">
                     {mistakeCount > 99 ? '99+' : mistakeCount}
                   </span>
                 )}

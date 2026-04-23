@@ -323,7 +323,7 @@ function BoardMixPanel({ spots }: { spots: readonly PostflopSpot[] }) {
                           <span
                             className={cn(
                               'text-right font-mono text-[11px]',
-                              isTop ? 'font-bold text-white' : 'text-fg-muted',
+                              isTop ? 'text-on-primary font-bold' : 'text-fg-muted',
                             )}
                           >
                             {POSTFLOP_ACTION_LABEL[act]}
@@ -337,7 +337,7 @@ function BoardMixPanel({ spots }: { spots: readonly PostflopSpot[] }) {
                           <span
                             className={cn(
                               'text-right font-mono text-[11px] tabular-nums',
-                              isTop ? 'font-bold text-white' : '',
+                              isTop ? 'text-on-primary font-bold' : '',
                             )}
                           >
                             {(freq * 100).toFixed(1)}%
