@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
+import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import { themeInitScript } from '@/lib/theme';
 import { SessionSync } from '@/components/session-sync';
@@ -89,6 +90,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <BottomNav />
         </SessionSync>
         <InstallPrompt />
+        <Analytics />
       </body>
     </html>
   );
