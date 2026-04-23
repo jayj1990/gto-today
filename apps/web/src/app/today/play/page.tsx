@@ -193,7 +193,9 @@ export default function TodayPlayPage() {
                 disabled={resultOpen}
                 actions={current.spot.availableActions}
                 callSize={current.spot.openSize}
-                raiseSize={current.spot.scenario === 'vs_open' ? 9 : 2.5}
+                raiseSize={
+                  current.spot.raiseSize ?? (current.spot.scenario === 'vs_open' ? 9 : 2.5)
+                }
                 onAnswer={handlePreflopAnswer}
               />
             ) : (

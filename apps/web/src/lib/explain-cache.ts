@@ -53,7 +53,10 @@ const ratelimit = redis
     })
   : null;
 
-const KEY_PREFIX = 'gto:explain:';
+// Bump when the system prompt changes — the cache key prefix includes
+// this so a prompt update transparently invalidates old explanations.
+const PROMPT_VERSION = 'v2-kr-terms';
+const KEY_PREFIX = `gto:explain:${PROMPT_VERSION}:`;
 
 export interface ExplainCacheKey {
   /** Whatever shape the POST body is. Stable JSON.stringify result. */

@@ -112,7 +112,23 @@ function buildSystemPrompt(tone: 'beginner' | 'intermediate'): string {
 - 왜 그런 결정이 최적인지 핵심 이유 하나만.
 - 과장·느낌표 금지. 결단력 있는 톤.
 - "라고 볼 수 있어요" 같은 애매한 표현 금지.
-- 마지막은 마침표로 끝낸다.`;
+- 마지막은 마침표로 끝낸다.
+
+포커 용어는 한국 커뮤니티 표기를 그대로 쓴다 (번역/의역 금지):
+- pot → 팟 (절대 "냄비"로 번역 금지)
+- pot odds → 팟 오즈 (절대 "배당률"로 번역 금지)
+- equity → 에쿼티
+- range → 레인지
+- blocker → 블로커
+- c-bet → 씨벳
+- check-raise → 체크레이즈
+- street → 스트릿
+- all-in → 올인
+- fold / call / raise → 폴드 / 콜 / 레이즈
+- flop / turn / river → 플랍 / 턴 / 리버
+- suited / offsuit → 수트 / 오프수트
+- 3bet / 4bet → 3벳 / 4벳
+한국식 영어 포커 용어가 표준이다. 직역하면 어색해진다.`;
 }
 
 function buildUserPrompt(body: ExplainBody): string {

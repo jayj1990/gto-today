@@ -10,10 +10,12 @@ import {
 } from './bb-defense';
 import { listPostflopSpots, type PostflopSpot } from './postflop';
 import {
-  availableActionsFor,
+  availableActionsFromNode,
+  callSizeFromPreActions,
   collapseForCombo,
   getQbTree,
   parseNodeKey,
+  raiseSizeFromNode,
   type ParsedNode,
 } from './qb-tree';
 
@@ -46,6 +48,11 @@ export interface TrainingSpot {
   /** For vs_open scenarios: who opened, and to what size. */
   readonly opener?: Position;
   readonly openSize?: number;
+  /** Size (BB) to display on the "raise" button — defaults to a
+   *  scenario-appropriate number when omitted. Set for deep nodes
+   *  (4bet / 5bet) so the label reads "레이즈 21bb" instead of
+   *  a hardcoded default. */
+  readonly raiseSize?: number;
   /** Every action prior to hero's decision. Empty for RFI. */
   readonly preActions?: readonly PreAction[];
   /** Pot before hero acts (BB). Used by 3bet/4bet/allin scenarios
@@ -447,7 +454,11 @@ function buildAdvancedSpot(
 
   const openerPair = node.preActions[0];
   const opener = openerPair?.actor as Position | undefined;
-  const openerSize = openerPair?.action.match(/^([\d.]+)bb$/)?.[1];
+  // openSize for the ActionBar "call" button — for vs_open this is the
+  // opener's 2.5bb; for vs_3bet it should be the facing 3bet size
+  // (e.g. 8.5bb), etc. Pull the most recent bb-size from the trace.
+  const callSize = callSizeFromPreActions(node.preActions);
+  const raiseSize = raiseSizeFromNode(raw);
 
   return {
     id: `${dateKey}-${idx}-${picked.combo}-${node.nodeKey}`,
@@ -458,7 +469,8 @@ function buildAdvancedSpot(
     stackBB: 100,
     scenario: node.scenario,
     ...(opener ? { opener } : {}),
-    ...(openerSize ? { openSize: parseFloat(openerSize) } : {}),
+    ...(callSize !== undefined ? { openSize: callSize } : {}),
+    ...(raiseSize !== undefined ? { raiseSize } : {}),
     preActions: node.preActions,
     potBB: node.potBB,
     gtoRaise: mix.raise,
@@ -466,7 +478,9 @@ function buildAdvancedSpot(
     gtoCall: mix.call,
     gtoAllIn: mix.allin,
     correctAnswer,
-    availableActions: availableActionsFor(node.scenario),
+    // Trust the actual node's action set over the scenario default —
+    // BB cold-4bet nodes have no "call" option, for instance.
+    availableActions: availableActionsFromNode(raw),
   };
 }
 

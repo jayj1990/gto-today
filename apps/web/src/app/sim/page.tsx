@@ -189,7 +189,9 @@ export default function SimPage() {
             disabled={resultOpen || loading}
             actions={item.spot.availableActions}
             callSize={item.spot.openSize}
-            raiseSize={item.spot.scenario === 'vs_open' ? 9 : 2.5}
+            raiseSize={
+              item.spot.raiseSize ?? (item.spot.scenario === 'vs_open' ? 9 : 2.5)
+            }
             onAnswer={handlePreflopAnswer}
           />
         )}

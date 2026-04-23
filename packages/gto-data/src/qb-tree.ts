@@ -221,3 +221,54 @@ export function availableActionsFor(scenario: Scenario): TrainingSpot['available
   // vs_3bet + vs_4bet: fold / call / raise / allin
   return ['fold', 'call', 'raise', 'allin'];
 }
+
+/** Actual legal actions at THIS node. Scenario-wide defaults are a
+ *  starting point but many qb nodes omit options (e.g. BB's cold
+ *  4bet-or-fold decision has no "call" key), so we narrow down to
+ *  what the raw solver output actually contains. */
+export function availableActionsFromNode(
+  node: Record<string, Record<string, number>>,
+): TrainingSpot['availableActions'] {
+  const actions = Object.keys(node);
+  const set = new Set<'fold' | 'call' | 'raise' | 'allin'>();
+  for (const a of actions) {
+    if (a === 'FOLD') set.add('fold');
+    else if (a === 'Call') set.add('call');
+    else if (a === 'AllIn') set.add('allin');
+    else if (/^([\d.]+)bb$/.test(a)) set.add('raise');
+  }
+  return (['fold', 'call', 'raise', 'allin'] as const).filter((a) =>
+    set.has(a),
+  ) as TrainingSpot['availableActions'];
+}
+
+/** The size label to show on the "raise" button for this node —
+ *  smallest raise size found in the node's action keys (e.g. "21.0bb"
+ *  → 21). Returns undefined when no raise option exists. */
+export function raiseSizeFromNode(
+  node: Record<string, Record<string, number>>,
+): number | undefined {
+  let min: number | undefined;
+  for (const a of Object.keys(node)) {
+    const m = a.match(/^([\d.]+)bb$/);
+    if (!m) continue;
+    const n = parseFloat(m[1]!);
+    if (min === undefined || n < min) min = n;
+  }
+  return min;
+}
+
+/** The size to display on the "call" button — the facing bet size
+ *  that the hero would match. Pulled from the most recent bb-sized
+ *  pre-action in the trace. */
+export function callSizeFromPreActions(
+  preActions: readonly { action: string }[],
+): number | undefined {
+  for (let i = preActions.length - 1; i >= 0; i--) {
+    const a = preActions[i]?.action;
+    if (!a) continue;
+    const m = a.match(/^([\d.]+)bb$/);
+    if (m) return parseFloat(m[1]!);
+  }
+  return undefined;
+}

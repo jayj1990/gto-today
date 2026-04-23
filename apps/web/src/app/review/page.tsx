@@ -191,7 +191,10 @@ export default function ReviewPage() {
                 <ActionBar
                   actions={visibleCurrent.spot.availableActions}
                   callSize={visibleCurrent.spot.openSize ?? undefined}
-                  raiseSize={visibleCurrent.spot.scenario === 'vs_open' ? 9 : 2.5}
+                  raiseSize={
+                    visibleCurrent.spot.raiseSize ??
+                    (visibleCurrent.spot.scenario === 'vs_open' ? 9 : 2.5)
+                  }
                   onAnswer={onAnswerPreflop}
                 />
               ) : (

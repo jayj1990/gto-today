@@ -91,7 +91,6 @@ export function PostflopResult({
 
   if (!open || !spot || !userAnswer) return null;
 
-  const teachingNote = spot.teachingNote;
 
   const grade = gradePostflopAction(spot, userAnswer);
   const total = Object.values(spot.mix).reduce((s, v) => s + (v ?? 0), 0);
@@ -233,19 +232,9 @@ export function PostflopResult({
           </div>
         </div>
 
-        {/* Pre-computed teaching note (never a runtime API call — every
-            seed + solver spot ships with its own rationale). */}
-        {teachingNote && (
-          <div className="mt-4 rounded-[var(--radius-button)] border-hair surface px-4 py-3 text-[13px] leading-[1.6] text-fg">
-            <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]">
-              왜 그런지
-            </p>
-            <p className="whitespace-pre-wrap">{teachingNote}</p>
-          </div>
-        )}
-
-        {/* AI coach explanation — opt-in. Pre-computed note is cheap;
-            the Haiku call only fires when user taps the button. */}
+        {/* AI coach explanation — opt-in. Pre-written teachingNote
+            was removed per Jay: duplicated with the AI path and the
+            hand-crafted copy looked low-effort next to it. */}
         <div className="mt-3">
           {!explanation && !explaining && !explainError && (
             <button
