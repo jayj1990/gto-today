@@ -29,6 +29,13 @@ const nextConfig: NextConfig = {
   },
   images: {
     formats: ['image/avif', 'image/webp'],
+    // Remote hosts we serve profile pictures from. Matches the
+    // CSP img-src allowlist in the headers() block below.
+    remotePatterns: [
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+      { protocol: 'https', hostname: 'ssl.pstatic.net' },
+      { protocol: 'https', hostname: '*.kakaocdn.net' },
+    ],
   },
   async headers() {
     // Baseline hardening headers.
@@ -40,6 +47,17 @@ const nextConfig: NextConfig = {
         key: 'Permissions-Policy',
         value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
       },
+      // HSTS — one year, include subdomains, preload-eligible. Vercel
+      // already sets a weaker one; ours overrides. Only meaningful
+      // over HTTPS which production is.
+      {
+        key: 'Strict-Transport-Security',
+        value: 'max-age=63072000; includeSubDomains; preload',
+      },
+      // COOP — isolates our top-level window from cross-origin popups
+      // (e.g. OAuth). Required for the `crossOriginIsolated` flag and
+      // scores a point in Lighthouse Best Practices.
+      { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
     ];
 
     // Content-Security-Policy — shipped in Report-Only mode first so
@@ -71,7 +89,10 @@ const nextConfig: NextConfig = {
       "form-action 'self' https://accounts.google.com https://nid.naver.com https://kauth.kakao.com",
       "base-uri 'self'",
       "object-src 'none'",
-      'upgrade-insecure-requests',
+      // `upgrade-insecure-requests` intentionally omitted — browsers
+      // ignore it under Report-Only (a console warning fires on
+      // every pageview otherwise). Add it back when we promote the
+      // header from Report-Only to enforcing.
       // Browsers POST JSON violation reports here — see
       // apps/web/src/app/api/csp-report/route.ts. Legacy `report-uri`
       // is still honored by Chromium/Safari; the newer Reporting-API

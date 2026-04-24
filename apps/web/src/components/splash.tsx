@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import Image from 'next/image';
 import { Logo } from '@gto/ui';
 
 const SESSION_KEY = 'gto.splash.seen';
@@ -50,13 +51,15 @@ export function Splash() {
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               className="flex flex-col items-center"
             >
-              {/* G3 chip logo — the canonical brand mark */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              {/* G3 chip logo — the canonical brand mark. priority on
+                  the splash hero so next/image emits a preload hint;
+                  this is the LCP element on first visit. */}
+              <Image
                 src="/logos/mark-g3-transparent.png"
                 alt=""
                 width={140}
                 height={140}
+                priority
                 style={{
                   width: 140,
                   height: 140,

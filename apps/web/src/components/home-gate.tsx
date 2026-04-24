@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Logo, cn } from '@gto/ui';
 import { useAuthStore } from '@/lib/auth-store';
@@ -105,12 +106,12 @@ export function HomeGate() {
 
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src="/logos/mark-g3-transparent.png"
             alt=""
             width={36}
             height={36}
+            priority
             style={{
               width: 36,
               height: 36,
@@ -127,8 +128,7 @@ export function HomeGate() {
         >
           <span className="hidden sm:inline">{user?.name ?? '게스트'}</span>
           {avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={avatarUrl}
               alt=""
               width={28}

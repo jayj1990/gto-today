@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
@@ -131,8 +132,7 @@ export function InstallPrompt() {
         >
           <div className="border-hair bg-[color:var(--color-surface-raised)]/95 mx-auto max-w-md rounded-[var(--radius-panel)] p-3 shadow-[var(--shadow-card)] backdrop-blur">
             <div className="flex items-center gap-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src="/logos/mark-g3-transparent.png"
                 alt=""
                 width={36}

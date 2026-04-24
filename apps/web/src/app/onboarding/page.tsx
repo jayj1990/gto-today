@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Logo, cn } from '@gto/ui';
 import { useAuthStore } from '@/lib/auth-store';
@@ -94,12 +95,12 @@ export default function OnboardingPage() {
           </button>
         ) : (
           <div className="flex items-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src="/logos/mark-g3-transparent.png"
               alt=""
               width={32}
               height={32}
+              priority
               style={{ width: 32, height: 32, objectFit: 'contain' }}
             />
             <Logo variant="full" width={88} aria-hidden />
@@ -127,12 +128,13 @@ export default function OnboardingPage() {
           >
             {/* Radial mask fades the four edges so the DALL·E square crops
                 merge smoothly into the felt-green page background. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={slide.image}
               alt={slide.alt}
-              width={320}
-              height={320}
+              width={640}
+              height={640}
+              priority={index === 0}
+              sizes="(max-width: 480px) 72vw, 320px"
               style={{
                 width: 'min(72vw, 320px)',
                 height: 'auto',

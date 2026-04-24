@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSession, signOut as nextAuthSignOut } from 'next-auth/react';
 import { useAuthStore } from '@/lib/auth-store';
 import { Skeleton } from '@/components/skeleton';
@@ -88,8 +89,7 @@ export default function AccountPage() {
         <>
           <section className="border-hair mt-8 flex items-center gap-4 rounded-[var(--radius-panel)] p-5">
             {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={avatarUrl}
                 alt=""
                 width={56}

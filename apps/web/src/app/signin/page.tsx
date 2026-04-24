@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn as nextAuthSignIn } from 'next-auth/react';
@@ -63,12 +64,12 @@ export default function SignInPage() {
     >
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src="/logos/mark-g3-transparent.png"
             alt=""
             width={32}
             height={32}
+            priority
             style={{ width: 32, height: 32, objectFit: 'contain' }}
           />
           <Logo variant="full" width={88} aria-hidden />
