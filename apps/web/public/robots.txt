@@ -2,5 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /dev/
 Disallow: /api/
+Disallow: /admin
 
 Sitemap: https://gto.today/sitemap.xml
