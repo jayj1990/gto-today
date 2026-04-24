@@ -46,6 +46,10 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  // Account lookups and listings are always keyed by userId; without
+  // an index Postgres scans the whole table on every session-sync
+  // round-trip.
+  @@index([userId])
 }
 
 model Session {
@@ -55,6 +59,11 @@ model Session {
   expires      DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  // Auth.js runs an expired-session sweep; indexing `expires` turns
+  // that into a range scan instead of a full-table read.
+  @@index([expires])
 }
 
 model VerificationToken {
@@ -63,4 +72,5 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+  @@index([expires])
 }
