@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn as nextAuthSignIn } from 'next-auth/react';
 import { Logo } from '@gto/ui';
@@ -8,18 +9,20 @@ import { useAuthStore } from '@/lib/auth-store';
 import { track } from '@/lib/analytics';
 
 /**
- * Sign-in screen. All three providers (Google / Kakao / Naver) are
- * wired up — Kakao & Naver only succeed when their client-id/secret
- * env vars are present on the deployment (see docs/oauth-setup.md).
- * If a key is missing, Auth.js redirects to its generic error page.
- *
- * "나중에" (skip) registers a guest session in zustand so HomeGate lets
- * the user through without bouncing them back here. Streaks won't sync
- * across devices until they upgrade to a real OAuth login.
+ * Sign-in screen.
+ * Active providers (loaded server-side in lib/auth.ts if env present):
+ *   - Google OAuth
+ *   - Naver OAuth
+ *   - Kakao OAuth (심사 통과 후)
+ *   - Resend email magic link
+ * Plus a 나중에 guest-session escape hatch.
  */
 export default function SignInPage() {
   const router = useRouter();
   const guestSignIn = useAuthStore((s) => s.signIn);
+  const [email, setEmail] = useState('');
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailSubmitting, setEmailSubmitting] = useState(false);
   const handleGoogle = () => {
     track({ name: 'signin_attempted', props: { method: 'google' } });
     void nextAuthSignIn('google', { callbackUrl: '/' });
@@ -36,6 +39,18 @@ export default function SignInPage() {
       signedInAt: Date.now(),
     });
     router.push('/');
+  };
+  const handleEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || emailSubmitting) return;
+    track({ name: 'signin_attempted', props: { method: 'email' } });
+    setEmailSubmitting(true);
+    try {
+      await nextAuthSignIn('resend', { email, callbackUrl: '/', redirect: false });
+      setEmailSent(true);
+    } finally {
+      setEmailSubmitting(false);
+    }
   };
 
   return (
@@ -125,6 +140,49 @@ export default function SignInPage() {
           </span>
         </button>
       </div>
+
+      <div className="mt-6 flex items-center gap-3">
+        <div className="h-px flex-1 bg-[color:var(--color-border)]" />
+        <span className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.2em]">또는</span>
+        <div className="h-px flex-1 bg-[color:var(--color-border)]" />
+      </div>
+
+      {emailSent ? (
+        <div className="border-hair surface mt-4 rounded-[var(--radius-button)] p-4 text-center">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-call)]">
+            메일 전송 완료
+          </p>
+          <p className="text-fg-muted mt-2 text-[13px] leading-[1.55]">
+            <span className="text-fg font-semibold">{email}</span>로 로그인 링크를 보냈어요.
+            <br />
+            이메일의 링크를 누르면 로그인됩니다.
+          </p>
+        </div>
+      ) : (
+        <form onSubmit={handleEmail} className="mt-4 flex flex-col gap-2">
+          <label htmlFor="signin-email" className="sr-only">
+            이메일
+          </label>
+          <input
+            id="signin-email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            required
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="border-hair surface text-fg h-14 w-full rounded-[var(--radius-button)] px-4 text-[15px] placeholder:text-[color:var(--color-fg-muted)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-gold)]"
+          />
+          <button
+            type="submit"
+            disabled={!email || emailSubmitting}
+            className="border-hair surface-raised text-fg inline-flex h-14 w-full items-center justify-center rounded-[var(--radius-button)] font-semibold active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {emailSubmitting ? '보내는 중…' : '이메일로 로그인 링크 받기'}
+          </button>
+        </form>
+      )}
 
       <div className="mt-auto pt-10">
         <p className="text-fg-muted/70 text-center text-[11px]">
