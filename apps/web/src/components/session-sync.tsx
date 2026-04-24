@@ -2,7 +2,20 @@
 
 import { useEffect } from 'react';
 import { SessionProvider, useSession } from 'next-auth/react';
-import { useAuthStore } from '@/lib/auth-store';
+import { useAuthStore, type AuthUser } from '@/lib/auth-store';
+
+/**
+ * Decide whether an Auth.js "unauthenticated" status should clear the
+ * local zustand store. Guest sessions are invisible to Auth.js and must
+ * be preserved — otherwise HomeGate loops the user back to /signin
+ * after they tapped 나중에.
+ *
+ * Exported for direct unit testing so a future refactor of the sync
+ * component can't silently reintroduce the loop.
+ */
+export function shouldMirrorSignOut(user: AuthUser | null): boolean {
+  return user?.method !== 'guest';
+}
 
 /**
  * Keeps the local zustand `auth-store` in sync with the real NextAuth
@@ -26,11 +39,8 @@ function SessionBridge({ children }: { children: React.ReactNode }) {
         signedInAt: Date.now(),
       });
     } else if (status === 'unauthenticated') {
-      // Only mirror the unauth state when the local session is also OAuth.
-      // A guest "나중에" login is Auth.js-invisible, so clearing it here
-      // would loop the user straight back to /signin via HomeGate.
       const user = useAuthStore.getState().user;
-      if (user?.method !== 'guest') {
+      if (shouldMirrorSignOut(user)) {
         setSignedOut();
       }
     }
