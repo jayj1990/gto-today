@@ -85,23 +85,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Script>
         {/* Pre-warm the Vercel Analytics + Speed-Insights origins so
             the ~50 ms TLS + DNS round-trip doesn't sit in front of
-            the LCP paint. Harmless when the domains aren't used. */}
+            the LCP paint. Harmless when the domains aren't used.
+            No image preloads here — on Slow 4G, fetchPriority=high
+            on 500KB+ images STARVES the CSS/JS critical-path and
+            sends LCP backwards (measured 4.9s → 12.4s regression).
+            Per-page <Image priority /> is enough. */}
         <link rel="preconnect" href="https://va.vercel-scripts.com" crossOrigin="" />
         <link rel="preconnect" href="https://vitals.vercel-insights.com" crossOrigin="" />
-        {/* Onboarding slide 1 is the LCP element for first-time visitors
-            (home → redirect → /onboarding). React 19 hoists this into
-            <head> at the SSR step, so the fetch starts before Next's
-            chunks even parse. */}
-        <link
-          rel="preload"
-          as="image"
-          href="/ai-assets/onboarding-v2/daily-training.png"
-          fetchPriority="high"
-        />
-        {/* The G3 chip is the LCP element on the splash (width 140 → 512
-            source PNG, ~543 KB). Preload so the fetch starts during
-            the critical render phase instead of after hydration. */}
-        <link rel="preload" as="image" href="/logos/mark-g3-transparent.png" fetchPriority="high" />
       </head>
       <body className="min-h-dvh pb-14 antialiased md:pb-0">
         <SessionSync>
