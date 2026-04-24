@@ -41,6 +41,9 @@ export default tseslint.config(
       'apps/*/scripts/**',
       // Next auto-generated
       'apps/web/next-env.d.ts',
+      // Serwist writes the bundled service worker into public/; treat
+      // everything under public/ as static output, not source to lint.
+      'apps/*/public/**',
     ],
   },
   js.configs.recommended,

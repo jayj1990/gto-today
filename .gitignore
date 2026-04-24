@@ -60,5 +60,10 @@ next-env.d.ts
 packages/gto-data/dist/
 packages/gto-data/generated/
 apps/web/public/data/*.json.gz
+# Serwist writes the compiled service worker on every build
+apps/web/public/sw.js
+apps/web/public/sw.js.map
+apps/web/public/workbox-*.js
+apps/web/public/workbox-*.js.map
 
 .vercel
