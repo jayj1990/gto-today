@@ -27,6 +27,7 @@ import { useMistakesStore } from '@/lib/mistakes-store';
 import { useLiveStore } from '@/lib/live-store';
 import { isoDateKR } from '@/lib/date';
 import { haptic } from '@/lib/haptic';
+import { track } from '@/lib/analytics';
 import { HandCardSkeleton } from '@/components/skeleton';
 
 const TOTAL = 10;
@@ -56,6 +57,9 @@ export default function TodayPlayPage() {
   useEffect(() => {
     let cancelled = false;
     const today = isoDateKR();
+    // One-shot analytics ping. `resumed` tells us whether this is a
+    // fresh day-0 start or a user coming back mid-session (cursor > 0).
+    track({ name: 'daily_started', props: { resumed: cursor > 0 } });
     generateDailyItems({ count: TOTAL, dateSeed: today, gameType }).then((list) => {
       if (cancelled) return;
       setItems(list);
@@ -69,6 +73,7 @@ export default function TodayPlayPage() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startDay, gameType]);
 
   useEffect(() => {
@@ -102,6 +107,7 @@ export default function TodayPlayPage() {
       });
     }
     haptic(grade === 'sharp' ? 'success' : grade === 'acceptable' ? 'warn' : 'error');
+    track({ name: 'answer_graded', props: { kind: 'preflop', grade } });
     setLastPreflopAnswer(action);
     setLastPostflopAnswer(null);
     setLastGrade(grade);
@@ -133,6 +139,7 @@ export default function TodayPlayPage() {
       });
     }
     haptic(grade === 'sharp' ? 'success' : grade === 'acceptable' ? 'warn' : 'error');
+    track({ name: 'answer_graded', props: { kind: 'postflop', grade } });
     setLastPostflopAnswer(action);
     setLastPreflopAnswer(null);
     setLastGrade(grade);

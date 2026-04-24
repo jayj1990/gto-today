@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { signIn as nextAuthSignIn } from 'next-auth/react';
 import { Logo } from '@gto/ui';
 import { useAuthStore } from '@/lib/auth-store';
+import { track } from '@/lib/analytics';
 
 /**
  * Sign-in screen. All three providers (Google / Kakao / Naver) are
@@ -20,12 +21,15 @@ export default function SignInPage() {
   const router = useRouter();
   const guestSignIn = useAuthStore((s) => s.signIn);
   const handleGoogle = () => {
+    track({ name: 'signin_attempted', props: { method: 'google' } });
     void nextAuthSignIn('google', { callbackUrl: '/' });
   };
   const handleNaver = () => {
+    track({ name: 'signin_attempted', props: { method: 'naver' } });
     void nextAuthSignIn('naver', { callbackUrl: '/' });
   };
   const handleLater = () => {
+    track({ name: 'signin_attempted', props: { method: 'guest' } });
     guestSignIn({
       method: 'guest',
       name: '게스트',

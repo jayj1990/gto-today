@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChipToss, MixBar, cn, type MixBarSegment } from '@gto/ui';
 import { sheetUp } from '@gto/ui/motion';
 import type { AnswerGrade, GradedAction, TrainingSpot } from '@gto/gto-data';
+import { track } from '@/lib/analytics';
 
 export interface ResultSheetProps {
   open: boolean;
@@ -141,9 +142,12 @@ export function ResultSheet({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ spot, userAnswer, locale: 'ko', tone: 'beginner' }),
       });
-      const data = (await res.json()) as { text?: string; error?: string };
+      const data = (await res.json()) as { text?: string; error?: string; cached?: boolean };
       if (!res.ok) setExplainError(data.error ?? '해설을 불러오지 못했어요');
-      else if (data.text) setExplanation(data.text);
+      else if (data.text) {
+        setExplanation(data.text);
+        track({ name: 'explain_opened', props: { cached: data.cached === true } });
+      }
     } catch {
       setExplainError('네트워크 오류로 해설을 불러오지 못했어요');
     } finally {
