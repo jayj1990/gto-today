@@ -1,5 +1,10 @@
 import withSerwistInit from '@serwist/next';
+import withBundleAnalyzer from '@next/bundle-analyzer';
 import type { NextConfig } from 'next';
+
+// `ANALYZE=true pnpm build` → opens interactive chunk treemap report
+// at .next/analyze/*.html. No effect on normal builds.
+const withAnalyzer = withBundleAnalyzer({ enabled: process.env['ANALYZE'] === 'true' });
 
 const withSerwist = withSerwistInit({
   // Service worker source (TS) and public-output path.
@@ -67,6 +72,12 @@ const nextConfig: NextConfig = {
       "base-uri 'self'",
       "object-src 'none'",
       'upgrade-insecure-requests',
+      // Browsers POST JSON violation reports here — see
+      // apps/web/src/app/api/csp-report/route.ts. Legacy `report-uri`
+      // is still honored by Chromium/Safari; the newer Reporting-API
+      // equivalent needs a Report-To header pairing which we skip
+      // until we're ready to ingest into Sentry.
+      'report-uri /api/csp-report',
     ].join('; ');
 
     return [
@@ -82,4 +93,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSerwist(nextConfig);
+export default withAnalyzer(withSerwist(nextConfig));
