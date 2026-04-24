@@ -37,16 +37,11 @@
      caused the numeric labels to render in a different typeface from
      their surrounding body text. Numbers get monospace alignment via
      the `tabular-nums` utility where needed. */
-  --font-display:
-    -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', system-ui, sans-serif;
-  --font-body:
-    -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', system-ui, sans-serif;
-  --font-kr:
-    -apple-system, 'Apple SD Gothic Neo', system-ui, sans-serif;
-  --font-mono:
-    -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', system-ui, sans-serif;
-  --font-serif:
-    ui-serif, 'New York', 'Times New Roman', serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', system-ui, sans-serif;
+  --font-kr: -apple-system, 'Apple SD Gothic Neo', system-ui, sans-serif;
+  --font-mono: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', system-ui, sans-serif;
+  --font-serif: ui-serif, 'New York', 'Times New Roman', serif;
 
   --radius-card: 16px;
   --radius-chip: 999px;
@@ -438,25 +433,37 @@
   }
 
   /* Shimmer skeleton — used by loading placeholders while a spot /
-     page is hydrating. Subtle ivory sweep across a dim base. */
-  @keyframes gto-shimmer {
-    0% {
-      background-position: -200% 0;
-    }
-    100% {
-      background-position: 200% 0;
-    }
-  }
+     page is hydrating. Subtle ivory sweep across a dim base.
+     Implementation note: `background-position` is not GPU-composited,
+     so Lighthouse flags it as a paint-thrashing animation. The
+     ::before pseudo runs translateX instead, which stays on its own
+     compositor layer and never triggers a paint. */
   .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+    background: rgba(244, 239, 230, 0.05);
+    border-radius: 8px;
+  }
+  .skeleton-shimmer::before {
+    content: '';
+    position: absolute;
+    inset: 0;
     background: linear-gradient(
       90deg,
-      rgba(244, 239, 230, 0.04) 0%,
-      rgba(244, 239, 230, 0.14) 45%,
-      rgba(244, 239, 230, 0.04) 90%
+      transparent 0%,
+      rgba(244, 239, 230, 0.14) 50%,
+      transparent 100%
     );
-    background-size: 200% 100%;
+    will-change: transform;
     animation: gto-shimmer 1.6s ease-in-out infinite;
-    border-radius: 8px;
+  }
+  @keyframes gto-shimmer {
+    0% {
+      transform: translate3d(-100%, 0, 0);
+    }
+    100% {
+      transform: translate3d(100%, 0, 0);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -468,7 +475,7 @@
     .animate-pot-pulse,
     .animate-chip-toss,
     .ripple-ink,
-    .skeleton-shimmer {
+    .skeleton-shimmer::before {
       animation: none !important;
     }
   }
