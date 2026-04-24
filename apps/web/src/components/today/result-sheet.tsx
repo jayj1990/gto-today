@@ -6,6 +6,7 @@ import { ChipToss, MixBar, cn, type MixBarSegment } from '@gto/ui';
 import { sheetUp } from '@gto/ui/motion';
 import type { AnswerGrade, GradedAction, TrainingSpot } from '@gto/gto-data';
 import { track } from '@/lib/analytics';
+import { readCached, writeCached } from '@/lib/explain-client-cache';
 
 export interface ResultSheetProps {
   open: boolean;
@@ -111,11 +112,22 @@ export function ResultSheet({
   // Reset not just on spot change but also when userAnswer or grade
   // flips — retry keeps spot.id stable and the prior answer's AI
   // explanation must disappear the moment the user picks again.
+  //
+  // On (re-)mount with a new spot we immediately try the client-side
+  // localStorage cache. A hit short-circuits the whole flow: no
+  // spinner, no button press, the explanation renders inline. The
+  // server-side Redis cache is still the source of truth; this just
+  // saves the round-trip for same-device repeats.
   useEffect(() => {
-    setExplanation(null);
     setExplainError(null);
     setExplaining(false);
-  }, [spot?.id, userAnswer, grade]);
+    if (!spot) {
+      setExplanation(null);
+      return;
+    }
+    const cached = readCached({ spotId: spot.id, userAnswer: userAnswer ?? null, locale: 'ko' });
+    setExplanation(cached);
+  }, [spot, userAnswer, grade]);
 
   // Dialog-grade keyboard handling: ESC advances (same as a swipe-down
   // dismiss) so power users aren't forced to reach for the CTA. Enter
@@ -146,6 +158,7 @@ export function ResultSheet({
       if (!res.ok) setExplainError(data.error ?? '해설을 불러오지 못했어요');
       else if (data.text) {
         setExplanation(data.text);
+        writeCached({ spotId: spot.id, userAnswer: userAnswer ?? null, locale: 'ko' }, data.text);
         track({ name: 'explain_opened', props: { cached: data.cached === true } });
       }
     } catch {

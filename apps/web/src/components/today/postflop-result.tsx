@@ -12,6 +12,7 @@ import {
 import { ChipToss, cn } from '@gto/ui';
 import { sheetUp } from '@gto/ui/motion';
 import { track } from '@/lib/analytics';
+import { readCached, writeCached } from '@/lib/explain-client-cache';
 
 export interface PostflopResultProps {
   open: boolean;
@@ -64,11 +65,24 @@ export function PostflopResult({
   const [explaining, setExplaining] = useState(false);
   const [explanation, setExplanation] = useState<string | null>(null);
   const [explainError, setExplainError] = useState<string | null>(null);
+  // Pull from the client-side localStorage cache on spot switch. Hits
+  // render the explanation inline without a spinner — matches the
+  // ResultSheet behaviour. See lib/explain-client-cache.ts for the
+  // key schema + version prefix.
   useEffect(() => {
-    setExplanation(null);
     setExplainError(null);
     setExplaining(false);
-  }, [spot?.id, userAnswer]);
+    if (!spot) {
+      setExplanation(null);
+      return;
+    }
+    const cached = readCached({
+      spotId: spot.id,
+      userAnswer: userAnswer ?? null,
+      locale: 'ko',
+    });
+    setExplanation(cached);
+  }, [spot, userAnswer]);
 
   // ESC / Enter → advance (same as the CTA); matches ResultSheet.
   useEffect(() => {
@@ -97,6 +111,7 @@ export function PostflopResult({
       if (!res.ok) setExplainError(data.error ?? '해설을 불러오지 못했어요');
       else if (data.text) {
         setExplanation(data.text);
+        writeCached({ spotId: spot.id, userAnswer: userAnswer ?? null, locale: 'ko' }, data.text);
         track({ name: 'explain_opened', props: { cached: data.cached === true } });
       }
     } catch {
