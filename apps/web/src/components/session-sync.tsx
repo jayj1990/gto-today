@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { MotionConfig } from 'framer-motion';
 import { SessionProvider, useSession } from 'next-auth/react';
 import { useAuthStore, type AuthUser } from '@/lib/auth-store';
 
@@ -52,7 +53,16 @@ function SessionBridge({ children }: { children: React.ReactNode }) {
 export function SessionSync({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
-      <SessionBridge>{children}</SessionBridge>
+      {/* Tell framer-motion to honor the user's OS-level
+          prefers-reduced-motion setting — without this, Motion
+          animations still run for users who've asked not to see them.
+          Our CSS keyframes already respect the media query via
+          globals.css + tokens.css; this closes the framer-motion gap.
+          `reducedMotion="user"` is the recommended setting per
+          https://motion.dev/docs/accessibility. */}
+      <MotionConfig reducedMotion="user">
+        <SessionBridge>{children}</SessionBridge>
+      </MotionConfig>
     </SessionProvider>
   );
 }
