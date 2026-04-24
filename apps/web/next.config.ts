@@ -26,11 +26,7 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
   },
   async headers() {
-    // Baseline hardening headers. CSP is deliberately omitted — it's
-    // easy to break Vercel Analytics + the OAuth redirect round-trip
-    // with an over-restrictive policy, and Report-Only mode adds
-    // noise without a real threat model in place. Add CSP when we
-    // have an analytics dashboard to verify against.
+    // Baseline hardening headers.
     const securityHeaders = [
       { key: 'X-Frame-Options', value: 'DENY' },
       { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -40,6 +36,39 @@ const nextConfig: NextConfig = {
         value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
       },
     ];
+
+    // Content-Security-Policy — shipped in Report-Only mode first so
+    // violations stream to the browser console (and to our Sentry
+    // integration) without blocking real user traffic. Tune the source
+    // lists based on what reports say, then promote to enforcing by
+    // swapping the header name.
+    //
+    // Origin sources covered:
+    //   self               — Next pages + /api routes + static assets
+    //   'unsafe-inline'    — Next hydration + Tailwind inline styles
+    //   'unsafe-eval'      — required by some Next internal chunks +
+    //                        framer-motion in dev builds
+    //   vercel analytics   — va.vercel-scripts.com + *-insights.com
+    //   vercel live        — preview comments
+    //   OAuth redirects    — accounts.google.com, nid.naver.com,
+    //                        kauth.kakao.com (form-action only)
+    //   avatar images      — googleusercontent + pstatic.net
+    //   sentry             — *.sentry.io (ingest + cdn)
+    const csp = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://*.vercel-insights.com https://vercel.live",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https://lh3.googleusercontent.com https://ssl.pstatic.net https://*.kakaocdn.net",
+      "font-src 'self' data:",
+      "connect-src 'self' https://*.vercel-insights.com https://vitals.vercel-insights.com https://vercel.live wss://ws-us3.pusher.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
+      "frame-src 'self' https://vercel.live",
+      "frame-ancestors 'none'",
+      "form-action 'self' https://accounts.google.com https://nid.naver.com https://kauth.kakao.com",
+      "base-uri 'self'",
+      "object-src 'none'",
+      'upgrade-insecure-requests',
+    ].join('; ');
+
     return [
       {
         source: '/fonts/(.*)',
@@ -47,7 +76,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/(.*)',
-        headers: securityHeaders,
+        headers: [...securityHeaders, { key: 'Content-Security-Policy-Report-Only', value: csp }],
       },
     ];
   },
