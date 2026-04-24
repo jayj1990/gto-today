@@ -26,10 +26,28 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
   },
   async headers() {
+    // Baseline hardening headers. CSP is deliberately omitted — it's
+    // easy to break Vercel Analytics + the OAuth redirect round-trip
+    // with an over-restrictive policy, and Report-Only mode adds
+    // noise without a real threat model in place. Add CSP when we
+    // have an analytics dashboard to verify against.
+    const securityHeaders = [
+      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      {
+        key: 'Permissions-Policy',
+        value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+      },
+    ];
     return [
       {
         source: '/fonts/(.*)',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
+        source: '/(.*)',
+        headers: securityHeaders,
       },
     ];
   },
