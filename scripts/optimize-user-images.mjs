@@ -1,14 +1,20 @@
 #!/usr/bin/env node
-// One-off: recompress the 4 images that real users actually download.
-// All sources are 1024×1024 PNGs; we render them at 32-320px. Losing
-// the extra resolution saves ~6.5 MB per first-visit, which is the
-// single biggest LCP win on a Slow 4G phone (measured 5.2s → target
-// under 2.5s).
+// Recompress the 4 images real users download, tuned for the
+// "safe / high-quality" profile: Retina-crisp on 3x DPR phones and
+// zero visible banding on the metallic chip gradient.
 //
-//   pnpm dlx tsx scripts/optimize-user-images.mjs
-//   (or: node scripts/optimize-user-images.mjs — sharp is a devDep)
+//   node scripts/optimize-user-images.mjs
 //
-// Safe to re-run; each target is deterministic given its source.
+// Safe to re-run. The script accepts either the 1024² DALL·E masters
+// or its own downscaled output as input, so one-shot recompression
+// and iterative tuning both work.
+//
+// Size targets (by design — not minimum-achievable):
+//   mark-g3-transparent.png   ≤ 400 KB  (full-color PNG, 512², alpha)
+//   onboarding slide *.jpg    ≤ 180 KB  (mozjpeg q92, 640²)
+// Well under the original 7.3 MB but noticeably larger than the
+// "aggressive" tier tried in commit e065b38 — we're buying back
+// Retina sharpness at the cost of a few hundred KB cold.
 
 import sharp from 'sharp';
 import { existsSync, statSync } from 'node:fs';
@@ -17,19 +23,17 @@ import { resolve } from 'node:path';
 const ROOT = resolve(import.meta.dirname, '..');
 
 const TARGETS = [
-  // Logo — transparent PNG, used at 28-140px. 512 gives retina headroom
-  // on the splash screen (140 * 3.6x) without wasting bytes. Keep PNG
-  // format — the transparent chip rim would break in JPEG. Palette
-  // quantization to 128 colors knocks it from 543 KB → 41 KB with no
-  // visible banding on a metallic-gold chip at this size.
-  { in: 'apps/web/public/logos/mark-g3-transparent.png', size: 512, format: 'png-palette' },
-  // Onboarding slides — rendered at min(72vw, 320px) behind a radial
-  // mask that softens the corners anyway, so 480 px square source +
-  // mozjpeg quality 82 is plenty and saves ~40 % vs a 640 px PNG.
-  // Verified opaque (no alpha channel) so JPEG is lossless for us.
-  { in: 'apps/web/public/ai-assets/onboarding-v2/daily-training.png', size: 480, format: 'jpeg' },
-  { in: 'apps/web/public/ai-assets/onboarding-v2/gto-mix.png', size: 480, format: 'jpeg' },
-  { in: 'apps/web/public/ai-assets/onboarding-v2/mobile-assist.png', size: 480, format: 'jpeg' },
+  // Logo — transparent PNG, used at 28-140 px. 512² covers the 140 ×
+  // 3.6 DPR splash case with real headroom. Full color (no palette) to
+  // keep the gold gradient banding-free on premium displays.
+  { in: 'apps/web/public/logos/mark-g3-transparent.png', size: 512, format: 'png' },
+  // Onboarding slides — max display is 320 px, so 640² is exact 2× on
+  // a 2× DPR phone and a graceful downscale on 3× DPR flagships.
+  // Verified opaque (channels=3, hasAlpha=false) so JPEG is lossless
+  // for what they contain; q92 keeps the felt / gold textures crisp.
+  { in: 'apps/web/public/ai-assets/onboarding-v2/daily-training.png', size: 640, format: 'jpeg' },
+  { in: 'apps/web/public/ai-assets/onboarding-v2/gto-mix.png', size: 640, format: 'jpeg' },
+  { in: 'apps/web/public/ai-assets/onboarding-v2/mobile-assist.png', size: 640, format: 'jpeg' },
 ];
 
 let savedBytes = 0;
@@ -54,14 +58,10 @@ for (const t of TARGETS) {
   });
   const buf =
     t.format === 'jpeg'
-      ? await pipeline.jpeg({ quality: 82, mozjpeg: true }).toBuffer()
-      : t.format === 'png-palette'
-        ? await pipeline
-            .png({ compressionLevel: 9, palette: true, quality: 90, colors: 128 })
-            .toBuffer()
-        : await pipeline
-            .png({ compressionLevel: 9, adaptiveFiltering: true, palette: false })
-            .toBuffer();
+      ? await pipeline.jpeg({ quality: 92, mozjpeg: true }).toBuffer()
+      : await pipeline
+          .png({ compressionLevel: 9, adaptiveFiltering: true, palette: false })
+          .toBuffer();
   // Write from buffer so in === out is safe when format stays the same.
   await sharp(buf).toFile(outPath);
   const after = statSync(outPath).size;
