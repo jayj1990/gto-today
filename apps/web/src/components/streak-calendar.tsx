@@ -8,6 +8,12 @@ export interface StreakCalendarProps {
   className?: string;
   /** How many days to render (including today). Default 7. */
   days?: number;
+  /**
+   * Layout override. Auto (default) stays as a single row for ≤7 days
+   * and switches to a 7-column weekly grid for longer windows, which
+   * reads as a mini calendar instead of a sliver-thin line.
+   */
+  layout?: 'auto' | 'row' | 'grid';
 }
 
 /**
@@ -18,12 +24,14 @@ export interface StreakCalendarProps {
  * Server renders nothing until the zustand store hydrates — avoids an
  * SSR/CSR mismatch (every visitor has different persisted history).
  */
-export function StreakCalendar({ className, days = 7 }: StreakCalendarProps) {
+export function StreakCalendar({ className, days = 7, layout = 'auto' }: StreakCalendarProps) {
   const lifetime = useChallengeStore((s) => s.lifetimeAnswers);
   const currentStreak = useChallengeStore((s) => s.currentStreak);
 
   const cells = useMemo(() => buildCells(lifetime, days), [lifetime, days]);
   const total = cells.reduce((a, c) => a + c.count, 0);
+  const cols = layout === 'row' ? days : layout === 'grid' ? 7 : days <= 7 ? days : 7;
+  const cellHeight = days <= 7 ? 34 : 22;
 
   return (
     <section
@@ -43,7 +51,7 @@ export function StreakCalendar({ className, days = 7 }: StreakCalendarProps) {
       <ul
         aria-label={`최근 ${days}일 훈련 기록`}
         className="mt-3 grid gap-1.5"
-        style={{ gridTemplateColumns: `repeat(${days}, minmax(0, 1fr))` }}
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
       >
         {cells.map((c) => (
           <li
@@ -55,14 +63,16 @@ export function StreakCalendar({ className, days = 7 }: StreakCalendarProps) {
               aria-hidden
               className="w-full rounded-sm"
               style={{
-                height: 34,
+                height: cellHeight,
                 background: shadeFor(c.count, c.accuracy),
                 border: c.isToday
                   ? '1.5px solid var(--color-accent)'
                   : '1px solid rgba(255,255,255,0.06)',
               }}
             />
-            <span className="text-fg-muted font-mono text-[9px] tabular-nums">{c.label}</span>
+            {days <= 7 && (
+              <span className="text-fg-muted font-mono text-[9px] tabular-nums">{c.label}</span>
+            )}
           </li>
         ))}
       </ul>

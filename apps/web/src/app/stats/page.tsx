@@ -6,6 +6,7 @@ import { cn } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
 import { useChallengeStore, type LifetimeAnswer } from '@/lib/challenge-store';
 import { useMistakesStore } from '@/lib/mistakes-store';
+import { StreakCalendar } from '@/components/streak-calendar';
 
 export default function StatsPage() {
   const lifetime = useChallengeStore((s) => s.lifetimeAnswers);
@@ -73,6 +74,11 @@ export default function StatsPage() {
           </section>
         ) : (
           <>
+            {/* 30-day activity heatmap — monthly shape. The 7-day row
+                on /today is the at-a-glance streak; this grid shows
+                how consistent the last month looked. */}
+            <StreakCalendar className="mt-6" days={30} layout="grid" />
+
             {/* Last-7-day accuracy */}
             <section className="mt-6">
               <SectionHeader

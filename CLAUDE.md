@@ -122,8 +122,8 @@ pnpm format          # prettier 전체 포맷
 - [x] Phase 2 — Brand Identity (logo variants, tokens, card art, motion presets)
 - [~] Phase 3 — Data Layer (poker-core + gto-data scaffolding done; iso canonicalizer + texture classifier + findSpotsByBoard shipped; Tier 1 solver batch = CO vs BB 100BB SRP, ~450 spots in progress on chain3.sh — see memory/gto_today_tier_plan.md)
 - [~] Phase 4 — Core Screens (auth + daily challenge + preflop live + postflop charts all live; postflop live-solve retired in favor of pre-computed lookup per 2026-04-22 pivot)
-- [ ] Phase 5 — AI Explanation Cache (solve-cache removed 2026-04-22 along with WASM live-solve; `/api/explain` Claude Haiku path still pending)
-- [~] Phase 6 — PWA + Deploy (deployed to gto.today via Vercel; Serwist + full PWA polish pending)
-- [ ] Phase 7 — Polish (Lighthouse, a11y, i18n, E2E)
+- [x] Phase 5 — AI Explanation Cache (`/api/explain` Claude Haiku 4.5 live; auth-gated + per-user sliding window rate-limit + Upstash Redis read-through cache with SHA-256 fingerprint keys + prompt-version invalidation)
+- [~] Phase 6 — PWA + Deploy (deployed to gto.today via Vercel; Serwist service worker with tiered runtime caching live 2026-04-24; offline HTML fallback to `/`; install prompt + iOS home-screen hint. Lighthouse-driven polish still pending.)
+- [~] Phase 7 — Polish (Playwright E2E harness + 10 specs across 2 suites shipped; a11y — touch targets ≥44px, aria-pressed on toggles, MotionConfig reducedMotion=user, CSP-Report-Only baseline — largely done. Remaining: Lighthouse measurement + budget, CSP enforcing, i18n, admin dashboard.)
 
 **Post-pivot architecture (2026-04-22)**: Postflop flows use `findSpotsByBoard` over pre-computed spots, not WASM live-solve. Jay's long-term plan is GTO Wizard-level coverage on dedicated compute (see memory/gto_today_pivot_wasm_to_categories.md).
