@@ -99,30 +99,20 @@ export default function ReviewPage() {
     advance();
   };
 
+  // Session-scoped skip set — kept in state (not a useMemo'd Set) so a
+  // skip triggers re-render naturally. Skipped mistakes stay in the
+  // store and re-appear next session; this just hides them from the
+  // current queue.
+  const [skipped, setSkipped] = useState<ReadonlySet<string>>(new Set());
+
   const onSkip = () => {
-    // Keep the mistake in the queue but push it to the back. Without
-    // mutating the store we just rotate the local view — re-render
-    // picks up queue[0] on the next mistake after user advances.
-    // Simpler MVP: treat skip == next queue item by ignoring current
-    // for the session (store unchanged so tomorrow it re-appears).
-    // Implementation: nudge `answered` so a remount sorts; we instead
-    // use a throwaway local timestamp nudge — keep as "later" by
-    // flipping to feedback-none and then letting user tap again.
-    // For now, simply advance and let queue's sort resurface it.
-    // Actually to skip without resolving, we just need queue index > 0.
-    // Since queue is always read fresh, rotate by resolving+re-recording
-    // would mutate 'at'. Simpler: hide via local state.
-    skipIds.add(keyOf(current!));
-    setSkipTick((t) => t + 1);
+    if (!current) return;
+    setSkipped((prev) => new Set(prev).add(keyOf(current)));
+    setLastAnswer(null);
     setPhase({ kind: 'quiz' });
   };
 
-  // Session-scoped skip list — mistakes pushed to the back for now.
-  const [skipTick, setSkipTick] = useState(0);
-  const skipIds = useMemo(() => new Set<string>(), []);
-  void skipTick;
-
-  const visibleQueue = queue.filter((m) => !skipIds.has(keyOf(m)));
+  const visibleQueue = queue.filter((m) => !skipped.has(keyOf(m)));
   const visibleCurrent = visibleQueue[0] ?? null;
 
   return (
@@ -147,13 +137,7 @@ export default function ReviewPage() {
         </header>
 
         {visibleCurrent === null ? (
-          <EmptyState
-            hadQueue={mistakes.length > 0}
-            onResetSkips={() => {
-              skipIds.clear();
-              setSkipTick((t) => t + 1);
-            }}
-          />
+          <EmptyState hadQueue={mistakes.length > 0} onResetSkips={() => setSkipped(new Set())} />
         ) : (
           <>
             <AnimatePresence mode="wait">
