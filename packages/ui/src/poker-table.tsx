@@ -60,6 +60,33 @@ const SEATS: Record<Format, Seat[]> = {
 const CHIP_PX = 50;
 
 /**
+ * Real-poker dealing order (clockwise starting at SB):
+ *   SB → BB → UTG → MP → … → BTN
+ * The dealer sweeps the table, dropping one card per seat in this
+ * order, then sweeps again for the second card. We don't separate the
+ * two passes (each seat's two cards animate together with a small
+ * gap), so seats just need a single slot index here.
+ */
+const DEAL_ORDER: Seat[] = [
+  'SB',
+  'BB',
+  'UTG',
+  'UTG1',
+  'UTG2',
+  'UTG3',
+  'MP',
+  'LJ',
+  'HJ',
+  'CO',
+  'BTN',
+];
+
+function dealSlot(seat: Seat): number {
+  const idx = DEAL_ORDER.indexOf(seat);
+  return idx >= 0 ? idx : 0;
+}
+
+/**
  * Chronological order chips should appear on the felt:
  *   SB post → BB post → UTG voluntary → MP → CO → BTN → SB voluntary → BB voluntary
  *
@@ -309,22 +336,23 @@ export function PokerTable({
                 gap: 3,
               }}
             >
-              {/* Dealing order — each seat's cards arrive ~90ms after
-                  the previous one (clockwise sweep). Hero cards land
-                  last so the user reads "everyone gets cards, then I
-                  look at mine." Per-seat delay flows through
-                  --anim-delay (consumed by .animate-card-slide-in). */}
+              {/* Dealing order — real poker (clockwise from SB):
+                  SB → BB → UTG → MP → CO → BTN. Each seat's cards
+                  arrive at slot * 90ms; hero gets the same slot so a
+                  BB hero sees their cards 2nd (right after SB), a BTN
+                  hero last. The 140ms inter-card gap on the hero is
+                  the visual cue for "your cards being placed face-up". */}
               {hasHeroCards && renderCard && (
                 <div style={{ display: 'flex', gap: 2 }}>
                   <span
                     className="animate-card-slide-in"
-                    style={{ ['--anim-delay' as string]: `${count * 90}ms` }}
+                    style={{ ['--anim-delay' as string]: `${dealSlot(seat) * 90}ms` }}
                   >
                     {renderCard(heroCards![0], 'sm')}
                   </span>
                   <span
                     className="animate-card-slide-in"
-                    style={{ ['--anim-delay' as string]: `${count * 90 + 140}ms` }}
+                    style={{ ['--anim-delay' as string]: `${dealSlot(seat) * 90 + 140}ms` }}
                   >
                     {renderCard(heroCards![1], 'sm')}
                   </span>
@@ -333,7 +361,11 @@ export function PokerTable({
               {hasVillainCards && state.cards && renderCard && (
                 <div
                   className="animate-card-slide-in"
-                  style={{ display: 'flex', gap: 2, ['--anim-delay' as string]: `${i * 90}ms` }}
+                  style={{
+                    display: 'flex',
+                    gap: 2,
+                    ['--anim-delay' as string]: `${dealSlot(seat) * 90}ms`,
+                  }}
                 >
                   {renderCard(state.cards[0], 'xs')}
                   {renderCard(state.cards[1], 'xs')}
@@ -342,7 +374,11 @@ export function PokerTable({
               {hasVillainCards && !state.cards && state.showBacks && (
                 <div
                   className="animate-card-slide-in"
-                  style={{ display: 'flex', gap: 2, ['--anim-delay' as string]: `${i * 90}ms` }}
+                  style={{
+                    display: 'flex',
+                    gap: 2,
+                    ['--anim-delay' as string]: `${dealSlot(seat) * 90}ms`,
+                  }}
                 >
                   <CardBack />
                   <CardBack />
@@ -377,7 +413,10 @@ export function PokerTable({
                   top: `${betY}%`,
                   ['--throw-x' as string]: `${-inward.x * 16}px`,
                   ['--throw-y' as string]: `${-inward.y * 16}px`,
-                  ['--anim-delay' as string]: `${count * 90 + 250 + chipOrderSlot(seat, state.action) * 80}ms`,
+                  // Deal sequence finishes at (count - 1) * 90 + 140
+                  // (last seat slot + hero 2nd-card stagger). Chips
+                  // start 250ms after that so the deal settles first.
+                  ['--anim-delay' as string]: `${(count - 1) * 90 + 140 + 250 + chipOrderSlot(seat, state.action) * 80}ms`,
                 }}
               >
                 <BetChip action={state.action} />
