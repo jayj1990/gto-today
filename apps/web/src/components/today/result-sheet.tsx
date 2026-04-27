@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChipToss, MixBar, cn, type MixBarSegment } from '@gto/ui';
+import { ChipToss, MixBar, cn, playWin, type MixBarSegment } from '@gto/ui';
 import { sheetUp } from '@gto/ui/motion';
 import type { AnswerGrade, GradedAction, TrainingSpot } from '@gto/gto-data';
 import { track } from '@/lib/analytics';
@@ -143,6 +143,12 @@ export function ResultSheet({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onNext]);
+
+  // Win chime — fires once when the sheet opens for a sharp grade.
+  // Pairs with the ChipToss visual for a clean correct-answer beat.
+  useEffect(() => {
+    if (open && grade === 'sharp') playWin();
+  }, [open, grade]);
 
   const fetchExplanation = async () => {
     if (!spot || explaining) return;

@@ -9,7 +9,7 @@ import {
   type PostflopAction,
   type PostflopSpot,
 } from '@gto/gto-data';
-import { ChipToss, cn } from '@gto/ui';
+import { ChipToss, cn, playWin } from '@gto/ui';
 import { sheetUp } from '@gto/ui/motion';
 import { track } from '@/lib/analytics';
 import { readCached, writeCached } from '@/lib/explain-client-cache';
@@ -96,6 +96,14 @@ export function PostflopResult({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onNext]);
+
+  // Win chime on sharp grade. Computed inside the effect so we don't
+  // recompute grade on every render — only fires once when the sheet
+  // opens with a passing answer.
+  useEffect(() => {
+    if (!open || !spot || !userAnswer) return;
+    if (gradePostflopAction(spot, userAnswer) === 'sharp') playWin();
+  }, [open, spot, userAnswer]);
 
   const fetchExplanation = async () => {
     if (!spot || explaining) return;

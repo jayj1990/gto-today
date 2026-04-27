@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSession, signOut as nextAuthSignOut } from 'next-auth/react';
+import { isMuted, setMuted } from '@gto/ui';
 import { useAuthStore } from '@/lib/auth-store';
 import { Skeleton } from '@/components/skeleton';
 
@@ -164,6 +166,8 @@ export default function AccountPage() {
             </ul>
           </section>
 
+          <SoundToggleSection />
+
           <section className="mt-10 grid gap-2">
             <Link
               href="/privacy"
@@ -190,6 +194,45 @@ export default function AccountPage() {
         </>
       )}
     </main>
+  );
+}
+
+function SoundToggleSection() {
+  // localStorage isn't available on the server, so the initial mount
+  // reads "false" until the effect fires. Avoids hydration mismatch.
+  const [muted, setLocal] = useState(false);
+  useEffect(() => setLocal(isMuted()), []);
+
+  const toggle = () => {
+    const next = !muted;
+    setMuted(next);
+    setLocal(next);
+  };
+
+  return (
+    <section className="mt-8">
+      <h2 className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.22em]">설정</h2>
+      <button
+        type="button"
+        onClick={toggle}
+        aria-pressed={!muted}
+        className="border-hair surface mt-3 flex h-14 w-full items-center justify-between rounded-[var(--radius-panel)] px-4 active:scale-[0.99]"
+      >
+        <div className="text-left">
+          <p className="text-[14px] font-medium">사운드</p>
+          <p className="text-fg-muted mt-0.5 text-[11px]">카드 딜링 · 칩 베팅 · 정답 효과음</p>
+        </div>
+        <span
+          className={
+            muted
+              ? 'text-fg-muted font-mono text-[11px] uppercase tracking-[0.2em]'
+              : 'font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-call)]'
+          }
+        >
+          {muted ? '꺼짐' : '켜짐'}
+        </span>
+      </button>
+    </section>
   );
 }
 

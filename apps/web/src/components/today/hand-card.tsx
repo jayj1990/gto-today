@@ -56,6 +56,7 @@ export function HandCard({ spot, className, celebratePot = false }: HandCardProp
           effectiveStack={spot.stackBB}
           lastBet={spot.scenario === 'vs_open' ? lastBet : undefined}
           pulsePot={celebratePot}
+          playSfx
           renderCard={(code, size) => {
             const rank = code.charAt(0);
             const suit = code.charAt(1) as 's' | 'h' | 'd' | 'c';

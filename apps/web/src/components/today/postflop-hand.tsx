@@ -101,6 +101,7 @@ export function PostflopHand({ spot, className, celebratePot = false }: Postflop
           effectiveStack={effStack}
           lastBet={spot.facingBetBB > 0 ? spot.facingBetBB : undefined}
           pulsePot={celebratePot}
+          playSfx
           renderCard={(code, size) => {
             const rank = code.charAt(0);
             const suit = code.charAt(1) as 's' | 'h' | 'd' | 'c';

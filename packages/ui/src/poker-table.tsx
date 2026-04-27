@@ -1,4 +1,5 @@
-import type { HTMLAttributes, ReactNode } from 'react';
+import { useEffect, useRef, type HTMLAttributes, type ReactNode } from 'react';
+import { playChip, playDeal } from './sound';
 
 export type Seat =
   | 'UTG'
@@ -48,6 +49,10 @@ export interface PokerTableProps extends HTMLAttributes<HTMLDivElement> {
   /** When it flips true, the pot number runs a one-shot gold-pulse
    *  so the result screen reads as "pot collected". */
   pulsePot?: boolean;
+  /** Play synthesized deal/chip SFX timed with the deal sweep + bet
+   *  cascade. Off by default because explorer surfaces (/charts) don't
+   *  want sound. Daily quiz / sim / review opt in. */
+  playSfx?: boolean;
 }
 
 const SEATS: Record<Format, Seat[]> = {
@@ -143,12 +148,48 @@ export function PokerTable({
   renderCard,
   showMarkers = true,
   pulsePot = false,
+  playSfx = false,
   className,
   style,
   ...rest
 }: PokerTableProps) {
   const seats = SEATS[format];
   const count = seats.length;
+
+  // Track which (seats, actions) signature we last announced so a
+  // re-render that doesn't actually change the table doesn't re-fire
+  // the deal/chip cascade. The signature changes when the user moves
+  // to a new spot (different seat states, different actions).
+  const lastSigRef = useRef<string>('');
+  useEffect(() => {
+    if (!playSfx) return;
+    const sig = seats
+      .map((s) => `${s}:${seatStates[s]?.action ? actionKey(seatStates[s]!.action!) : '_'}`)
+      .join('|');
+    if (sig === lastSigRef.current) return;
+    lastSigRef.current = sig;
+
+    const timers: number[] = [];
+    // Deal sweep — one swoosh per dealt seat, matches dealSlot * 90ms.
+    for (const seat of seats) {
+      const st = seatStates[seat];
+      if (!st || (!st.cards && !st.showBacks)) continue;
+      const t = window.setTimeout(playDeal, dealSlot(seat) * 90);
+      timers.push(t);
+    }
+    // Bet cascade — one chip clink per non-fold action, base offset
+    // matches the chip animation start ((count-1)*90 + 140 + 250).
+    const betBase = (count - 1) * 90 + 140 + 250;
+    for (const seat of seats) {
+      const st = seatStates[seat];
+      if (!st?.action || st.action.kind === 'fold') continue;
+      const t = window.setTimeout(playChip, betBase + chipOrderSlot(seat, st.action) * 80);
+      timers.push(t);
+    }
+    return () => {
+      for (const t of timers) window.clearTimeout(t);
+    };
+  }, [playSfx, seats, seatStates, count]);
 
   return (
     <div

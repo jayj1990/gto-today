@@ -9,6 +9,7 @@ export { RangeGrid } from './range-grid';
 export { ComboDetailSheet } from './combo-detail-sheet';
 export { TouchButton } from './touch-button';
 export { ChipToss } from './chip-toss';
+export { playDeal, playChip, playWin, isMuted, setMuted } from './sound';
 
 export type { ComboDetailSheetProps } from './combo-detail-sheet';
 export type { ChipTossProps } from './chip-toss';
