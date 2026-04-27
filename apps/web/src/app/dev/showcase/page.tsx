@@ -1,6 +1,7 @@
-import { CardView, Chip, Logo, PokerTable } from '@gto/ui';
+import { CardView, Chip, Logo } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
 import { MotionDemo } from '@/components/showcase/motion-demo';
+import { PokerTableDemo } from '@/components/showcase/poker-table-demo';
 import { RangeDemo } from '@/components/showcase/range-demo';
 
 export const metadata = { title: 'Showcase' };
@@ -87,63 +88,7 @@ export default function ShowcasePage() {
         </Section>
 
         <Section title="05 · Poker table (overhead)">
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div>
-              <p className="text-fg-muted mb-2 font-mono text-[11px]">6-max · BTN (RFI)</p>
-              <PokerTable
-                format="6max"
-                hero="BTN"
-                toAct="BTN"
-                heroCards={['As', 'Kh']}
-                pot={1.5}
-                effectiveStack={100}
-                renderCard={(code, size) => (
-                  <CardView
-                    rank={code.charAt(0)}
-                    suit={code.charAt(1) as 's' | 'h' | 'd' | 'c'}
-                    size={size}
-                    deckScheme="four-color"
-                  />
-                )}
-                seats={{
-                  UTG: { stack: 100, action: { kind: 'fold' } },
-                  MP: { stack: 100, action: { kind: 'fold' } },
-                  CO: { stack: 100, action: { kind: 'fold' } },
-                  BTN: { stack: 100 },
-                  SB: { stack: 99.5, action: { kind: 'post', bb: 0.5 }, showBacks: true },
-                  BB: { stack: 99, action: { kind: 'post', bb: 1 }, showBacks: true },
-                }}
-              />
-            </div>
-            <div>
-              <p className="text-fg-muted mb-2 font-mono text-[11px]">6-max · BB facing raise</p>
-              <PokerTable
-                format="6max"
-                hero="BB"
-                toAct="BB"
-                heroCards={['Qs', 'Qd']}
-                pot={4}
-                effectiveStack={100}
-                lastBet={2.5}
-                renderCard={(code, size) => (
-                  <CardView
-                    rank={code.charAt(0)}
-                    suit={code.charAt(1) as 's' | 'h' | 'd' | 'c'}
-                    size={size}
-                    deckScheme="four-color"
-                  />
-                )}
-                seats={{
-                  UTG: { stack: 100, action: { kind: 'fold' } },
-                  MP: { stack: 100, action: { kind: 'fold' } },
-                  CO: { stack: 100, action: { kind: 'fold' } },
-                  BTN: { stack: 97.5, action: { kind: 'raise', bb: 2.5 }, showBacks: true },
-                  SB: { stack: 99.5, action: { kind: 'post', bb: 0.5 }, showBacks: true },
-                  BB: { stack: 99 },
-                }}
-              />
-            </div>
-          </div>
+          <PokerTableDemo />
         </Section>
 
         <Section title="06 · Preflop range (live GTO data)">
