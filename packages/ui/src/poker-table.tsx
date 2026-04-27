@@ -543,6 +543,7 @@ function SeatChip({
 
   return (
     <div
+      className={variant === 'hero' ? 'animate-hero-pulse' : undefined}
       style={{
         position: 'relative',
         width: CHIP_PX,
@@ -550,16 +551,43 @@ function SeatChip({
         borderRadius: '50%',
         background: 'rgb(24, 24, 28)',
         border: `${ringWidth}px solid ${ringColor}`,
-        boxShadow:
-          variant === 'hero'
-            ? '0 0 0 1px rgba(31,157,85,0.4), 0 4px 14px rgba(0,0,0,0.55), 0 0 20px rgba(31,157,85,0.3)'
-            : variant === 'toAct'
-              ? '0 4px 14px rgba(0,0,0,0.55), 0 0 16px rgba(230,168,23,0.4)'
-              : '0 3px 10px rgba(0,0,0,0.5)',
+        // Non-hero variants get static box-shadow; the hero's shadow is
+        // animated via .animate-hero-pulse so we omit the inline value
+        // (it would override the keyframe).
+        ...(variant === 'hero'
+          ? {}
+          : {
+              boxShadow:
+                variant === 'toAct'
+                  ? '0 4px 14px rgba(0,0,0,0.55), 0 0 16px rgba(230,168,23,0.4)'
+                  : '0 3px 10px rgba(0,0,0,0.5)',
+            }),
         opacity: variant === 'folded' ? 0.35 : 1,
         overflow: 'visible',
       }}
     >
+      {variant === 'hero' && (
+        <span
+          aria-hidden
+          style={{
+            position: 'absolute',
+            top: -16,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            fontFamily: 'var(--font-mono, monospace)',
+            fontSize: 9,
+            fontWeight: 700,
+            letterSpacing: '0.18em',
+            color: 'var(--color-call)',
+            textTransform: 'uppercase',
+            textShadow: '0 1px 4px rgba(0,0,0,0.7)',
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
+          }}
+        >
+          내 자리
+        </span>
+      )}
       <div
         style={{
           position: 'absolute',
