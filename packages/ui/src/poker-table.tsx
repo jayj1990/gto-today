@@ -67,10 +67,10 @@ const CHIP_PX = 50;
 /**
  * Real-poker dealing order (clockwise starting at SB):
  *   SB → BB → UTG → MP → … → BTN
- * The dealer sweeps the table, dropping one card per seat in this
- * order, then sweeps again for the second card. We don't separate the
- * two passes (each seat's two cards animate together with a small
- * gap), so seats just need a single slot index here.
+ * The dealer sweeps the table TWICE — one card to each seat, then
+ * around again for the second card. dealDelayMs returns the absolute
+ * delay (ms) for a given seat's nth card given the seat count and
+ * step-per-card.
  */
 const DEAL_ORDER: Seat[] = [
   'SB',
@@ -86,9 +86,25 @@ const DEAL_ORDER: Seat[] = [
   'BTN',
 ];
 
+const DEAL_STEP_MS = 110;
+
 function dealSlot(seat: Seat): number {
   const idx = DEAL_ORDER.indexOf(seat);
   return idx >= 0 ? idx : 0;
+}
+
+/**
+ * Delay for seat's nth card (0-indexed). Pass 1 lays one card on every
+ * seat in deal order, then pass 2 sweeps again. Total deal duration =
+ * 2 * count * DEAL_STEP_MS.
+ */
+function dealDelayMs(seat: Seat, cardIdx: 0 | 1, count: number): number {
+  return (cardIdx * count + dealSlot(seat)) * DEAL_STEP_MS;
+}
+
+function dealEndMs(count: number): number {
+  // Last seat in pass 2 + the slide-in animation tail (~820ms).
+  return (2 * count - 1) * DEAL_STEP_MS;
 }
 
 /**
@@ -170,20 +186,21 @@ export function PokerTable({
     lastSigRef.current = sig;
 
     const timers: number[] = [];
-    // Deal sweep — one swoosh per dealt seat, matches dealSlot * 90ms.
+    // Two-pass deal sweep: one swoosh per card. SB[0] BB[0] UTG[0] …
+    // BTN[0] then SB[1] BB[1] … BTN[1].
     for (const seat of seats) {
       const st = seatStates[seat];
       if (!st || (!st.cards && !st.showBacks)) continue;
-      const t = window.setTimeout(playDeal, dealSlot(seat) * 90);
-      timers.push(t);
+      timers.push(window.setTimeout(playDeal, dealDelayMs(seat, 0, count)));
+      timers.push(window.setTimeout(playDeal, dealDelayMs(seat, 1, count)));
     }
-    // Bet cascade — one chip clink per non-fold action, base offset
-    // matches the chip animation start ((count-1)*90 + 140 + 250).
-    const betBase = (count - 1) * 90 + 140 + 250;
+    // Bet cascade — base offset matches the chip animation start (deal
+    // sweep finishes + 600ms settle, then 140ms per chipOrderSlot).
+    const betBase = dealEndMs(count) + 600;
     for (const seat of seats) {
       const st = seatStates[seat];
       if (!st?.action || st.action.kind === 'fold') continue;
-      const t = window.setTimeout(playChip, betBase + chipOrderSlot(seat, st.action) * 80);
+      const t = window.setTimeout(playChip, betBase + chipOrderSlot(seat, st.action) * 140);
       timers.push(t);
     }
     return () => {
@@ -377,62 +394,85 @@ export function PokerTable({
                 gap: 3,
               }}
             >
-              {/* Dealing order — real poker (clockwise from SB):
-                  SB → BB → UTG → MP → CO → BTN. Each seat's cards
-                  arrive at slot * 90ms; hero gets the same slot so a
-                  BB hero sees their cards 2nd (right after SB), a BTN
-                  hero last. The 140ms inter-card gap on the hero is
-                  the visual cue for "your cards being placed face-up". */}
+              {/* Two-pass dealing — real poker (clockwise from SB).
+                  Pass 1: each seat gets card[0] in deal order. Pass 2:
+                  same sweep again for card[1]. Each card is a separate
+                  animated element with its own --anim-delay so cards
+                  appear one at a time, not pair at a time. */}
               {hasHeroCards && renderCard && (
                 <div style={{ display: 'flex', gap: 2 }}>
                   <span
                     className="animate-card-slide-in"
-                    style={{ ['--anim-delay' as string]: `${dealSlot(seat) * 90}ms` }}
+                    style={{ ['--anim-delay' as string]: `${dealDelayMs(seat, 0, count)}ms` }}
                   >
                     {renderCard(heroCards![0], 'sm')}
                   </span>
                   <span
                     className="animate-card-slide-in"
-                    style={{ ['--anim-delay' as string]: `${dealSlot(seat) * 90 + 140}ms` }}
+                    style={{ ['--anim-delay' as string]: `${dealDelayMs(seat, 1, count)}ms` }}
                   >
                     {renderCard(heroCards![1], 'sm')}
                   </span>
                 </div>
               )}
               {hasVillainCards && state.cards && renderCard && (
-                <div
-                  className="animate-card-slide-in"
-                  style={{
-                    display: 'flex',
-                    gap: 2,
-                    ['--anim-delay' as string]: `${dealSlot(seat) * 90}ms`,
-                  }}
-                >
-                  {renderCard(state.cards[0], 'xs')}
-                  {renderCard(state.cards[1], 'xs')}
+                <div style={{ display: 'flex', gap: 2 }}>
+                  <span
+                    className="animate-card-slide-in"
+                    style={{ ['--anim-delay' as string]: `${dealDelayMs(seat, 0, count)}ms` }}
+                  >
+                    {renderCard(state.cards[0], 'xs')}
+                  </span>
+                  <span
+                    className="animate-card-slide-in"
+                    style={{ ['--anim-delay' as string]: `${dealDelayMs(seat, 1, count)}ms` }}
+                  >
+                    {renderCard(state.cards[1], 'xs')}
+                  </span>
                 </div>
               )}
               {hasVillainCards && !state.cards && state.showBacks && (
-                <div
-                  className="animate-card-slide-in"
-                  style={{
-                    display: 'flex',
-                    gap: 2,
-                    ['--anim-delay' as string]: `${dealSlot(seat) * 90}ms`,
-                  }}
-                >
-                  <CardBack />
-                  <CardBack />
+                <div style={{ display: 'flex', gap: 2 }}>
+                  <span
+                    className="animate-card-slide-in"
+                    style={{ ['--anim-delay' as string]: `${dealDelayMs(seat, 0, count)}ms` }}
+                  >
+                    <CardBack />
+                  </span>
+                  <span
+                    className="animate-card-slide-in"
+                    style={{ ['--anim-delay' as string]: `${dealDelayMs(seat, 1, count)}ms` }}
+                  >
+                    <CardBack />
+                  </span>
                 </div>
               )}
 
-              {/* Chip below */}
-              <SeatChip
-                seat={seat}
-                stack={state.stack}
-                variant={isFolded ? 'folded' : isHero ? 'hero' : isToAct ? 'toAct' : 'idle'}
-                showDealerBadge={showMarkers && seat === 'BTN'}
-              />
+              {/* Chip below — folded seats fade to dim AFTER deal in
+                  fold-order slot, so the scene reads as "everyone got
+                  cards, then UTG mucks, MP mucks, …". Active seats
+                  render at full opacity from frame 0. */}
+              <span
+                className={isFolded ? 'animate-fold-fade' : undefined}
+                style={
+                  isFolded
+                    ? {
+                        // Folds wait for the deal sweep + a small beat,
+                        // then dim in fold-order slot (UTG→BTN).
+                        ['--anim-delay' as string]: `${
+                          dealEndMs(count) + 200 + dealSlot(seat) * 90
+                        }ms`,
+                      }
+                    : undefined
+                }
+              >
+                <SeatChip
+                  seat={seat}
+                  stack={state.stack}
+                  variant={isFolded ? 'folded' : isHero ? 'hero' : isToAct ? 'toAct' : 'idle'}
+                  showDealerBadge={showMarkers && seat === 'BTN'}
+                />
+              </span>
             </div>
 
             {/* Bet chip on the radial line between seat and center.
@@ -454,10 +494,14 @@ export function PokerTable({
                   top: `${betY}%`,
                   ['--throw-x' as string]: `${-inward.x * 16}px`,
                   ['--throw-y' as string]: `${-inward.y * 16}px`,
-                  // Deal sequence finishes at (count - 1) * 90 + 140
-                  // (last seat slot + hero 2nd-card stagger). Chips
-                  // start 250ms after that so the deal settles first.
-                  ['--anim-delay' as string]: `${(count - 1) * 90 + 140 + 250 + chipOrderSlot(seat, state.action) * 80}ms`,
+                  // Deal sweep is two passes (dealEndMs ≈ 2*count*step).
+                  // Wait 600ms after the last card lands so the user
+                  // sees the deal complete before betting starts, then
+                  // each chip arrives 140ms apart in chipOrderSlot
+                  // sequence (SB post → BB post → voluntary actions).
+                  ['--anim-delay' as string]: `${
+                    dealEndMs(count) + 600 + chipOrderSlot(seat, state.action) * 140
+                  }ms`,
                 }}
               >
                 <BetChip action={state.action} />
