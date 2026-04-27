@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -18,6 +18,8 @@ import { ActionBar, type ActionKind } from '@/components/today/action-bar';
 import { HandCard } from '@/components/today/hand-card';
 import { PostflopHand } from '@/components/today/postflop-hand';
 import { haptic } from '@/lib/haptic';
+import { track } from '@/lib/analytics';
+import { readCached, writeCached } from '@/lib/explain-client-cache';
 import {
   useMistakesStore,
   type MistakeRecord,
@@ -45,18 +47,21 @@ export default function ReviewPage() {
   const queue = useMemo(() => [...mistakes].sort((a, b) => b.at - a.at), [mistakes]);
 
   const [phase, setPhase] = useState<Phase>({ kind: 'quiz' });
+  const [lastAnswer, setLastAnswer] = useState<ActionKind | PostflopAction | null>(null);
   const [answered, setAnswered] = useState(0); // session-scoped counter
 
   const current = queue[0] ?? null;
 
   const advance = () => {
     setPhase({ kind: 'quiz' });
+    setLastAnswer(null);
     setAnswered((n) => n + 1);
   };
 
   const onAnswerPreflop = (action: ActionKind) => {
     if (!current || current.kind !== 'preflop' || phase.kind !== 'quiz') return;
     const grade = gradeAnswer(current.spot, action);
+    setLastAnswer(action);
     setPhase({ kind: 'feedback', grade });
     haptic(grade === 'sharp' ? 'success' : grade === 'acceptable' ? 'warn' : 'error');
     if (grade === 'sharp') {
@@ -72,6 +77,7 @@ export default function ReviewPage() {
   const onAnswerPostflop = (action: PostflopAction) => {
     if (!current || current.kind !== 'postflop' || phase.kind !== 'quiz') return;
     const grade = gradePostflopAction(current.spot, action);
+    setLastAnswer(action);
     setPhase({ kind: 'feedback', grade });
     haptic(grade === 'sharp' ? 'success' : grade === 'acceptable' ? 'warn' : 'error');
     if (grade === 'sharp') {
@@ -82,7 +88,10 @@ export default function ReviewPage() {
     }
   };
 
-  const onRetry = () => setPhase({ kind: 'quiz' });
+  const onRetry = () => {
+    setLastAnswer(null);
+    setPhase({ kind: 'quiz' });
+  };
 
   const onResolveManual = () => {
     if (!current) return;
@@ -219,6 +228,7 @@ export default function ReviewPage() {
               <FeedbackPanel
                 mistake={visibleCurrent}
                 grade={phase.grade}
+                userAnswer={lastAnswer}
                 onRetry={onRetry}
                 onResolveManual={onResolveManual}
                 onSkip={onSkip}
@@ -294,16 +304,74 @@ function EmptyState({ hadQueue, onResetSkips }: { hadQueue: boolean; onResetSkip
 function FeedbackPanel({
   mistake,
   grade,
+  userAnswer,
   onRetry,
   onResolveManual,
   onSkip,
 }: {
   mistake: MistakeRecord;
   grade: AnswerGrade;
+  userAnswer: ActionKind | PostflopAction | null;
   onRetry: () => void;
   onResolveManual: () => void;
   onSkip: () => void;
 }) {
+  // AI explain — opt-in, mirrors the daily-quiz / postflop result UX.
+  // Reset deps include userAnswer because retry leaves spot.id stable.
+  const [explaining, setExplaining] = useState(false);
+  const [explanation, setExplanation] = useState<string | null>(null);
+  const [explainError, setExplainError] = useState<string | null>(null);
+  useEffect(() => {
+    setExplainError(null);
+    setExplaining(false);
+    if (!mistake) {
+      setExplanation(null);
+      return;
+    }
+    const cached = readCached({
+      spotId: mistake.spotId,
+      userAnswer: userAnswer != null ? String(userAnswer) : null,
+      locale: 'ko',
+    });
+    setExplanation(cached);
+  }, [mistake, userAnswer, grade]);
+
+  const fetchExplanation = async () => {
+    if (!mistake || explaining) return;
+    setExplaining(true);
+    setExplainError(null);
+    try {
+      const res = await fetch('/api/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          spot: mistake.spot,
+          userAnswer,
+          locale: 'ko',
+          tone: 'beginner',
+        }),
+      });
+      const data = (await res.json()) as { text?: string; error?: string; cached?: boolean };
+      if (!res.ok) setExplainError(data.error ?? '해설을 불러오지 못했어요');
+      else if (data.text) {
+        setExplanation(data.text);
+        writeCached(
+          {
+            spotId: mistake.spotId,
+            userAnswer: userAnswer != null ? String(userAnswer) : null,
+            locale: 'ko',
+          },
+          data.text,
+        );
+        track({ name: 'explain_opened', props: { cached: data.cached === true } });
+      }
+    } catch {
+      setExplainError('네트워크 오류로 해설을 불러오지 못했어요');
+    } finally {
+      setExplaining(false);
+    }
+  };
+
   if (grade === 'sharp') {
     return (
       <motion.div
@@ -341,14 +409,44 @@ function FeedbackPanel({
       >
         GTO: {gto}
       </h2>
-      {mistake.kind === 'postflop' && mistake.spot.teachingNote && (
-        <p className="border-[color:var(--color-accent)]/30 bg-[color:var(--color-accent)]/8 text-fg mt-3 rounded-[var(--radius-button)] border p-3 text-[12px] leading-[1.55]">
-          <span className="mb-1 block font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]">
-            왜 그런지
-          </span>
-          {mistake.spot.teachingNote}
-        </p>
-      )}
+      {/* Opt-in AI coach explain — same UX as daily quiz / sim. */}
+      <div className="mt-3">
+        {!explanation && !explaining && !explainError && (
+          <button
+            type="button"
+            onClick={fetchExplanation}
+            className="border-[color:var(--color-accent)]/30 bg-[color:var(--color-accent)]/8 w-full rounded-[var(--radius-button)] border px-3 py-2.5 text-[12px] font-medium text-[color:var(--color-accent)] active:scale-[0.98]"
+          >
+            AI 코치의 해설 보기
+          </button>
+        )}
+        {explaining && (
+          <div className="border-hair surface-raised text-fg-muted rounded-[var(--radius-button)] px-3 py-2.5 text-center font-mono text-[11px]">
+            해설 작성 중…
+          </div>
+        )}
+        {explainError && (
+          <div className="border-[color:var(--color-raise)]/40 bg-[color:var(--color-raise)]/5 flex items-center justify-between gap-2 rounded-[var(--radius-button)] border px-3 py-2 text-[11px] text-[color:var(--color-raise)]">
+            <span className="min-w-0 flex-1 truncate">{explainError}</span>
+            <button
+              type="button"
+              onClick={fetchExplanation}
+              className="shrink-0 underline underline-offset-2"
+            >
+              재시도
+            </button>
+          </div>
+        )}
+        {explanation && (
+          <div className="border-hair surface-raised text-fg rounded-[var(--radius-button)] px-3 py-2.5 text-[13px] leading-[1.6]">
+            <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]">
+              AI 해설
+            </p>
+            <p className="whitespace-pre-wrap">{explanation}</p>
+          </div>
+        )}
+      </div>
+
       <div className="mt-4 grid grid-cols-3 gap-2">
         <button
           type="button"
