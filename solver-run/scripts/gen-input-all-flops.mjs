@@ -165,10 +165,13 @@ function scriptFor(name, cards) {
     'set_print_interval 50',
     'set_use_isomorphism 1',
     'start_solve',
-    // dump all 3 streets so the parser can pull turn + river spots
-    // too. File size jumps ~8-15x per output but disk is cheap; UX
-    // depth (3-street drill) is the whole point of Phase C.
-    'set_dump_rounds 3',
+    // dump_rounds 1 = flop only (~50 KB/file). 3 produces ~9 GB/file
+    // because the entire chance tree across 3 streets gets serialized
+    // — at 1,755 boards × 15 pairings that's ~250 TB, which already
+    // filled the host disk once and triggered a crash. Turn / river
+    // drills need a separate targeted-subtree solve, not a brute-force
+    // full-tree dump.
+    'set_dump_rounds 1',
     `dump_result C:/Users/Jay/poker-gto-guide/solver-run/outputs/${name}.json`,
   ].join('\n') + '\n';
 }
