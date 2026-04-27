@@ -12,3 +12,8 @@ watchdog.log
 # subdir txts (e.g. inputs-retry/) so hand-crafted recovery files
 # stay versioned.
 /*.txt
+
+# Per-pairing runner scripts emitted by gen-input-all-flops.mjs (e.g.
+# run-full-BB-vs-CO.sh). Shape is deterministic from the input args,
+# regenerates on every all-tiers.sh tick.
+run-full-*.sh
