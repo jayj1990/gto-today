@@ -44,22 +44,51 @@ const IP = (() => {
 /* ---------- Iso flop enumeration ---------- */
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
 
-// Canonical iso flops: every unordered rank triple × 3 suit patterns
-// (rainbow ABC, two-tone AAB, monotone AAA). Gives 455 rank triples
-// × 3 suit patterns = 1365 distinct "shapes" that cover every real
-// flop's strategic profile without redundant suit permutations.
+// Canonical iso flops: every unordered rank triple × the suit patterns
+// that are actually realisable given the rank repetition.
+//
+// **Bug guard (2026-04-27)**: the original implementation pushed three
+// suit patterns (rainbow / two-tone / monotone) for every (i, j, k)
+// triple — but i ≤ j ≤ k allows paired/trips ranks, and applying a
+// "share-a-suit" pattern to a paired rank produces a duplicate card
+// (e.g. KK two-tone → [Ks, Ks, Td]). 322 bad spots had already shipped
+// before this was caught. Now we branch on rank repetition:
+//   • all distinct → rainbow + two-tone + monotone (3 patterns)
+//   • one pair + kicker → rainbow + a single two-tone variant where
+//     the kicker shares a suit with one of the pair cards
+//   • trips → only one realisable pattern (three different suits)
 function enumerateIsoFlops() {
   const flops = [];
   for (let i = 0; i < 13; i++) {
     for (let j = i; j < 13; j++) {
       for (let k = j; k < 13; k++) {
         const r = [RANKS[i], RANKS[j], RANKS[k]];
-        // Rainbow — three different suits
-        flops.push([`${r[0]}s`, `${r[1]}h`, `${r[2]}d`]);
-        // Two-tone — top two share a suit
-        flops.push([`${r[0]}s`, `${r[1]}s`, `${r[2]}d`]);
-        // Monotone — all spades (only one combination matters)
-        flops.push([`${r[0]}s`, `${r[1]}s`, `${r[2]}s`]);
+        const trips = i === j && j === k;
+        const paired = !trips && (i === j || j === k);
+
+        if (trips) {
+          // [Xs, Xh, Xd] — three different suits required.
+          flops.push([`${r[0]}s`, `${r[1]}h`, `${r[2]}d`]);
+        } else if (paired) {
+          // Rainbow: pair gets s+h, kicker takes the third suit.
+          flops.push([`${r[0]}s`, `${r[1]}h`, `${r[2]}d`]);
+          // Two-tone: kicker shares a suit with one of the pair cards.
+          if (i === j) {
+            // Top pair — kicker shares spade with the high pair card.
+            flops.push([`${r[0]}s`, `${r[1]}h`, `${r[2]}s`]);
+          } else {
+            // Bottom pair (j === k) — top card shares heart with one
+            // of the bottom-pair cards.
+            flops.push([`${r[0]}s`, `${r[1]}h`, `${r[2]}h`]);
+          }
+          // Monotone is impossible with a paired board (would require
+          // the same card twice).
+        } else {
+          // Three distinct ranks — full 3 suit patterns.
+          flops.push([`${r[0]}s`, `${r[1]}h`, `${r[2]}d`]);
+          flops.push([`${r[0]}s`, `${r[1]}s`, `${r[2]}d`]);
+          flops.push([`${r[0]}s`, `${r[1]}s`, `${r[2]}s`]);
+        }
       }
     }
   }

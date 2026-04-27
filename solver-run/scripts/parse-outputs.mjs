@@ -448,6 +448,16 @@ function main() {
       console.warn(`  ! ${f} — could not recover board`);
       continue;
     }
+    // Reject impossible boards (duplicate cards). Pre-2026-04-27
+    // gen-next-phase.mjs emitted [Ks, Ks, Td] style boards from
+    // pair-rank loops where suits should have differed — solver
+    // garbage-in/garbage-out, and the rendered table showed two of the
+    // same card. Defense-in-depth: parser drops them so they can't
+    // reach the app even if a bad input slips back in.
+    if (new Set(board).size !== board.length) {
+      console.warn(`  ! ${f} — duplicate card board ${board.join(',')}, skipping`);
+      continue;
+    }
     // MTT trees carry the 1BB big-blind ante in their pot (6.5 vs 5.5).
     const isMTT = pot > 6.0 || f.startsWith('mtt_');
     const sourceName = f.replace(/\.json$/, '');
