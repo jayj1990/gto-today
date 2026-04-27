@@ -60,6 +60,36 @@ const SEATS: Record<Format, Seat[]> = {
 const CHIP_PX = 50;
 
 /**
+ * Chronological order chips should appear on the felt:
+ *   SB post → BB post → UTG voluntary → MP → CO → BTN → SB voluntary → BB voluntary
+ *
+ * Posts go first because in real poker the blinds are on the felt
+ * before any voluntary action happens. Voluntary actions then sweep
+ * UTG → BB in normal preflop turn order. Returns a slot index used
+ * downstream as `slot * stepMs` so the animation reads like the deal.
+ */
+function chipOrderSlot(seat: Seat, action: SeatAction): number {
+  if (action.kind === 'post') {
+    return seat === 'SB' ? 0 : 1; // SB before BB
+  }
+  const voluntaryOrder: Seat[] = [
+    'UTG',
+    'UTG1',
+    'UTG2',
+    'UTG3',
+    'MP',
+    'LJ',
+    'HJ',
+    'CO',
+    'BTN',
+    'SB',
+    'BB',
+  ];
+  const idx = voluntaryOrder.indexOf(seat);
+  return 2 + (idx >= 0 ? idx : 0);
+}
+
+/**
  * GTO-Wizard-inspired overhead table — vertical cluster layout.
  *
  * For every active seat we render a vertical group:
@@ -335,8 +365,8 @@ export function PokerTable({
                 chip biased toward the seat (~16px outward) so it
                 visually travels across the felt to its bet position
                 instead of just popping into place. Bet chips land
-                after the deal — delay + count*90 so the sequence is
-                "deal first, then bets". */}
+                after the deal in poker order: SB post → BB post →
+                voluntary actions UTG→BB. */}
             {state.action && state.action.kind !== 'fold' && (
               <div
                 key={`bet-${seat}-${actionKey(state.action)}`}
@@ -347,7 +377,7 @@ export function PokerTable({
                   top: `${betY}%`,
                   ['--throw-x' as string]: `${-inward.x * 16}px`,
                   ['--throw-y' as string]: `${-inward.y * 16}px`,
-                  ['--anim-delay' as string]: `${count * 90 + 250 + i * 70}ms`,
+                  ['--anim-delay' as string]: `${count * 90 + 250 + chipOrderSlot(seat, state.action) * 80}ms`,
                 }}
               >
                 <BetChip action={state.action} />
