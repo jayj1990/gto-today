@@ -55,7 +55,7 @@ export function DailyComplete({
         오늘의 훈련 완료
       </p>
       <h1 className="font-display mt-3 text-[42px] font-bold leading-none tracking-[-0.02em]">
-        오늘도 한 걸음
+        {headline(accuracy)}
       </h1>
       <p className="text-body text-fg-muted mt-3">
         {currentStreak === 1 ? '연속 훈련을 시작했어요.' : `${currentStreak}일 연속, 꾸준합니다.`}
@@ -80,24 +80,71 @@ export function DailyComplete({
         </li>
       </ul>
 
-      <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center">
-        <Link
-          href="/sim"
-          className="bg-gold-gradient text-noir h-12 select-none rounded-[var(--radius-button)] px-5 py-3 font-semibold active:scale-[0.98]"
-        >
-          자유 연습 이어서
-        </Link>
-        <Link
-          href="/"
-          className="border-hair h-12 select-none rounded-[var(--radius-button)] px-5 py-3 font-medium active:scale-[0.98]"
-        >
-          홈으로
-        </Link>
-      </div>
+      {wrong > 0 ? (
+        <div className="mt-10 flex flex-col gap-2">
+          <Link
+            href="/review"
+            className="bg-gold-gradient text-noir flex h-14 select-none items-center justify-between rounded-[var(--radius-button)] px-5 font-semibold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+          >
+            <span>오답 {wrong}개 바로 복습</span>
+            <span aria-hidden>→</span>
+          </Link>
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              href="/sim"
+              className="border-hair surface-raised flex h-12 select-none items-center justify-center rounded-[var(--radius-button)] px-4 text-[13px] font-medium active:scale-[0.98]"
+            >
+              자유 연습
+            </Link>
+            <Link
+              href="/"
+              className="border-hair surface-raised flex h-12 select-none items-center justify-center rounded-[var(--radius-button)] px-4 text-[13px] font-medium active:scale-[0.98]"
+            >
+              홈으로
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Link
+            href="/sim"
+            className="bg-gold-gradient text-noir h-12 select-none rounded-[var(--radius-button)] px-5 py-3 font-semibold active:scale-[0.98]"
+          >
+            자유 연습 이어서
+          </Link>
+          <Link
+            href="/"
+            className="border-hair h-12 select-none rounded-[var(--radius-button)] px-5 py-3 font-medium active:scale-[0.98]"
+          >
+            홈으로
+          </Link>
+        </div>
+      )}
 
-      <p className="text-fg-muted mt-8 text-[13px]">내일 자정, 새 10핸드가 공개돼요.</p>
+      <Link
+        href="/stats"
+        className="text-fg-muted mt-6 inline-block font-mono text-[11px] uppercase tracking-[0.18em] underline-offset-4 hover:underline"
+      >
+        전체 통계 보기 →
+      </Link>
+
+      <p className="text-fg-muted mt-6 text-[13px]">내일 자정, 새 10핸드가 공개돼요.</p>
     </motion.div>
   );
+}
+
+/**
+ * Tone-shifted headline so the celebration matches accuracy, not just
+ * "completion happened". Tight bands so the gradient feels meaningful:
+ *   ≥90 정확  · ≥70 좋아요  · ≥50 한 걸음  · <50 시작
+ * The user's already-positive completion vibe is in the eyebrow + the
+ * chip toss; the headline does the actual emotional work.
+ */
+function headline(accuracy: number): string {
+  if (accuracy >= 90) return '정확한 하루';
+  if (accuracy >= 70) return '오늘도 잘했어요';
+  if (accuracy >= 50) return '오늘도 한 걸음';
+  return '괜찮아요, 내일 또';
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
