@@ -279,27 +279,41 @@ export function PokerTable({
                 gap: 3,
               }}
             >
-              {/* Cards on top. Hero cards stagger with a tiny delay
-                  so they land 1→2; villain cards share the same
-                  timing but no stagger (they're face-down anyway). */}
+              {/* Dealing order — each seat's cards arrive ~90ms after
+                  the previous one (clockwise sweep). Hero cards land
+                  last so the user reads "everyone gets cards, then I
+                  look at mine." Per-seat delay flows through
+                  --anim-delay (consumed by .animate-card-slide-in). */}
               {hasHeroCards && renderCard && (
                 <div style={{ display: 'flex', gap: 2 }}>
-                  <span className="animate-card-slide-in" style={{ animationDelay: '0ms' }}>
+                  <span
+                    className="animate-card-slide-in"
+                    style={{ ['--anim-delay' as string]: `${count * 90}ms` }}
+                  >
                     {renderCard(heroCards![0], 'sm')}
                   </span>
-                  <span className="animate-card-slide-in" style={{ animationDelay: '140ms' }}>
+                  <span
+                    className="animate-card-slide-in"
+                    style={{ ['--anim-delay' as string]: `${count * 90 + 140}ms` }}
+                  >
                     {renderCard(heroCards![1], 'sm')}
                   </span>
                 </div>
               )}
               {hasVillainCards && state.cards && renderCard && (
-                <div className="animate-card-slide-in" style={{ display: 'flex', gap: 2 }}>
+                <div
+                  className="animate-card-slide-in"
+                  style={{ display: 'flex', gap: 2, ['--anim-delay' as string]: `${i * 90}ms` }}
+                >
                   {renderCard(state.cards[0], 'xs')}
                   {renderCard(state.cards[1], 'xs')}
                 </div>
               )}
               {hasVillainCards && !state.cards && state.showBacks && (
-                <div className="animate-card-slide-in" style={{ display: 'flex', gap: 2 }}>
+                <div
+                  className="animate-card-slide-in"
+                  style={{ display: 'flex', gap: 2, ['--anim-delay' as string]: `${i * 90}ms` }}
+                >
                   <CardBack />
                   <CardBack />
                 </div>
@@ -317,7 +331,12 @@ export function PokerTable({
             {/* Bet chip on the radial line between seat and center.
                 `key` keyed on the action kind+size so changing the
                 action (e.g. raise → 3bet) remounts and replays the
-                spring-in animation. */}
+                spring-in animation. The --throw-x/y vars start the
+                chip biased toward the seat (~16px outward) so it
+                visually travels across the felt to its bet position
+                instead of just popping into place. Bet chips land
+                after the deal — delay + count*90 so the sequence is
+                "deal first, then bets". */}
             {state.action && state.action.kind !== 'fold' && (
               <div
                 key={`bet-${seat}-${actionKey(state.action)}`}
@@ -326,6 +345,9 @@ export function PokerTable({
                   position: 'absolute',
                   left: `${betX}%`,
                   top: `${betY}%`,
+                  ['--throw-x' as string]: `${-inward.x * 16}px`,
+                  ['--throw-y' as string]: `${-inward.y * 16}px`,
+                  ['--anim-delay' as string]: `${count * 90 + 250 + i * 70}ms`,
                 }}
               >
                 <BetChip action={state.action} />

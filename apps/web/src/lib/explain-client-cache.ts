@@ -16,7 +16,7 @@
  * invalidates stale entries cleanly.
  */
 
-const VERSION = 'v2'; // bump when the Claude system prompt changes
+const VERSION = 'v3'; // bump when the Claude system prompt changes
 const KEY_PREFIX = `gto.explain.${VERSION}:`;
 
 export interface CacheKeyInput {

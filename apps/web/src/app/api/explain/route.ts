@@ -125,6 +125,7 @@ function buildSystemPrompt(tone: 'beginner' | 'intermediate'): string {
 - 마지막은 마침표로 끝낸다.
 
 포커 용어는 한국 커뮤니티 표기를 그대로 쓴다 (번역/의역 금지):
+- hand → 핸드 (절대 "손"으로 번역 금지)
 - pot → 팟 (절대 "냄비"로 번역 금지)
 - pot odds → 팟 오즈 (절대 "배당률"로 번역 금지)
 - equity → 에쿼티
@@ -138,6 +139,9 @@ function buildSystemPrompt(tone: 'beginner' | 'intermediate'): string {
 - flop / turn / river → 플랍 / 턴 / 리버
 - suited / offsuit → 수트 / 오프수트
 - 3bet / 4bet → 3벳 / 4벳
+- combo → 콤보
+- board → 보드
+- position → 포지션
 한국식 영어 포커 용어가 표준이다. 직역하면 어색해진다.`;
 }
 

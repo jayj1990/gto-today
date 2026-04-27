@@ -55,7 +55,7 @@ const ratelimit = redis
 
 // Bump when the system prompt changes — the cache key prefix includes
 // this so a prompt update transparently invalidates old explanations.
-const PROMPT_VERSION = 'v2-kr-terms';
+const PROMPT_VERSION = 'v3-hand-glossary';
 const KEY_PREFIX = `gto:explain:${PROMPT_VERSION}:`;
 
 export interface ExplainCacheKey {
