@@ -19,8 +19,13 @@ REPO="C:/Users/Jay/poker-gto-guide"
 LOG="$REPO/solver-run/process-watchdog.log"
 ALL_TIERS_LOG="$REPO/solver-run/all-tiers.log"
 WATCH_INTERVAL=300  # 5 min
+STARTUP_GRACE=180   # 3 min — lets a freshly-launched all-tiers spawn
+                    # its first console_solver before we start checking,
+                    # so we don't race-launch a duplicate chain.
 
 echo "=== process-watchdog start $(date) (pid $$) ===" >> "$LOG"
+echo "[$(date)] grace period ${STARTUP_GRACE}s before first check" >> "$LOG"
+sleep $STARTUP_GRACE
 
 while true; do
   # Already finished? all-tiers.sh writes "=== all-tiers done" at the very
