@@ -64,14 +64,31 @@ for PAIR in "${PAIRINGS[@]}"; do
   }
 
   # Commit only if something changed (idempotent re-runs are safe).
+  PUSHED=0
   if ! git diff --quiet packages/gto-data/ 2>/dev/null; then
     COUNT=$(ls "$REPO/solver-run/outputs/${NAME}_"*.json 2>/dev/null | wc -l)
     git add packages/gto-data/ >> "$LOG" 2>&1
     git commit -m "data(solver): ${NAME} — ${COUNT} boards (all-iso)" >> "$LOG" 2>&1
-    git push origin main >> "$LOG" 2>&1 || echo "[warn] push failed — continuing" >> "$LOG"
-    echo "[$(date +%H:%M:%S)] ✓ ${NAME} pushed (${COUNT} boards)" >> "$LOG"
+    if git push origin main >> "$LOG" 2>&1; then
+      PUSHED=1
+      echo "[$(date +%H:%M:%S)] ✓ ${NAME} pushed (${COUNT} boards)" >> "$LOG"
+    else
+      echo "[warn] push failed — continuing" >> "$LOG"
+    fi
   else
     echo "[$(date +%H:%M:%S)] ${NAME} produced no new data" >> "$LOG"
+  fi
+
+  # Auto-cleanup raw outputs after successful push — the strategy data
+  # is permanently in git via solver-spots.ts at this point, the raw
+  # JSON is no longer needed and would otherwise accumulate to ~7 GB
+  # across the 15 pairings. Skip cleanup if push failed so the data
+  # can be re-parsed/re-pushed manually.
+  if [ "$PUSHED" = "1" ]; then
+    BEFORE=$(du -sh "$REPO/solver-run/outputs/${NAME}_"*.json 2>/dev/null | tail -1 | awk '{print $1}')
+    rm -f "$REPO/solver-run/outputs/${NAME}_"*.json
+    rm -f "$REPO/solver-run/inputs/${NAME}_"*.txt
+    echo "[$(date +%H:%M:%S)] ✓ cleaned ${NAME} raw outputs + inputs (~${BEFORE})" >> "$LOG"
   fi
 done
 
