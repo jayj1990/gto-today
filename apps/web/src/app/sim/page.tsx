@@ -69,6 +69,47 @@ export default function SimPage() {
     setLoading(false);
   }, [gameType]);
 
+  // Blitz mode — optional 30s/hand pressure. Toggle is ephemeral
+  // (resets on page reload) so users don't get stuck in the mode
+  // by accident.
+  const [blitz, setBlitz] = useState(false);
+  const BLITZ_SECONDS = 30;
+  const [secondsLeft, setSecondsLeft] = useState(BLITZ_SECONDS);
+  const [timedOut, setTimedOut] = useState(false);
+  const itemId = item ? (item.kind === 'preflop' ? item.spot.id : item.spot.id) : null;
+
+  // Reset countdown on every new spot.
+  useEffect(() => {
+    if (!blitz) return;
+    setSecondsLeft(BLITZ_SECONDS);
+    setTimedOut(false);
+  }, [blitz, itemId]);
+
+  // Tick once per 100ms — finer resolution gives the bar a smooth
+  // glide instead of stepping in seconds.
+  useEffect(() => {
+    if (!blitz || resultOpen || loading || !item) return;
+    const tick = window.setInterval(() => {
+      setSecondsLeft((s) => Math.max(0, s - 0.1));
+    }, 100);
+    return () => window.clearInterval(tick);
+  }, [blitz, resultOpen, loading, item]);
+
+  // On 0, count as wrong + advance after a short "시간 초과" beat.
+  useEffect(() => {
+    if (!blitz || resultOpen || timedOut) return;
+    if (secondsLeft > 0) return;
+    setTimedOut(true);
+    haptic('error');
+    recordWrong();
+    const t = window.setTimeout(() => {
+      setTimedOut(false);
+      void loadNext();
+    }, 900);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [secondsLeft]);
+
   useEffect(() => {
     void loadNext();
   }, [loadNext]);
@@ -159,7 +200,25 @@ export default function SimPage() {
             spot; the strip keeps the same numbers visible in ~24px so
             the actual hand has more room. */}
         <header className="mb-3 flex items-baseline justify-between gap-3">
-          <h1 className="font-display text-[18px] font-bold tracking-[-0.015em]">무한 GTO 훈련</h1>
+          <div className="flex items-baseline gap-2">
+            <h1 className="font-display text-[18px] font-bold tracking-[-0.015em]">
+              무한 GTO 훈련
+            </h1>
+            <button
+              type="button"
+              onClick={() => setBlitz((v) => !v)}
+              aria-pressed={blitz}
+              title="30초 모드"
+              className={cn(
+                'inline-flex h-6 items-center rounded-full border px-2 font-mono text-[9px] uppercase tracking-[0.16em] active:scale-95',
+                blitz
+                  ? 'border-[color:var(--color-warning)]/45 bg-[color:var(--color-warning)]/15 text-[color:var(--color-warning)]'
+                  : 'border-hair surface-raised text-fg-muted',
+              )}
+            >
+              {blitz ? '30s · ON' : '30s'}
+            </button>
+          </div>
           <div className="flex items-baseline gap-2 font-mono text-[11px] tabular-nums">
             <span style={{ color: 'var(--color-call)' }}>● {sharp}</span>
             <span style={{ color: 'var(--color-info)' }}>● {acceptable}</span>
@@ -180,6 +239,43 @@ export default function SimPage() {
             )}
           </div>
         </header>
+
+        {/* Blitz countdown — visible only when blitz mode is on. Bar
+            shrinks left-to-right as time runs out; color flips to
+            raise-red below 5s. */}
+        {blitz && item && !timedOut && (
+          <div
+            aria-label={`남은 시간 ${Math.ceil(secondsLeft)}초`}
+            className="mb-3 flex items-center gap-2"
+          >
+            <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-[color:var(--color-border)]">
+              <div
+                className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-100 ease-linear"
+                style={{
+                  width: `${(secondsLeft / BLITZ_SECONDS) * 100}%`,
+                  background: secondsLeft < 5 ? 'var(--color-raise)' : 'var(--color-warning)',
+                }}
+              />
+            </div>
+            <span
+              className="font-mono text-[11px] tabular-nums"
+              style={{
+                color: secondsLeft < 5 ? 'var(--color-raise)' : 'var(--color-warning)',
+              }}
+            >
+              {Math.ceil(secondsLeft)}s
+            </span>
+          </div>
+        )}
+
+        {/* Timeout flash — shown briefly when the countdown hits 0. */}
+        {timedOut && (
+          <div className="border-[color:var(--color-raise)]/50 bg-[color:var(--color-raise)]/10 mb-3 rounded-[var(--radius-button)] border px-4 py-3 text-center">
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--color-raise)]">
+              시간 초과 — 다음 핸드로
+            </p>
+          </div>
+        )}
 
         {loading && !item && <HandCardSkeleton />}
 
