@@ -8,6 +8,7 @@ import { useChallengeStore, type LifetimeAnswer } from '@/lib/challenge-store';
 import { useMistakesStore } from '@/lib/mistakes-store';
 import { StreakCalendar } from '@/components/streak-calendar';
 import { shareOrCopy } from '@/lib/share';
+import { computeAchievements, type AchievementProgress } from '@/lib/achievements';
 
 export default function StatsPage() {
   const lifetime = useChallengeStore((s) => s.lifetimeAnswers);
@@ -19,6 +20,11 @@ export default function StatsPage() {
   const byDay = useMemo(() => groupByDay(lifetime, 7), [lifetime]);
   const byPosition = useMemo(() => groupByPosition(lifetime), [lifetime]);
   const weakCombos = useMemo(() => topWeaknesses(lifetime, 5), [lifetime]);
+  const achievements = useMemo(
+    () => computeAchievements({ lifetimeAnswers: lifetime, bestStreak }),
+    [lifetime, bestStreak],
+  );
+  const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
   return (
     <>
@@ -85,6 +91,18 @@ export default function StatsPage() {
           </section>
         ) : (
           <>
+            {/* Achievement ribbon — unlocked badges first, locked
+                tail at the end so the user sees what's next. Derived
+                from the same lifetime / streak data, no new state. */}
+            <section className="mt-6">
+              <SectionHeader title="업적" right={`${unlockedCount} / ${achievements.length}`} />
+              <ul className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-8">
+                {achievements.map((a) => (
+                  <AchievementBadge key={a.id} a={a} />
+                ))}
+              </ul>
+            </section>
+
             {/* 30-day activity heatmap — monthly shape. The 7-day row
                 on /today is the at-a-glance streak; this grid shows
                 how consistent the last month looked. */}
@@ -212,6 +230,43 @@ export default function StatsPage() {
         </nav>
       </main>
     </>
+  );
+}
+
+function AchievementBadge({ a }: { a: AchievementProgress }) {
+  return (
+    <li
+      title={`${a.title} — ${a.description} (${a.progressLabel})`}
+      className={cn(
+        'flex aspect-square flex-col items-center justify-center gap-1 rounded-[var(--radius-button)] border p-1.5 text-center transition-opacity',
+        a.unlocked
+          ? 'border-[color:var(--color-gold)]/45 bg-[color:var(--color-gold)]/10'
+          : 'border-hair surface opacity-60',
+      )}
+      aria-label={`${a.title}: ${a.unlocked ? '획득' : `진행 ${Math.round(a.progress * 100)}%`}`}
+    >
+      <span
+        aria-hidden
+        className="font-display text-[20px]"
+        style={{ color: a.unlocked ? 'var(--color-gold)' : 'var(--color-fg-muted)' }}
+      >
+        {a.icon}
+      </span>
+      <span
+        className="text-[9px] font-bold leading-tight"
+        style={{ color: a.unlocked ? 'var(--color-fg)' : 'var(--color-fg-muted)' }}
+      >
+        {a.title}
+      </span>
+      {!a.unlocked && a.progress > 0 && (
+        <div className="mt-0.5 h-[2px] w-full overflow-hidden rounded-full bg-[color:var(--color-border)]">
+          <div
+            className="h-full bg-[color:var(--color-accent)]"
+            style={{ width: `${Math.round(a.progress * 100)}%` }}
+          />
+        </div>
+      )}
+    </li>
   );
 }
 
