@@ -93,3 +93,13 @@ for PAIR in "${PAIRINGS[@]}"; do
 done
 
 echo "=== all-tiers done $(date) ===" >> "$LOG"
+
+# Final sweep — catch any raw outputs / inputs that survived a push
+# failure mid-chain. By the time we hit this line every pairing's
+# strategy data is already in git via solver-spots.ts, so every raw
+# JSON + input txt under solver-run/{outputs,inputs}/ is disposable.
+FINAL_BEFORE=$(du -sh "$REPO/solver-run/outputs" 2>/dev/null | awk '{print $1}')
+rm -f "$REPO/solver-run/outputs/full_"*.json
+rm -f "$REPO/solver-run/inputs/full_"*.txt
+FINAL_AFTER=$(du -sh "$REPO/solver-run/outputs" 2>/dev/null | awk '{print $1}')
+echo "[$(date +%H:%M:%S)] ✓ final sweep: outputs ${FINAL_BEFORE} → ${FINAL_AFTER}" >> "$LOG"
