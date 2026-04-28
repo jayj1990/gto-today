@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Chip, CountUp, cn } from '@gto/ui';
 import { chipToss, fadeUp } from '@gto/ui/motion';
 import type { AnswerRecord } from '@/lib/challenge-store';
+import { shareOrCopy } from '@/lib/share';
 
 export interface DailyCompleteProps {
   answers: AnswerRecord[];
@@ -121,6 +123,14 @@ export function DailyComplete({
         </div>
       )}
 
+      <ShareRow
+        sharp={sharp}
+        acceptable={acceptable}
+        wrong={wrong}
+        accuracy={accuracy}
+        currentStreak={currentStreak}
+      />
+
       <Link
         href="/stats"
         className="text-fg-muted mt-6 inline-block font-mono text-[11px] uppercase tracking-[0.18em] underline-offset-4 hover:underline"
@@ -130,6 +140,73 @@ export function DailyComplete({
 
       <p className="text-fg-muted mt-6 text-[13px]">내일 자정, 새 10핸드가 공개돼요.</p>
     </motion.div>
+  );
+}
+
+function ShareRow({
+  sharp,
+  acceptable,
+  wrong,
+  accuracy,
+  currentStreak,
+}: {
+  sharp: number;
+  acceptable: number;
+  wrong: number;
+  accuracy: number;
+  currentStreak: number;
+}) {
+  const [status, setStatus] = useState<'idle' | 'shared' | 'copied' | 'failed'>('idle');
+
+  const onShare = async () => {
+    const total = sharp + acceptable + wrong;
+    const accuracyText = `${Math.round(accuracy)}%`;
+    const text = [
+      `오늘의 GTO 훈련 완료`,
+      `정확도 ${accuracyText} · 정답 ${sharp} · 차선 ${acceptable} · 오답 ${wrong} · ${total}핸드`,
+      currentStreak > 0 ? `${currentStreak}일 연속 훈련 중` : null,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const result = await shareOrCopy({
+      title: 'GTO Today',
+      text,
+      url: 'https://gto.today',
+    });
+
+    if (result === 'share') setStatus('shared');
+    else if (result === 'clipboard') setStatus('copied');
+    else setStatus('failed');
+    window.setTimeout(() => setStatus('idle'), 2400);
+  };
+
+  const label =
+    status === 'copied'
+      ? '복사됨 — 어디든 붙여넣기'
+      : status === 'shared'
+        ? '공유 완료'
+        : status === 'failed'
+          ? '공유 실패 — 다시 시도'
+          : '결과 공유';
+
+  return (
+    <button
+      type="button"
+      onClick={onShare}
+      aria-live="polite"
+      className={cn(
+        'mt-4 inline-flex h-10 items-center justify-center gap-1.5 rounded-[var(--radius-button)] border px-4 font-mono text-[11px] uppercase tracking-[0.18em] active:scale-[0.97]',
+        status === 'copied'
+          ? 'border-[color:var(--color-call)]/40 bg-[color:var(--color-call)]/10 text-[color:var(--color-call)]'
+          : status === 'failed'
+            ? 'border-[color:var(--color-raise)]/40 bg-[color:var(--color-raise)]/10 text-[color:var(--color-raise)]'
+            : 'border-hair surface-raised text-fg hover:bg-[color:var(--color-surface-raised)]',
+      )}
+    >
+      <span aria-hidden>↗</span>
+      {label}
+    </button>
   );
 }
 

@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
 import { useChallengeStore, type LifetimeAnswer } from '@/lib/challenge-store';
 import { useMistakesStore } from '@/lib/mistakes-store';
 import { StreakCalendar } from '@/components/streak-calendar';
+import { shareOrCopy } from '@/lib/share';
 
 export default function StatsPage() {
   const lifetime = useChallengeStore((s) => s.lifetimeAnswers);
@@ -23,13 +24,23 @@ export default function StatsPage() {
     <>
       <SiteHeader />
       <main className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4">
-        <header className="mb-5">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
-            Stats
-          </p>
-          <h1 className="font-display mt-1 text-[26px] font-bold leading-[1.1] tracking-[-0.02em]">
-            내 훈련 기록
-          </h1>
+        <header className="mb-5 flex items-baseline justify-between gap-3">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
+              Stats
+            </p>
+            <h1 className="font-display mt-1 text-[26px] font-bold leading-[1.1] tracking-[-0.02em]">
+              내 훈련 기록
+            </h1>
+          </div>
+          {totals.total > 0 && (
+            <ShareStatsButton
+              currentStreak={currentStreak}
+              bestStreak={bestStreak}
+              total={totals.total}
+              accuracy={totals.accuracy}
+            />
+          )}
         </header>
 
         {/* Top-line KPIs */}
@@ -201,6 +212,88 @@ export default function StatsPage() {
         </nav>
       </main>
     </>
+  );
+}
+
+function ShareStatsButton({
+  currentStreak,
+  bestStreak,
+  total,
+  accuracy,
+}: {
+  currentStreak: number;
+  bestStreak: number;
+  total: number;
+  accuracy: number;
+}) {
+  const [status, setStatus] = useState<'idle' | 'shared' | 'copied' | 'failed'>('idle');
+
+  // Streak milestones get an extra celebration line. 7/30/100/365 are
+  // the bands users tend to brag about; anything below 7 we just
+  // ship the plain accuracy summary.
+  const milestone =
+    currentStreak >= 365
+      ? '1년 연속'
+      : currentStreak >= 100
+        ? '100일 연속'
+        : currentStreak >= 30
+          ? '30일 연속'
+          : currentStreak >= 7
+            ? '7일 연속'
+            : null;
+
+  const onShare = async () => {
+    const text = [
+      'GTO Today 훈련 기록',
+      `정확도 ${accuracy}% · 누적 ${total}핸드`,
+      milestone
+        ? `${milestone} 달성 (현재 ${currentStreak}일)`
+        : currentStreak > 0
+          ? `${currentStreak}일 연속 훈련 중`
+          : null,
+      bestStreak > currentStreak ? `최장 ${bestStreak}일` : null,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const result = await shareOrCopy({
+      title: 'GTO Today',
+      text,
+      url: 'https://gto.today',
+    });
+
+    if (result === 'share') setStatus('shared');
+    else if (result === 'clipboard') setStatus('copied');
+    else setStatus('failed');
+    window.setTimeout(() => setStatus('idle'), 2400);
+  };
+
+  const label =
+    status === 'copied'
+      ? '복사됨'
+      : status === 'shared'
+        ? '공유됨'
+        : status === 'failed'
+          ? '실패'
+          : '공유';
+
+  return (
+    <button
+      type="button"
+      onClick={onShare}
+      aria-live="polite"
+      className={cn(
+        'inline-flex h-9 shrink-0 items-center gap-1 rounded-full border px-3 font-mono text-[10px] uppercase tracking-[0.2em] active:scale-[0.97]',
+        status === 'copied' || status === 'shared'
+          ? 'border-[color:var(--color-call)]/40 bg-[color:var(--color-call)]/10 text-[color:var(--color-call)]'
+          : status === 'failed'
+            ? 'border-[color:var(--color-raise)]/40 bg-[color:var(--color-raise)]/10 text-[color:var(--color-raise)]'
+            : 'border-hair surface-raised text-fg-muted hover:text-fg',
+      )}
+    >
+      <span aria-hidden>↗</span>
+      {label}
+    </button>
   );
 }
 
