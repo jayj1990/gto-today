@@ -9,10 +9,13 @@ import {
   type PostflopAction,
   type PostflopSpot,
 } from '@gto/gto-data';
+import { comboKey } from '@gto/poker-core';
+import type { CardCode } from '@gto/poker-core';
 import { ChipToss, cn, playWin } from '@gto/ui';
 import { sheetUp } from '@gto/ui/motion';
 import { track } from '@/lib/analytics';
 import { readCached, writeCached } from '@/lib/explain-client-cache';
+import { shareOrCopy } from '@/lib/share';
 
 export interface PostflopResultProps {
   open: boolean;
@@ -311,6 +314,13 @@ export function PostflopResult({
           )}
         </div>
 
+        <SharePostflopLink
+          spot={spot}
+          userAnswer={userAnswer}
+          grade={grade}
+          gtoLabel={topAction ? POSTFLOP_ACTION_LABEL[topAction] : '—'}
+        />
+
         {/* Retry + next */}
         <div className="mb-3 mt-5 flex gap-2">
           {onRetry && (
@@ -339,5 +349,81 @@ export function PostflopResult({
         </div>
       </motion.div>
     </>
+  );
+}
+
+/**
+ * Share-spot button for postflop drills. Encodes combo / position /
+ * street / board / answers into /share/spot params so the friend's
+ * unfurled OG card shows the situation visually.
+ */
+function SharePostflopLink({
+  spot,
+  userAnswer,
+  grade,
+  gtoLabel,
+}: {
+  spot: PostflopSpot;
+  userAnswer: PostflopAction | null;
+  grade: 'sharp' | 'acceptable' | 'wrong';
+  gtoLabel: string;
+}) {
+  const [status, setStatus] = useState<'idle' | 'shared' | 'copied' | 'failed'>('idle');
+
+  const onShare = async () => {
+    const u = new URL('https://gto.today/share/spot');
+    u.searchParams.set('combo', comboKey(spot.hero[0] as CardCode, spot.hero[1] as CardCode));
+    u.searchParams.set('pos', spot.context.heroPos);
+    u.searchParams.set('scenario', spot.street);
+    if (spot.context.villainPos) u.searchParams.set('opener', spot.context.villainPos);
+    if (spot.board.length > 0) u.searchParams.set('board', spot.board.join(''));
+    if (userAnswer) u.searchParams.set('me', POSTFLOP_ACTION_LABEL[userAnswer]);
+    u.searchParams.set('gto', gtoLabel);
+    u.searchParams.set('grade', grade);
+
+    const headline =
+      grade === 'sharp'
+        ? '이 GTO 스팟 정답!'
+        : grade === 'wrong'
+          ? '이 스팟 너라면?'
+          : '같이 풀어볼래?';
+
+    const result = await shareOrCopy({
+      title: 'GTO Today',
+      text: `${headline}\n${spot.context.heroPos} · ${STREET_LABEL[spot.street]}`,
+      url: u.toString(),
+    });
+
+    if (result === 'share') setStatus('shared');
+    else if (result === 'clipboard') setStatus('copied');
+    else setStatus('failed');
+    window.setTimeout(() => setStatus('idle'), 2400);
+  };
+
+  const label =
+    status === 'copied'
+      ? '복사됨'
+      : status === 'shared'
+        ? '공유됨'
+        : status === 'failed'
+          ? '실패'
+          : '↗ 친구에게';
+
+  return (
+    <button
+      type="button"
+      onClick={onShare}
+      aria-live="polite"
+      className={cn(
+        'mt-3 inline-flex h-9 items-center gap-1 self-start rounded-full border px-3 font-mono text-[10px] uppercase tracking-[0.2em] active:scale-[0.97]',
+        status === 'copied' || status === 'shared'
+          ? 'border-[color:var(--color-call)]/40 bg-[color:var(--color-call)]/10 text-[color:var(--color-call)]'
+          : status === 'failed'
+            ? 'border-[color:var(--color-raise)]/40 bg-[color:var(--color-raise)]/10 text-[color:var(--color-raise)]'
+            : 'border-hair surface-raised text-fg-muted hover:text-fg',
+      )}
+    >
+      {label}
+    </button>
   );
 }

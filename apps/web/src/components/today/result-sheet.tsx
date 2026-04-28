@@ -7,6 +7,7 @@ import { sheetUp } from '@gto/ui/motion';
 import type { AnswerGrade, GradedAction, TrainingSpot } from '@gto/gto-data';
 import { track } from '@/lib/analytics';
 import { readCached, writeCached } from '@/lib/explain-client-cache';
+import { shareOrCopy } from '@/lib/share';
 
 export interface ResultSheetProps {
   open: boolean;
@@ -325,6 +326,15 @@ export function ResultSheet({
               )}
             </div>
 
+            {spot && (
+              <ShareSpotLink
+                spot={spot}
+                userAnswer={userAnswer}
+                grade={grade}
+                gtoLabel={ACTION_LABEL[dominantAction(spot)]}
+              />
+            )}
+
             {/* Action row: 다시 해보기 + 다음 핸드 */}
             <div className="mt-5 flex gap-2">
               {onRetry && (
@@ -355,5 +365,81 @@ export function ResultSheet({
         </>
       )}
     </AnimatePresence>
+  );
+}
+
+/**
+ * Small "↗ 친구에게" link that builds a /share/spot URL with the
+ * combo / position / scenario / answer / GTO / grade encoded as
+ * query params, then dispatches via shareOrCopy. The friend who
+ * receives the link sees the unfurled OG card from /api/og/spot.
+ */
+function ShareSpotLink({
+  spot,
+  userAnswer,
+  grade,
+  gtoLabel,
+}: {
+  spot: TrainingSpot;
+  userAnswer: GradedAction | null;
+  grade: AnswerGrade | null;
+  gtoLabel: string;
+}) {
+  const [status, setStatus] = useState<'idle' | 'shared' | 'copied' | 'failed'>('idle');
+
+  const onShare = async () => {
+    const u = new URL('https://gto.today/share/spot');
+    u.searchParams.set('combo', spot.combo);
+    u.searchParams.set('pos', spot.position);
+    u.searchParams.set('scenario', spot.scenario);
+    if (spot.opener) u.searchParams.set('opener', spot.opener);
+    if (userAnswer) u.searchParams.set('me', ACTION_LABEL[userAnswer]);
+    u.searchParams.set('gto', gtoLabel);
+    if (grade) u.searchParams.set('grade', grade);
+
+    const headline =
+      grade === 'sharp'
+        ? '이 GTO 스팟 정답!'
+        : grade === 'wrong'
+          ? '이 스팟 너라면?'
+          : '같이 풀어볼래?';
+
+    const result = await shareOrCopy({
+      title: 'GTO Today',
+      text: `${headline}\n${spot.position} · ${spot.combo}`,
+      url: u.toString(),
+    });
+
+    if (result === 'share') setStatus('shared');
+    else if (result === 'clipboard') setStatus('copied');
+    else setStatus('failed');
+    window.setTimeout(() => setStatus('idle'), 2400);
+  };
+
+  const label =
+    status === 'copied'
+      ? '복사됨'
+      : status === 'shared'
+        ? '공유됨'
+        : status === 'failed'
+          ? '실패'
+          : '↗ 친구에게';
+
+  return (
+    <button
+      type="button"
+      onClick={onShare}
+      aria-live="polite"
+      className={cn(
+        'mt-3 inline-flex h-9 items-center gap-1 self-start rounded-full border px-3 font-mono text-[10px] uppercase tracking-[0.2em] active:scale-[0.97]',
+        status === 'copied' || status === 'shared'
+          ? 'border-[color:var(--color-call)]/40 bg-[color:var(--color-call)]/10 text-[color:var(--color-call)]'
+          : status === 'failed'
+            ? 'border-[color:var(--color-raise)]/40 bg-[color:var(--color-raise)]/10 text-[color:var(--color-raise)]'
+            : 'border-hair surface-raised text-fg-muted hover:text-fg',
+      )}
+    >
+      {label}
+    </button>
   );
 }
