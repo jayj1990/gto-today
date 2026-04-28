@@ -19,6 +19,7 @@ import { SiteHeader } from '@/components/site-header';
 import { useLiveStore } from '@/lib/live-store';
 import { useChallengeStore } from '@/lib/challenge-store';
 import { useMistakesStore } from '@/lib/mistakes-store';
+import { useSimStore } from '@/lib/sim-store';
 import { isoDateKR } from '@/lib/date';
 import { haptic } from '@/lib/haptic';
 import { HandCard } from '@/components/today/hand-card';
@@ -44,9 +45,16 @@ export default function SimPage() {
   const [lastPreflopAnswer, setLastPreflopAnswer] = useState<GradedAction | null>(null);
   const [lastPostflopAnswer, setLastPostflopAnswer] = useState<PostflopAction | null>(null);
 
-  const [sharp, setSharp] = useState(0);
-  const [acceptable, setAcceptable] = useState(0);
-  const [wrong, setWrong] = useState(0);
+  // Session counters live in a persisted Zustand store so navigation
+  // (e.g. tap into /review then back) doesn't reset the running tally.
+  const sharp = useSimStore((s) => s.sharp);
+  const acceptable = useSimStore((s) => s.acceptable);
+  const wrong = useSimStore((s) => s.wrong);
+  const recordSharp = useSimStore((s) => s.recordSharp);
+  const recordAcceptable = useSimStore((s) => s.recordAcceptable);
+  const recordWrong = useSimStore((s) => s.recordWrong);
+  const undoLast = useSimStore((s) => s.undoLast);
+  const resetSession = useSimStore((s) => s.reset);
   const total = sharp + acceptable + wrong;
   const accuracy = total === 0 ? 0 : ((sharp + acceptable) / total) * 100;
 
@@ -69,9 +77,9 @@ export default function SimPage() {
     haptic(grade === 'sharp' ? 'success' : grade === 'acceptable' ? 'warn' : 'error');
     setLastGrade(grade);
     setResultOpen(true);
-    if (grade === 'sharp') setSharp((v) => v + 1);
-    else if (grade === 'acceptable') setAcceptable((v) => v + 1);
-    else setWrong((v) => v + 1);
+    if (grade === 'sharp') recordSharp();
+    else if (grade === 'acceptable') recordAcceptable();
+    else recordWrong();
   };
 
   const recordMistake = useMistakesStore((s) => s.recordMistake);
@@ -135,9 +143,7 @@ export default function SimPage() {
   };
 
   const handleRetry = () => {
-    if (lastGrade === 'sharp') setSharp((v) => Math.max(0, v - 1));
-    else if (lastGrade === 'acceptable') setAcceptable((v) => Math.max(0, v - 1));
-    else if (lastGrade === 'wrong') setWrong((v) => Math.max(0, v - 1));
+    if (lastGrade) undoLast(lastGrade);
     setResultOpen(false);
     setLastPreflopAnswer(null);
     setLastPostflopAnswer(null);
@@ -148,20 +154,31 @@ export default function SimPage() {
     <>
       <SiteHeader />
       <main className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3">
-        <header className="mb-3">
-          <div className="flex items-baseline justify-between">
-            <h1 className="font-display text-[20px] font-bold tracking-[-0.015em]">
-              무한 GTO 훈련
-            </h1>
-            <p className="text-fg-muted font-mono text-[11px]">
-              {total} · 정확도 {Math.round(accuracy)}%
-            </p>
+        {/* Single-line header — title + inline session strip. The
+            previous 3-stat grid took ~80px of vertical space on every
+            spot; the strip keeps the same numbers visible in ~24px so
+            the actual hand has more room. */}
+        <header className="mb-3 flex items-baseline justify-between gap-3">
+          <h1 className="font-display text-[18px] font-bold tracking-[-0.015em]">무한 GTO 훈련</h1>
+          <div className="flex items-baseline gap-2 font-mono text-[11px] tabular-nums">
+            <span style={{ color: 'var(--color-call)' }}>● {sharp}</span>
+            <span style={{ color: 'var(--color-info)' }}>● {acceptable}</span>
+            <span style={{ color: 'var(--color-raise)' }}>● {wrong}</span>
+            <span className="text-fg-muted ml-1">{Math.round(accuracy)}%</span>
+            {total > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm('세션 기록을 초기화할까요?')) resetSession();
+                }}
+                aria-label="세션 초기화"
+                className="text-fg-muted/60 hover:text-fg-muted ml-1.5 active:scale-95"
+                title="세션 초기화"
+              >
+                ↺
+              </button>
+            )}
           </div>
-          <dl className="mt-2 grid grid-cols-3 gap-2 text-center">
-            <Stat label="정답" value={String(sharp)} tone="gold" />
-            <Stat label="차선" value={String(acceptable)} tone="accent" />
-            <Stat label="오답" value={String(wrong)} tone="raise" />
-          </dl>
         </header>
 
         {loading && !item && <HandCardSkeleton />}
@@ -240,30 +257,5 @@ export default function SimPage() {
         />
       </main>
     </>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: 'accent' | 'gold' | 'raise';
-}) {
-  const color =
-    tone === 'accent'
-      ? 'text-[color:var(--color-accent)]'
-      : tone === 'gold'
-        ? 'text-[color:var(--color-gold)]'
-        : tone === 'raise'
-          ? 'text-[color:var(--color-raise)]'
-          : 'text-fg';
-  return (
-    <div className="surface border-hair rounded-[var(--radius-button)] p-2">
-      <div className={`font-mono text-[17px] font-semibold ${color}`}>{value}</div>
-      <div className="text-fg-muted font-mono text-[10px] uppercase tracking-[0.14em]">{label}</div>
-    </div>
   );
 }
