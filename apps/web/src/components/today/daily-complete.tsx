@@ -160,19 +160,29 @@ function ShareRow({
 
   const onShare = async () => {
     const total = sharp + acceptable + wrong;
-    const accuracyText = `${Math.round(accuracy)}%`;
+    const accuracyRound = Math.round(accuracy);
     const text = [
       `오늘의 GTO 훈련 완료`,
-      `정확도 ${accuracyText} · 정답 ${sharp} · 차선 ${acceptable} · 오답 ${wrong} · ${total}핸드`,
+      `정확도 ${accuracyRound}% · 정답 ${sharp} · 차선 ${acceptable} · 오답 ${wrong} · ${total}핸드`,
       currentStreak > 0 ? `${currentStreak}일 연속 훈련 중` : null,
     ]
       .filter(Boolean)
       .join('\n');
 
+    // Share URL points at /share/daily so unfurled cards in KakaoTalk
+    // / Twitter / etc. render the dynamic OG image instead of a
+    // generic gto.today preview.
+    const shareUrl = new URL('https://gto.today/share/daily');
+    shareUrl.searchParams.set('acc', String(accuracyRound));
+    shareUrl.searchParams.set('sharp', String(sharp));
+    shareUrl.searchParams.set('acceptable', String(acceptable));
+    shareUrl.searchParams.set('wrong', String(wrong));
+    if (currentStreak > 0) shareUrl.searchParams.set('streak', String(currentStreak));
+
     const result = await shareOrCopy({
       title: 'GTO Today',
       text,
-      url: 'https://gto.today',
+      url: shareUrl.toString(),
     });
 
     if (result === 'share') setStatus('shared');

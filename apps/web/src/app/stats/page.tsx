@@ -256,10 +256,19 @@ function ShareStatsButton({
       .filter(Boolean)
       .join('\n');
 
+    // Wrap the share URL with /share/stats so unfurled previews on
+    // KakaoTalk / Twitter render the dynamic OG image card.
+    const shareUrl = new URL('https://gto.today/share/stats');
+    if (currentStreak > 0) shareUrl.searchParams.set('streak', String(currentStreak));
+    if (bestStreak > 0) shareUrl.searchParams.set('best', String(bestStreak));
+    if (total > 0) shareUrl.searchParams.set('total', String(total));
+    shareUrl.searchParams.set('acc', String(accuracy));
+    if (milestone) shareUrl.searchParams.set('milestone', milestone);
+
     const result = await shareOrCopy({
       title: 'GTO Today',
       text,
-      url: 'https://gto.today',
+      url: shareUrl.toString(),
     });
 
     if (result === 'share') setStatus('shared');
