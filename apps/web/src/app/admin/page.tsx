@@ -25,22 +25,44 @@ export default async function AdminPage() {
   const session = await auth();
   if (!session?.user?.email || session.user.email !== adminEmail) notFound();
 
-  const [userCount, sessionCount, recentUsers, providerRows, recentVerifs] = await Promise.all([
-    prisma.user.count(),
-    prisma.session.count({ where: { expires: { gt: new Date() } } }),
-    prisma.user.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-      select: { id: true, name: true, email: true, createdAt: true, image: true },
-    }),
-    prisma.account.groupBy({
-      by: ['provider'],
-      _count: { provider: true },
-    }),
-    prisma.verificationToken.count({ where: { expires: { gt: new Date() } } }),
-  ]);
+  // Window for the 7-day trend chart. Anchored to the current
+  // server time so the latest bucket is always "today".
+  const now = new Date();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const weekStart = new Date(now.getTime() - 7 * dayMs);
+  weekStart.setHours(0, 0, 0, 0);
+
+  const [userCount, sessionCount, recentUsers, providerRows, recentVerifs, weekUsers] =
+    await Promise.all([
+      prisma.user.count(),
+      prisma.session.count({ where: { expires: { gt: now } } }),
+      prisma.user.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        select: { id: true, name: true, email: true, createdAt: true, image: true },
+      }),
+      prisma.account.groupBy({
+        by: ['provider'],
+        _count: { provider: true },
+      }),
+      prisma.verificationToken.count({ where: { expires: { gt: now } } }),
+      prisma.user.findMany({
+        where: { createdAt: { gte: weekStart } },
+        select: { createdAt: true },
+      }),
+    ]);
 
   const byProvider = Object.fromEntries(providerRows.map((r) => [r.provider, r._count.provider]));
+
+  // Bucket the last-7-days signups into per-day counts. KST-friendly:
+  // bucket 0 = 6 days ago, bucket 6 = today.
+  const dailySignups = Array.from({ length: 7 }, (_, i) => {
+    const dayStart = new Date(weekStart.getTime() + i * dayMs);
+    const dayEnd = new Date(dayStart.getTime() + dayMs);
+    const count = weekUsers.filter((u) => u.createdAt >= dayStart && u.createdAt < dayEnd).length;
+    return { day: dayStart, count };
+  });
+  const dailyMax = Math.max(1, ...dailySignups.map((d) => d.count));
 
   return (
     <main
@@ -55,10 +77,22 @@ export default async function AdminPage() {
           <h1 className="font-display mt-2 text-[28px] font-bold tracking-[-0.02em]">
             운영 대시보드
           </h1>
+          <p className="text-fg-muted mt-1 font-mono text-[10px] tabular-nums">
+            as of {now.toISOString().replace('T', ' ').slice(0, 19)} UTC
+          </p>
         </div>
-        <Link href="/" className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.2em]">
-          ← 홈
-        </Link>
+        <div className="flex flex-col items-end gap-1">
+          <Link
+            href="/admin"
+            prefetch={false}
+            className="text-fg-muted hover:text-fg font-mono text-[11px] uppercase tracking-[0.2em]"
+          >
+            ↻ 새로고침
+          </Link>
+          <Link href="/" className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.2em]">
+            ← 홈
+          </Link>
+        </div>
       </header>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -66,6 +100,41 @@ export default async function AdminPage() {
         <Kpi label="활성 세션" value={sessionCount} />
         <Kpi label="대기 매직링크" value={recentVerifs} />
         <Kpi label="OAuth 계정" value={providerRows.reduce((a, r) => a + r._count.provider, 0)} />
+      </section>
+
+      <section className="mt-8">
+        <SectionHeader
+          title="최근 7일 가입 트렌드"
+          right={`${weekUsers.length}명 · 일 평균 ${(weekUsers.length / 7).toFixed(1)}`}
+        />
+        <div className="border-hair surface mt-3 rounded-[var(--radius-panel)] p-4">
+          <div className="flex items-end justify-between gap-1.5" style={{ height: 96 }}>
+            {dailySignups.map(({ day, count }, i) => {
+              const ratio = count / dailyMax;
+              const isToday = i === dailySignups.length - 1;
+              return (
+                <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
+                  <div className="flex h-full w-full items-end">
+                    <div
+                      className="w-full rounded-sm transition-all"
+                      style={{
+                        height: count > 0 ? `${Math.max(4, ratio * 100)}%` : '2px',
+                        background: isToday
+                          ? 'var(--color-accent)'
+                          : 'color-mix(in oklab, var(--color-accent) 35%, transparent)',
+                      }}
+                      aria-label={`${day.toISOString().slice(0, 10)}: ${count}명`}
+                    />
+                  </div>
+                  <span className="text-fg-muted font-mono text-[9px] tabular-nums">
+                    {day.toISOString().slice(5, 10).replace('-', '/')}
+                  </span>
+                  <span className="font-mono text-[10px] font-semibold tabular-nums">{count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </section>
 
       <section className="mt-8">
@@ -138,9 +207,14 @@ function Kpi({ label, value }: { label: string; value: number }) {
   );
 }
 
-function SectionHeader({ title }: { title: string }) {
+function SectionHeader({ title, right }: { title: string; right?: string }) {
   return (
-    <h2 className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.22em]">{title}</h2>
+    <div className="flex items-baseline justify-between gap-3">
+      <h2 className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.22em]">{title}</h2>
+      {right && (
+        <span className="text-fg-muted/70 font-mono text-[10px] tabular-nums">{right}</span>
+      )}
+    </div>
   );
 }
 
