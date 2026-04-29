@@ -415,15 +415,16 @@ function ShareSpotLink({ spot }: { spot: TrainingSpot }) {
         ? '공유됨'
         : status === 'failed'
           ? '실패'
-          : '↗ 친구에게 공유';
+          : '↗ 공유';
 
   return (
     <button
       type="button"
       onClick={onShare}
       aria-live="polite"
+      aria-label="친구에게 공유"
       className={cn(
-        'flex h-14 flex-1 select-none flex-col items-center justify-center rounded-[var(--radius-button)] border font-medium active:scale-[0.98]',
+        'flex h-14 flex-1 select-none items-center justify-center rounded-[var(--radius-button)] border font-medium active:scale-[0.98]',
         status === 'copied' || status === 'shared'
           ? 'border-[color:var(--color-call)]/40 bg-[color:var(--color-call)]/10 text-[color:var(--color-call)]'
           : status === 'failed'
@@ -431,10 +432,7 @@ function ShareSpotLink({ spot }: { spot: TrainingSpot }) {
             : 'border-hair surface-raised text-fg',
       )}
     >
-      <span>{label}</span>
-      <span className="text-fg-muted mt-0.5 font-mono text-[9px] uppercase tracking-[0.18em]">
-        링크로 공유
-      </span>
+      {label}
     </button>
   );
 }
