@@ -148,5 +148,77 @@ function buildSystemPrompt(tone: 'beginner' | 'intermediate'): string {
 function buildUserPrompt(body: ExplainBody): string {
   const spot = body.spot as Record<string, unknown>;
   const user = body.userAnswer ?? '(미응답)';
-  return `스팟:\n${JSON.stringify(spot, null, 2)}\n\n유저 선택: ${String(user)}\n\n이 스팟에서 왜 그게 GTO 답인지 짧게 설명.`;
+
+  // Surface hero / board / position as labeled plain-text lines BEFORE
+  // the JSON dump. Without this, the model occasionally hallucinated
+  // hero = e.g. "TT" off a T76 board even though spot.hero was clearly
+  // [2s,2c]. Forcing the model to acknowledge the hero combo + cards
+  // up-front before we hand over the structured payload removes that
+  // class of error.
+  const heroCombo = comboLabelFromSpot(spot);
+  const heroCards = Array.isArray(spot['hero'])
+    ? (spot['hero'] as unknown[]).filter((c): c is string => typeof c === 'string').join(' ')
+    : '';
+  const board = Array.isArray(spot['board'])
+    ? (spot['board'] as unknown[]).filter((c): c is string => typeof c === 'string').join(' ')
+    : '';
+  const position =
+    typeof spot['position'] === 'string'
+      ? (spot['position'] as string)
+      : isObject(spot['context']) &&
+          typeof (spot['context'] as Record<string, unknown>)['heroPos'] === 'string'
+        ? ((spot['context'] as Record<string, unknown>)['heroPos'] as string)
+        : '';
+
+  const heroLine = heroCombo
+    ? `히어로 콤보: ${heroCombo}${heroCards ? ` (카드: ${heroCards})` : ''}`
+    : heroCards
+      ? `히어로 카드: ${heroCards}`
+      : '';
+  const boardLine = board ? `보드: ${board}` : '';
+  const posLine = position ? `히어로 포지션: ${position}` : '';
+
+  const facts = [heroLine, boardLine, posLine].filter(Boolean).join('\n');
+
+  return [
+    facts ? `${facts}\n` : '',
+    '⚠ 위 콤보·카드·보드는 사실이다. 다른 콤보로 추정·환언 금지.',
+    '',
+    `스팟 전체:\n${JSON.stringify(spot, null, 2)}`,
+    '',
+    `유저 선택: ${String(user)}`,
+    '',
+    '이 스팟에서 왜 그게 GTO 답인지 짧게 설명.',
+  ].join('\n');
+}
+
+function isObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null;
+}
+
+/**
+ * Best-effort hero-combo label (e.g. "AKs", "22", "T9o") from the
+ * spot's hero card pair. Preflop spots already carry `combo` directly;
+ * postflop spots only have `hero: [card, card]` so we derive the
+ * canonical 169-grid label.
+ */
+function comboLabelFromSpot(spot: Record<string, unknown>): string {
+  if (typeof spot['combo'] === 'string') return spot['combo'] as string;
+  const hero = spot['hero'];
+  if (!Array.isArray(hero) || hero.length !== 2) return '';
+  const a = hero[0];
+  const b = hero[1];
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== 2 || b.length !== 2) {
+    return '';
+  }
+  const r1 = a.charAt(0);
+  const r2 = b.charAt(0);
+  const s1 = a.charAt(1);
+  const s2 = b.charAt(1);
+  const RANK_ORDER = '23456789TJQKA';
+  if (r1 === r2) return `${r1}${r2}`; // pocket pair
+  // Higher rank first (Pio convention).
+  const hi = RANK_ORDER.indexOf(r1) > RANK_ORDER.indexOf(r2) ? r1 : r2;
+  const lo = hi === r1 ? r2 : r1;
+  return `${hi}${lo}${s1 === s2 ? 's' : 'o'}`;
 }
