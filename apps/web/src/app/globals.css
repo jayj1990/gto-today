@@ -484,6 +484,11 @@
   .animate-fold-fade {
     animation: gto-fold-flash 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
     animation-delay: var(--anim-delay, 0ms);
+    /* `both` fill keeps the chip at opacity 1 during the delay window
+       (before the seat actually folds in betting order). Inline-block
+       so the wrapper span has a proper box for transform/box-shadow. */
+    display: inline-block;
+    will-change: transform, opacity;
   }
 
   /* Gold pot pulse — fires when the result sheet opens so the pot

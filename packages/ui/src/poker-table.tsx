@@ -545,15 +545,17 @@ export function PokerTable({
 
               {/* Chip below — folded seats dim in the unified action
                   cascade (folds and bets share the same timeline so
-                  events fire in real betting order). */}
+                  events fire in real betting order). Postflop folds
+                  are dim from frame 0 (the muck happened off-screen
+                  before this scene started). */}
               <span
                 className={isMucking ? 'animate-fold-fade' : undefined}
                 style={
                   isMucking
-                    ? {
-                        ['--anim-delay' as string]: `${actionDelayMs(seat, count, seats)}ms`,
-                      }
-                    : undefined
+                    ? { ['--anim-delay' as string]: `${actionDelayMs(seat, count, seats)}ms` }
+                    : isFolded
+                      ? { opacity: 0.35, display: 'inline-block' }
+                      : undefined
                 }
               >
                 <SeatChip
@@ -658,7 +660,12 @@ function SeatChip({
                   ? '0 4px 14px rgba(0,0,0,0.55), 0 0 16px rgba(230,168,23,0.4)'
                   : '0 3px 10px rgba(0,0,0,0.5)',
             }),
-        opacity: variant === 'folded' ? 0.35 : 1,
+        // Opacity for folded seats is owned by the wrapper span (via
+        // animate-fold-fade in preflop, or a static opacity 0.35 in
+        // postflop). Hardcoding 0.35 here would override the
+        // wrapper's 1→0.35 fade keyframe and the chip would look
+        // dim from frame 0 — which is what made BB read as "already
+        // folded" before SB even raised.
         overflow: 'visible',
       }}
     >
