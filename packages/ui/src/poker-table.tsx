@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type HTMLAttributes, type ReactNode } from 'react';
+import { useEffect, useRef, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 import { playChip, playDeal } from './sound';
 
 export type Seat =
@@ -28,7 +28,15 @@ export type SeatAction =
 
 export interface SeatState {
   stack?: number;
+  /** Voluntary action this seat took (raise / call / check / fold). Posts
+   *  are NOT a voluntary action — use the `post` field instead so the
+   *  voluntary chip can stack on top of the posted blind chip. */
   action?: SeatAction;
+  /** Posted blind (BB units). Always 0.5 for SB and 1 for BB; rendered
+   *  on the felt before the deal starts and persists through any
+   *  voluntary action — when SB 3-bets, the 0.5 post chip stays AND
+   *  the raise chip flies in beside it. */
+  post?: number;
   cards?: readonly [string, string];
   showBacks?: boolean;
 }
@@ -123,33 +131,49 @@ function dealEndMs(count: number): number {
 }
 
 /**
+ * Voluntary preflop action order, used both for the chip-bet cascade
+ * and the fold-muck sequence. Mirrors real poker betting order.
+ */
+const VOLUNTARY_ORDER: readonly Seat[] = [
+  'UTG',
+  'UTG1',
+  'UTG2',
+  'UTG3',
+  'MP',
+  'LJ',
+  'HJ',
+  'CO',
+  'BTN',
+  'SB',
+  'BB',
+];
+
+/**
+ * Slot index of `seat` within the format's voluntary-action order.
+ * 6max → UTG(0) MP(1) CO(2) BTN(3) SB(4) BB(5). Same idea as
+ * dealSlot but with the betting-order priority list.
+ */
+function voluntarySlot(seat: Seat, formatSeats: readonly Seat[]): number {
+  const ordered = [...formatSeats].sort(
+    (a, b) => VOLUNTARY_ORDER.indexOf(a) - VOLUNTARY_ORDER.indexOf(b),
+  );
+  const idx = ordered.indexOf(seat);
+  return idx >= 0 ? idx : 0;
+}
+
+/**
  * Chronological order chips should appear on the felt:
  *   SB post → BB post → UTG voluntary → MP → CO → BTN → SB voluntary → BB voluntary
  *
  * Posts go first because in real poker the blinds are on the felt
  * before any voluntary action happens. Voluntary actions then sweep
- * UTG → BB in normal preflop turn order. Returns a slot index used
- * downstream as `slot * stepMs` so the animation reads like the deal.
+ * UTG → BB in normal preflop turn order.
  */
-function chipOrderSlot(seat: Seat, action: SeatAction): number {
+function chipOrderSlot(seat: Seat, action: SeatAction, formatSeats: readonly Seat[]): number {
   if (action.kind === 'post') {
     return seat === 'SB' ? 0 : 1; // SB before BB
   }
-  const voluntaryOrder: Seat[] = [
-    'UTG',
-    'UTG1',
-    'UTG2',
-    'UTG3',
-    'MP',
-    'LJ',
-    'HJ',
-    'CO',
-    'BTN',
-    'SB',
-    'BB',
-  ];
-  const idx = voluntaryOrder.indexOf(seat);
-  return 2 + (idx >= 0 ? idx : 0);
+  return 2 + voluntarySlot(seat, formatSeats);
 }
 
 /**
@@ -232,7 +256,7 @@ export function PokerTable({
       // 250ms per chip slot (was 140ms) so each bet visibly settles
       // before the next chip flies in. Sequence: SB post → BB post →
       // UTG voluntary → MP → CO → BTN.
-      const t = window.setTimeout(playChip, betBase + chipOrderSlot(seat, st.action) * 250);
+      const t = window.setTimeout(playChip, betBase + chipOrderSlot(seat, st.action, seats) * 250);
       timers.push(t);
     }
     return () => {
@@ -408,8 +432,51 @@ export function PokerTable({
         const betX = x + inward.x * 15;
         const betY = y + inward.y * 15;
 
-        const hasVillainCards = !isHero && !isFolded && (state.cards || state.showBacks);
+        // Folded seats DO get cards dealt (in the preflop scene) — they
+        // arrive with the regular sweep, then muck back away in
+        // betting order. In postflop scenes the deal already happened
+        // off-screen, so folded seats render bare (no cards).
+        const hasVillainCardsBase = !isHero && (state.cards || state.showBacks);
+        const hideMuckedCards = isFolded && skipSeatDeal;
+        const hasVillainCards = hasVillainCardsBase && !hideMuckedCards;
         const hasHeroCards = isHero && heroCards;
+        const isMucking = isFolded && !skipSeatDeal;
+
+        // Cards: standard slide-in for active seats; deal-then-muck
+        // chain for seats that fold preflop. Muck delay matches the
+        // chip-fade so the seat dies as a single beat (cards thrown +
+        // chip dims).
+        const cardClass = skipSeatDeal
+          ? undefined
+          : isMucking
+            ? 'animate-card-muck'
+            : 'animate-card-slide-in';
+        const cardStyle = (cardIdx: 0 | 1): CSSProperties | undefined => {
+          if (skipSeatDeal) return undefined;
+          const base: Record<string, string> = {
+            '--anim-delay': `${dealDelayMs(seat, cardIdx, seats)}ms`,
+          };
+          if (isMucking) {
+            base['--muck-delay'] = `${dealEndMs(count) + 200 + voluntarySlot(seat, seats) * 90}ms`;
+          }
+          return base as CSSProperties;
+        };
+
+        // Post + voluntary chip layout. When both exist (SB/BB raise),
+        // stack them along the radial line — post toward the pot
+        // (already "committed"), voluntary toward the seat ("their
+        // current move"). When only one exists, sit at the bet
+        // position. Offset is small (~2pp) so the chips read as a
+        // pair, not separate piles.
+        const hasPost = state.post !== undefined;
+        const hasVoluntaryAction =
+          !!state.action && state.action.kind !== 'fold' && state.action.kind !== 'post';
+        const stackChips = hasPost && hasVoluntaryAction;
+        const postOffset = stackChips ? 2.4 : 0;
+        const postChipX = betX + inward.x * postOffset;
+        const postChipY = betY + inward.y * postOffset;
+        const voluntaryChipX = betX - inward.x * postOffset;
+        const voluntaryChipY = betY - inward.y * postOffset;
 
         return (
           <div key={seat}>
@@ -432,6 +499,10 @@ export function PokerTable({
                   animated element with its own --anim-delay so cards
                   appear one at a time, not pair at a time.
 
+                  Folded seats also get cards (they were dealt before
+                  the player chose to fold) — those cards then run the
+                  muck animation and disappear in betting order.
+
                   Postflop spots (board.length > 0) skip this entirely:
                   the hole cards have logically been received before
                   the scene begins, so re-dealing them now would feel
@@ -439,90 +510,45 @@ export function PokerTable({
                   case — only the community board cards animate. */}
               {hasHeroCards && renderCard && (
                 <div style={{ display: 'flex', gap: 2 }}>
-                  <span
-                    className={skipSeatDeal ? undefined : 'animate-card-slide-in'}
-                    style={
-                      skipSeatDeal
-                        ? undefined
-                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 0, seats)}ms` }
-                    }
-                  >
+                  <span className={cardClass} style={cardStyle(0)}>
                     {renderCard(heroCards![0], 'sm')}
                   </span>
-                  <span
-                    className={skipSeatDeal ? undefined : 'animate-card-slide-in'}
-                    style={
-                      skipSeatDeal
-                        ? undefined
-                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 1, seats)}ms` }
-                    }
-                  >
+                  <span className={cardClass} style={cardStyle(1)}>
                     {renderCard(heroCards![1], 'sm')}
                   </span>
                 </div>
               )}
               {hasVillainCards && state.cards && renderCard && (
                 <div style={{ display: 'flex', gap: 2 }}>
-                  <span
-                    className={skipSeatDeal ? undefined : 'animate-card-slide-in'}
-                    style={
-                      skipSeatDeal
-                        ? undefined
-                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 0, seats)}ms` }
-                    }
-                  >
+                  <span className={cardClass} style={cardStyle(0)}>
                     {renderCard(state.cards[0], 'xs')}
                   </span>
-                  <span
-                    className={skipSeatDeal ? undefined : 'animate-card-slide-in'}
-                    style={
-                      skipSeatDeal
-                        ? undefined
-                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 1, seats)}ms` }
-                    }
-                  >
+                  <span className={cardClass} style={cardStyle(1)}>
                     {renderCard(state.cards[1], 'xs')}
                   </span>
                 </div>
               )}
               {hasVillainCards && !state.cards && state.showBacks && (
                 <div style={{ display: 'flex', gap: 2 }}>
-                  <span
-                    className={skipSeatDeal ? undefined : 'animate-card-slide-in'}
-                    style={
-                      skipSeatDeal
-                        ? undefined
-                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 0, seats)}ms` }
-                    }
-                  >
+                  <span className={cardClass} style={cardStyle(0)}>
                     <CardBack />
                   </span>
-                  <span
-                    className={skipSeatDeal ? undefined : 'animate-card-slide-in'}
-                    style={
-                      skipSeatDeal
-                        ? undefined
-                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 1, seats)}ms` }
-                    }
-                  >
+                  <span className={cardClass} style={cardStyle(1)}>
                     <CardBack />
                   </span>
                 </div>
               )}
 
               {/* Chip below — folded seats fade to dim AFTER deal in
-                  fold-order slot, so the scene reads as "everyone got
-                  cards, then UTG mucks, MP mucks, …". Active seats
-                  render at full opacity from frame 0. */}
+                  betting order (UTG→BB), matching the muck. Active
+                  seats render at full opacity from frame 0. */}
               <span
-                className={isFolded ? 'animate-fold-fade' : undefined}
+                className={isMucking ? 'animate-fold-fade' : undefined}
                 style={
-                  isFolded
+                  isMucking
                     ? {
-                        // Folds wait for the deal sweep + a small beat,
-                        // then dim in fold-order slot (UTG→BTN).
                         ['--anim-delay' as string]: `${
-                          dealEndMs(count) + 200 + dealSlot(seat, seats) * 90
+                          dealEndMs(count) + 200 + voluntarySlot(seat, seats) * 90
                         }ms`,
                       }
                     : undefined
@@ -537,33 +563,41 @@ export function PokerTable({
               </span>
             </div>
 
-            {/* Bet chip on the radial line between seat and center.
-                `key` keyed on the action kind+size so changing the
-                action (e.g. raise → 3bet) remounts and replays the
-                spring-in animation. The --throw-x/y vars start the
-                chip biased toward the seat (~16px outward) so it
-                visually travels across the felt to its bet position
-                instead of just popping into place. Bet chips land
-                after the deal in poker order: SB post → BB post →
-                voluntary actions UTG→BB. */}
-            {state.action && state.action.kind !== 'fold' && (
+            {/* Posted blind — appears instantly with the table, BEFORE
+                the deal. Real-poker convention: blinds are on the felt
+                before any cards are dealt. No animation, no delay. */}
+            {hasPost && (
+              <div
+                key={`post-${seat}-${state.post}`}
+                style={{
+                  position: 'absolute',
+                  left: `${postChipX}%`,
+                  top: `${postChipY}%`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
+                <BetChip action={{ kind: 'post', bb: state.post! }} />
+              </div>
+            )}
+
+            {/* Voluntary action chip — flies in after deal + muck
+                resolution. SB/BB raises stack on top of the post chip
+                (additional bet on top of the posted blind). The
+                --throw-x/y vars start the chip biased toward the
+                seat (~16px outward) so it visually travels across
+                the felt to its bet position. */}
+            {hasVoluntaryAction && state.action && (
               <div
                 key={`bet-${seat}-${actionKey(state.action)}`}
                 className="animate-chip-bet-in"
                 style={{
                   position: 'absolute',
-                  left: `${betX}%`,
-                  top: `${betY}%`,
+                  left: `${voluntaryChipX}%`,
+                  top: `${voluntaryChipY}%`,
                   ['--throw-x' as string]: `${-inward.x * 16}px`,
                   ['--throw-y' as string]: `${-inward.y * 16}px`,
-                  // Deal sweep is two passes (dealEndMs ≈ 2*count*step).
-                  // Wait through the fold-flash sequence (~1200ms after
-                  // the last card) so the user sees folds resolve before
-                  // any chip flies. Then each chip arrives 250ms apart
-                  // in chipOrderSlot order (SB post → BB post →
-                  // voluntary actions UTG → BB).
                   ['--anim-delay' as string]: `${
-                    dealEndMs(count) + 1200 + chipOrderSlot(seat, state.action) * 250
+                    dealEndMs(count) + 1200 + chipOrderSlot(seat, state.action, seats) * 250
                   }ms`,
                 }}
               >

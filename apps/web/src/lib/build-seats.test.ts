@@ -34,8 +34,12 @@ describe('buildSeats', () => {
     );
     expect(foldedSeats).toEqual(['UTG', 'MP', 'CO']);
     expect(seats.UTG?.action?.kind).toBe('fold');
-    expect(seats.SB?.action?.kind).toBe('post');
-    expect(seats.BB?.action?.kind).toBe('post');
+    // Posts now live on a separate `post` field so SB/BB voluntary
+    // actions (raise/call/3bet) can stack on top of the blind chip.
+    expect(seats.SB?.post).toBe(0.5);
+    expect(seats.BB?.post).toBe(1);
+    expect(seats.SB?.action).toBeUndefined();
+    expect(seats.BB?.action).toBeUndefined();
     expect(pot).toBe(1.5);
     expect(lastBet).toBe(1);
   });
@@ -138,6 +142,34 @@ describe('buildSeats', () => {
   it('hero seat never shows card backs', () => {
     const { seats } = buildSeats(baseSpot({ position: 'BTN', scenario: 'rfi' }));
     expect(seats.BTN?.showBacks).toBe(false);
+  });
+
+  it('SB raise keeps the post chip on the felt + adds the raise', () => {
+    // Real poker: when SB 3-bets, the 0.5 blind chip stays in the pot
+    // AND the raise chip lands on top of it. Both should be present
+    // on the seat state.
+    const { seats } = buildSeats(
+      baseSpot({
+        position: 'BB',
+        scenario: 'vs_3bet',
+        preActions: [
+          { actor: 'CO', action: '2.5bb' },
+          { actor: 'SB', action: '11bb' },
+        ],
+      }),
+    );
+    expect(seats.SB?.post).toBe(0.5);
+    expect(seats.SB?.action).toEqual({ kind: 'raise', bb: 11 });
+  });
+
+  it('folded seats keep showBacks=true so the muck animation can play', () => {
+    // Folded seats received hole cards before mucking — the table
+    // animates the deal sweep then mucks the cards away in betting
+    // order. showBacks must stay true so the cards render.
+    const { seats } = buildSeats(baseSpot({ position: 'BTN', scenario: 'rfi' }));
+    expect(seats.UTG?.showBacks).toBe(true);
+    expect(seats.MP?.showBacks).toBe(true);
+    expect(seats.CO?.showBacks).toBe(true);
   });
 
   it('never contradicts preActions — raisers are NOT rendered as folded', () => {

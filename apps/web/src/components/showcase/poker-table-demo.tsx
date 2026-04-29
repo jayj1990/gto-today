@@ -29,12 +29,12 @@ export function PokerTableDemo() {
             />
           )}
           seats={{
-            UTG: { stack: 100, action: { kind: 'fold' } },
-            MP: { stack: 100, action: { kind: 'fold' } },
-            CO: { stack: 100, action: { kind: 'fold' } },
+            UTG: { stack: 100, action: { kind: 'fold' }, showBacks: true },
+            MP: { stack: 100, action: { kind: 'fold' }, showBacks: true },
+            CO: { stack: 100, action: { kind: 'fold' }, showBacks: true },
             BTN: { stack: 100 },
-            SB: { stack: 99.5, action: { kind: 'post', bb: 0.5 }, showBacks: true },
-            BB: { stack: 99, action: { kind: 'post', bb: 1 }, showBacks: true },
+            SB: { stack: 99.5, post: 0.5, showBacks: true },
+            BB: { stack: 99, post: 1, showBacks: true },
           }}
         />
       </div>
@@ -57,12 +57,12 @@ export function PokerTableDemo() {
             />
           )}
           seats={{
-            UTG: { stack: 100, action: { kind: 'fold' } },
-            MP: { stack: 100, action: { kind: 'fold' } },
-            CO: { stack: 100, action: { kind: 'fold' } },
+            UTG: { stack: 100, action: { kind: 'fold' }, showBacks: true },
+            MP: { stack: 100, action: { kind: 'fold' }, showBacks: true },
+            CO: { stack: 100, action: { kind: 'fold' }, showBacks: true },
             BTN: { stack: 97.5, action: { kind: 'raise', bb: 2.5 }, showBacks: true },
-            SB: { stack: 99.5, action: { kind: 'post', bb: 0.5 }, showBacks: true },
-            BB: { stack: 99 },
+            SB: { stack: 99.5, post: 0.5, showBacks: true },
+            BB: { stack: 99, post: 1 },
           }}
         />
       </div>

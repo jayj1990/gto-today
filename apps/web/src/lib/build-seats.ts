@@ -31,8 +31,11 @@ export function buildSeats(spot: TrainingSpot): BuildSeatsResult {
     out[seat as Seat] = { stack, showBacks: true };
   }
 
-  out['SB'] = { stack: stack - 0.5, action: { kind: 'post', bb: 0.5 }, showBacks: true };
-  out['BB'] = { stack: stack - 1, action: { kind: 'post', bb: 1 }, showBacks: true };
+  // Posted blinds live on the `post` field, not as a voluntary action.
+  // That way an SB or BB who later 3-bets keeps their 0.5 / 1 chip on
+  // the felt AND adds a raise chip on top, matching real poker.
+  out['SB'] = { stack: stack - 0.5, post: 0.5, showBacks: true };
+  out['BB'] = { stack: stack - 1, post: 1, showBacks: true };
 
   const foldedSeats: Seat[] = [];
   let pot = 1.5;
@@ -61,13 +64,18 @@ export function buildSeats(spot: TrainingSpot): BuildSeatsResult {
     for (const pre of spot.preActions) {
       const seat = pre.actor as Seat;
       acted.add(seat);
+      // Spread the existing state so SB/BB keep their `post` chip on
+      // the felt when they later act (raise stacks on top of post).
+      // `showBacks: true` even on fold — folded seats still received
+      // hole cards before mucking; the table animates the muck.
       if (pre.action === 'FOLD') {
-        out[seat] = { stack, action: { kind: 'fold' }, showBacks: false };
+        out[seat] = { ...out[seat], stack, action: { kind: 'fold' }, showBacks: true };
         foldedSeats.push(seat);
         continue;
       }
       if (pre.action === 'Call') {
         out[seat] = {
+          ...out[seat],
           stack: stack - facing,
           action: { kind: 'call', bb: facing },
           showBacks: true,
@@ -77,6 +85,7 @@ export function buildSeats(spot: TrainingSpot): BuildSeatsResult {
       }
       if (pre.action === 'AllIn') {
         out[seat] = {
+          ...out[seat],
           stack: 0,
           action: { kind: 'raise', bb: stack },
           showBacks: true,
@@ -89,6 +98,7 @@ export function buildSeats(spot: TrainingSpot): BuildSeatsResult {
       if (m) {
         const size = parseFloat(m[1]!);
         out[seat] = {
+          ...out[seat],
           stack: stack - size,
           action: { kind: 'raise', bb: size },
           showBacks: true,
@@ -102,7 +112,7 @@ export function buildSeats(spot: TrainingSpot): BuildSeatsResult {
       const seat = order[i] as Seat;
       if (acted.has(seat)) continue;
       if (seat === 'SB' || seat === 'BB') continue;
-      out[seat] = { stack, action: { kind: 'fold' }, showBacks: false };
+      out[seat] = { ...out[seat], stack, action: { kind: 'fold' }, showBacks: true };
       foldedSeats.push(seat);
     }
     pot = runningPot;
@@ -116,11 +126,12 @@ export function buildSeats(spot: TrainingSpot): BuildSeatsResult {
     for (let i = 0; i < openerIdx; i++) {
       const seat = order[i] as Seat;
       if (seat === 'BB') continue;
-      out[seat] = { stack, action: { kind: 'fold' }, showBacks: false };
+      out[seat] = { ...out[seat], stack, action: { kind: 'fold' }, showBacks: true };
       foldedSeats.push(seat);
     }
     const openerSeat = spot.opener as Seat;
     out[openerSeat] = {
+      ...out[openerSeat],
       stack: stack - openSize,
       action: { kind: 'raise', bb: openSize },
       showBacks: true,
@@ -130,18 +141,20 @@ export function buildSeats(spot: TrainingSpot): BuildSeatsResult {
     for (let i = openerIdx + 1; i < heroIdx; i++) {
       const seat = order[i] as Seat;
       if (seat === 'BB') continue;
-      out[seat] = { stack, action: { kind: 'fold' }, showBacks: false };
+      out[seat] = { ...out[seat], stack, action: { kind: 'fold' }, showBacks: true };
       foldedSeats.push(seat);
     }
   } else {
     for (let i = 0; i < heroIdx; i++) {
       const seat = order[i] as Seat;
       if (seat === 'SB' || seat === 'BB') continue;
-      out[seat] = { stack, action: { kind: 'fold' }, showBacks: false };
+      out[seat] = { ...out[seat], stack, action: { kind: 'fold' }, showBacks: true };
       foldedSeats.push(seat);
     }
   }
 
+  // Hero's holes come from the heroCards prop — disable showBacks so
+  // the cluster doesn't try to render an extra back-card row.
   out[spot.position as Seat] = { ...(out[spot.position as Seat] ?? {}), showBacks: false };
 
   return { seats: out, foldedSeats, pot, lastBet };
