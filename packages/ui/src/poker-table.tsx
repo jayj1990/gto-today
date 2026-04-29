@@ -69,12 +69,10 @@ const CHIP_PX = 50;
 /**
  * Real-poker dealing order (clockwise starting at SB):
  *   SB → BB → UTG → MP → … → BTN
- * The dealer sweeps the table TWICE — one card to each seat, then
- * around again for the second card. dealDelayMs returns the absolute
- * delay (ms) for a given seat's nth card given the seat count and
- * step-per-card.
+ * Used as a sort key — each format keeps only the seats it actually
+ * has, but the relative order matches a real dealer sweep.
  */
-const DEAL_ORDER: Seat[] = [
+const DEAL_PRIORITY: readonly Seat[] = [
   'SB',
   'BB',
   'UTG',
@@ -91,15 +89,22 @@ const DEAL_ORDER: Seat[] = [
 // Per-card gap. Tuned with the slide-in animation duration so
 // adjacent cards feel sequential (each one fully lands before the
 // next starts) instead of all sliding in at once.
-//   - 110ms (original): too tight, sweep read as simultaneous
-//   - 200ms: still felt simultaneous because 320ms anim overlapped
-//   - 280ms (now): with the 280ms animation, neighbors overlap by
-//     <40ms so the dealing reads clearly as one-at-a-time SB →
-//     BB → UTG → MP → CO → BTN.
 const DEAL_STEP_MS = 280;
 
-function dealSlot(seat: Seat): number {
-  const idx = DEAL_ORDER.indexOf(seat);
+/**
+ * Slot index of `seat` within the format's actual seats — NOT the
+ * global 11-seat list. Earlier versions used the full DEAL_PRIORITY
+ * directly, which left 280ms gaps for non-existent seats (e.g. 6max
+ * has no UTG1/UTG2/UTG3/LJ/HJ, so MP got slot 6 and CO slot 9, with
+ * pass 2 starting at slot 6 — overlapping pass 1). Computing the
+ * slot relative to the actual format keeps the sweep tight and
+ * non-overlapping regardless of table size.
+ */
+function dealSlot(seat: Seat, formatSeats: readonly Seat[]): number {
+  const ordered = [...formatSeats].sort(
+    (a, b) => DEAL_PRIORITY.indexOf(a) - DEAL_PRIORITY.indexOf(b),
+  );
+  const idx = ordered.indexOf(seat);
   return idx >= 0 ? idx : 0;
 }
 
@@ -108,8 +113,8 @@ function dealSlot(seat: Seat): number {
  * seat in deal order, then pass 2 sweeps again. Total deal duration =
  * 2 * count * DEAL_STEP_MS.
  */
-function dealDelayMs(seat: Seat, cardIdx: 0 | 1, count: number): number {
-  return (cardIdx * count + dealSlot(seat)) * DEAL_STEP_MS;
+function dealDelayMs(seat: Seat, cardIdx: 0 | 1, formatSeats: readonly Seat[]): number {
+  return (cardIdx * formatSeats.length + dealSlot(seat, formatSeats)) * DEAL_STEP_MS;
 }
 
 function dealEndMs(count: number): number {
@@ -210,8 +215,8 @@ export function PokerTable({
       for (const seat of seats) {
         const st = seatStates[seat];
         if (!st || (!st.cards && !st.showBacks)) continue;
-        timers.push(window.setTimeout(playDeal, dealDelayMs(seat, 0, count)));
-        timers.push(window.setTimeout(playDeal, dealDelayMs(seat, 1, count)));
+        timers.push(window.setTimeout(playDeal, dealDelayMs(seat, 0, seats)));
+        timers.push(window.setTimeout(playDeal, dealDelayMs(seat, 1, seats)));
       }
     }
     // Bet cascade — base offset matches the chip animation start.
@@ -439,7 +444,7 @@ export function PokerTable({
                     style={
                       skipSeatDeal
                         ? undefined
-                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 0, count)}ms` }
+                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 0, seats)}ms` }
                     }
                   >
                     {renderCard(heroCards![0], 'sm')}
@@ -449,7 +454,7 @@ export function PokerTable({
                     style={
                       skipSeatDeal
                         ? undefined
-                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 1, count)}ms` }
+                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 1, seats)}ms` }
                     }
                   >
                     {renderCard(heroCards![1], 'sm')}
@@ -463,7 +468,7 @@ export function PokerTable({
                     style={
                       skipSeatDeal
                         ? undefined
-                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 0, count)}ms` }
+                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 0, seats)}ms` }
                     }
                   >
                     {renderCard(state.cards[0], 'xs')}
@@ -473,7 +478,7 @@ export function PokerTable({
                     style={
                       skipSeatDeal
                         ? undefined
-                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 1, count)}ms` }
+                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 1, seats)}ms` }
                     }
                   >
                     {renderCard(state.cards[1], 'xs')}
@@ -487,7 +492,7 @@ export function PokerTable({
                     style={
                       skipSeatDeal
                         ? undefined
-                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 0, count)}ms` }
+                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 0, seats)}ms` }
                     }
                   >
                     <CardBack />
@@ -497,7 +502,7 @@ export function PokerTable({
                     style={
                       skipSeatDeal
                         ? undefined
-                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 1, count)}ms` }
+                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 1, seats)}ms` }
                     }
                   >
                     <CardBack />
@@ -517,7 +522,7 @@ export function PokerTable({
                         // Folds wait for the deal sweep + a small beat,
                         // then dim in fold-order slot (UTG→BTN).
                         ['--anim-delay' as string]: `${
-                          dealEndMs(count) + 200 + dealSlot(seat) * 90
+                          dealEndMs(count) + 200 + dealSlot(seat, seats) * 90
                         }ms`,
                       }
                     : undefined
