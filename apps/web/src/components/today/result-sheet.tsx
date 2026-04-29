@@ -8,6 +8,7 @@ import type { AnswerGrade, GradedAction, TrainingSpot } from '@gto/gto-data';
 import { track } from '@/lib/analytics';
 import { readCached, writeCached } from '@/lib/explain-client-cache';
 import { shareOrCopy } from '@/lib/share';
+import { useLiveStore } from '@/lib/live-store';
 
 export interface ResultSheetProps {
   open: boolean;
@@ -326,14 +327,7 @@ export function ResultSheet({
               )}
             </div>
 
-            {spot && (
-              <ShareSpotLink
-                spot={spot}
-                userAnswer={userAnswer}
-                grade={grade}
-                gtoLabel={ACTION_LABEL[dominantAction(spot)]}
-              />
-            )}
+            {spot && <ShareSpotLink spot={spot} />}
 
             {/* Action row: 다시 해보기 + 다음 핸드 */}
             <div className="mt-5 flex gap-2">
@@ -369,44 +363,37 @@ export function ResultSheet({
 }
 
 /**
- * Small "↗ 친구에게" link that builds a /share/spot URL with the
- * combo / position / scenario / answer / GTO / grade encoded as
- * query params, then dispatches via shareOrCopy. The friend who
- * receives the link sees the unfurled OG card from /api/og/spot.
+ * "↗ 친구에게 공유" link that builds a /share/spot URL pointing the
+ * friend at the SAME quiz the sharer just saw — the friend solves it
+ * blind. Only the spot's locator (date + index + gameType) is on the
+ * URL; the sharer's answer / GTO answer / grade are NOT included so
+ * the friend doesn't see the answer before attempting it. The spot
+ * itself is regenerated deterministically from the locator.
  */
-function ShareSpotLink({
-  spot,
-  userAnswer,
-  grade,
-  gtoLabel,
-}: {
-  spot: TrainingSpot;
-  userAnswer: GradedAction | null;
-  grade: AnswerGrade | null;
-  gtoLabel: string;
-}) {
+function ShareSpotLink({ spot }: { spot: TrainingSpot }) {
+  const gameType = useLiveStore((s) => s.config.gameType);
   const [status, setStatus] = useState<'idle' | 'shared' | 'copied' | 'failed'>('idle');
 
   const onShare = async () => {
+    // spot.id starts with `YYYY-MM-DD-IDX-...`. Pull both fields out
+    // so the share page can regenerate the same daily list and
+    // index into it. Combo/pos/scenario/board are passed too so the
+    // OG unfurl card doesn't need to wait on regeneration.
+    const m = spot.id.match(/^(\d{4}-\d{2}-\d{2})-(\d+)-/);
     const u = new URL('https://gto.today/share/spot');
+    if (m) {
+      u.searchParams.set('d', m[1]!);
+      u.searchParams.set('i', m[2]!);
+    }
+    if (gameType) u.searchParams.set('g', gameType);
     u.searchParams.set('combo', spot.combo);
     u.searchParams.set('pos', spot.position);
     u.searchParams.set('scenario', spot.scenario);
     if (spot.opener) u.searchParams.set('opener', spot.opener);
-    if (userAnswer) u.searchParams.set('me', ACTION_LABEL[userAnswer]);
-    u.searchParams.set('gto', gtoLabel);
-    if (grade) u.searchParams.set('grade', grade);
-
-    const headline =
-      grade === 'sharp'
-        ? '이 GTO 스팟 정답!'
-        : grade === 'wrong'
-          ? '이 스팟 너라면?'
-          : '같이 풀어볼래?';
 
     const result = await shareOrCopy({
       title: 'GTO Today',
-      text: `${headline}\n${spot.position} · ${spot.combo}`,
+      text: `이 스팟 풀어볼래?\n${spot.position} · ${spot.combo}`,
       url: u.toString(),
     });
 
@@ -423,7 +410,7 @@ function ShareSpotLink({
         ? '공유됨'
         : status === 'failed'
           ? '실패'
-          : '↗ 친구에게';
+          : '↗ 친구에게 공유';
 
   return (
     <button

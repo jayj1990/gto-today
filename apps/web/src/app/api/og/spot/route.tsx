@@ -3,8 +3,9 @@ import { ImageResponse } from 'next/og';
 export const runtime = 'edge';
 
 /**
- * Spot-share OG image. Shows position + hero combo + (optional) board
- * + the user's answer vs the GTO answer side by side.
+ * Spot-share OG image. Teaser-only: position + hero combo + (optional)
+ * board. The recipient solves the spot blind on the share page, so
+ * the answer / GTO answer / grade are deliberately NOT rendered here.
  *
  * Query params:
  *   - combo: e.g. "AKs", "QQ", "76o" — 169 hand grid label
@@ -12,9 +13,6 @@ export const runtime = 'edge';
  *   - scenario: "rfi" | "vs_open" | "vs_3bet" | "flop" | …
  *   - opener: opener position when scenario starts with vs_
  *   - board: optional 3-5 card codes joined ("Ks7s2c") for postflop
- *   - me: user's answer label ("폴드", "콜", "레이즈 21bb", "체크", "벳 75%")
- *   - gto: GTO answer label
- *   - grade: "sharp" | "acceptable" | "wrong"
  */
 export async function GET(req: Request): Promise<Response> {
   const { searchParams } = new URL(req.url);
@@ -23,12 +21,6 @@ export async function GET(req: Request): Promise<Response> {
   const scenario = searchParams.get('scenario') ?? '';
   const opener = searchParams.get('opener');
   const board = searchParams.get('board');
-  const me = searchParams.get('me') ?? '—';
-  const gto = searchParams.get('gto') ?? '—';
-  const grade = (searchParams.get('grade') ?? 'wrong') as 'sharp' | 'acceptable' | 'wrong';
-
-  const gradeLabel = grade === 'sharp' ? 'sharp' : grade === 'acceptable' ? 'acceptable' : 'miss';
-  const gradeColor = grade === 'sharp' ? '#1F9D55' : grade === 'acceptable' ? '#4A9EFF' : '#C8102E';
 
   const scenarioLabel = scenarioLabelOf(scenario, pos, opener);
   const boardCards = board ? splitBoard(board) : null;
@@ -127,22 +119,46 @@ export async function GET(req: Request): Promise<Response> {
         )}
       </div>
 
-      {/* Answer row */}
+      {/* Footer — challenge CTA, no answer reveal */}
       <div
         style={{
           marginTop: 'auto',
           display: 'flex',
-          gap: 32,
+          alignItems: 'flex-end',
+          justifyContent: 'space-between',
           paddingTop: 32,
           borderTop: '1px solid rgba(212, 175, 55, 0.25)',
         }}
       >
-        <AnswerBlock label="my answer" value={me} accent={gradeColor} grade={gradeLabel} />
-        <AnswerBlock label="GTO" value={gto} accent="#D4AF37" />
         <div
           style={{
-            marginLeft: 'auto',
-            alignSelf: 'flex-end',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6,
+          }}
+        >
+          <span
+            style={{
+              color: 'rgba(244, 239, 230, 0.5)',
+              fontSize: 16,
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+            }}
+          >
+            challenge
+          </span>
+          <span
+            style={{
+              color: '#F4EFE6',
+              fontSize: 38,
+              fontWeight: 700,
+            }}
+          >
+            너라면 어떻게 칠래?
+          </span>
+        </div>
+        <div
+          style={{
             color: 'rgba(212, 175, 55, 0.85)',
             fontSize: 22,
             fontWeight: 600,
@@ -158,54 +174,6 @@ export async function GET(req: Request): Promise<Response> {
       width: 1200,
       height: 630,
     },
-  );
-}
-
-function AnswerBlock({
-  label,
-  value,
-  accent,
-  grade,
-}: {
-  label: string;
-  value: string;
-  accent: string;
-  grade?: string;
-}) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 220 }}>
-      <span
-        style={{
-          color: 'rgba(244, 239, 230, 0.5)',
-          fontSize: 16,
-          letterSpacing: '0.22em',
-          textTransform: 'uppercase',
-        }}
-      >
-        {label}
-        {grade && (
-          <span
-            style={{
-              marginLeft: 8,
-              color: accent,
-              fontSize: 14,
-              letterSpacing: '0.18em',
-            }}
-          >
-            · {grade}
-          </span>
-        )}
-      </span>
-      <span
-        style={{
-          color: accent,
-          fontSize: 38,
-          fontWeight: 700,
-        }}
-      >
-        {value}
-      </span>
-    </div>
   );
 }
 

@@ -16,6 +16,7 @@ import { sheetUp } from '@gto/ui/motion';
 import { track } from '@/lib/analytics';
 import { readCached, writeCached } from '@/lib/explain-client-cache';
 import { shareOrCopy } from '@/lib/share';
+import { useLiveStore } from '@/lib/live-store';
 
 export interface PostflopResultProps {
   open: boolean;
@@ -314,12 +315,7 @@ export function PostflopResult({
           )}
         </div>
 
-        <SharePostflopLink
-          spot={spot}
-          userAnswer={userAnswer}
-          grade={grade}
-          gtoLabel={topAction ? POSTFLOP_ACTION_LABEL[topAction] : '—'}
-        />
+        <SharePostflopLink spot={spot} />
 
         {/* Retry + next */}
         <div className="mb-3 mt-5 flex gap-2">
@@ -353,44 +349,33 @@ export function PostflopResult({
 }
 
 /**
- * Share-spot button for postflop drills. Encodes combo / position /
- * street / board / answers into /share/spot params so the friend's
- * unfurled OG card shows the situation visually.
+ * Share-spot button for postflop drills. Carries the spot's locator
+ * (date + index + gameType) so the friend's /share/spot page can
+ * regenerate the same daily list and surface this spot as a quiz —
+ * the friend solves blind, the answer / GTO answer / grade are NOT
+ * leaked through the URL.
  */
-function SharePostflopLink({
-  spot,
-  userAnswer,
-  grade,
-  gtoLabel,
-}: {
-  spot: PostflopSpot;
-  userAnswer: PostflopAction | null;
-  grade: 'sharp' | 'acceptable' | 'wrong';
-  gtoLabel: string;
-}) {
+function SharePostflopLink({ spot }: { spot: PostflopSpot }) {
+  const gameType = useLiveStore((s) => s.config.gameType);
   const [status, setStatus] = useState<'idle' | 'shared' | 'copied' | 'failed'>('idle');
 
   const onShare = async () => {
+    const m = spot.id.match(/^(\d{4}-\d{2}-\d{2})-(\d+)-/);
     const u = new URL('https://gto.today/share/spot');
+    if (m) {
+      u.searchParams.set('d', m[1]!);
+      u.searchParams.set('i', m[2]!);
+    }
+    if (gameType) u.searchParams.set('g', gameType);
     u.searchParams.set('combo', comboKey(spot.hero[0] as CardCode, spot.hero[1] as CardCode));
     u.searchParams.set('pos', spot.context.heroPos);
     u.searchParams.set('scenario', spot.street);
     if (spot.context.villainPos) u.searchParams.set('opener', spot.context.villainPos);
     if (spot.board.length > 0) u.searchParams.set('board', spot.board.join(''));
-    if (userAnswer) u.searchParams.set('me', POSTFLOP_ACTION_LABEL[userAnswer]);
-    u.searchParams.set('gto', gtoLabel);
-    u.searchParams.set('grade', grade);
-
-    const headline =
-      grade === 'sharp'
-        ? '이 GTO 스팟 정답!'
-        : grade === 'wrong'
-          ? '이 스팟 너라면?'
-          : '같이 풀어볼래?';
 
     const result = await shareOrCopy({
       title: 'GTO Today',
-      text: `${headline}\n${spot.context.heroPos} · ${STREET_LABEL[spot.street]}`,
+      text: `이 스팟 풀어볼래?\n${spot.context.heroPos} · ${STREET_LABEL[spot.street]}`,
       url: u.toString(),
     });
 
@@ -407,7 +392,7 @@ function SharePostflopLink({
         ? '공유됨'
         : status === 'failed'
           ? '실패'
-          : '↗ 친구에게';
+          : '↗ 친구에게 공유';
 
   return (
     <button
