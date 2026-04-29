@@ -57,12 +57,16 @@ export function setMuted(muted: boolean): void {
 }
 
 /**
- * Card-deal swoosh — short noise burst with a high-pass filter,
- * descending pitch envelope. ~80ms, peaks at ~-18 dBFS.
+ * Card-deal sound — two-stage percussion mimicking a card flick into
+ * the felt:
+ *   1. "Flick" — short high-frequency noise burst (45ms, band-pass
+ *      ~2.8kHz) for the paper-on-paper friction at release.
+ *   2. "Tap" — softer low-frequency noise burst (60ms, low-pass
+ *      380Hz) ~25ms later for the card landing on felt.
  *
- * The "swish" is the noise + filter sweep; the click at the start is
- * the attack ramp from 0. Playing this in a stagger reads as one card
- * after another being dealt across the felt.
+ * Previous version was a single descending band-pass burst — sounded
+ * more like a "shhh" than a card. The flick → tap sequence reads as
+ * a card actually being dealt.
  */
 export function playDeal(): void {
   if (isMuted()) return;
@@ -71,35 +75,57 @@ export function playDeal(): void {
   void ac.resume();
 
   const now = ac.currentTime;
-  const dur = 0.09;
 
-  // Pink-ish noise via short buffer of random samples.
-  const buf = ac.createBuffer(1, Math.ceil(ac.sampleRate * dur), ac.sampleRate);
-  const data = buf.getChannelData(0);
-  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.6;
-  const src = ac.createBufferSource();
-  src.buffer = buf;
+  // Layer 1: flick — high-frequency band-pass noise.
+  const flickDur = 0.045;
+  const flickBuf = ac.createBuffer(1, Math.ceil(ac.sampleRate * flickDur), ac.sampleRate);
+  const flickData = flickBuf.getChannelData(0);
+  for (let i = 0; i < flickData.length; i++) flickData[i] = (Math.random() * 2 - 1) * 0.5;
+  const flickSrc = ac.createBufferSource();
+  flickSrc.buffer = flickBuf;
+  const flickFilter = ac.createBiquadFilter();
+  flickFilter.type = 'bandpass';
+  flickFilter.frequency.value = 2800;
+  flickFilter.Q.value = 1.4;
+  const flickGain = ac.createGain();
+  flickGain.gain.setValueAtTime(0, now);
+  flickGain.gain.linearRampToValueAtTime(0.14, now + 0.004);
+  flickGain.gain.exponentialRampToValueAtTime(0.001, now + flickDur);
+  flickSrc.connect(flickFilter).connect(flickGain).connect(ac.destination);
+  flickSrc.start(now);
+  flickSrc.stop(now + flickDur + 0.005);
 
-  // Band-pass for the "paper sliding" timbre.
-  const filter = ac.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.frequency.setValueAtTime(2400, now);
-  filter.frequency.exponentialRampToValueAtTime(900, now + dur);
-  filter.Q.value = 0.9;
-
-  const gain = ac.createGain();
-  gain.gain.setValueAtTime(0, now);
-  gain.gain.linearRampToValueAtTime(0.18, now + 0.008);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-
-  src.connect(filter).connect(gain).connect(ac.destination);
-  src.start(now);
-  src.stop(now + dur + 0.01);
+  // Layer 2: card-on-felt thump — softer low-frequency noise 25ms later.
+  const tapStart = now + 0.025;
+  const tapDur = 0.06;
+  const tapBuf = ac.createBuffer(1, Math.ceil(ac.sampleRate * tapDur), ac.sampleRate);
+  const tapData = tapBuf.getChannelData(0);
+  for (let i = 0; i < tapData.length; i++) tapData[i] = (Math.random() * 2 - 1) * 0.7;
+  const tapSrc = ac.createBufferSource();
+  tapSrc.buffer = tapBuf;
+  const tapFilter = ac.createBiquadFilter();
+  tapFilter.type = 'lowpass';
+  tapFilter.frequency.value = 380;
+  tapFilter.Q.value = 0.7;
+  const tapGain = ac.createGain();
+  tapGain.gain.setValueAtTime(0, tapStart);
+  tapGain.gain.linearRampToValueAtTime(0.18, tapStart + 0.005);
+  tapGain.gain.exponentialRampToValueAtTime(0.001, tapStart + tapDur);
+  tapSrc.connect(tapFilter).connect(tapGain).connect(ac.destination);
+  tapSrc.start(tapStart);
+  tapSrc.stop(tapStart + tapDur + 0.005);
 }
 
 /**
- * Chip clink — two stacked tones (ring + tap) plus a tiny noise tick.
- * Total ~120ms. Sounds like a clay chip landing on a felt + chip stack.
+ * Chip-place sound — three layers stacked at the same instant:
+ *   1. Click attack — 900Hz square wave, 12ms decay (the "tk").
+ *   2. Mid body — triangle 1.7→1.1kHz, 90ms tail (clay shimmer).
+ *   3. Sub thump — 110Hz lowpass noise, 40ms (clay-disc weight).
+ *
+ * Previous version was a triangle "tap" + high sine "ring" that
+ * sounded like a small bell. The new mix has actual percussive
+ * attack + real low-end weight, plus a ringy mid body, so it lands
+ * as a clay chip on felt instead of a music note.
  */
 export function playChip(): void {
   if (isMuted()) return;
@@ -109,31 +135,48 @@ export function playChip(): void {
 
   const now = ac.currentTime;
 
-  // Tap: short triangle at ~1.4 kHz, decays in 60ms.
-  const tap = ac.createOscillator();
-  tap.type = 'triangle';
-  tap.frequency.setValueAtTime(1400, now);
-  tap.frequency.exponentialRampToValueAtTime(900, now + 0.05);
-  const tapGain = ac.createGain();
-  tapGain.gain.setValueAtTime(0, now);
-  tapGain.gain.linearRampToValueAtTime(0.16, now + 0.004);
-  tapGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
-  tap.connect(tapGain).connect(ac.destination);
-  tap.start(now);
-  tap.stop(now + 0.08);
+  // Layer 1: click attack — square pulse with a fast decay.
+  const click = ac.createOscillator();
+  click.type = 'square';
+  click.frequency.value = 900;
+  const clickGain = ac.createGain();
+  clickGain.gain.setValueAtTime(0, now);
+  clickGain.gain.linearRampToValueAtTime(0.09, now + 0.001);
+  clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.012);
+  click.connect(clickGain).connect(ac.destination);
+  click.start(now);
+  click.stop(now + 0.02);
 
-  // Ring: a sine ~3.2 kHz, longer tail, gives the ceramic shimmer.
-  const ring = ac.createOscillator();
-  ring.type = 'sine';
-  ring.frequency.setValueAtTime(3200, now);
-  ring.frequency.exponentialRampToValueAtTime(2400, now + 0.12);
-  const ringGain = ac.createGain();
-  ringGain.gain.setValueAtTime(0, now);
-  ringGain.gain.linearRampToValueAtTime(0.06, now + 0.006);
-  ringGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
-  ring.connect(ringGain).connect(ac.destination);
-  ring.start(now);
-  ring.stop(now + 0.14);
+  // Layer 2: ringy body — triangle that drops in pitch as it decays.
+  const body = ac.createOscillator();
+  body.type = 'triangle';
+  body.frequency.setValueAtTime(1700, now);
+  body.frequency.exponentialRampToValueAtTime(1100, now + 0.08);
+  const bodyGain = ac.createGain();
+  bodyGain.gain.setValueAtTime(0, now);
+  bodyGain.gain.linearRampToValueAtTime(0.07, now + 0.003);
+  bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+  body.connect(bodyGain).connect(ac.destination);
+  body.start(now);
+  body.stop(now + 0.1);
+
+  // Layer 3: weight thump — sub-frequency noise burst.
+  const subDur = 0.04;
+  const subBuf = ac.createBuffer(1, Math.ceil(ac.sampleRate * subDur), ac.sampleRate);
+  const subData = subBuf.getChannelData(0);
+  for (let i = 0; i < subData.length; i++) subData[i] = (Math.random() * 2 - 1) * 0.8;
+  const subSrc = ac.createBufferSource();
+  subSrc.buffer = subBuf;
+  const subFilter = ac.createBiquadFilter();
+  subFilter.type = 'lowpass';
+  subFilter.frequency.value = 110;
+  const subGain = ac.createGain();
+  subGain.gain.setValueAtTime(0, now);
+  subGain.gain.linearRampToValueAtTime(0.16, now + 0.003);
+  subGain.gain.exponentialRampToValueAtTime(0.001, now + subDur);
+  subSrc.connect(subFilter).connect(subGain).connect(ac.destination);
+  subSrc.start(now);
+  subSrc.stop(now + subDur + 0.005);
 }
 
 /**

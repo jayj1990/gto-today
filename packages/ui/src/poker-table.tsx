@@ -88,7 +88,12 @@ const DEAL_ORDER: Seat[] = [
   'BTN',
 ];
 
-const DEAL_STEP_MS = 110;
+// Per-card gap. Was 110ms, but the slide-in animation is ~320ms so
+// adjacent cards overlapped 200ms and the whole sweep read as
+// "everyone got a card at once". 200ms leaves ~120ms overlap with
+// the new shorter animation — adjacent cards still feel connected
+// but each one visibly lands before the next starts.
+const DEAL_STEP_MS = 200;
 
 function dealSlot(seat: Seat): number {
   const idx = DEAL_ORDER.indexOf(seat);
@@ -105,8 +110,8 @@ function dealDelayMs(seat: Seat, cardIdx: 0 | 1, count: number): number {
 }
 
 function dealEndMs(count: number): number {
-  // Last seat in pass 2 + the slide-in animation tail (~820ms).
-  return (2 * count - 1) * DEAL_STEP_MS;
+  // Last card's start time + the slide-in animation tail (~320ms).
+  return (2 * count - 1) * DEAL_STEP_MS + 320;
 }
 
 /**
@@ -173,6 +178,13 @@ export function PokerTable({
 }: PokerTableProps) {
   const seats = SEATS[format];
   const count = seats.length;
+  // When the table already has a flop on it, the hole cards have
+  // logically been received before this scene started — running the
+  // two-pass deal cascade now would re-deal cards that should already
+  // be sitting at each seat. Postflop spots skip the seat-deal step
+  // entirely; only the community cards animate (left-to-right flop
+  // reveal handled by the board section below).
+  const skipSeatDeal = board.length > 0;
 
   // Track which (seats, actions) signature we last announced so a
   // re-render that doesn't actually change the table doesn't re-fire
@@ -188,17 +200,22 @@ export function PokerTable({
     lastSigRef.current = sig;
 
     const timers: number[] = [];
-    // Two-pass deal sweep: one swoosh per card. SB[0] BB[0] UTG[0] …
-    // BTN[0] then SB[1] BB[1] … BTN[1].
-    for (const seat of seats) {
-      const st = seatStates[seat];
-      if (!st || (!st.cards && !st.showBacks)) continue;
-      timers.push(window.setTimeout(playDeal, dealDelayMs(seat, 0, count)));
-      timers.push(window.setTimeout(playDeal, dealDelayMs(seat, 1, count)));
+    if (!skipSeatDeal) {
+      // Two-pass deal sweep: one swoosh per card. SB[0] BB[0] UTG[0] …
+      // BTN[0] then SB[1] BB[1] … BTN[1]. Postflop spots skip this
+      // entirely so the only audio is the flop reveal.
+      for (const seat of seats) {
+        const st = seatStates[seat];
+        if (!st || (!st.cards && !st.showBacks)) continue;
+        timers.push(window.setTimeout(playDeal, dealDelayMs(seat, 0, count)));
+        timers.push(window.setTimeout(playDeal, dealDelayMs(seat, 1, count)));
+      }
     }
-    // Bet cascade — base offset matches the chip animation start (deal
-    // sweep finishes + 600ms settle, then 140ms per chipOrderSlot).
-    const betBase = dealEndMs(count) + 600;
+    // Bet cascade — base offset matches the chip animation start.
+    // Preflop: wait for the deal sweep + 600ms settle. Postflop:
+    // chips are already in the pot before the spot starts, so any
+    // bet-chip clinks fire immediately (no deal to wait for).
+    const betBase = skipSeatDeal ? 0 : dealEndMs(count) + 600;
     for (const seat of seats) {
       const st = seatStates[seat];
       if (!st?.action || st.action.kind === 'fold') continue;
@@ -208,7 +225,7 @@ export function PokerTable({
     return () => {
       for (const t of timers) window.clearTimeout(t);
     };
-  }, [playSfx, seats, seatStates, count]);
+  }, [playSfx, seats, seatStates, count, skipSeatDeal]);
 
   return (
     <div
@@ -400,18 +417,32 @@ export function PokerTable({
                   Pass 1: each seat gets card[0] in deal order. Pass 2:
                   same sweep again for card[1]. Each card is a separate
                   animated element with its own --anim-delay so cards
-                  appear one at a time, not pair at a time. */}
+                  appear one at a time, not pair at a time.
+
+                  Postflop spots (board.length > 0) skip this entirely:
+                  the hole cards have logically been received before
+                  the scene begins, so re-dealing them now would feel
+                  like a rewind. The animation classes drop in that
+                  case — only the community board cards animate. */}
               {hasHeroCards && renderCard && (
                 <div style={{ display: 'flex', gap: 2 }}>
                   <span
-                    className="animate-card-slide-in"
-                    style={{ ['--anim-delay' as string]: `${dealDelayMs(seat, 0, count)}ms` }}
+                    className={skipSeatDeal ? undefined : 'animate-card-slide-in'}
+                    style={
+                      skipSeatDeal
+                        ? undefined
+                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 0, count)}ms` }
+                    }
                   >
                     {renderCard(heroCards![0], 'sm')}
                   </span>
                   <span
-                    className="animate-card-slide-in"
-                    style={{ ['--anim-delay' as string]: `${dealDelayMs(seat, 1, count)}ms` }}
+                    className={skipSeatDeal ? undefined : 'animate-card-slide-in'}
+                    style={
+                      skipSeatDeal
+                        ? undefined
+                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 1, count)}ms` }
+                    }
                   >
                     {renderCard(heroCards![1], 'sm')}
                   </span>
@@ -420,14 +451,22 @@ export function PokerTable({
               {hasVillainCards && state.cards && renderCard && (
                 <div style={{ display: 'flex', gap: 2 }}>
                   <span
-                    className="animate-card-slide-in"
-                    style={{ ['--anim-delay' as string]: `${dealDelayMs(seat, 0, count)}ms` }}
+                    className={skipSeatDeal ? undefined : 'animate-card-slide-in'}
+                    style={
+                      skipSeatDeal
+                        ? undefined
+                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 0, count)}ms` }
+                    }
                   >
                     {renderCard(state.cards[0], 'xs')}
                   </span>
                   <span
-                    className="animate-card-slide-in"
-                    style={{ ['--anim-delay' as string]: `${dealDelayMs(seat, 1, count)}ms` }}
+                    className={skipSeatDeal ? undefined : 'animate-card-slide-in'}
+                    style={
+                      skipSeatDeal
+                        ? undefined
+                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 1, count)}ms` }
+                    }
                   >
                     {renderCard(state.cards[1], 'xs')}
                   </span>
@@ -436,14 +475,22 @@ export function PokerTable({
               {hasVillainCards && !state.cards && state.showBacks && (
                 <div style={{ display: 'flex', gap: 2 }}>
                   <span
-                    className="animate-card-slide-in"
-                    style={{ ['--anim-delay' as string]: `${dealDelayMs(seat, 0, count)}ms` }}
+                    className={skipSeatDeal ? undefined : 'animate-card-slide-in'}
+                    style={
+                      skipSeatDeal
+                        ? undefined
+                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 0, count)}ms` }
+                    }
                   >
                     <CardBack />
                   </span>
                   <span
-                    className="animate-card-slide-in"
-                    style={{ ['--anim-delay' as string]: `${dealDelayMs(seat, 1, count)}ms` }}
+                    className={skipSeatDeal ? undefined : 'animate-card-slide-in'}
+                    style={
+                      skipSeatDeal
+                        ? undefined
+                        : { ['--anim-delay' as string]: `${dealDelayMs(seat, 1, count)}ms` }
+                    }
                   >
                     <CardBack />
                   </span>
