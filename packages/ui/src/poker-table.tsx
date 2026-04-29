@@ -88,12 +88,15 @@ const DEAL_ORDER: Seat[] = [
   'BTN',
 ];
 
-// Per-card gap. Was 110ms, but the slide-in animation is ~320ms so
-// adjacent cards overlapped 200ms and the whole sweep read as
-// "everyone got a card at once". 200ms leaves ~120ms overlap with
-// the new shorter animation — adjacent cards still feel connected
-// but each one visibly lands before the next starts.
-const DEAL_STEP_MS = 200;
+// Per-card gap. Tuned with the slide-in animation duration so
+// adjacent cards feel sequential (each one fully lands before the
+// next starts) instead of all sliding in at once.
+//   - 110ms (original): too tight, sweep read as simultaneous
+//   - 200ms: still felt simultaneous because 320ms anim overlapped
+//   - 280ms (now): with the 280ms animation, neighbors overlap by
+//     <40ms so the dealing reads clearly as one-at-a-time SB →
+//     BB → UTG → MP → CO → BTN.
+const DEAL_STEP_MS = 280;
 
 function dealSlot(seat: Seat): number {
   const idx = DEAL_ORDER.indexOf(seat);
@@ -212,14 +215,19 @@ export function PokerTable({
       }
     }
     // Bet cascade — base offset matches the chip animation start.
-    // Preflop: wait for the deal sweep + 600ms settle. Postflop:
-    // chips are already in the pot before the spot starts, so any
-    // bet-chip clinks fire immediately (no deal to wait for).
-    const betBase = skipSeatDeal ? 0 : dealEndMs(count) + 600;
+    // Preflop: wait for the deal sweep + 600ms + the fold-flash
+    // sequence (8 fold slots × 90ms + 720ms flash = 1440ms ceiling)
+    // so betting visually starts only AFTER folds are fully resolved.
+    // Postflop: chips are already in the pot before the spot starts,
+    // so any bet-chip clinks fire immediately (no deal to wait for).
+    const betBase = skipSeatDeal ? 0 : dealEndMs(count) + 1200;
     for (const seat of seats) {
       const st = seatStates[seat];
       if (!st?.action || st.action.kind === 'fold') continue;
-      const t = window.setTimeout(playChip, betBase + chipOrderSlot(seat, st.action) * 140);
+      // 250ms per chip slot (was 140ms) so each bet visibly settles
+      // before the next chip flies in. Sequence: SB post → BB post →
+      // UTG voluntary → MP → CO → BTN.
+      const t = window.setTimeout(playChip, betBase + chipOrderSlot(seat, st.action) * 250);
       timers.push(t);
     }
     return () => {
@@ -544,12 +552,13 @@ export function PokerTable({
                   ['--throw-x' as string]: `${-inward.x * 16}px`,
                   ['--throw-y' as string]: `${-inward.y * 16}px`,
                   // Deal sweep is two passes (dealEndMs ≈ 2*count*step).
-                  // Wait 600ms after the last card lands so the user
-                  // sees the deal complete before betting starts, then
-                  // each chip arrives 140ms apart in chipOrderSlot
-                  // sequence (SB post → BB post → voluntary actions).
+                  // Wait through the fold-flash sequence (~1200ms after
+                  // the last card) so the user sees folds resolve before
+                  // any chip flies. Then each chip arrives 250ms apart
+                  // in chipOrderSlot order (SB post → BB post →
+                  // voluntary actions UTG → BB).
                   ['--anim-delay' as string]: `${
-                    dealEndMs(count) + 600 + chipOrderSlot(seat, state.action) * 140
+                    dealEndMs(count) + 1200 + chipOrderSlot(seat, state.action) * 250
                   }ms`,
                 }}
               >

@@ -338,11 +338,11 @@
     }
   }
   .animate-card-slide-in {
-    /* Was 820ms — too long, so per-seat staggers blurred together
-       and the deal read as "everyone got a card at once". 320ms
-       lands snappily; pair with the 200ms DEAL_STEP_MS in the
-       PokerTable so cards visibly arrive one after another. */
-    animation: gto-card-slide-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    /* Tuned with DEAL_STEP_MS in the PokerTable. 280ms animation +
+       280ms step = neighbours barely overlap, so each card visibly
+       lands before the next starts. Required to make "SB first,
+       then BB, then UTG…" actually readable rather than blurred. */
+    animation: gto-card-slide-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
     animation-delay: var(--anim-delay, 0ms);
     /* Inline spans wrapping a block child reflow when the animation
        finishes (transform: none), which made the villain card-back's
@@ -419,21 +419,36 @@
     animation-delay: var(--anim-delay, 0ms);
   }
 
-  /* Fold dim — folded seats fade their chip from full opacity to the
-     "dead seat" 35% over 320ms in fold-order slot. Triggered only at
-     deal-time intro, so a freshly dealt scene reads as "everyone gets
-     cards, then UTG folds, MP folds, CO acts" instead of just ending
-     up with some chips already half-bright. */
-  @keyframes gto-fold-fade {
+  /* Fold animation — a brief red ring flash + outward nudge, then the
+     chip settles into the dead-seat 35% opacity. Replaces a plain
+     opacity fade that was too quiet to notice. The ring uses raise
+     red so it reads as the same color family as the fold action; the
+     scale wobble (1 → 1.08 → 0.96) gives a "tossed in the muck" feel
+     before the seat dims out. */
+  @keyframes gto-fold-flash {
     0% {
       opacity: 1;
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(200, 16, 46, 0);
+    }
+    25% {
+      opacity: 1;
+      transform: scale(1.08);
+      box-shadow: 0 0 0 6px rgba(200, 16, 46, 0.45);
+    }
+    55% {
+      opacity: 0.7;
+      transform: scale(0.96);
+      box-shadow: 0 0 0 14px rgba(200, 16, 46, 0);
     }
     100% {
       opacity: 0.35;
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(200, 16, 46, 0);
     }
   }
   .animate-fold-fade {
-    animation: gto-fold-fade 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: gto-fold-flash 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
     animation-delay: var(--anim-delay, 0ms);
   }
 
