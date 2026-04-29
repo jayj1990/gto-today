@@ -65,10 +65,13 @@ export function HandCard({ spot, className, celebratePot = false }: HandCardProp
         />
       </div>
 
-      {/* Pre-action ribbon (3bet / 4bet / squeeze pots) */}
-      {spot.preActions && spot.preActions.length > 1 && (
+      {/* Pre-action ribbon (3bet / 4bet / squeeze pots). Uses the pot
+          computed by buildSeats — spot.potBB on the data file can be
+          stale (rounded or computed from a partial action chain) and
+          contradicted the live table number. */}
+      {spot.preActions && spot.preActions.length >= 1 && preActionRibbon(spot) && (
         <p className="mt-2 text-center font-mono text-[11px] text-[color:var(--color-gold)]">
-          {preActionRibbon(spot)} · 팟 {spot.potBB ?? '?'}BB
+          {preActionRibbon(spot)} · 팟 {fmtBB(pot)}BB
         </p>
       )}
 
@@ -104,6 +107,11 @@ function scenarioPill(spot: TrainingSpot): string {
     default:
       return 'Spot';
   }
+}
+
+function fmtBB(n: number): string {
+  if (n % 1 === 0) return String(n);
+  return n.toFixed(1);
 }
 
 function preActionRibbon(spot: TrainingSpot): string {

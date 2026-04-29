@@ -162,18 +162,22 @@ function voluntarySlot(seat: Seat, formatSeats: readonly Seat[]): number {
 }
 
 /**
- * Chronological order chips should appear on the felt:
- *   SB post → BB post → UTG voluntary → MP → CO → BTN → SB voluntary → BB voluntary
+ * Single post-deal action timeline. Folds AND bets share the same
+ * cascade in real betting order — UTG fold → MP fold → CO open →
+ * BTN 3bet → SB 4bet → BB fold → hero acts. Each event fires at:
+ *   dealEnd + ACTION_BUFFER_MS + voluntarySlot * ACTION_STEP_MS
  *
- * Posts go first because in real poker the blinds are on the felt
- * before any voluntary action happens. Voluntary actions then sweep
- * UTG → BB in normal preflop turn order.
+ * Step is wider than the previous fold-only cascade (90ms) and
+ * narrower than the previous bet-only cascade (250ms) — each event
+ * registers visually before the next starts but the scene doesn't
+ * drag. Posts are NOT in this timeline; they render statically
+ * before the deal begins (real-poker convention).
  */
-function chipOrderSlot(seat: Seat, action: SeatAction, formatSeats: readonly Seat[]): number {
-  if (action.kind === 'post') {
-    return seat === 'SB' ? 0 : 1; // SB before BB
-  }
-  return 2 + voluntarySlot(seat, formatSeats);
+const ACTION_BUFFER_MS = 600;
+const ACTION_STEP_MS = 350;
+
+function actionDelayMs(seat: Seat, count: number, formatSeats: readonly Seat[]): number {
+  return dealEndMs(count) + ACTION_BUFFER_MS + voluntarySlot(seat, formatSeats) * ACTION_STEP_MS;
 }
 
 /**
@@ -243,21 +247,17 @@ export function PokerTable({
         timers.push(window.setTimeout(playDeal, dealDelayMs(seat, 1, seats)));
       }
     }
-    // Bet cascade — base offset matches the chip animation start.
-    // Preflop: wait for the deal sweep + 600ms + the fold-flash
-    // sequence (8 fold slots × 90ms + 720ms flash = 1440ms ceiling)
-    // so betting visually starts only AFTER folds are fully resolved.
-    // Postflop: chips are already in the pot before the spot starts,
-    // so any bet-chip clinks fire immediately (no deal to wait for).
-    const betBase = skipSeatDeal ? 0 : dealEndMs(count) + 1200;
-    for (const seat of seats) {
-      const st = seatStates[seat];
-      if (!st?.action || st.action.kind === 'fold') continue;
-      // 250ms per chip slot (was 140ms) so each bet visibly settles
-      // before the next chip flies in. Sequence: SB post → BB post →
-      // UTG voluntary → MP → CO → BTN.
-      const t = window.setTimeout(playChip, betBase + chipOrderSlot(seat, st.action, seats) * 250);
-      timers.push(t);
+    // Bet cascade fires in the same unified action timeline as folds
+    // (UTG fold → MP fold → CO open → BTN 3bet → SB 4bet → BB fold).
+    // Postflop scenes have no preflop action to play — chips are in
+    // the pot before the spot starts.
+    if (!skipSeatDeal) {
+      for (const seat of seats) {
+        const st = seatStates[seat];
+        if (!st?.action || st.action.kind === 'fold') continue;
+        const t = window.setTimeout(playChip, actionDelayMs(seat, count, seats));
+        timers.push(t);
+      }
     }
     return () => {
       for (const t of timers) window.clearTimeout(t);
@@ -457,7 +457,11 @@ export function PokerTable({
             '--anim-delay': `${dealDelayMs(seat, cardIdx, seats)}ms`,
           };
           if (isMucking) {
-            base['--muck-delay'] = `${dealEndMs(count) + 200 + voluntarySlot(seat, seats) * 90}ms`;
+            // Muck fires in the unified action timeline, exactly when
+            // it's this seat's turn to act in real betting order. So
+            // BB's muck happens AFTER SB's raise chip lands, not
+            // before — same cadence as the bet cascade.
+            base['--muck-delay'] = `${actionDelayMs(seat, count, seats)}ms`;
           }
           return base as CSSProperties;
         };
@@ -539,17 +543,15 @@ export function PokerTable({
                 </div>
               )}
 
-              {/* Chip below — folded seats fade to dim AFTER deal in
-                  betting order (UTG→BB), matching the muck. Active
-                  seats render at full opacity from frame 0. */}
+              {/* Chip below — folded seats dim in the unified action
+                  cascade (folds and bets share the same timeline so
+                  events fire in real betting order). */}
               <span
                 className={isMucking ? 'animate-fold-fade' : undefined}
                 style={
                   isMucking
                     ? {
-                        ['--anim-delay' as string]: `${
-                          dealEndMs(count) + 200 + voluntarySlot(seat, seats) * 90
-                        }ms`,
+                        ['--anim-delay' as string]: `${actionDelayMs(seat, count, seats)}ms`,
                       }
                     : undefined
                 }
@@ -580,12 +582,11 @@ export function PokerTable({
               </div>
             )}
 
-            {/* Voluntary action chip — flies in after deal + muck
-                resolution. SB/BB raises stack on top of the post chip
-                (additional bet on top of the posted blind). The
-                --throw-x/y vars start the chip biased toward the
-                seat (~16px outward) so it visually travels across
-                the felt to its bet position. */}
+            {/* Voluntary action chip — flies in at the seat's slot in
+                the unified action timeline, so the cascade reads as
+                real preflop order: UTG fold → MP fold → CO open →
+                BTN 3bet → SB 4bet → BB fold. SB/BB raises stack on
+                top of the post chip. */}
             {hasVoluntaryAction && state.action && (
               <div
                 key={`bet-${seat}-${actionKey(state.action)}`}
@@ -596,9 +597,7 @@ export function PokerTable({
                   top: `${voluntaryChipY}%`,
                   ['--throw-x' as string]: `${-inward.x * 16}px`,
                   ['--throw-y' as string]: `${-inward.y * 16}px`,
-                  ['--anim-delay' as string]: `${
-                    dealEndMs(count) + 1200 + chipOrderSlot(seat, state.action, seats) * 250
-                  }ms`,
+                  ['--anim-delay' as string]: `${actionDelayMs(seat, count, seats)}ms`,
                 }}
               >
                 <BetChip action={state.action} />
