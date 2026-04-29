@@ -240,9 +240,17 @@ export function PokerTable({
       // Two-pass deal sweep: one swoosh per card. SB[0] BB[0] UTG[0] …
       // BTN[0] then SB[1] BB[1] … BTN[1]. Postflop spots skip this
       // entirely so the only audio is the flop reveal.
+      //
+      // Hero is a special case: their cards come in via the heroCards
+      // prop, NOT through seatStates[hero].cards/.showBacks — so the
+      // st-only check used to silently skip the hero deal. We OR in
+      // the heroCards path so the hero's two flicks play with the
+      // rest of the sweep.
       for (const seat of seats) {
         const st = seatStates[seat];
-        if (!st || (!st.cards && !st.showBacks)) continue;
+        const isHero = seat === hero;
+        const dealsCards = isHero ? !!heroCards : !!(st && (st.cards || st.showBacks));
+        if (!dealsCards) continue;
         timers.push(window.setTimeout(playDeal, dealDelayMs(seat, 0, seats)));
         timers.push(window.setTimeout(playDeal, dealDelayMs(seat, 1, seats)));
       }
@@ -262,7 +270,7 @@ export function PokerTable({
     return () => {
       for (const t of timers) window.clearTimeout(t);
     };
-  }, [playSfx, seats, seatStates, count, skipSeatDeal]);
+  }, [playSfx, seats, seatStates, count, skipSeatDeal, hero, heroCards]);
 
   return (
     <div
