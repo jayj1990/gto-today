@@ -22,6 +22,16 @@ export interface BuildSeatsResult {
  * vs_3bet / vs_4bet / vs_squeeze / vs_allin from silently falling
  * through to "all fold" when a new scenario is added to the union.
  */
+/** Posted blinds, by seat — used to convert "raise to N" totals into
+ *  the additional-chip increment shown on the felt. SB raising to 21
+ *  has 0.5 already in the pot, so the new raise chip displays 20.5
+ *  (post + raise = 21 total). */
+function postedBlind(seat: Seat): number {
+  if (seat === 'SB') return 0.5;
+  if (seat === 'BB') return 1;
+  return 0;
+}
+
 export function buildSeats(spot: TrainingSpot): BuildSeatsResult {
   const order = POSITIONS_BY_FORMAT[spot.format as Format];
   const out: Partial<Record<Seat, SeatState>> = {};
@@ -74,20 +84,26 @@ export function buildSeats(spot: TrainingSpot): BuildSeatsResult {
         continue;
       }
       if (pre.action === 'Call') {
+        // Display the chip the seat actually pushed THIS action — for
+        // SB calling 2.5, that's 2.0 (the 0.5 post is already on the
+        // felt as a separate post chip). Pot math still uses the
+        // total via addContribution.
+        const posted = postedBlind(seat);
         out[seat] = {
           ...out[seat],
           stack: stack - facing,
-          action: { kind: 'call', bb: facing },
+          action: { kind: 'call', bb: facing - posted },
           showBacks: true,
         };
         runningPot += addContribution(seat, facing);
         continue;
       }
       if (pre.action === 'AllIn') {
+        const posted = postedBlind(seat);
         out[seat] = {
           ...out[seat],
           stack: 0,
-          action: { kind: 'raise', bb: stack },
+          action: { kind: 'raise', bb: stack - posted },
           showBacks: true,
         };
         runningPot += addContribution(seat, stack);
@@ -97,10 +113,11 @@ export function buildSeats(spot: TrainingSpot): BuildSeatsResult {
       const m = pre.action.match(/^([\d.]+)bb$/);
       if (m) {
         const size = parseFloat(m[1]!);
+        const posted = postedBlind(seat);
         out[seat] = {
           ...out[seat],
           stack: stack - size,
-          action: { kind: 'raise', bb: size },
+          action: { kind: 'raise', bb: size - posted },
           showBacks: true,
         };
         runningPot += addContribution(seat, size);
@@ -115,6 +132,27 @@ export function buildSeats(spot: TrainingSpot): BuildSeatsResult {
       out[seat] = { ...out[seat], stack, action: { kind: 'fold' }, showBacks: true };
       foldedSeats.push(seat);
     }
+
+    // Any seat that hasn't acted but sits between the last preAction
+    // actor and hero (clockwise) must have folded for action to come
+    // back to hero now. Handles the "vs_4bet at CO" case where the
+    // action goes CO→BTN→SB→BB→CO; if preActions ends at SB's 4-bet,
+    // BB still needs to fold before hero (CO) faces the bet.
+    const lastActor = spot.preActions[spot.preActions.length - 1]!.actor as Seat;
+    const lastIdx = order.indexOf(lastActor);
+    if (lastIdx >= 0) {
+      let cursor = (lastIdx + 1) % order.length;
+      let safety = order.length;
+      while (cursor !== heroIdx && safety-- > 0) {
+        const seat = order[cursor] as Seat;
+        if (!acted.has(seat) && !out[seat]?.action) {
+          out[seat] = { ...out[seat], action: { kind: 'fold' }, showBacks: true };
+          foldedSeats.push(seat);
+        }
+        cursor = (cursor + 1) % order.length;
+      }
+    }
+
     pot = runningPot;
     lastBet = facing;
   } else if (spot.scenario === 'vs_open' && spot.opener) {

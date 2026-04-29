@@ -134,7 +134,9 @@ describe('buildSeats', () => {
         preActions: [{ actor: 'SB', action: 'AllIn' }],
       }),
     );
-    expect(seats.SB?.action).toEqual({ kind: 'raise', bb: 20 });
+    // SB's all-in chip is the additional 19.5 they pushed beyond the
+    // 0.5 post (post chip stays separately on the felt).
+    expect(seats.SB?.action).toEqual({ kind: 'raise', bb: 19.5 });
     expect(seats.SB?.stack).toBe(0);
     expect(lastBet).toBe(20);
   });
@@ -144,10 +146,10 @@ describe('buildSeats', () => {
     expect(seats.BTN?.showBacks).toBe(false);
   });
 
-  it('SB raise keeps the post chip on the felt + adds the raise', () => {
-    // Real poker: when SB 3-bets, the 0.5 blind chip stays in the pot
-    // AND the raise chip lands on top of it. Both should be present
-    // on the seat state.
+  it('SB raise keeps the post chip on the felt + adds the raise increment', () => {
+    // Real poker: when SB 3-bets to 11bb, the 0.5 blind chip stays in
+    // the pot AND a raise chip for the additional 10.5bb lands on top
+    // (post + raise increment = 11bb total commit).
     const { seats } = buildSeats(
       baseSpot({
         position: 'BB',
@@ -159,7 +161,34 @@ describe('buildSeats', () => {
       }),
     );
     expect(seats.SB?.post).toBe(0.5);
-    expect(seats.SB?.action).toEqual({ kind: 'raise', bb: 11 });
+    // Increment shown on the raise chip is total (11) minus posted (0.5).
+    expect(seats.SB?.action).toEqual({ kind: 'raise', bb: 10.5 });
+  });
+
+  it('vs_4bet at CO with no BB action: BB auto-folds (action returns to hero)', () => {
+    // The exact spot in the user's screenshot: CO opens 2.5, BTN
+    // 3-bets 8.5, SB 4-bets 21. For action to come back to CO, BB
+    // must have folded. preActions list omits BB's fold, so
+    // build-seats must infer it.
+    const { seats, foldedSeats } = buildSeats(
+      baseSpot({
+        position: 'CO',
+        scenario: 'vs_4bet',
+        preActions: [
+          { actor: 'CO', action: '2.5bb' },
+          { actor: 'BTN', action: '8.5bb' },
+          { actor: 'SB', action: '21bb' },
+        ],
+      }),
+    );
+    expect(foldedSeats).toContain('BB');
+    expect(seats.BB?.action).toEqual({ kind: 'fold' });
+    // BB's post chip should still be on the felt (folded blinds stay
+    // in the pot).
+    expect(seats.BB?.post).toBe(1);
+    // SB's raise chip is the 20.5 increment (21 total - 0.5 post).
+    expect(seats.SB?.action).toEqual({ kind: 'raise', bb: 20.5 });
+    expect(seats.SB?.post).toBe(0.5);
   });
 
   it('folded seats keep showBacks=true so the muck animation can play', () => {
