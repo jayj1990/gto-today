@@ -325,13 +325,10 @@ export function PostflopResult({
             <button
               type="button"
               onClick={onRetry}
-              aria-label="연습용 다시 풀어보기. 기록은 첫 답으로 유지됩니다."
-              className="border-hair surface-raised flex h-14 flex-1 flex-col items-center justify-center rounded-[var(--radius-button)] font-medium active:scale-[0.98]"
+              aria-label="재시도. 연습용 · 기록은 첫 답으로 유지됩니다."
+              className="border-hair surface-raised text-fg flex h-14 flex-1 select-none items-center justify-center rounded-[var(--radius-button)] font-medium active:scale-[0.98]"
             >
-              <span>다시 풀어보기</span>
-              <span className="text-fg-muted mt-0.5 font-mono text-[9px] uppercase tracking-[0.18em]">
-                연습용 · 기록 불변
-              </span>
+              재시도
             </button>
           )}
           <button
@@ -388,7 +385,7 @@ function SharePostflopLink({ spot }: { spot: PostflopSpot }) {
         ? '공유됨'
         : status === 'failed'
           ? '실패'
-          : '↗ 공유';
+          : '공유';
 
   return (
     <button
