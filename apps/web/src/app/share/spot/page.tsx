@@ -3,12 +3,10 @@ import Image from 'next/image';
 import { ShareSpotQuiz } from './quiz';
 
 interface SharedSearchParams {
-  /** Date the spot was generated (YYYY-MM-DD). */
-  d?: string;
-  /** Index within that day's daily list (0..9). */
-  i?: string;
-  /** Game type the daily list was generated for. */
-  g?: string;
+  /** Base64-encoded full spot payload (the friend renders THIS, not
+   *  a regenerated daily-list lookup — so a spot stays stable even
+   *  when the solver pool grows and shifts indices). */
+  s?: string;
   /** Teaser fields used only for the OG unfurl card — never rendered
    *  on the page itself, so the recipient solves blind. */
   combo?: string;
@@ -66,10 +64,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 
 export default async function ShareSpotPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const dateKey = params.d ?? '';
-  const idxRaw = params.i ?? '';
-  const idx = Number.parseInt(idxRaw, 10);
-  const validLocator = !!dateKey && Number.isInteger(idx) && idx >= 0 && idx < 10;
+  const encoded = params.s ?? '';
 
   return (
     <main className="safe-pad-x mx-auto flex min-h-dvh max-w-lg flex-col pb-12 pt-8">
@@ -87,12 +82,8 @@ export default async function ShareSpotPage({ searchParams }: PageProps) {
       </div>
 
       <div className="mt-8">
-        {validLocator ? (
-          <ShareSpotQuiz
-            dateKey={dateKey}
-            idx={idx}
-            {...(params.g ? { gameType: params.g } : {})}
-          />
+        {encoded ? (
+          <ShareSpotQuiz encoded={encoded} />
         ) : (
           <div className="border-hair surface rounded-[var(--radius-panel)] px-5 py-6 text-center">
             <p className="text-fg-muted text-[13px]">유효하지 않은 스팟 링크입니다.</p>

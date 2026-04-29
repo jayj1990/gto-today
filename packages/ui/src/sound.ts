@@ -117,15 +117,18 @@ export function playDeal(): void {
 }
 
 /**
- * Chip-place sound — three layers stacked at the same instant:
- *   1. Click attack — 900Hz square wave, 12ms decay (the "tk").
- *   2. Mid body — triangle 1.7→1.1kHz, 90ms tail (clay shimmer).
- *   3. Sub thump — 110Hz lowpass noise, 40ms (clay-disc weight).
+ * Chip-place sound — three layers of FILTERED NOISE stacked at the
+ * same instant. Tonal oscillators (square / triangle) read as
+ * "뿅뿅" beeps because the human ear hears them as musical pitch.
+ * Real chips hitting felt are aperiodic transients — clay rim
+ * scraping clay, then a thump. Noise + bandpass/lowpass mimics that.
  *
- * Previous version was a triangle "tap" + high sine "ring" that
- * sounded like a small bell. The new mix has actual percussive
- * attack + real low-end weight, plus a ringy mid body, so it lands
- * as a clay chip on felt instead of a music note.
+ *   1. Rim attack — 35ms bandpass (~3.2kHz, Q=2) for the clay-on-clay
+ *      "click" of the chip striking the stack. Sharp, no pitch.
+ *   2. Mid body — 80ms bandpass (~900Hz, Q=1) for the rim resonance.
+ *      Adds the chip's "clack" identity without turning into a tone.
+ *   3. Sub thump — 50ms lowpass (~120Hz) for the disc's mass landing
+ *      on felt. The weight that makes a chip feel solid.
  */
 export function playChip(): void {
   if (isMuted()) return;
@@ -135,44 +138,56 @@ export function playChip(): void {
 
   const now = ac.currentTime;
 
-  // Layer 1: click attack — square pulse with a fast decay.
-  const click = ac.createOscillator();
-  click.type = 'square';
-  click.frequency.value = 900;
-  const clickGain = ac.createGain();
-  clickGain.gain.setValueAtTime(0, now);
-  clickGain.gain.linearRampToValueAtTime(0.09, now + 0.001);
-  clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.012);
-  click.connect(clickGain).connect(ac.destination);
-  click.start(now);
-  click.stop(now + 0.02);
+  // Helper — fill a buffer with white noise of the given duration.
+  const noiseBuf = (durSec: number, amp = 1): AudioBuffer => {
+    const buf = ac.createBuffer(1, Math.ceil(ac.sampleRate * durSec), ac.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * amp;
+    return buf;
+  };
 
-  // Layer 2: ringy body — triangle that drops in pitch as it decays.
-  const body = ac.createOscillator();
-  body.type = 'triangle';
-  body.frequency.setValueAtTime(1700, now);
-  body.frequency.exponentialRampToValueAtTime(1100, now + 0.08);
-  const bodyGain = ac.createGain();
-  bodyGain.gain.setValueAtTime(0, now);
-  bodyGain.gain.linearRampToValueAtTime(0.07, now + 0.003);
-  bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
-  body.connect(bodyGain).connect(ac.destination);
-  body.start(now);
-  body.stop(now + 0.1);
+  // Layer 1: rim attack — bandpass click around 3.2kHz.
+  const rimDur = 0.035;
+  const rimSrc = ac.createBufferSource();
+  rimSrc.buffer = noiseBuf(rimDur, 0.6);
+  const rimFilter = ac.createBiquadFilter();
+  rimFilter.type = 'bandpass';
+  rimFilter.frequency.value = 3200;
+  rimFilter.Q.value = 2;
+  const rimGain = ac.createGain();
+  rimGain.gain.setValueAtTime(0, now);
+  rimGain.gain.linearRampToValueAtTime(0.18, now + 0.002);
+  rimGain.gain.exponentialRampToValueAtTime(0.001, now + rimDur);
+  rimSrc.connect(rimFilter).connect(rimGain).connect(ac.destination);
+  rimSrc.start(now);
+  rimSrc.stop(now + rimDur + 0.005);
 
-  // Layer 3: weight thump — sub-frequency noise burst.
-  const subDur = 0.04;
-  const subBuf = ac.createBuffer(1, Math.ceil(ac.sampleRate * subDur), ac.sampleRate);
-  const subData = subBuf.getChannelData(0);
-  for (let i = 0; i < subData.length; i++) subData[i] = (Math.random() * 2 - 1) * 0.8;
+  // Layer 2: clack body — bandpass around 900Hz (chip identity).
+  const clackDur = 0.08;
+  const clackSrc = ac.createBufferSource();
+  clackSrc.buffer = noiseBuf(clackDur, 0.7);
+  const clackFilter = ac.createBiquadFilter();
+  clackFilter.type = 'bandpass';
+  clackFilter.frequency.value = 900;
+  clackFilter.Q.value = 1.0;
+  const clackGain = ac.createGain();
+  clackGain.gain.setValueAtTime(0, now);
+  clackGain.gain.linearRampToValueAtTime(0.16, now + 0.003);
+  clackGain.gain.exponentialRampToValueAtTime(0.001, now + clackDur);
+  clackSrc.connect(clackFilter).connect(clackGain).connect(ac.destination);
+  clackSrc.start(now);
+  clackSrc.stop(now + clackDur + 0.005);
+
+  // Layer 3: weight thump — sub-frequency lowpass noise.
+  const subDur = 0.05;
   const subSrc = ac.createBufferSource();
-  subSrc.buffer = subBuf;
+  subSrc.buffer = noiseBuf(subDur, 0.85);
   const subFilter = ac.createBiquadFilter();
   subFilter.type = 'lowpass';
-  subFilter.frequency.value = 110;
+  subFilter.frequency.value = 120;
   const subGain = ac.createGain();
   subGain.gain.setValueAtTime(0, now);
-  subGain.gain.linearRampToValueAtTime(0.16, now + 0.003);
+  subGain.gain.linearRampToValueAtTime(0.18, now + 0.004);
   subGain.gain.exponentialRampToValueAtTime(0.001, now + subDur);
   subSrc.connect(subFilter).connect(subGain).connect(ac.destination);
   subSrc.start(now);

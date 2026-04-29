@@ -9,6 +9,7 @@ import { track } from '@/lib/analytics';
 import { readCached, writeCached } from '@/lib/explain-client-cache';
 import { shareOrCopy } from '@/lib/share';
 import { useLiveStore } from '@/lib/live-store';
+import { encodeSharedSpot } from '@/lib/spot-codec';
 
 export interface ResultSheetProps {
   open: boolean;
@@ -327,10 +328,12 @@ export function ResultSheet({
               )}
             </div>
 
-            {spot && <ShareSpotLink spot={spot} />}
-
-            {/* Action row: 다시 해보기 + 다음 핸드 */}
+            {/* Action row: 친구에게 공유 + 다시 풀어보기 + 다음 핸드.
+                The share + retry buttons sit to the left of the gold
+                primary CTA and share equal width — they're both
+                secondary actions. */}
             <div className="mt-5 flex gap-2">
+              {spot && <ShareSpotLink spot={spot} />}
               {onRetry && (
                 <button
                   type="button"
@@ -349,7 +352,9 @@ export function ResultSheet({
                 onClick={onNext}
                 className={cn(
                   'bg-gold-gradient text-noir h-14 select-none rounded-[var(--radius-button)] font-semibold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]',
-                  onRetry ? 'flex-[2]' : 'flex-1',
+                  // Two secondary buttons (share + retry) to the left
+                  // → primary keeps flex-[2] for visual weight.
+                  'flex-[2]',
                 )}
               >
                 {isLast ? '결과 보기' : '다음 핸드 →'}
@@ -370,22 +375,22 @@ export function ResultSheet({
  * the friend doesn't see the answer before attempting it. The spot
  * itself is regenerated deterministically from the locator.
  */
+/**
+ * "↗ 친구에게 공유" button. Carries the FULL serialized spot in the
+ * URL (base64 JSON in `s=...`) so the recipient sees the exact
+ * same hand the sharer played, regardless of any later changes to
+ * the deterministic generator (e.g. solver pool growth shifting
+ * postflop indices). No answer is leaked through the URL.
+ */
 function ShareSpotLink({ spot }: { spot: TrainingSpot }) {
-  const gameType = useLiveStore((s) => s.config.gameType);
+  useLiveStore((s) => s.config.gameType); // subscribe so URL stays fresh on switch
   const [status, setStatus] = useState<'idle' | 'shared' | 'copied' | 'failed'>('idle');
 
   const onShare = async () => {
-    // spot.id starts with `YYYY-MM-DD-IDX-...`. Pull both fields out
-    // so the share page can regenerate the same daily list and
-    // index into it. Combo/pos/scenario/board are passed too so the
-    // OG unfurl card doesn't need to wait on regeneration.
-    const m = spot.id.match(/^(\d{4}-\d{2}-\d{2})-(\d+)-/);
     const u = new URL('https://gto.today/share/spot');
-    if (m) {
-      u.searchParams.set('d', m[1]!);
-      u.searchParams.set('i', m[2]!);
-    }
-    if (gameType) u.searchParams.set('g', gameType);
+    u.searchParams.set('s', encodeSharedSpot({ kind: 'preflop', spot }));
+    // Teaser-only fields for the OG unfurl card. The page itself
+    // ignores these and decodes `s` for the actual spot.
     u.searchParams.set('combo', spot.combo);
     u.searchParams.set('pos', spot.position);
     u.searchParams.set('scenario', spot.scenario);
@@ -418,15 +423,18 @@ function ShareSpotLink({ spot }: { spot: TrainingSpot }) {
       onClick={onShare}
       aria-live="polite"
       className={cn(
-        'mt-3 inline-flex h-9 items-center gap-1 self-start rounded-full border px-3 font-mono text-[10px] uppercase tracking-[0.2em] active:scale-[0.97]',
+        'flex h-14 flex-1 select-none flex-col items-center justify-center rounded-[var(--radius-button)] border font-medium active:scale-[0.98]',
         status === 'copied' || status === 'shared'
           ? 'border-[color:var(--color-call)]/40 bg-[color:var(--color-call)]/10 text-[color:var(--color-call)]'
           : status === 'failed'
             ? 'border-[color:var(--color-raise)]/40 bg-[color:var(--color-raise)]/10 text-[color:var(--color-raise)]'
-            : 'border-hair surface-raised text-fg-muted hover:text-fg',
+            : 'border-hair surface-raised text-fg',
       )}
     >
-      {label}
+      <span>{label}</span>
+      <span className="text-fg-muted mt-0.5 font-mono text-[9px] uppercase tracking-[0.18em]">
+        링크로 공유
+      </span>
     </button>
   );
 }

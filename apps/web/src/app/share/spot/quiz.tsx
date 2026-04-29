@@ -1,15 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  generateDailyItems,
   gradeAnswer,
   gradePostflopAction,
   POSTFLOP_ACTION_COLOR,
   POSTFLOP_ACTION_LABEL,
   type AnswerGrade,
-  type DailyItem,
   type GradedAction,
   type PostflopAction,
 } from '@gto/gto-data';
@@ -17,19 +15,11 @@ import { cn } from '@gto/ui';
 import { HandCard } from '@/components/today/hand-card';
 import { PostflopHand } from '@/components/today/postflop-hand';
 import { ActionBar } from '@/components/today/action-bar';
-import { HandCardSkeleton } from '@/components/skeleton';
-import { useLiveStore } from '@/lib/live-store';
-
-const TOTAL = 10;
+import { decodeSharedSpot, type SharedSpot } from '@/lib/spot-codec';
 
 export interface ShareSpotQuizProps {
-  /** Date key the spot was generated against (YYYY-MM-DD). */
-  dateKey: string;
-  /** Index within that day's daily list (0..9). */
-  idx: number;
-  /** Game type the daily list was generated for. Falls back to the
-   *  viewer's current setting (or 'mtt') if missing. */
-  gameType?: string;
+  /** Base64-encoded spot payload from the share URL (`s=...`). */
+  encoded: string;
 }
 
 const GRADE_COPY: Record<AnswerGrade, { headline: string; tone: string }> = {
@@ -47,46 +37,26 @@ const PREFLOP_LABEL: Record<GradedAction, string> = {
 };
 
 /**
- * Shared-spot quiz client. Regenerates the same daily list the
- * sharer played (deterministic from dateKey + gameType), picks the
- * indexed item, and presents it as a fresh quiz to the recipient.
+ * Shared-spot quiz client. The shared URL carries the FULL spot
+ * payload (base64 JSON), so we just decode and render — no
+ * dependency on the deterministic generator. That guarantees the
+ * recipient always sees the exact hand the sharer played, even
+ * months later when the solver pool / spot indices have shifted.
  *
- * The recipient solves blind — no leak of the original sharer's
- * answer or the GTO answer until they submit. After they answer,
- * we reveal the grade locally and CTA them to /today.
+ * The recipient solves blind: no answer / GTO answer is in the URL,
+ * and we only reveal the result locally after they submit.
  */
-export function ShareSpotQuiz({ dateKey, idx, gameType }: ShareSpotQuizProps) {
-  const fallbackType = useLiveStore((s) => s.config.gameType);
-  const effectiveType = (gameType ?? fallbackType ?? 'mtt') as 'cash' | 'mtt';
+export function ShareSpotQuiz({ encoded }: ShareSpotQuizProps) {
+  const payload = useMemo<SharedSpot | null>(() => decodeSharedSpot(encoded), [encoded]);
 
-  const [item, setItem] = useState<DailyItem | null>(null);
-  const [loadFailed, setLoadFailed] = useState(false);
   const [preflopAnswer, setPreflopAnswer] = useState<GradedAction | null>(null);
   const [postflopAnswer, setPostflopAnswer] = useState<PostflopAction | null>(null);
   const [grade, setGrade] = useState<AnswerGrade | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    generateDailyItems({ count: TOTAL, dateSeed: dateKey, gameType: effectiveType })
-      .then((list) => {
-        if (cancelled) return;
-        const picked = list[idx] ?? null;
-        if (!picked) setLoadFailed(true);
-        setItem(picked);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setLoadFailed(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [dateKey, idx, effectiveType]);
-
-  if (loadFailed) {
+  if (!payload) {
     return (
       <div className="border-hair surface mt-8 rounded-[var(--radius-panel)] px-5 py-6 text-center">
-        <p className="text-fg-muted text-[13px]">스팟을 찾지 못했어요.</p>
+        <p className="text-fg-muted text-[13px]">스팟을 읽지 못했어요.</p>
         <Link
           href="/today"
           className="bg-gold-gradient text-noir mt-5 inline-flex h-12 select-none items-center justify-center rounded-[var(--radius-button)] px-5 text-[14px] font-semibold"
@@ -97,20 +67,16 @@ export function ShareSpotQuiz({ dateKey, idx, gameType }: ShareSpotQuizProps) {
     );
   }
 
-  if (!item) {
-    return <HandCardSkeleton />;
-  }
-
   const onPreflopAnswer = (action: GradedAction) => {
-    if (item.kind !== 'preflop') return;
-    const g = gradeAnswer(item.spot, action);
+    if (payload.kind !== 'preflop') return;
+    const g = gradeAnswer(payload.spot, action);
     setPreflopAnswer(action);
     setGrade(g);
   };
 
   const onPostflopAnswer = (action: PostflopAction) => {
-    if (item.kind !== 'postflop') return;
-    const g = gradePostflopAction(item.spot, action);
+    if (payload.kind !== 'postflop') return;
+    const g = gradePostflopAction(payload.spot, action);
     setPostflopAnswer(action);
     setGrade(g);
   };
@@ -128,30 +94,30 @@ export function ShareSpotQuiz({ dateKey, idx, gameType }: ShareSpotQuizProps) {
         </p>
       </header>
 
-      {item.kind === 'preflop' ? (
-        <HandCard spot={item.spot} celebratePot={grade === 'sharp'} />
+      {payload.kind === 'preflop' ? (
+        <HandCard spot={payload.spot} celebratePot={grade === 'sharp'} />
       ) : (
-        <PostflopHand spot={item.spot} celebratePot={grade === 'sharp'} />
+        <PostflopHand spot={payload.spot} celebratePot={grade === 'sharp'} />
       )}
 
-      {!answered && item.kind === 'preflop' && (
+      {!answered && payload.kind === 'preflop' && (
         <ActionBar
-          actions={item.spot.availableActions}
-          callSize={item.spot.openSize}
-          raiseSize={item.spot.raiseSize ?? (item.spot.scenario === 'vs_open' ? 9 : 2.5)}
+          actions={payload.spot.availableActions}
+          callSize={payload.spot.openSize}
+          raiseSize={payload.spot.raiseSize ?? (payload.spot.scenario === 'vs_open' ? 9 : 2.5)}
           onAnswer={onPreflopAnswer}
         />
       )}
 
-      {!answered && item.kind === 'postflop' && (
+      {!answered && payload.kind === 'postflop' && (
         <div
           className="safe-bottom mt-5 grid gap-2"
           style={{
-            gridTemplateColumns: `repeat(${item.spot.availableActions.length}, minmax(0, 1fr))`,
+            gridTemplateColumns: `repeat(${payload.spot.availableActions.length}, minmax(0, 1fr))`,
           }}
         >
-          {item.spot.availableActions.map((a) => {
-            const compact = item.spot.availableActions.length >= 3;
+          {payload.spot.availableActions.map((a) => {
+            const compact = payload.spot.availableActions.length >= 3;
             return (
               <button
                 key={a}
@@ -184,7 +150,7 @@ export function ShareSpotQuiz({ dateKey, idx, gameType }: ShareSpotQuizProps) {
             </dt>
             <dt className="text-fg-muted font-mono text-[10px] uppercase tracking-[0.18em]">GTO</dt>
             <dd className="text-fg font-semibold">
-              {item.kind === 'preflop'
+              {payload.kind === 'preflop'
                 ? preflopAnswer
                   ? PREFLOP_LABEL[preflopAnswer]
                   : '—'
@@ -193,9 +159,9 @@ export function ShareSpotQuiz({ dateKey, idx, gameType }: ShareSpotQuizProps) {
                   : '—'}
             </dd>
             <dd className="font-semibold text-[color:var(--color-gold)]">
-              {item.kind === 'preflop'
-                ? PREFLOP_LABEL[dominantPreflop(item.spot)]
-                : POSTFLOP_ACTION_LABEL[dominantPostflop(item.spot)]}
+              {payload.kind === 'preflop'
+                ? PREFLOP_LABEL[dominantPreflop(payload.spot)]
+                : POSTFLOP_ACTION_LABEL[dominantPostflop(payload.spot)]}
             </dd>
           </dl>
           <Link
@@ -216,9 +182,7 @@ export function ShareSpotQuiz({ dateKey, idx, gameType }: ShareSpotQuizProps) {
   );
 }
 
-function dominantPreflop(spot: Extract<DailyItem, { kind: 'preflop' }>['spot']): GradedAction {
-  // Pick the highest-frequency GTO action across raise / call / fold.
-  // Mirrors the result-sheet's dominantAction logic.
+function dominantPreflop(spot: Extract<SharedSpot, { kind: 'preflop' }>['spot']): GradedAction {
   const r = spot.gtoRaise;
   const c = spot.gtoCall ?? 0;
   const f = spot.gtoFold;
@@ -227,7 +191,7 @@ function dominantPreflop(spot: Extract<DailyItem, { kind: 'preflop' }>['spot']):
   return 'fold';
 }
 
-function dominantPostflop(spot: Extract<DailyItem, { kind: 'postflop' }>['spot']): PostflopAction {
+function dominantPostflop(spot: Extract<SharedSpot, { kind: 'postflop' }>['spot']): PostflopAction {
   let best: PostflopAction = 'fold';
   let bestFreq = -1;
   for (const [k, v] of Object.entries(spot.mix)) {
