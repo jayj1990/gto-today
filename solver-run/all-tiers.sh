@@ -3,14 +3,6 @@
 # through all 1,755 canonical flops sequentially, committing + pushing
 # after each tier completes.
 #
-# Ordered by realistic frequency (most-common spots first) so users
-# benefit as each tier finishes:
-#
-#   Tier 2: BB defense (5 openers)
-#   Tier 3: BTN in-position 3bet defense (3 openers)
-#   Tier 4: SB OOP defense (4 openers)
-#   Tier 5: CO + MP squeeze (3 openers)
-#
 # Resumable: each run-full-X-vs-Y.sh checks `[ ! -s output.json ]`
 # before calling the solver, so killing + restarting resumes mid-tier.
 #
@@ -23,14 +15,29 @@ LOG="$REPO/solver-run/all-tiers.log"
 
 echo "=== all-tiers start $(date) ===" >> "$LOG"
 
-# Pairing list — each is "DEFENDER:OPENER". All 15 combos we ship
-# preflop data for, ordered by expected play-frequency.
+# Pairing list — each is "DEFENDER:OPENER". 15 pairings ordered by
+# real-game frequency so the most useful data ships first.
+#
+# Frequency rationale (6-max 100BB cash, approximate):
+#   BB:BTN, BB:CO, SB:BTN — late-position steals BB/SB face daily
+#   BB:SB                 — heads-up SB-vs-BB pot
+#   SB:CO                 — SB defending CO open
+#   BB:MP, BB:UTG         — early opens BB defends (less wide)
+#   SB:MP, SB:UTG         — SB defending early opens
+#   BTN:CO/MP/UTG         — BTN as 3-bettor (in-position 3bet pots, rarer)
+#   CO:MP, CO:UTG, MP:UTG — squeeze pots (rarest, need open + caller)
+#
+# BB:CO is kept at the front because the in-flight tier is already
+# 62 % done — wiping it to chase BB:BTN would burn ~30 hr of compute
+# for no marginal data win.
 PAIRINGS=(
-  "BB:CO"    "BB:BTN"  "BB:SB"    "BB:UTG"   "BB:MP"
-  "BTN:CO"   "BTN:MP"  "BTN:UTG"
-  "SB:BTN"   "SB:CO"   "SB:MP"    "SB:UTG"
-  "CO:MP"    "CO:UTG"
-  "MP:UTG"
+  "BB:CO"                                  # in-flight (~62 % done) — finish first
+  "BB:BTN"   "SB:BTN"   "BB:SB"            # late-position steal cluster
+  "SB:CO"
+  "BB:MP"    "BB:UTG"                      # BB vs early opens
+  "SB:MP"    "SB:UTG"                      # SB vs early opens
+  "BTN:CO"   "BTN:MP"   "BTN:UTG"          # BTN 3bet pots
+  "CO:MP"    "CO:UTG"   "MP:UTG"           # squeeze pots
 )
 
 for PAIR in "${PAIRINGS[@]}"; do
