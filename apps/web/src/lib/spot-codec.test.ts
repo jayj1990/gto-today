@@ -8,7 +8,10 @@ import { decodeSharedSpot, encodeSharedSpot, type SharedSpot } from './spot-code
  * unicode, the recipient's quiz page goes blank with no diagnostic.
  */
 
-const samplePreflop: TrainingSpot = {
+// Branded types (ComboKey / CardCode) in @gto/poker-core require an
+// explicit `as unknown as T` for plain-string fixtures. Direct cast
+// trips strict-overlap checks.
+const samplePreflop = {
   id: '2026-04-30-3-K4s-BB-vs-CO',
   combo: 'K4s',
   hero: ['Kh', '4h'],
@@ -23,9 +26,9 @@ const samplePreflop: TrainingSpot = {
   gtoCall: 0,
   correctAnswer: 'fold',
   availableActions: ['fold', 'call'],
-} as TrainingSpot;
+} as unknown as TrainingSpot;
 
-const samplePostflop: PostflopSpot = {
+const samplePostflop = {
   id: 'pf-srp-bb-vs-co-T76r',
   street: 'flop',
   board: ['Th', '7d', '6c'],
@@ -44,7 +47,7 @@ const samplePostflop: PostflopSpot = {
   mix: { check: 0.68, bet33: 0.32 },
   availableActions: ['check', 'bet33', 'bet75'],
   teachingNote: '혼합 전략 — 체크가 빈번하지만 1/3 벳도 충분.',
-} as PostflopSpot;
+} as unknown as PostflopSpot;
 
 describe('spot-codec', () => {
   it('preflop spot survives base64 round-trip', () => {
