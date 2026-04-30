@@ -1,11 +1,11 @@
 {
   "22": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.68184,
+    "fold": 0.31816
   },
   "33": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.76384,
+    "fold": 0.23616000000000004
   },
   "44": {
     "raise": 1,
@@ -112,28 +112,28 @@
     "fold": 0
   },
   "K7s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.7523599999999999,
+    "fold": 0.24764000000000008
   },
   "K6s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.51046,
+    "fold": 0.48954
   },
   "K5s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "K4s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "K3s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "K2s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "AQo": {
     "raise": 1,
@@ -160,32 +160,32 @@
     "fold": 0
   },
   "Q8s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.7761399999999999,
+    "fold": 0.22386000000000006
   },
   "Q7s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "Q6s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "Q5s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "Q4s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "Q3s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "Q2s": {
-    "raise": 0.84584,
-    "fold": 0.15415999999999996
+    "raise": 0,
+    "fold": 1
   },
   "AJo": {
     "raise": 1,
@@ -212,24 +212,24 @@
     "fold": 0
   },
   "J8s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.7745,
+    "fold": 0.22550000000000003
   },
   "J7s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "J6s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "J5s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "J4s": {
-    "raise": 0.8688,
-    "fold": 0.13119999999999998
+    "raise": 0,
+    "fold": 1
   },
   "J3s": {
     "raise": 0,
@@ -244,16 +244,16 @@
     "fold": 0
   },
   "KTo": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.92128,
+    "fold": 0.07872000000000001
   },
   "QTo": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.73104,
+    "fold": 0.26896
   },
   "JTo": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.69086,
+    "fold": 0.30913999999999997
   },
   "TT": {
     "raise": 1,
@@ -264,16 +264,16 @@
     "fold": 0
   },
   "T8s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.84584,
+    "fold": 0.15415999999999996
   },
   "T7s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "T6s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "T5s": {
     "raise": 0,
@@ -296,32 +296,32 @@
     "fold": 0
   },
   "K9o": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.59328,
+    "fold": 0.40671999999999997
   },
   "Q9o": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "J9o": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "T9o": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "98s": {
     "raise": 1,
     "fold": 0
   },
   "97s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "96s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "95s": {
     "raise": 0,
@@ -340,40 +340,40 @@
     "fold": 1
   },
   "A8o": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.84584,
+    "fold": 0.15415999999999996
   },
   "K8o": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "Q8o": {
     "raise": 0,
     "fold": 1
   },
   "J8o": {
-    "raise": 0.29808,
-    "fold": 0.70192
+    "raise": 0,
+    "fold": 1
   },
   "T8o": {
-    "raise": 0.63756,
-    "fold": 0.36244
+    "raise": 0,
+    "fold": 1
   },
   "98o": {
-    "raise": 0.70152,
-    "fold": 0.29847999999999997
+    "raise": 0,
+    "fold": 1
   },
   "87s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.85076,
+    "fold": 0.14924000000000004
   },
   "86s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "85s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "84s": {
     "raise": 0,
@@ -388,8 +388,8 @@
     "fold": 1
   },
   "A7o": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.6064,
+    "fold": 0.39359999999999995
   },
   "K7o": {
     "raise": 0,
@@ -412,20 +412,20 @@
     "fold": 1
   },
   "87o": {
-    "raise": 0.34728,
-    "fold": 0.65272
+    "raise": 0,
+    "fold": 1
   },
   "76s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.7425200000000001,
+    "fold": 0.25747999999999993
   },
   "75s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "74s": {
-    "raise": 0.20295999999999997,
-    "fold": 0.79704
+    "raise": 0,
+    "fold": 1
   },
   "73s": {
     "raise": 0,
@@ -436,8 +436,8 @@
     "fold": 1
   },
   "A6o": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.51784,
+    "fold": 0.48216000000000003
   },
   "K6o": {
     "raise": 0,
@@ -468,12 +468,12 @@
     "fold": 1
   },
   "65s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.68102,
+    "fold": 0.31898000000000004
   },
   "64s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0,
+    "fold": 1
   },
   "63s": {
     "raise": 0,
@@ -484,8 +484,8 @@
     "fold": 1
   },
   "A5o": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.6064,
+    "fold": 0.39359999999999995
   },
   "K5o": {
     "raise": 0,
@@ -520,20 +520,20 @@
     "fold": 1
   },
   "54s": {
-    "raise": 1,
-    "fold": 0
+    "raise": 0.57278,
+    "fold": 0.42722000000000004
   },
   "53s": {
-    "raise": 0.26036000000000004,
-    "fold": 0.73964
+    "raise": 0,
+    "fold": 1
   },
   "52s": {
     "raise": 0,
     "fold": 1
   },
   "A4o": {
-    "raise": 0.91472,
-    "fold": 0.08528000000000002
+    "raise": 0,
+    "fold": 1
   },
   "K4o": {
     "raise": 0,

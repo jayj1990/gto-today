@@ -105,10 +105,21 @@ async function buildDefense(defender: string, opener: string) {
 
   const out: Record<string, { call: number; raise: number; fold: number }> = {};
   for (const [combo, v] of Object.entries(cash)) {
-    const call = clamp01(v.call * adj.callMul);
-    const raise = clamp01(v.raise * adj.raiseMul);
-    const remain = 1 - call - raise;
-    const fold = clamp01(remain);
+    let call = clamp01(v.call * adj.callMul);
+    let raise = clamp01(v.raise * adj.raiseMul);
+    // Multiplicative widening can push call + raise past 1 when the
+    // cash entry already has very little fold mass to absorb the
+    // bump (e.g. cash call=0.85 + raise=0.10 → MTT 1.02 + 0.108 →
+    // sum 1.13). Previous version silently clamped fold to 0 and
+    // shipped a row that summed > 1 — visible to users as "콜 100% +
+    // 레이즈 13%". Renormalise the (call, raise) pair proportionally
+    // so the row always sums to 1 with non-negative fold residue.
+    const cr = call + raise;
+    if (cr > 1) {
+      call = call / cr;
+      raise = raise / cr;
+    }
+    const fold = clamp01(1 - call - raise);
     out[combo] = { call, raise, fold };
   }
   const output = join(DATA_DIR, `mtt_6max_100bb_${low}_vs_${opener}.json`);
