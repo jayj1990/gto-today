@@ -117,18 +117,24 @@ export function playDeal(): void {
 }
 
 /**
- * Chip-place sound — three layers of FILTERED NOISE stacked at the
- * same instant. Tonal oscillators (square / triangle) read as
- * "뿅뿅" beeps because the human ear hears them as musical pitch.
- * Real chips hitting felt are aperiodic transients — clay rim
- * scraping clay, then a thump. Noise + bandpass/lowpass mimics that.
+ * Chip-place sound — physical-modeling-inspired stack: a sharp clay-
+ * on-clay strike, the woody clack body that gives a chip its
+ * identity, and a brief disc-mass thump. Two passes 35ms apart fake
+ * the "two chips kissing as the bet lands" doubling that real clay
+ * chips make when tossed onto a stack.
  *
- *   1. Rim attack — 35ms bandpass (~3.2kHz, Q=2) for the clay-on-clay
- *      "click" of the chip striking the stack. Sharp, no pitch.
- *   2. Mid body — 80ms bandpass (~900Hz, Q=1) for the rim resonance.
- *      Adds the chip's "clack" identity without turning into a tone.
- *   3. Sub thump — 50ms lowpass (~120Hz) for the disc's mass landing
- *      on felt. The weight that makes a chip feel solid.
+ *   Strike   — 8ms highpassed noise (>5kHz) for the percussive ceramic
+ *              attack. Pure transient, no body.
+ *   Clack    — 70ms bandpass noise around 480Hz (Q=4) with the centre
+ *              frequency sliding down ~520→440Hz. The slight pitch
+ *              droop is what reads as "clay" rather than "drum hit".
+ *   Ring     — 90ms bandpass noise at ~2.4kHz (Q=2.5) for the high
+ *              overtones a clay chip emits as it settles.
+ *   Body     — 28ms lowpass noise (~150Hz) for a touch of disc mass.
+ *
+ * Two strikes ~35ms apart make it sound like a chip stack rather
+ * than a single clack — the way a real bet lands when chips touch
+ * the felt then settle into the existing pile.
  */
 export function playChip(): void {
   if (isMuted()) return;
@@ -136,9 +142,8 @@ export function playChip(): void {
   if (!ac) return;
   void ac.resume();
 
-  const now = ac.currentTime;
+  const t0 = ac.currentTime;
 
-  // Helper — fill a buffer with white noise of the given duration.
   const noiseBuf = (durSec: number, amp = 1): AudioBuffer => {
     const buf = ac.createBuffer(1, Math.ceil(ac.sampleRate * durSec), ac.sampleRate);
     const data = buf.getChannelData(0);
@@ -146,52 +151,78 @@ export function playChip(): void {
     return buf;
   };
 
-  // Layer 1: rim attack — bandpass click around 3.2kHz.
-  const rimDur = 0.035;
-  const rimSrc = ac.createBufferSource();
-  rimSrc.buffer = noiseBuf(rimDur, 0.6);
-  const rimFilter = ac.createBiquadFilter();
-  rimFilter.type = 'bandpass';
-  rimFilter.frequency.value = 3200;
-  rimFilter.Q.value = 2;
-  const rimGain = ac.createGain();
-  rimGain.gain.setValueAtTime(0, now);
-  rimGain.gain.linearRampToValueAtTime(0.18, now + 0.002);
-  rimGain.gain.exponentialRampToValueAtTime(0.001, now + rimDur);
-  rimSrc.connect(rimFilter).connect(rimGain).connect(ac.destination);
-  rimSrc.start(now);
-  rimSrc.stop(now + rimDur + 0.005);
+  /** One full chip "clack" — strike + clack body + ring + sub at `at`. */
+  const playOne = (at: number, gainScale: number) => {
+    // Strike — highpassed noise transient. The percussive bite.
+    const strikeDur = 0.008;
+    const strikeSrc = ac.createBufferSource();
+    strikeSrc.buffer = noiseBuf(strikeDur, 1);
+    const strikeFilter = ac.createBiquadFilter();
+    strikeFilter.type = 'highpass';
+    strikeFilter.frequency.value = 5000;
+    const strikeGain = ac.createGain();
+    strikeGain.gain.setValueAtTime(0, at);
+    strikeGain.gain.linearRampToValueAtTime(0.22 * gainScale, at + 0.001);
+    strikeGain.gain.exponentialRampToValueAtTime(0.0005, at + strikeDur);
+    strikeSrc.connect(strikeFilter).connect(strikeGain).connect(ac.destination);
+    strikeSrc.start(at);
+    strikeSrc.stop(at + strikeDur + 0.005);
 
-  // Layer 2: clack body — bandpass around 900Hz (chip identity).
-  const clackDur = 0.08;
-  const clackSrc = ac.createBufferSource();
-  clackSrc.buffer = noiseBuf(clackDur, 0.7);
-  const clackFilter = ac.createBiquadFilter();
-  clackFilter.type = 'bandpass';
-  clackFilter.frequency.value = 900;
-  clackFilter.Q.value = 1.0;
-  const clackGain = ac.createGain();
-  clackGain.gain.setValueAtTime(0, now);
-  clackGain.gain.linearRampToValueAtTime(0.16, now + 0.003);
-  clackGain.gain.exponentialRampToValueAtTime(0.001, now + clackDur);
-  clackSrc.connect(clackFilter).connect(clackGain).connect(ac.destination);
-  clackSrc.start(now);
-  clackSrc.stop(now + clackDur + 0.005);
+    // Clack body — narrow bandpass noise with a downward sweep.
+    // The pitch droop is the "clay" tell. Q=4 is tight enough to
+    // ring slightly without sounding like a synth note.
+    const clackDur = 0.07;
+    const clackSrc = ac.createBufferSource();
+    clackSrc.buffer = noiseBuf(clackDur, 0.85);
+    const clackFilter = ac.createBiquadFilter();
+    clackFilter.type = 'bandpass';
+    clackFilter.frequency.setValueAtTime(520, at);
+    clackFilter.frequency.exponentialRampToValueAtTime(440, at + 0.05);
+    clackFilter.Q.value = 4;
+    const clackGain = ac.createGain();
+    clackGain.gain.setValueAtTime(0, at);
+    clackGain.gain.linearRampToValueAtTime(0.28 * gainScale, at + 0.003);
+    clackGain.gain.exponentialRampToValueAtTime(0.001, at + clackDur);
+    clackSrc.connect(clackFilter).connect(clackGain).connect(ac.destination);
+    clackSrc.start(at);
+    clackSrc.stop(at + clackDur + 0.005);
 
-  // Layer 3: weight thump — sub-frequency lowpass noise.
-  const subDur = 0.05;
-  const subSrc = ac.createBufferSource();
-  subSrc.buffer = noiseBuf(subDur, 0.85);
-  const subFilter = ac.createBiquadFilter();
-  subFilter.type = 'lowpass';
-  subFilter.frequency.value = 120;
-  const subGain = ac.createGain();
-  subGain.gain.setValueAtTime(0, now);
-  subGain.gain.linearRampToValueAtTime(0.18, now + 0.004);
-  subGain.gain.exponentialRampToValueAtTime(0.001, now + subDur);
-  subSrc.connect(subFilter).connect(subGain).connect(ac.destination);
-  subSrc.start(now);
-  subSrc.stop(now + subDur + 0.005);
+    // Ring — high overtones. Adds the bright shimmer real chips make.
+    const ringDur = 0.09;
+    const ringSrc = ac.createBufferSource();
+    ringSrc.buffer = noiseBuf(ringDur, 0.6);
+    const ringFilter = ac.createBiquadFilter();
+    ringFilter.type = 'bandpass';
+    ringFilter.frequency.value = 2400;
+    ringFilter.Q.value = 2.5;
+    const ringGain = ac.createGain();
+    ringGain.gain.setValueAtTime(0, at);
+    ringGain.gain.linearRampToValueAtTime(0.1 * gainScale, at + 0.004);
+    ringGain.gain.exponentialRampToValueAtTime(0.001, at + ringDur);
+    ringSrc.connect(ringFilter).connect(ringGain).connect(ac.destination);
+    ringSrc.start(at);
+    ringSrc.stop(at + ringDur + 0.005);
+
+    // Body — quick subby thump for disc mass.
+    const bodyDur = 0.028;
+    const bodySrc = ac.createBufferSource();
+    bodySrc.buffer = noiseBuf(bodyDur, 0.85);
+    const bodyFilter = ac.createBiquadFilter();
+    bodyFilter.type = 'lowpass';
+    bodyFilter.frequency.value = 150;
+    const bodyGain = ac.createGain();
+    bodyGain.gain.setValueAtTime(0, at);
+    bodyGain.gain.linearRampToValueAtTime(0.16 * gainScale, at + 0.003);
+    bodyGain.gain.exponentialRampToValueAtTime(0.001, at + bodyDur);
+    bodySrc.connect(bodyFilter).connect(bodyGain).connect(ac.destination);
+    bodySrc.start(at);
+    bodySrc.stop(at + bodyDur + 0.005);
+  };
+
+  // First clack at full volume; second clack 35ms later at 60% — the
+  // settling kiss against the stack.
+  playOne(t0, 1);
+  playOne(t0 + 0.035, 0.6);
 }
 
 /**
