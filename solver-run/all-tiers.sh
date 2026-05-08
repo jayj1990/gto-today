@@ -30,14 +30,24 @@ echo "=== all-tiers start $(date) ===" >> "$LOG"
 # BB:CO is kept at the front because the in-flight tier is already
 # 62 % done — wiping it to chase BB:BTN would burn ~30 hr of compute
 # for no marginal data win.
+#
+# Order = priority. The first 6 entries (BB:CO + 5 core) cover ~80%
+# of real-game spots and ship first. The deferred 9 follow once the
+# core lands. The git-log skip guard makes this self-healing across
+# crashes / restarts — already-shipped pairings auto-skip.
 PAIRINGS=(
-  "BB:CO"                                  # in-flight (~62 % done) — finish first
-  "BB:BTN"   "SB:BTN"   "BB:SB"            # late-position steal cluster
-  "SB:CO"
-  "BB:MP"    "BB:UTG"                      # BB vs early opens
-  "SB:MP"    "SB:UTG"                      # SB vs early opens
-  "BTN:CO"   "BTN:MP"   "BTN:UTG"          # BTN 3bet pots
-  "CO:MP"    "CO:UTG"   "MP:UTG"           # squeeze pots
+  "BB:CO"                                  # done
+  "BB:BTN"                                 # done
+  "BB:SB"                                  # core (BB defends SB open)
+  "BB:MP"                                  # core (BB vs MP)
+  "BB:UTG"                                 # core (BB vs UTG)
+  "BTN:CO"   "BTN:MP"   "BTN:UTG"          # BTN as defender (in-position calls)
+  # ── REMOVED 2026-05-07: defenders below have call%=0 in the
+  # preflop charts (squeeze/3bet-only positions). Running the
+  # solver against an empty OOP range produces trivial garbage
+  # data. Re-add only after building dedicated 3bet-pot ranges:
+  #   SB:BTN  SB:CO   SB:MP   SB:UTG   (SB never flats)
+  #   CO:MP   CO:UTG  MP:UTG           (squeeze positions)
 )
 
 for PAIR in "${PAIRINGS[@]}"; do
@@ -46,10 +56,20 @@ for PAIR in "${PAIRINGS[@]}"; do
   NAME="full_${DEF}_vs_${OPN}"
   RUNNER="$REPO/solver-run/run-${NAME//_/-}.sh"
 
+  # Skip pairings already pushed to git. Cleanup empties outputs/, so the
+  # per-board "[ ! -s output ]" resume check can't tell the difference
+  # between "never solved" and "already shipped". Without this guard a
+  # crash + restart would re-solve every prior pairing from scratch
+  # (~117h each).
+  cd "$REPO"
+  if git log --oneline --grep="data(solver): ${NAME} —" 2>/dev/null | grep -q .; then
+    echo "[$(date +%H:%M:%S)] ⊘ ${NAME} already in git, skip" >> "$LOG"
+    continue
+  fi
+
   echo "[$(date +%H:%M:%S)] ▶ ${NAME} begin" >> "$LOG"
 
   # Regenerate inputs each time so changes in range data propagate.
-  cd "$REPO"
   node solver-run/scripts/gen-input-all-flops.mjs \
     --defender="$DEF" --opener="$OPN" >> "$LOG" 2>&1
 

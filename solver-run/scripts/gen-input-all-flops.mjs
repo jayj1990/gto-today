@@ -74,6 +74,24 @@ function rangeFromMix(mix, pick) {
 const OOP_RANGE = rangeFromMix(defenseChart, (m) => m.call ?? 0);
 const IP_RANGE = rangeFromMix(rfiChart, (m) => m.raise ?? 0);
 
+// Sanity gate — squeeze positions (SB, CO vs early, MP vs UTG) have
+// call% = 0 in the preflop charts because GTO says they 3bet-or-fold.
+// Running the SRP solver against an empty OOP range produces trivial
+// garbage data (cost: ~22h on 2026-05-07 SB:BTN incident). Refuse to
+// emit input files when this happens — the solver chain will skip
+// this pairing instead of poisoning git with junk.
+if (!OOP_RANGE) {
+  console.error(
+    `[gen-input] ABORT: ${defender} vs ${opener} has empty OOP range (call% = 0 across all 169 hands). ` +
+      `This is a squeeze position — solve as 3bet pot, not SRP. Skipping input generation.`,
+  );
+  process.exit(4);
+}
+if (!IP_RANGE) {
+  console.error(`[gen-input] ABORT: ${defender} vs ${opener} has empty IP range. Source chart bug.`);
+  process.exit(5);
+}
+
 // ─────────────── 1,755 canonical flop generator ───────────────
 // Count proof: 286 rank-triples × 5 suit patterns + 156 pair-kicker
 // × 2 kicker-suit patterns + 13 trips = 1430 + 312 + 13 = 1755.

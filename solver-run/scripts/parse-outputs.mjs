@@ -418,6 +418,22 @@ function main() {
   const files = fs.readdirSync(INPUT).filter((f) => f.endsWith('.json'));
   console.log(`found ${files.length} solver outputs`);
 
+  // Merge mode: preserve spots from prior pairings whose raw outputs
+  // have been cleaned up. Without this, each pairing commit overwrites
+  // earlier pairings — caught 2026-05-08 when BB:CO data was silently
+  // lost on the BB:BTN merge (recovered from git 6a9c8fa).
+  const byId = new Map();
+  if (fs.existsSync(OUT_JSON)) {
+    try {
+      const prev = JSON.parse(fs.readFileSync(OUT_JSON, 'utf8'));
+      for (const s of prev) byId.set(s.id, s);
+      console.log(`merge mode: loaded ${byId.size} existing spots from ${OUT_JSON}`);
+    } catch (e) {
+      console.warn(`merge mode: existing JSON unparseable, starting fresh — ${e.message}`);
+    }
+  }
+  const existingCount = byId.size;
+
   const spots = [];
   for (const f of files) {
     let tree;
@@ -494,9 +510,18 @@ function main() {
     console.log(`  ✓ ${f} → ${streetCount} spots (${meta.format})`);
   }
 
+  // Merge new spots into the existing-by-id map (re-solved boards
+  // overwrite by id, never silently delete earlier pairings).
+  for (const s of spots) byId.set(s.id, s);
+  const finalSpots = [...byId.values()];
+  const overwritten = existingCount + spots.length - finalSpots.length;
+  console.log(
+    `merge: ${existingCount} existing + ${spots.length} new (${overwritten} overwritten) → ${finalSpots.length} total`,
+  );
+
   fs.mkdirSync(path.dirname(OUT_JSON), { recursive: true });
-  fs.writeFileSync(OUT_JSON, JSON.stringify(spots, null, 2) + '\n', 'utf8');
-  console.log(`\nwrote ${spots.length} spots → ${OUT_JSON}`);
+  fs.writeFileSync(OUT_JSON, JSON.stringify(finalSpots, null, 2) + '\n', 'utf8');
+  console.log(`wrote ${finalSpots.length} spots → ${OUT_JSON}`);
 
   // Emit TS module so the data is bundled directly (no runtime fetch).
   // `as unknown as` double-cast lets plain JSON strings satisfy the
@@ -509,7 +534,7 @@ function main() {
     "import type { PostflopSpot } from '../postflop';",
     '',
     'export const SOLVER_SPOTS = (' +
-      JSON.stringify(spots, null, 2) +
+      JSON.stringify(finalSpots, null, 2) +
       ' as unknown) as readonly PostflopSpot[];',
     '',
   ].join('\n');
