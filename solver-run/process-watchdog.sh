@@ -40,11 +40,20 @@ while true; do
   if ps -W 2>/dev/null | grep -q "console_solver"; then
     : # alive — quiet
   else
-    echo "[$(date)] console_solver not running — relaunching all-tiers" >> "$LOG"
-    nohup bash "$REPO/solver-run/all-tiers.sh" >> "$REPO/solver-run/all-tiers.out" 2>&1 &
-    echo "[$(date)] relaunched (pid $!)" >> "$LOG"
-    # Give it time to spawn before next poll so we don't double-launch.
-    sleep 60
+    # Don't double-launch all-tiers. Console_solver can briefly disappear
+    # between boards (parser run, cleanup, next runner spawn) — that's
+    # not a chain death. Only relaunch if the orchestrator itself is gone.
+    # Caught 2026-05-10: watchdog spawned a 2nd all-tiers while the 1st
+    # was alive between solves; both raced on the same input file.
+    if ps -ef 2>/dev/null | grep -E 'all-tiers\.sh' | grep -v grep > /dev/null; then
+      echo "[$(date)] console_solver gap (between boards) — all-tiers alive, skip relaunch" >> "$LOG"
+    else
+      echo "[$(date)] console_solver + all-tiers both dead — relaunching all-tiers" >> "$LOG"
+      nohup bash "$REPO/solver-run/all-tiers.sh" >> "$REPO/solver-run/all-tiers.out" 2>&1 &
+      echo "[$(date)] relaunched (pid $!)" >> "$LOG"
+      # Give it time to spawn before next poll so we don't double-launch.
+      sleep 60
+    fi
   fi
 
   sleep $WATCH_INTERVAL

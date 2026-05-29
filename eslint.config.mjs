@@ -44,6 +44,12 @@ export default tseslint.config(
       // Serwist writes the bundled service worker into public/; treat
       // everything under public/ as static output, not source to lint.
       'apps/*/public/**',
+      // Auto-generated solver data — 387K+ line files. ESLint OOMs
+      // when forced to parse them via lint-staged. parse-outputs.mjs
+      // already emits with /* eslint-disable */; nothing to lint here.
+      // Caught 2026-05-17: pre-commit OOM dropped the BB:UTG commit.
+      'packages/gto-data/src/ranges/solver-spots.ts',
+      'packages/gto-data/data/postflop-solver-spots.json',
     ],
   },
   js.configs.recommended,
