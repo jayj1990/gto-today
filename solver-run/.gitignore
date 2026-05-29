@@ -13,7 +13,8 @@ watchdog.log
 # stay versioned.
 /*.txt
 
-# Per-pairing runner scripts emitted by gen-input-all-flops.mjs (e.g.
-# run-full-BB-vs-CO.sh). Shape is deterministic from the input args,
-# regenerates on every all-tiers.sh tick.
+# Per-pairing runner scripts emitted by gen-input-all-flops.mjs and
+# gen-input-3bet-pots.mjs (e.g. run-full-BB-vs-CO.sh,
+# run-full3-SB-vs-BTN.sh). Deterministic, regenerated each tick.
 run-full-*.sh
+run-full3-*.sh

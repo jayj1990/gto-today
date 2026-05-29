@@ -99,14 +99,17 @@ function classifyTexture(board) {
  * postflop. The opener is the villain.
  */
 function pairingFromFilename(name) {
-  const m = name.match(/^full_([A-Z]{2,3})_vs_([A-Z]{2,3})_/);
+  // Matches both `full_DEF_vs_OPN_*` (SRP, defender calls) and
+  // `full3_DEF_vs_OPN_*` (3bet pot, defender 3bets / opener calls).
+  const m = name.match(/^full3?_([A-Z]{2,3})_vs_([A-Z]{2,3})_/);
   if (!m) return { heroPos: 'BB', villainPos: 'CO' };
   return { heroPos: m[1], villainPos: m[2] };
 }
 
-function preflopSummaryKR(heroPos, villainPos, isMTT) {
-  const suffix = isMTT ? ' (MTT · 1BB 앤티)' : '';
-  return `${villainPos} 오픈 · ${heroPos} 콜${suffix}`;
+function preflopSummaryKR(heroPos, villainPos, potType) {
+  if (potType === '3bp') return `${villainPos} 오픈 · ${heroPos} 3벳 · ${villainPos} 콜`;
+  if (potType === 'mtt') return `${villainPos} 오픈 · ${heroPos} 콜 (MTT · 1BB 앤티)`;
+  return `${villainPos} 오픈 · ${heroPos} 콜`;
 }
 
 // Walk the solver JSON down to the root-node's strategy block and
@@ -195,9 +198,8 @@ function buildSpot(sourceName, board, root, { c, freqs }, meta) {
     ? `이 보드 · 이 핸드에서는 ${actionKR[top] ?? top}이 단독 정답에 가깝습니다.`
     : `혼합 전략 — ${actionKR[top] ?? top}이 가장 빈번하지만 ${sortedMix[1] ? actionKR[sortedMix[1][0]] ?? sortedMix[1][0] : '대체 액션'}도 충분한 비중.`;
 
-  const isMTT = meta.format === 'mtt';
-  const { heroPos, villainPos } = meta;
-  const preflopSummary = preflopSummaryKR(heroPos, villainPos, isMTT);
+  const { heroPos, villainPos, potType } = meta;
+  const preflopSummary = preflopSummaryKR(heroPos, villainPos, potType);
 
   return {
     id: `pf_${sourceName}_${c}`,
@@ -208,7 +210,7 @@ function buildSpot(sourceName, board, root, { c, freqs }, meta) {
     context: {
       heroPos,
       villainPos,
-      potType: isMTT ? 'mtt' : 'srp',
+      potType,
       spr: meta.eff / meta.pot,
       potBB: meta.pot,
       effStackBB: meta.eff,
@@ -388,9 +390,8 @@ function buildDeeperSpot(sourceName, board, node, { c, freqs }, meta, street, li
       ? `${street} 결정 · ${actionKR[top] ?? top}이 단독 정답에 가깝습니다.${lineText}`
       : `혼합 전략 — ${actionKR[top] ?? top}이 가장 빈번${sortedMix[1] ? `, 대체는 ${actionKR[sortedMix[1][0]] ?? sortedMix[1][0]}` : ''}.${lineText}`;
 
-  const isMTT = meta.format === 'mtt';
-  const { heroPos, villainPos } = meta;
-  const preflopSummary = preflopSummaryKR(heroPos, villainPos, isMTT);
+  const { heroPos, villainPos, potType } = meta;
+  const preflopSummary = preflopSummaryKR(heroPos, villainPos, potType);
 
   return {
     id: `pf_${sourceName}_${street}_${board.join('')}_${c}`,
@@ -401,7 +402,7 @@ function buildDeeperSpot(sourceName, board, node, { c, freqs }, meta, street, li
     context: {
       heroPos,
       villainPos,
-      potType: isMTT ? 'mtt' : 'srp',
+      potType,
       spr: meta.eff / meta.pot,
       potBB: meta.pot,
       effStackBB: meta.eff,
@@ -474,14 +475,19 @@ function main() {
       console.warn(`  ! ${f} — duplicate card board ${board.join(',')}, skipping`);
       continue;
     }
-    // MTT trees carry the 1BB big-blind ante in their pot (6.5 vs 5.5).
-    const isMTT = pot > 6.0 || f.startsWith('mtt_');
+    // Filename-driven classification (pot-size heuristic is unreliable
+    // now that 3bet pots have pot ~21, which used to trigger the MTT
+    // branch via `pot > 6.0`).
     const sourceName = f.replace(/\.json$/, '');
+    const is3bet = sourceName.startsWith('full3_');
+    const isMTT = sourceName.startsWith('mtt_');
+    const potType = is3bet ? '3bp' : isMTT ? 'mtt' : 'srp';
     const { heroPos, villainPos } = pairingFromFilename(sourceName);
     const meta = {
       pot,
       eff,
       format: isMTT ? 'mtt' : 'cash',
+      potType,
       heroPos,
       villainPos,
     };

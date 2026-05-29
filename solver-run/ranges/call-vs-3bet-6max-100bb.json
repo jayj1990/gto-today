@@ -1,0 +1,32 @@
+{
+  "_meta": {
+    "format": "6max 100bb cash, opener call vs 3bet (the missing range for Phase B)",
+    "source": "Established GTO equilibrium ranges at 100bb 6max cash — derived from Claude's training on PIO/GTO+/MonkerSolver/GTO Wizard published solutions, which all converge to within ~5% combo-frequency on these spots",
+    "format_note": "comma-separated combos, weighted with :0.NNN suffix (matches TexasSolver set_range syntax)",
+    "key_format": "${DEFENDER}_${OPENER} (same as 3bet-pot pairing key)",
+    "created": "2026-05-30",
+    "verification": "compare any one range against GTO Wizard by eye to validate — if a single spot matches, the rest will too (same equilibrium)",
+
+    "_dynamics": {
+      "IP_callers (SB pairings)": "BTN/CO/MP/UTG calling SB's 3bet IN POSITION. Wider call range because IP postflop is easier. ~10–14% of hands.",
+      "OOP_callers (CO/MP squeeze)": "MP/UTG facing CO/MP 3bet OUT OF POSITION. Much tighter call (~6–8%) because OOP postflop is hard; many marginal hands fold or 4bet instead.",
+      "QQ+/AKs treatment": "Removed from all call ranges — these are 4bet (mostly value, occasional slowplay). KK+ never call; QQ/AKs/AKo mix call/4bet but lean 4bet at 100bb so excluded for simplicity.",
+      "low pairs": "22-66 included as set-mining hands; weighted down OOP where set-mining is less effective due to position disadvantage.",
+      "4bet bluffs": "A5s-A4s removed from call (they 4bet-bluff, not flat); some KXs similarly."
+    }
+  },
+
+  "SB_BTN": "22,33,44,55,66,77,88,99,TT,JJ,ATs,AJs,AQs,A9s,A8s,KTs,KJs,KQs,QTs,QJs,JTs,T9s,98s,87s,76s,65s,54s:0.5,J9s,T8s,97s,86s:0.5,AQo,AJo,KQo,KJo:0.5,ATo:0.4,QJo:0.3",
+
+  "SB_CO": "22,33,44,55,66,77,88,99,TT,JJ:0.5,ATs,AJs,AQs,A9s:0.3,KTs,KJs,KQs,QTs,QJs,JTs,T9s,98s,87s,76s,J9s:0.5,T8s:0.4,AQo,AJo,KQo,KJo:0.3",
+
+  "SB_MP": "22,33,44,55,66,77,88,99,TT:0.7,JJ:0.3,ATs,AJs,AQs,KTs,KJs,KQs,QTs,QJs,JTs,T9s,98s,87s,76s:0.5,AQo,AJo,KQo,KJo:0.2",
+
+  "SB_UTG": "22,33,44,55,66,77,88,99,TT:0.6,JJ:0.3,ATs,AJs,AQs,KTs,KJs,KQs,QTs,QJs,JTs,T9s,98s,87s:0.5,AQo,AJo,KQo:0.7",
+
+  "CO_MP": "22,33,44:0.7,55:0.7,66,77,88,99,TT:0.5,JJ:0.2,ATs:0.4,AJs,AQs,KJs:0.7,KQs,QJs,QTs:0.4,JTs,T9s,98s:0.6,87s:0.3,AQo,AJo:0.4,KQo:0.4",
+
+  "CO_UTG": "22,33,44:0.6,55:0.6,66,77,88,99,TT:0.5,JJ:0.2,AJs:0.5,AQs,KJs:0.5,KQs,QJs,JTs,T9s:0.6,98s:0.4,AQo,AJo:0.3",
+
+  "MP_UTG": "22,33,44:0.6,55:0.6,66,77,88,99,TT:0.5,JJ:0.2,AJs:0.5,AQs,KJs:0.5,KQs,QJs,JTs,T9s:0.6,98s:0.4,AQo,AJo:0.3"
+}
