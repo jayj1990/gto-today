@@ -82,9 +82,8 @@ export function ChartNavigator({
   // A preflop "flop reached" state = someone raised, someone called,
   // no more preflop decisions. Detected when resolveNode can't find a
   // solver node (legal=[] with no special flag) and the path isn't
-  // empty. Postflop exploration is intentionally disabled while we
-  // migrate from WASM live-solve to pre-computed lookups — users get
-  // a clean "end of preflop" handoff instead of infinite loading.
+  // empty. We hand off to /charts/postflop, which now serves
+  // pre-computed GTO across all 8 solved pairings.
   const flopReached =
     path.length > 0 &&
     node?.legal.length === 0 &&
@@ -148,8 +147,8 @@ export function ChartNavigator({
                 플랍 도달
               </h2>
               <p className="text-fg-muted mt-2 text-[13px]">
-                레이즈·콜이 끝났어요. 포스트플랍 차트는 현재 BB vs CO 시나리오 위주로 수록되어 있고,
-                다른 페어링은 솔버가 추가하는 중입니다.
+                레이즈·콜이 끝났어요. 포스트플랍 차트엔 8개 포지션 페어링의 사전계산 GTO 전략이 보드
+                텍스처별로 수록돼 있어요.
               </p>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <button

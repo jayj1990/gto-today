@@ -19,23 +19,39 @@ import { CardView } from '@gto/ui';
 
 export default function PostflopChartPage() {
   const allSpots = useMemo(() => listPostflopSpots(), []);
-  const grouped = useMemo(() => groupSpotsByTexture(allSpots), [allSpots]);
+
+  // Defender×opener pairings present in the data, ordered by real-game
+  // frequency. 8 pairings as of the 2026-05 solver batch (BB defends
+  // CO/BTN/SB/MP/UTG; BTN defends CO/MP/UTG).
+  const pairings = useMemo(() => derivePairings(allSpots), [allSpots]);
+  const [pairingKey, setPairingKey] = useState(() => pairings[0]?.key ?? '');
+  const activePairing = pairings.find((p) => p.key === pairingKey);
+
+  // Narrow to the selected pairing, then group that subset by texture.
+  const pairingSpots = useMemo(
+    () => allSpots.filter((s) => `${s.context.heroPos}_${s.context.villainPos}` === pairingKey),
+    [allSpots, pairingKey],
+  );
+  const grouped = useMemo(() => groupSpotsByTexture(pairingSpots), [pairingSpots]);
   const totalBoards = useMemo(
-    () => new Set(allSpots.filter((s) => s.board.length === 3).map((s) => s.board.join(','))).size,
-    [allSpots],
+    () =>
+      new Set(pairingSpots.filter((s) => s.board.length === 3).map((s) => s.board.join(','))).size,
+    [pairingSpots],
   );
 
-  // Default to the first texture group that actually has data so
-  // first-paint isn't a "준비 중" empty screen.
+  // First texture with data for this pairing.
   const firstWithData =
     TEXTURE_GROUPS.find((g) => (grouped[g.id] ?? []).length > 0)?.id ?? TEXTURE_GROUPS[0]!.id;
   const [groupId, setGroupId] = useState(firstWithData);
   const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
 
+  // If the active texture has no boards for the current pairing, fall
+  // back to the first populated one — a pairing switch never strands
+  // the user on an empty tab. No effect/state sync needed.
+  const effectiveGroupId = (grouped[groupId] ?? []).length > 0 ? groupId : firstWithData;
+
   // Memoise groupSpots so downstream hooks have a stable array identity.
-  // `grouped[groupId] ?? []` allocates a fresh empty array on every
-  // render otherwise, invalidating the memo cache.
-  const groupSpots = useMemo(() => grouped[groupId] ?? [], [grouped, groupId]);
+  const groupSpots = useMemo(() => grouped[effectiveGroupId] ?? [], [grouped, effectiveGroupId]);
   const boards = useMemo(() => distinctBoards(groupSpots), [groupSpots]);
 
   const selectedSpots = useMemo(
@@ -62,28 +78,57 @@ export default function PostflopChartPage() {
           <div className="flex items-center gap-2">
             <span
               aria-hidden
-              className="inline-block h-2 w-2 animate-pulse rounded-full bg-[color:var(--color-gold)]"
+              className="inline-block h-2 w-2 rounded-full bg-[color:var(--color-gold)]"
             />
             <p className="font-mono text-[10px] uppercase tracking-[0.2em]">
-              솔버 작동 중 · 실시간 업데이트
+              사전계산 GTO · 8개 페어링
             </p>
-            <span className="ml-auto font-mono text-[10px] tabular-nums">
-              {totalBoards}개 보드 수록
-            </span>
+            <span className="ml-auto font-mono text-[10px] tabular-nums">{totalBoards}개 보드</span>
           </div>
           <p className="mt-1.5 text-[11px] leading-[1.55]">
-            사전계산 GTO · 6맥스 100BB · BB가 CO 2.5x 오픈에 콜한 플랍. 보드가 추가될 때마다
-            새로고침하면 더 많은 스팟을 볼 수 있어요. 빈 텍스처 탭은 아직 배치가 도달하지 않은
-            영역입니다.
+            6맥스 100BB 싱글레이즈 팟.{' '}
+            <span className="text-fg font-semibold">
+              {activePairing?.summary ?? activePairing?.label}
+            </span>{' '}
+            상황의 플랍 GTO 전략. 아래 페어링과 보드 텍스처를 골라보세요.
           </p>
         </div>
+
+        {/* Pairing pills */}
+        <section className="mb-2 overflow-x-auto">
+          <div className="flex min-w-max gap-1.5">
+            {pairings.map((p) => {
+              const active = p.key === pairingKey;
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => {
+                    setPairingKey(p.key);
+                    setSelectedBoard(null);
+                  }}
+                  aria-pressed={active}
+                  aria-label={`${p.label} 페어링`}
+                  className={cn(
+                    'inline-flex h-9 items-center whitespace-nowrap rounded-[var(--radius-button)] border px-3 font-mono text-[11px]',
+                    active
+                      ? 'bg-[color:var(--color-accent)]/15 border-[color:var(--color-accent)] text-[color:var(--color-accent)]'
+                      : 'border-hair surface text-fg-muted',
+                  )}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
         {/* Texture tabs */}
         <section className="mb-3 overflow-x-auto">
           <div className="flex min-w-max gap-1.5">
             {TEXTURE_GROUPS.map((g) => {
               const count = (grouped[g.id] ?? []).length;
-              const active = g.id === groupId;
+              const active = g.id === effectiveGroupId;
               return (
                 <button
                   key={g.id}
@@ -101,13 +146,7 @@ export default function PostflopChartPage() {
                   )}
                 >
                   {g.label}
-                  {count > 0 ? (
-                    <span className="ml-1 tabular-nums">· {count}</span>
-                  ) : (
-                    <span className="ml-1 text-[9px] uppercase tracking-[0.16em] opacity-70">
-                      · 준비 중
-                    </span>
-                  )}
+                  <span className="ml-1 tabular-nums">· {count}</span>
                 </button>
               );
             })}
@@ -118,9 +157,12 @@ export default function PostflopChartPage() {
         {boards.length === 0 ? (
           <div className="border-[color:var(--color-gold)]/30 bg-[color:var(--color-gold)]/5 mt-4 rounded-[var(--radius-panel)] border p-6 text-center">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-gold)]">
-              아직 배치 도달 전
+              이 텍스처는 비어있어요
             </p>
-            <p className="text-fg mt-2 text-[13px]">이 텍스처는 솔버가 곧 계산해서 채워 넣어요.</p>
+            <p className="text-fg mt-2 text-[13px]">
+              {activePairing?.label} 페어링엔 이 텍스처 보드가 없습니다. 아래에서 다른 텍스처를
+              골라보세요.
+            </p>
             <div className="mt-4 flex flex-wrap justify-center gap-1.5">
               {TEXTURE_GROUPS.filter((g) => (grouped[g.id] ?? []).length > 0).map((g) => (
                 <button
@@ -358,6 +400,42 @@ function BoardMixPanel({ spots }: { spots: readonly PostflopSpot[] }) {
       )}
     </section>
   );
+}
+
+/** Distinct defender×opener pairings present in the spot pool, ordered
+ *  by real-game frequency (late-position steals first). Key matches
+ *  `${heroPos}_${villainPos}` so the page can filter the pool cheaply. */
+const PAIRING_ORDER = [
+  'BB_BTN',
+  'BB_CO',
+  'BB_SB',
+  'BB_MP',
+  'BB_UTG',
+  'BTN_CO',
+  'BTN_MP',
+  'BTN_UTG',
+];
+function derivePairings(
+  spots: readonly PostflopSpot[],
+): { key: string; label: string; summary: string; count: number }[] {
+  const map = new Map<string, { key: string; label: string; summary: string; count: number }>();
+  for (const s of spots) {
+    const key = `${s.context.heroPos}_${s.context.villainPos}`;
+    const existing = map.get(key);
+    if (existing) existing.count++;
+    else
+      map.set(key, {
+        key,
+        label: `${s.context.heroPos} vs ${s.context.villainPos}`,
+        summary: s.context.preflopSummary,
+        count: 1,
+      });
+  }
+  const rank = (k: string) => {
+    const i = PAIRING_ORDER.indexOf(k);
+    return i < 0 ? 99 : i;
+  };
+  return [...map.values()].sort((a, b) => rank(a.key) - rank(b.key));
 }
 
 function suitPatternLabel(pattern: 'r' | 'tt' | 'mono'): string {
