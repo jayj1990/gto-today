@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   PUSH_FOLD_20BB,
@@ -69,15 +68,6 @@ export default function PushFoldPage() {
         </div>
 
         {mode === 'chart' ? <ChartView /> : <TrainView />}
-
-        <nav className="mt-8 flex justify-center">
-          <Link
-            href="/"
-            className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.2em] underline-offset-4 hover:underline"
-          >
-            ← 홈으로
-          </Link>
-        </nav>
       </main>
     </>
   );
