@@ -44,12 +44,17 @@ export default tseslint.config(
       // Serwist writes the bundled service worker into public/; treat
       // everything under public/ as static output, not source to lint.
       'apps/*/public/**',
-      // Auto-generated solver data — 387K+ line files. ESLint OOMs
-      // when forced to parse them via lint-staged. parse-outputs.mjs
-      // already emits with /* eslint-disable */; nothing to lint here.
-      // Caught 2026-05-17: pre-commit OOM dropped the BB:UTG commit.
+      // Auto-generated solver data. parse-outputs.mjs emits chunked
+      // TS modules; lint-staged OOMs trying to parse the larger ones,
+      // and there's nothing to lint anyway (the files carry
+      // /* eslint-disable */ headers). The barrel itself is small
+      // but still autogen, ignored for consistency.
+      // Background: 2026-05-17 the un-chunked file OOMed the hook and
+      // dropped the BB:UTG commit; 2026-05-30 we chunked + moved the
+      // ignore here.
       'packages/gto-data/src/ranges/solver-spots.ts',
-      'packages/gto-data/data/postflop-solver-spots.json',
+      'packages/gto-data/src/ranges/solver-spots/**',
+      'packages/gto-data/data/spots-chunks/**',
     ],
   },
   js.configs.recommended,
