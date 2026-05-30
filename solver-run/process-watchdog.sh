@@ -27,10 +27,16 @@ echo "=== process-watchdog start $(date) (pid $$) ===" >> "$LOG"
 echo "[$(date)] grace period ${STARTUP_GRACE}s before first check" >> "$LOG"
 sleep $STARTUP_GRACE
 
+# Only consider "all-tiers done" as a reason to exit AFTER we've
+# spawned the chain at least once. The log persists across watchdog
+# restarts, so stale done markers from prior sessions used to trick a
+# fresh watchdog into exiting immediately (caught 2026-05-30: every
+# Task-Scheduler watchdog kept exiting on the 2026-05-24 SRP-done
+# marker, so Phase B never started).
+SPAWNED=0
+
 while true; do
-  # Already finished? all-tiers.sh writes "=== all-tiers done" at the very
-  # end. If we see that, exit — nothing more to babysit.
-  if grep -q "=== all-tiers done" "$ALL_TIERS_LOG" 2>/dev/null; then
+  if [ "$SPAWNED" = "1" ] && tail -n 30 "$ALL_TIERS_LOG" 2>/dev/null | grep -q "=== all-tiers done"; then
     echo "[$(date)] all-tiers complete — watchdog exiting" >> "$LOG"
     exit 0
   fi
@@ -51,6 +57,7 @@ while true; do
       echo "[$(date)] console_solver + all-tiers both dead — relaunching all-tiers" >> "$LOG"
       nohup bash "$REPO/solver-run/all-tiers.sh" >> "$REPO/solver-run/all-tiers.out" 2>&1 &
       echo "[$(date)] relaunched (pid $!)" >> "$LOG"
+      SPAWNED=1
       # Give it time to spawn before next poll so we don't double-launch.
       sleep 60
     fi
