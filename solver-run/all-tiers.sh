@@ -85,9 +85,18 @@ for PAIR in "${PAIRINGS[@]}"; do
 
   # Parse + typecheck + commit + push.
   node solver-run/scripts/parse-outputs.mjs >> "$LOG" 2>&1
+  # typecheck triggers turbo's full dep graph, which includes
+  # gto-data:build → build-preflop, which sometimes hits a transient
+  # UNKNOWN errno -4094 writing manifest.json under repeated load
+  # (caught 2026-05-31 — SB:BTN looped for 12h on this single race).
+  # Retry once after a short pause before treating it as fatal.
   pnpm typecheck >> "$LOG" 2>&1 || {
-    echo "[$(date +%H:%M:%S)] typecheck FAILED after ${NAME} — stopping chain" >> "$LOG"
-    exit 1
+    echo "[$(date +%H:%M:%S)] typecheck failed first try, sleeping 30s then retrying" >> "$LOG"
+    sleep 30
+    pnpm typecheck >> "$LOG" 2>&1 || {
+      echo "[$(date +%H:%M:%S)] typecheck FAILED twice after ${NAME} — stopping chain" >> "$LOG"
+      exit 1
+    }
   }
 
   # Commit only if something changed (idempotent re-runs are safe).
@@ -160,9 +169,18 @@ for PAIR in "${PAIRINGS_3BET[@]}"; do
   echo "[$(date +%H:%M:%S)] ✓ ${NAME} batch done — parsing" >> "$LOG"
 
   node solver-run/scripts/parse-outputs.mjs >> "$LOG" 2>&1
+  # typecheck triggers turbo's full dep graph, which includes
+  # gto-data:build → build-preflop, which sometimes hits a transient
+  # UNKNOWN errno -4094 writing manifest.json under repeated load
+  # (caught 2026-05-31 — SB:BTN looped for 12h on this single race).
+  # Retry once after a short pause before treating it as fatal.
   pnpm typecheck >> "$LOG" 2>&1 || {
-    echo "[$(date +%H:%M:%S)] typecheck FAILED after ${NAME} — stopping chain" >> "$LOG"
-    exit 1
+    echo "[$(date +%H:%M:%S)] typecheck failed first try, sleeping 30s then retrying" >> "$LOG"
+    sleep 30
+    pnpm typecheck >> "$LOG" 2>&1 || {
+      echo "[$(date +%H:%M:%S)] typecheck FAILED twice after ${NAME} — stopping chain" >> "$LOG"
+      exit 1
+    }
   }
 
   PUSHED=0
