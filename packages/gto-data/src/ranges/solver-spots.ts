@@ -14,6 +14,7 @@ import { SOLVER_SPOTS_FULL_BTN_UTG } from './solver-spots/full-btn-utg';
 import { SOLVER_SPOTS_FULL3_SB_BTN } from './solver-spots/full3-sb-btn';
 import { SOLVER_SPOTS_FULL3_SB_CO } from './solver-spots/full3-sb-co';
 import { SOLVER_SPOTS_FULL3_SB_MP } from './solver-spots/full3-sb-mp';
+import { SOLVER_SPOTS_FULL3_SB_UTG } from './solver-spots/full3-sb-utg';
 import { SOLVER_SPOTS_LEGACY } from './solver-spots/legacy';
 
 export const SOLVER_SPOTS: readonly PostflopSpot[] = [
@@ -28,5 +29,6 @@ export const SOLVER_SPOTS: readonly PostflopSpot[] = [
   ...SOLVER_SPOTS_FULL3_SB_BTN,
   ...SOLVER_SPOTS_FULL3_SB_CO,
   ...SOLVER_SPOTS_FULL3_SB_MP,
+  ...SOLVER_SPOTS_FULL3_SB_UTG,
   ...SOLVER_SPOTS_LEGACY,
 ];
