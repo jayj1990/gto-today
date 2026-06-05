@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   generateDailyItems,
@@ -33,11 +34,16 @@ import { HandCardSkeleton } from '@/components/skeleton';
 const TOTAL = 10;
 
 export default function TodayPlayPage() {
+  const router = useRouter();
   const [items, setItems] = useState<DailyItem[] | null>(null);
   const [resultOpen, setResultOpen] = useState(false);
   const [lastGrade, setLastGrade] = useState<AnswerGrade | null>(null);
   const [lastPreflopAnswer, setLastPreflopAnswer] = useState<GradedAction | null>(null);
   const [lastPostflopAnswer, setLastPostflopAnswer] = useState<PostflopAction | null>(null);
+  // After the 10th hand we surface a "continue → infinite drills?"
+  // prompt before the stats screen. Defaults to the prompt; user
+  // opts into the stats by tapping "결과 보기".
+  const [showResults, setShowResults] = useState(false);
 
   const cursor = useChallengeStore((s) => s.cursor);
   const answers = useChallengeStore((s) => s.answers);
@@ -241,7 +247,37 @@ export default function TodayPlayPage() {
           </>
         )}
 
-        {isComplete && (
+        {isComplete && !showResults && (
+          <section className="mt-8 text-center">
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
+              데일리 10핸드 완료
+            </p>
+            <h2 className="font-display mt-2 text-[26px] font-bold">계속 훈련할까요?</h2>
+            <p className="text-fg-muted mt-2 text-[13px]">
+              무한 훈련 모드에서 같은 페이스로 계속 풀 수 있어요.
+            </p>
+            <div className="mt-6 grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => {
+                  track({ name: 'daily_continue_to_sim' });
+                  router.push('/sim');
+                }}
+                className="bg-gold-gradient text-noir flex h-12 select-none items-center justify-center rounded-[var(--radius-button)] px-5 font-semibold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+              >
+                계속 →
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowResults(true)}
+                className="border-hair surface-raised flex h-12 select-none items-center justify-center rounded-[var(--radius-button)] px-5 text-[13px] font-medium active:scale-[0.98]"
+              >
+                결과 보기
+              </button>
+            </div>
+          </section>
+        )}
+        {isComplete && showResults && (
           <DailyComplete answers={answers} currentStreak={currentStreak} bestStreak={bestStreak} />
         )}
 

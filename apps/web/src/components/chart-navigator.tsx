@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ComboDetailSheet, RangeGrid, type ComboMix } from '@gto/ui';
+import { findSpotsByBoard, listPostflopSpots } from '@gto/gto-data';
+import type { FlopCards } from '@gto/poker-core';
+import { BoardPicker } from './board-picker';
+import { BoardMixPanel } from './board-mix-panel';
 import { Skeleton } from './skeleton';
 
 type DecisionsJson = Record<string, Record<string, Record<string, number>>>;
@@ -72,7 +76,10 @@ export function ChartNavigator({
 
   const handleAction = (action: string) => setPath((p) => [...p, `${node?.actor}_${action}`]);
   const handleBack = () => setPath((p) => p.slice(0, -1));
-  const handleRestart = () => setPath([]);
+  const handleRestart = () => {
+    setPath([]);
+    setPickedFlop([]);
+  };
 
   const seatState = useMemo(() => buildSeatState(path, node?.actor), [path, node?.actor]);
 
@@ -82,14 +89,35 @@ export function ChartNavigator({
   // A preflop "flop reached" state = someone raised, someone called,
   // no more preflop decisions. Detected when resolveNode can't find a
   // solver node (legal=[] with no special flag) and the path isn't
-  // empty. We hand off to /charts/postflop, which now serves
-  // pre-computed GTO across all 8 solved pairings.
+  // empty. We surface a board picker inline so the user can pick the
+  // exact flop they're on and see the postflop strategy without
+  // leaving /live/play.
   const flopReached =
     path.length > 0 &&
     node?.legal.length === 0 &&
     !node?.bbWins &&
     !node?.showdown &&
     !node?.postAllIn;
+
+  // Inline board picker state + lookup. Cleared whenever the path
+  // resets via handleRestart (new hand).
+  const [pickedFlop, setPickedFlop] = useState<readonly string[]>([]);
+  const pairingFromPath = useMemo(() => derivePairing(path), [path]);
+  const postflopPool = useMemo(
+    () =>
+      pairingFromPath
+        ? listPostflopSpots().filter(
+            (s) =>
+              s.context.heroPos === pairingFromPath.defender &&
+              s.context.villainPos === pairingFromPath.opener,
+          )
+        : [],
+    [pairingFromPath],
+  );
+  const flopLookup = useMemo(() => {
+    if (pickedFlop.length !== 3 || postflopPool.length === 0) return null;
+    return findSpotsByBoard(pickedFlop as unknown as FlopCards, { pool: postflopPool });
+  }, [pickedFlop, postflopPool]);
 
   return (
     <div className={className}>
@@ -139,32 +167,70 @@ export function ChartNavigator({
               </button>
             </section>
           ) : flopReached ? (
-            <section className="border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 rounded-[var(--radius-panel)] border p-6 text-center">
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-gold)]">
-                프리플랍 종료
-              </p>
-              <h2 className="font-display mt-1 text-[22px] font-bold text-[color:var(--color-gold)]">
-                플랍 도달
-              </h2>
-              <p className="text-fg-muted mt-2 text-[13px]">
-                레이즈·콜이 끝났어요. 포스트플랍 차트엔 8개 포지션 페어링의 사전계산 GTO 전략이 보드
-                텍스처별로 수록돼 있어요.
-              </p>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={handleRestart}
-                  className="bg-gold-gradient text-noir inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] px-4 font-semibold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
-                >
-                  새 핸드 ↻
-                </button>
-                <a
-                  href="/charts/postflop"
-                  className="border-hair surface text-fg inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] px-4 text-[13px] font-semibold active:scale-[0.98]"
-                >
-                  포스트플랍 차트 →
-                </a>
+            <section className="space-y-3">
+              <div className="border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 rounded-[var(--radius-panel)] border p-4 text-center">
+                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-gold)]">
+                  프리플랍 종료
+                </p>
+                <h2 className="font-display mt-1 text-[22px] font-bold text-[color:var(--color-gold)]">
+                  플랍 도달
+                  {pairingFromPath && (
+                    <span className="ml-2 font-mono text-[13px] tracking-[0.04em]">
+                      · {pairingFromPath.defender} vs {pairingFromPath.opener}
+                    </span>
+                  )}
+                </h2>
+                <p className="text-fg-muted mt-2 text-[13px]">
+                  플랍 3장을 골라 GTO 전략을 확인해보세요.
+                </p>
               </div>
+
+              {pairingFromPath ? (
+                <>
+                  <BoardPicker selected={pickedFlop} onChange={setPickedFlop} />
+                  {pickedFlop.length < 3 ? (
+                    <p className="text-fg-muted text-center font-mono text-[11px] uppercase tracking-[0.18em]">
+                      카드 {pickedFlop.length}/3 · 3장 고르면 자동으로 전략이 나옵니다
+                    </p>
+                  ) : flopLookup?.match === 'none' ? (
+                    <div className="border-[color:var(--color-fold)]/30 bg-[color:var(--color-fold)]/5 rounded-[var(--radius-panel)] border p-4 text-center">
+                      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-fold)]">
+                        근접 보드 없음
+                      </p>
+                      <p className="text-fg mt-2 text-[13px]">
+                        {pairingFromPath.defender} vs {pairingFromPath.opener} 페어링에 이 보드와
+                        가까운 사전계산 데이터가 없습니다.
+                      </p>
+                    </div>
+                  ) : flopLookup ? (
+                    <>
+                      <div className="border-hair surface flex items-center justify-between gap-3 rounded-[var(--radius-button)] p-2.5">
+                        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]">
+                          {flopLookup.match === 'exact'
+                            ? '정확 일치'
+                            : `근접 일치 · 거리 ${flopLookup.distance}`}
+                        </p>
+                        <p className="text-fg-muted font-mono text-[11px] tabular-nums">
+                          {flopLookup.spots.length}개 콤보
+                        </p>
+                      </div>
+                      <BoardMixPanel key={flopLookup.matchKey} spots={flopLookup.spots} />
+                    </>
+                  ) : null}
+                </>
+              ) : (
+                <p className="text-fg-muted text-center text-[13px]">
+                  이 시나리오엔 사전계산 포스트플랍 데이터가 아직 없어요.
+                </p>
+              )}
+
+              <button
+                type="button"
+                onClick={handleRestart}
+                className="bg-gold-gradient text-noir mt-2 inline-flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] px-4 font-semibold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
+              >
+                새 핸드 ↻
+              </button>
             </section>
           ) : (
             <>
@@ -403,6 +469,39 @@ function resolveNode(decisions: DecisionsJson, path: string[]): NodeData | null 
   }
 
   return { actor, actions: {}, legal: [] };
+}
+
+/** Walk the preflop path to find the postflop pairing — the most
+ *  recent caller is the defender (postflop hero), the most recent
+ *  raiser before that call is the opener. Returns null if the path
+ *  doesn't look like a SRP (no opener, no caller, multi-3bet, …);
+ *  the UI then surfaces "no precomputed data" instead of guessing. */
+function derivePairing(path: string[]): { defender: string; opener: string } | null {
+  let lastCaller: string | null = null;
+  let lastCallerIdx = -1;
+  for (let i = 0; i < path.length; i++) {
+    const tok = path[i]!;
+    const us = tok.indexOf('_');
+    if (us < 0) continue;
+    if (tok.slice(us + 1) === 'CALL') {
+      lastCaller = tok.slice(0, us);
+      lastCallerIdx = i;
+    }
+  }
+  if (!lastCaller) return null;
+  // Most recent raiser BEFORE the last call.
+  let opener: string | null = null;
+  for (let i = lastCallerIdx - 1; i >= 0; i--) {
+    const tok = path[i]!;
+    const us = tok.indexOf('_');
+    if (us < 0) continue;
+    if (isRaiseAction(tok.slice(us + 1))) {
+      opener = tok.slice(0, us);
+      break;
+    }
+  }
+  if (!opener) return null;
+  return { defender: lastCaller, opener };
 }
 
 function nextActor(path: string[]): string | null {

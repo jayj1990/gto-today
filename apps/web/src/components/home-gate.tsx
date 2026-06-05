@@ -187,14 +187,6 @@ export function HomeGate() {
           progress={todayActive ? todayProgress / 10 : 0}
         />
         <PrimaryCard
-          href="/sim"
-          eyebrow="Infinite Drills"
-          title="무한 GTO 훈련"
-          description="10핸드 끝났다면 이어서 계속."
-          variant="secondary"
-          delay={0.06}
-        />
-        <PrimaryCard
           href="/live"
           eyebrow="Live Assist"
           title="실전 모드"

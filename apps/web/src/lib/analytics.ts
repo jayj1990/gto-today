@@ -25,7 +25,8 @@ export type AnalyticsEvent =
       name: 'signin_attempted';
       props: { method: 'google' | 'naver' | 'kakao' | 'email' | 'guest' };
     }
-  | { name: 'install_prompt'; props: { action: 'shown' | 'installed' | 'dismissed' } };
+  | { name: 'install_prompt'; props: { action: 'shown' | 'installed' | 'dismissed' } }
+  | { name: 'daily_continue_to_sim' };
 
 export function track(event: AnalyticsEvent): void {
   try {
