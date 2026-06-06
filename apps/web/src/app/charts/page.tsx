@@ -9,16 +9,10 @@ export default function ChartsPage() {
     <>
       <SiteHeader />
       <main className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-3xl flex-col pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3">
-        <header className="mb-3 flex items-baseline justify-between gap-3">
+        <header className="mb-3">
           <h1 className="font-display text-[20px] font-bold tracking-[-0.015em]">
             프리플랍 차트 · 6맥스 100BB
           </h1>
-          <Link
-            href="/charts/postflop"
-            className="font-mono text-[11px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]"
-          >
-            포스트플랍 →
-          </Link>
         </header>
 
         <ChartNavigator />

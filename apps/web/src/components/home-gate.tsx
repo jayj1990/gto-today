@@ -194,14 +194,6 @@ export function HomeGate() {
           delay={0.12}
         />
         <PrimaryCard
-          href="/charts/postflop"
-          eyebrow="Wizard-style · 12 페어링"
-          title="포스트플랍 차트"
-          description="페어링·텍스처별 탐색 또는 보드 3장 직접 검색."
-          variant="secondary"
-          delay={0.135}
-        />
-        <PrimaryCard
           href="/mtt/push-fold"
           eyebrow="MTT · 20BB"
           title="올인/폴드 차트"
