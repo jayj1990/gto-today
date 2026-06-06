@@ -20,7 +20,6 @@ import { Skeleton } from '@/components/skeleton';
  *
  * Once both are satisfied, it renders the home card list. /sim is
  * reached via the daily-completion prompt, not a home card.
- * (cache-bust 2026-06-06 — prior deploy served stale home chunk)
  */
 export function HomeGate() {
   const router = useRouter();
