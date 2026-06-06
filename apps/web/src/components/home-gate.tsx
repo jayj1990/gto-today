@@ -18,9 +18,9 @@ import { Skeleton } from '@/components/skeleton';
  *   • onboarding completion → redirect to /onboarding
  *   • sign-in               → redirect to /signin
  *
- * Once both are satisfied, it renders a deliberately minimal home: just
- * two large buttons ("오늘의 훈련" / "실전 모드") as requested. The old
- * hero + secondary card + footer grid is gone — one decision per screen.
+ * Once both are satisfied, it renders the home card list. /sim is
+ * reached via the daily-completion prompt, not a home card.
+ * (cache-bust 2026-06-06 — prior deploy served stale home chunk)
  */
 export function HomeGate() {
   const router = useRouter();
