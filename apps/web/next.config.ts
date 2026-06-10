@@ -26,6 +26,11 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@gto/ui', '@gto/poker-core', '@gto/gto-data'],
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
+    // The generated solver-spots dataset in @gto/gto-data is tens of MB
+    // of TS that webpack parses in both server and client compilations,
+    // and it grows with every Windows solver batch. Trade build speed
+    // for headroom so the build container doesn't get OOM-killed.
+    webpackMemoryOptimizations: true,
   },
   images: {
     formats: ['image/avif', 'image/webp'],
