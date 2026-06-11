@@ -4,6 +4,7 @@ import { classifyAnswer, type TrainingSpot } from './spot-generator';
 import { getPreflopChart } from './preflop';
 import { getBbDefenseChart, SUPPORTED_OPENERS } from './bb-defense';
 import { listPostflopSpots, type PostflopSpot } from './postflop';
+import { fetchDailyPairingSpots } from './spots-loader';
 import { SUITS } from '@gto/poker-core';
 import type { CardCode, ComboKey } from '@gto/poker-core';
 
@@ -170,10 +171,21 @@ export type RandomItem =
   | { readonly kind: 'postflop'; readonly spot: PostflopSpot };
 
 export async function generateRandomItem(opts: RandomSpotOptions = {}): Promise<RandomItem | null> {
-  // 35% chance of a postflop drill. Preflop still dominates because our
-  // postflop pool is only 5 seeds and would feel repetitive at 50/50.
+  // 35% chance of a postflop drill. Postflop spots come from the same
+  // date-seeded pairing chunk the daily quiz uses — after a daily run
+  // it's already session-cached, so /sim adds zero extra downloads.
+  // Fetch failure (offline) falls back to seeds, then to preflop.
   if (Math.random() < 0.35) {
-    const pool = listPostflopSpots(opts.gameType ? { gameType: opts.gameType } : {});
+    const dateKey = new Date().toISOString().slice(0, 10);
+    let pool: readonly PostflopSpot[];
+    try {
+      pool = await fetchDailyPairingSpots(dateKey, opts.gameType);
+    } catch {
+      pool = [];
+    }
+    if (pool.length === 0) {
+      pool = listPostflopSpots(opts.gameType ? { gameType: opts.gameType } : {});
+    }
     if (pool.length > 0) {
       const spot = pool[Math.floor(Math.random() * pool.length)]!;
       return { kind: 'postflop', spot };

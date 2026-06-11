@@ -1,12 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   distinctBoards,
+  fetchPairings,
+  fetchPairingSpots,
   findSpotsByBoard,
   groupSpotsByTexture,
-  listPostflopSpots,
   TEXTURE_GROUPS,
+  type PairingChunkMeta,
   type PostflopSpot,
 } from '@gto/gto-data';
 import { canonicalizeFlop, type FlopCards } from '@gto/poker-core';
@@ -17,24 +19,58 @@ import { BoardMixPanel } from './board-mix-panel';
 /**
  * Standalone postflop-strategy explorer. Pairing pill row → 텍스처 탭
  * (bucketed boards) OR 보드 검색 (free 13×4 picker via findSpotsByBoard).
- * Used inline by /live/play (modes toggle) and by /charts/postflop.
- * Brings its own info box + state; consumers only mount it inside their
- * own main / header.
+ * Used inline by /live/play (modes toggle).
+ *
+ * Data is runtime-fetched: the manifest gives the pairing pills, then
+ * selecting a pairing fetches that chunk (~5 MB JSON, session-cached).
+ * Nothing is bundled — the bundled-TS approach produced a 57 MB chunk
+ * that crashed mobile browsers (2026-06-12).
  */
 export function PostflopExplorer() {
-  const allSpots = useMemo(() => listPostflopSpots(), []);
-
-  // Defender×opener pairings present in the data, ordered by real-game
-  // frequency. 15 pairings once Phase B finishes (8 SRP + 7 3bet pot).
-  const pairings = useMemo(() => derivePairings(allSpots), [allSpots]);
-  const [pairingKey, setPairingKey] = useState(() => pairings[0]?.key ?? '');
+  const [pairings, setPairings] = useState<readonly PairingChunkMeta[]>([]);
+  const [pairingKey, setPairingKey] = useState('');
+  const [pairingSpots, setPairingSpots] = useState<readonly PostflopSpot[]>([]);
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
   const activePairing = pairings.find((p) => p.key === pairingKey);
 
-  // Narrow to the selected pairing, then group that subset by texture.
-  const pairingSpots = useMemo(
-    () => allSpots.filter((s) => `${s.context.heroPos}_${s.context.villainPos}` === pairingKey),
-    [allSpots, pairingKey],
-  );
+  // Manifest once — pairing pills (legacy chunk hidden; it's the old
+  // phase/mtt grab-bag, not a coherent pairing).
+  useEffect(() => {
+    let cancelled = false;
+    void fetchPairings()
+      .then((all) => {
+        if (cancelled) return;
+        const visible = all.filter((p) => p.key !== 'legacy');
+        setPairings(visible);
+        setPairingKey((k) => k || (visible[0]?.key ?? ''));
+      })
+      .catch(() => {
+        if (!cancelled) setLoadState('error');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Chunk per selected pairing.
+  useEffect(() => {
+    if (!pairingKey) return;
+    let cancelled = false;
+    setLoadState('loading');
+    void fetchPairingSpots(pairingKey)
+      .then((spots) => {
+        if (cancelled) return;
+        setPairingSpots(spots);
+        setLoadState('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setLoadState('error');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pairingKey]);
+
   const grouped = useMemo(() => groupSpotsByTexture(pairingSpots), [pairingSpots]);
   const totalBoards = useMemo(
     () =>
@@ -78,7 +114,7 @@ export function PostflopExplorer() {
         <p className="mt-1.5 text-[11px] leading-[1.55]">
           6맥스 100BB.{' '}
           <span className="text-fg font-semibold">
-            {activePairing?.summary ?? activePairing?.label}
+            {activePairing ? activePairing.summary || pairingLabel(activePairing) : '…'}
           </span>{' '}
           상황의 플랍 GTO 전략.
         </p>
@@ -123,7 +159,7 @@ export function PostflopExplorer() {
                   setSelectedBoard(null);
                 }}
                 aria-pressed={active}
-                aria-label={`${p.label} 페어링`}
+                aria-label={`${pairingLabel(p)} 페어링`}
                 className={cn(
                   'inline-flex h-9 items-center whitespace-nowrap rounded-[var(--radius-button)] border px-3 font-mono text-[11px]',
                   active
@@ -131,14 +167,25 @@ export function PostflopExplorer() {
                     : 'border-hair surface text-fg-muted',
                 )}
               >
-                {p.label}
+                {pairingLabel(p)}
               </button>
             );
           })}
         </div>
       </section>
 
-      {exploreMode === 'texture' ? (
+      {loadState === 'error' ? (
+        <div className="border-[color:var(--color-raise)]/30 bg-[color:var(--color-raise)]/5 mt-3 rounded-[var(--radius-panel)] border p-5 text-center">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-raise)]">
+            데이터 로드 실패
+          </p>
+          <p className="text-fg mt-2 text-[13px]">네트워크 연결을 확인하고 다시 시도해주세요.</p>
+        </div>
+      ) : loadState === 'loading' ? (
+        <p className="text-fg-muted mt-4 text-center font-mono text-[11px] uppercase tracking-[0.18em]">
+          전략 데이터 불러오는 중…
+        </p>
+      ) : exploreMode === 'texture' ? (
         <>
           <section className="mb-3 overflow-x-auto">
             <div className="flex min-w-max gap-1.5">
@@ -175,7 +222,8 @@ export function PostflopExplorer() {
                 이 텍스처는 비어있어요
               </p>
               <p className="text-fg mt-2 text-[13px]">
-                {activePairing?.label} 페어링엔 이 텍스처 보드가 없습니다.
+                {activePairing ? pairingLabel(activePairing) : '이'} 페어링엔 이 텍스처 보드가
+                없습니다.
               </p>
               <div className="mt-4 flex flex-wrap justify-center gap-1.5">
                 {TEXTURE_GROUPS.filter((g) => (grouped[g.id] ?? []).length > 0).map((g) => (
@@ -253,7 +301,8 @@ export function PostflopExplorer() {
                 근접 보드 없음
               </p>
               <p className="text-fg mt-2 text-[13px]">
-                {activePairing?.label} 페어링에 이 보드와 비슷한 사전계산 데이터가 없습니다.
+                {activePairing ? pairingLabel(activePairing) : '이'} 페어링에 이 보드와 비슷한
+                사전계산 데이터가 없습니다.
               </p>
             </div>
           ) : search ? (
@@ -275,45 +324,11 @@ export function PostflopExplorer() {
   );
 }
 
-const PAIRING_ORDER = [
-  'BB_BTN',
-  'BB_CO',
-  'BB_SB',
-  'BB_MP',
-  'BB_UTG',
-  'BTN_CO',
-  'BTN_MP',
-  'BTN_UTG',
-  'SB_BTN',
-  'SB_CO',
-  'SB_MP',
-  'SB_UTG',
-  'CO_MP',
-  'CO_UTG',
-  'MP_UTG',
-];
-
-function derivePairings(
-  spots: readonly PostflopSpot[],
-): { key: string; label: string; summary: string; count: number }[] {
-  const map = new Map<string, { key: string; label: string; summary: string; count: number }>();
-  for (const s of spots) {
-    const key = `${s.context.heroPos}_${s.context.villainPos}`;
-    const existing = map.get(key);
-    if (existing) existing.count++;
-    else
-      map.set(key, {
-        key,
-        label: `${s.context.heroPos} vs ${s.context.villainPos}`,
-        summary: s.context.preflopSummary,
-        count: 1,
-      });
-  }
-  const rank = (k: string) => {
-    const i = PAIRING_ORDER.indexOf(k);
-    return i < 0 ? 99 : i;
-  };
-  return [...map.values()].sort((a, b) => rank(a.key) - rank(b.key));
+/** Pill label — `BB vs CO`, 3bet pots tagged so SRP/3벳 lines are
+ *  distinguishable at a glance. */
+function pairingLabel(p: PairingChunkMeta): string {
+  const base = `${p.heroPos} vs ${p.villainPos}`;
+  return p.potType === '3bp' ? `${base} ·3벳` : base;
 }
 
 function suitPatternLabel(pattern: 'r' | 'tt' | 'mono'): string {

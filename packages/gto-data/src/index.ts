@@ -4,6 +4,7 @@ export * from './postflop-textures';
 export * from './combos';
 export * from './spot-generator';
 export * from './random-spot';
+export * from './spots-loader';
 export * from './bb-defense';
 export * from './qb-tree';
 export * from './range-derive';

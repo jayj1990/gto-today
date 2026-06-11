@@ -15,18 +15,19 @@ import path from 'node:path';
 
 const ROOT = 'C:/Users/Jay/poker-gto-guide';
 const INPUT = path.join(ROOT, 'solver-run/outputs');
-// Chunked layout (2026-05-30) — the single 51MB solver-spots.{json,ts}
-// was about to cross GitHub's 100MB hard limit as Phase B added the
-// 7 squeeze pairings. Now spots live in per-pairing chunks:
-//   data/spots-chunks/{chunkKey}.json   (parse-time merge base)
-//   src/ranges/solver-spots/{chunkKey}.ts (chunk modules, app bundle)
-//   src/ranges/solver-spots.ts           (barrel that re-exports SOLVER_SPOTS)
-// Consumers keep importing SOLVER_SPOTS unchanged. ~5MB / chunk × 16 chunks.
-const CHUNKS_JSON_DIR = path.join(ROOT, 'packages/gto-data/data/spots-chunks');
-const CHUNKS_TS_DIR = path.join(ROOT, 'packages/gto-data/src/ranges/solver-spots');
-const INDEX_TS = path.join(ROOT, 'packages/gto-data/src/ranges/solver-spots.ts');
-// First run of the new pipeline falls back to the legacy single JSON
-// to seed the chunks from the existing 71K spots, then it can be removed.
+// Runtime-fetched layout (2026-06-12) — bundling the spots as TS
+// modules put a 57 MB JS chunk in the client bundle once Phase B
+// landed (~145K spots). Mobile Safari OOM-crashed parsing it, taking
+// every screen down. Spots now ship as static JSON under
+//   apps/web/public/data/postflop/{chunkKey}.json
+// plus a manifest.json describing each chunk (pairing, count,
+// potType). The app fetches one pairing at a time via
+// fetchPairingSpots() — nothing is bundled.
+const PUBLIC_DIR = path.join(ROOT, 'apps/web/public/data/postflop');
+const MANIFEST_JSON = path.join(PUBLIC_DIR, 'manifest.json');
+// Migration fallbacks — earlier layouts, read once if PUBLIC_DIR is
+// empty so no spot is lost on the first run of the new pipeline.
+const OLD_CHUNKS_JSON_DIR = path.join(ROOT, 'packages/gto-data/data/spots-chunks');
 const LEGACY_OUT_JSON = path.join(ROOT, 'packages/gto-data/data/postflop-solver-spots.json');
 
 /** Bucket key derived from spot id. SRP → `full-bb-co`; 3bet pot →
@@ -37,11 +38,6 @@ function chunkKey(spot) {
   const m = spot.id.match(/^pf_(full3?)_([A-Z]+)_vs_([A-Z]+)_/);
   if (m) return `${m[1]}-${m[2].toLowerCase()}-${m[3].toLowerCase()}`;
   return 'legacy';
-}
-
-/** `full-bb-co` → `SOLVER_SPOTS_FULL_BB_CO` (named TS export). */
-function exportNameFor(key) {
-  return 'SOLVER_SPOTS_' + key.replace(/-/g, '_').toUpperCase();
 }
 
 // Default pot/stack when the input txt doesn't declare them. We now
@@ -450,30 +446,33 @@ function main() {
   // earlier pairings — caught 2026-05-08 when BB:CO data was silently
   // lost on the BB:BTN merge (recovered from git 6a9c8fa).
   const byId = new Map();
-  if (fs.existsSync(CHUNKS_JSON_DIR)) {
-    for (const f of fs.readdirSync(CHUNKS_JSON_DIR)) {
-      if (!f.endsWith('.json')) continue;
+  const loadDir = (dir, label) => {
+    if (!fs.existsSync(dir)) return;
+    for (const f of fs.readdirSync(dir)) {
+      if (!f.endsWith('.json') || f === 'manifest.json') continue;
       try {
-        const arr = JSON.parse(fs.readFileSync(path.join(CHUNKS_JSON_DIR, f), 'utf8'));
+        const arr = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
         for (const s of arr) byId.set(s.id, s);
       } catch (e) {
-        console.warn(`chunk ${f} unparseable, skipping — ${e.message}`);
+        console.warn(`${label}/${f} unparseable, skipping — ${e.message}`);
       }
     }
-    if (byId.size > 0) {
-      console.log(`merge mode: loaded ${byId.size} existing spots from ${path.basename(CHUNKS_JSON_DIR)}/`);
+  };
+  loadDir(PUBLIC_DIR, 'public');
+  if (byId.size > 0) {
+    console.log(`merge mode: loaded ${byId.size} existing spots from public/data/postflop/`);
+  } else {
+    // Migration: earlier layouts, read once.
+    loadDir(OLD_CHUNKS_JSON_DIR, 'spots-chunks');
+    if (byId.size === 0 && fs.existsSync(LEGACY_OUT_JSON)) {
+      try {
+        const prev = JSON.parse(fs.readFileSync(LEGACY_OUT_JSON, 'utf8'));
+        for (const s of prev) byId.set(s.id, s);
+      } catch (e) {
+        console.warn(`legacy JSON unparseable — ${e.message}`);
+      }
     }
-  }
-  // First run: chunks don't exist yet. Seed from the legacy single JSON
-  // so the first chunked write captures every prior pairing.
-  if (byId.size === 0 && fs.existsSync(LEGACY_OUT_JSON)) {
-    try {
-      const prev = JSON.parse(fs.readFileSync(LEGACY_OUT_JSON, 'utf8'));
-      for (const s of prev) byId.set(s.id, s);
-      console.log(`migration: seeded ${byId.size} spots from legacy ${path.basename(LEGACY_OUT_JSON)}`);
-    } catch (e) {
-      console.warn(`legacy JSON unparseable — ${e.message}`);
-    }
+    if (byId.size > 0) console.log(`migration: seeded ${byId.size} spots from prior layout`);
   }
   const existingCount = byId.size;
 
@@ -575,50 +574,34 @@ function main() {
     else buckets.set(k, [s]);
   }
 
-  // Write JSON + TS chunks. Sorted keys so the index import order is
-  // deterministic across runs (diff-friendly).
-  fs.mkdirSync(CHUNKS_JSON_DIR, { recursive: true });
-  fs.mkdirSync(CHUNKS_TS_DIR, { recursive: true });
+  // Write one minified JSON per chunk + a manifest describing them.
+  // Minified: these are fetched at runtime — pretty-printing costs
+  // ~30% extra transfer for nothing.
+  fs.mkdirSync(PUBLIC_DIR, { recursive: true });
   const chunkKeys = [...buckets.keys()].sort();
+  const manifestChunks = [];
   for (const k of chunkKeys) {
     const arr = buckets.get(k);
-    const json = JSON.stringify(arr, null, 2);
-    fs.writeFileSync(path.join(CHUNKS_JSON_DIR, `${k}.json`), json + '\n', 'utf8');
-    const name = exportNameFor(k);
-    const ts = [
-      `// AUTO-GENERATED chunk: ${k}. Do not edit by hand.`,
-      '// Regenerate: node solver-run/scripts/parse-outputs.mjs',
-      '/* eslint-disable */',
-      '',
-      "import type { PostflopSpot } from '../../postflop';",
-      '',
-      `export const ${name} = (${json} as unknown) as readonly PostflopSpot[];`,
-      '',
-    ].join('\n');
-    fs.writeFileSync(path.join(CHUNKS_TS_DIR, `${k}.ts`), ts, 'utf8');
+    fs.writeFileSync(path.join(PUBLIC_DIR, `${k}.json`), JSON.stringify(arr) + '\n', 'utf8');
+    const first = arr[0];
+    manifestChunks.push({
+      key: k,
+      count: arr.length,
+      heroPos: first?.context?.heroPos ?? null,
+      villainPos: first?.context?.villainPos ?? null,
+      potType: first?.context?.potType ?? null,
+      summary: first?.context?.preflopSummary ?? '',
+    });
   }
+  fs.writeFileSync(
+    MANIFEST_JSON,
+    JSON.stringify({ version: 1, chunks: manifestChunks }, null, 2) + '\n',
+    'utf8',
+  );
 
-  // Index — barrel that combines every chunk into SOLVER_SPOTS so
-  // consumers (listPostflopSpots, findSpotsByBoard, …) don't change.
-  const indexTs = [
-    '// AUTO-GENERATED barrel. Do not edit by hand.',
-    '// Regenerate: node solver-run/scripts/parse-outputs.mjs',
-    '/* eslint-disable */',
-    '',
-    "import type { PostflopSpot } from '../postflop';",
-    ...chunkKeys.map((k) => `import { ${exportNameFor(k)} } from './solver-spots/${k}';`),
-    '',
-    'export const SOLVER_SPOTS: readonly PostflopSpot[] = [',
-    ...chunkKeys.map((k) => `  ...${exportNameFor(k)},`),
-    '];',
-    '',
-  ].join('\n');
-  fs.writeFileSync(INDEX_TS, indexTs, 'utf8');
-
-  console.log(`wrote ${chunkKeys.length} chunks + index`);
-  for (const k of chunkKeys) {
-    const sz = Math.round(JSON.stringify(buckets.get(k)).length / 1024);
-    console.log(`  ${k}: ${buckets.get(k).length} spots (${sz} KB)`);
+  console.log(`wrote ${chunkKeys.length} chunks + manifest → public/data/postflop/`);
+  for (const c of manifestChunks) {
+    console.log(`  ${c.key}: ${c.count} spots (${c.heroPos} vs ${c.villainPos}, ${c.potType})`);
   }
 }
 

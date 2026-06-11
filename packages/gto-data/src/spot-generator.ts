@@ -9,6 +9,7 @@ import {
   type DefensePairing,
 } from './bb-defense';
 import { listPostflopSpots, type PostflopSpot } from './postflop';
+import { fetchDailyPairingSpots } from './spots-loader';
 import {
   availableActionsFromNode,
   callSizeFromPreActions,
@@ -534,10 +535,12 @@ export { RANKS };
 
 /**
  * Daily training lineup — mix of preflop + postflop. Preflop spots come
- * from `generateDailySpots`; postflop spots are drawn from the five
- * handcrafted seeds in ranges/postflop-seeds.ts.
+ * from `generateDailySpots`; postflop spots come from one date-seeded
+ * solver pairing chunk (runtime fetch — never bundled), falling back to
+ * the handcrafted seeds when the fetch fails (offline, tests).
  *
- * Deterministic per-date: same date = same 10 items on every device.
+ * Deterministic per-date: same date = same pairing = same 10 items on
+ * every device.
  *
  * DailyItem is a discriminated union so consumers can branch on
  * `kind === 'preflop' | 'postflop'` to pick the right renderer.
@@ -547,7 +550,12 @@ export type DailyItem =
   | { readonly kind: 'postflop'; readonly spot: PostflopSpot };
 
 export async function generateDailyItems(
-  opts: GenerateOptions & { preflopCount?: number; postflopCount?: number } = {},
+  opts: GenerateOptions & {
+    preflopCount?: number;
+    postflopCount?: number;
+    /** Test seam — inject a postflop pool instead of runtime-fetching. */
+    postflopPool?: readonly PostflopSpot[];
+  } = {},
 ): Promise<DailyItem[]> {
   const preflopCount = opts.preflopCount ?? 6;
   const postflopCount = opts.postflopCount ?? 4;
@@ -558,9 +566,18 @@ export async function generateDailyItems(
   const preflop = await generateDailySpots({ ...opts, count: preflopCount });
   const items: DailyItem[] = preflop.map((s) => ({ kind: 'preflop', spot: s }));
 
-  // Postflop half — shuffle the 5 seeds deterministically, take first N
-  // (repeat if postflopCount > 5).
-  const pool = listPostflopSpots();
+  // Postflop half — one date-seeded pairing chunk; seeds on failure.
+  let pool: readonly PostflopSpot[] | undefined = opts.postflopPool;
+  if (!pool) {
+    try {
+      pool = await fetchDailyPairingSpots(dateKey, opts.gameType);
+    } catch {
+      pool = undefined;
+    }
+  }
+  if (!pool || pool.length === 0) {
+    pool = listPostflopSpots(opts.gameType ? { gameType: opts.gameType } : {});
+  }
   const shuffled = [...pool].sort(() => rng() - 0.5);
   for (let i = 0; i < postflopCount; i++) {
     const spot = shuffled[i % shuffled.length]!;

@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "chunks": [
+    {
+      "key": "full-bb-btn",
+      "count": 8620,
+      "heroPos": "BB",
+      "villainPos": "BTN",
+      "potType": "srp",
+      "summary": "BTN 오픈 · BB 콜"
+    },
+    {
+      "key": "full-bb-co",
+      "count": 8755,
+      "heroPos": "BB",
+      "villainPos": "CO",
+      "potType": "srp",
+      "summary": "CO 오픈 · BB 콜"
+    },
+    {
+      "key": "full-bb-mp",
+      "count": 8709,
+      "heroPos": "BB",
+      "villainPos": "MP",
+      "potType": "srp",
+      "summary": "MP 오픈 · BB 콜"
+    },
+    {
+      "key": "full-bb-sb",
+      "count": 8705,
+      "heroPos": "BB",
+      "villainPos": "SB",
+      "potType": "srp",
+      "summary": "SB 오픈 · BB 콜"
+    },
+    {
+      "key": "full-bb-utg",
+      "count": 8630,
+      "heroPos": "BB",
+      "villainPos": "UTG",
+      "potType": "srp",
+      "summary": "UTG 오픈 · BB 콜"
+    },
+    {
+      "key": "full-btn-co",
+      "count": 8741,
+      "heroPos": "BTN",
+      "villainPos": "CO",
+      "potType": "srp",
+      "summary": "CO 오픈 · BTN 콜"
+    },
+    {
+      "key": "full-btn-mp",
+      "count": 8522,
+      "heroPos": "BTN",
+      "villainPos": "MP",
+      "potType": "srp",
+      "summary": "MP 오픈 · BTN 콜"
+    },
+    {
+      "key": "full-btn-utg",
+      "count": 8521,
+      "heroPos": "BTN",
+      "villainPos": "UTG",
+      "potType": "srp",
+      "summary": "UTG 오픈 · BTN 콜"
+    },
+    {
+      "key": "full3-co-mp",
+      "count": 8008,
+      "heroPos": "CO",
+      "villainPos": "MP",
+      "potType": "3bp",
+      "summary": "MP 오픈 · CO 3벳 · MP 콜"
+    },
+    {
+      "key": "full3-co-utg",
+      "count": 7990,
+      "heroPos": "CO",
+      "villainPos": "UTG",
+      "potType": "3bp",
+      "summary": "UTG 오픈 · CO 3벳 · UTG 콜"
+    },
+    {
+      "key": "full3-mp-utg",
+      "count": 5590,
+      "heroPos": "MP",
+      "villainPos": "UTG",
+      "potType": "3bp",
+      "summary": "UTG 오픈 · MP 3벳 · UTG 콜"
+    },
+    {
+      "key": "full3-sb-btn",
+      "count": 8775,
+      "heroPos": "SB",
+      "villainPos": "BTN",
+      "potType": "3bp",
+      "summary": "BTN 오픈 · SB 3벳 · BTN 콜"
+    },
+    {
+      "key": "full3-sb-co",
+      "count": 8674,
+      "heroPos": "SB",
+      "villainPos": "CO",
+      "potType": "3bp",
+      "summary": "CO 오픈 · SB 3벳 · CO 콜"
+    },
+    {
+      "key": "full3-sb-mp",
+      "count": 8599,
+      "heroPos": "SB",
+      "villainPos": "MP",
+      "potType": "3bp",
+      "summary": "MP 오픈 · SB 3벳 · MP 콜"
+    },
+    {
+      "key": "full3-sb-utg",
+      "count": 8589,
+      "heroPos": "SB",
+      "villainPos": "UTG",
+      "potType": "3bp",
+      "summary": "UTG 오픈 · SB 3벳 · UTG 콜"
+    },
+    {
+      "key": "legacy",
+      "count": 2447,
+      "heroPos": "BB",
+      "villainPos": "CO",
+      "potType": "srp",
+      "summary": "CO 오픈 · BB 콜"
+    }
+  ]
+}

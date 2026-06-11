@@ -1,32 +1,62 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import {
+  fetchDailyPairingSpots,
   listPostflopSpots,
   POSTFLOP_ACTION_COLOR,
   POSTFLOP_ACTION_LABEL,
   type PostflopAction,
+  type PostflopSpot,
 } from '@gto/gto-data';
 import { cn } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
 import { PostflopHand } from '@/components/today/postflop-hand';
 import { PostflopResult } from '@/components/today/postflop-result';
+import { isoDateKR } from '@/lib/date';
 
 /**
- * Stand-alone post-flop training loop. Walks through the 5 handcrafted
- * postflop seeds. Uses the shared PostflopResult bottom-sheet so retry
- * + gated teaching-note behave identically to the mixed /today/play and
- * /sim flows.
+ * Stand-alone post-flop training loop. Walks a 20-spot date-seeded
+ * sample from today's pairing chunk (runtime fetch, session-cached;
+ * handcrafted seeds as offline fallback). Uses the shared
+ * PostflopResult bottom-sheet so retry + gated teaching-note behave
+ * identically to the mixed /today/play and /sim flows.
  */
+const SESSION_SIZE = 20;
+
 export default function TodayPostflopPage() {
-  const spots = useMemo(() => listPostflopSpots(), []);
+  const [spots, setSpots] = useState<readonly PostflopSpot[] | null>(null);
   const [cursor, setCursor] = useState(0);
   const [answer, setAnswer] = useState<PostflopAction | null>(null);
   const [resultOpen, setResultOpen] = useState(false);
 
-  const spot = spots[cursor] ?? null;
-  const isDone = cursor >= spots.length;
+  useEffect(() => {
+    let cancelled = false;
+    const dateKey = isoDateKR();
+    void fetchDailyPairingSpots(dateKey)
+      .catch(() => [] as PostflopSpot[])
+      .then((pool) => {
+        if (cancelled) return;
+        const source = pool.length > 0 ? pool : listPostflopSpots();
+        // Date-seeded sample — same boards for everyone on a given day.
+        let h = 0;
+        for (let i = 0; i < dateKey.length; i++) h = (h * 31 + dateKey.charCodeAt(i)) >>> 0;
+        const out: PostflopSpot[] = [];
+        const step = Math.max(1, Math.floor(source.length / SESSION_SIZE));
+        for (let i = 0; i < Math.min(SESSION_SIZE, source.length); i++) {
+          out.push(source[(h + i * step) % source.length]!);
+        }
+        setSpots(out);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const loaded = spots !== null;
+  const spot = spots?.[cursor] ?? null;
+  const isDone = loaded && cursor >= spots.length;
 
   const handleAnswer = (action: PostflopAction) => {
     if (!spot || resultOpen) return;
@@ -55,7 +85,13 @@ export default function TodayPostflopPage() {
     <>
       <SiteHeader />
       <main className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col pb-[calc(env(safe-area-inset-bottom)+32px)] pt-6">
-        {!isDone && spot && (
+        {!loaded && (
+          <p className="text-fg-muted mt-10 text-center font-mono text-[11px] uppercase tracking-[0.18em]">
+            오늘의 스팟 불러오는 중…
+          </p>
+        )}
+
+        {loaded && !isDone && spot && (
           <>
             <header className="mb-5">
               <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--color-accent)]">
@@ -104,7 +140,7 @@ export default function TodayPostflopPage() {
               오늘도 한 걸음
             </h1>
             <p className="text-body text-fg-muted mt-3">
-              5개 스팟 모두 풀었어요. 자주 나오는 결정 타입을 한 바퀴 돌았습니다.
+              오늘의 스팟 {spots.length}개를 모두 풀었어요. 내일 새 보드로 다시 만나요.
             </p>
             <button
               type="button"
@@ -122,7 +158,7 @@ export default function TodayPostflopPage() {
           userAnswer={answer}
           onNext={handleNext}
           onRetry={handleRetry}
-          nextLabel={cursor === spots.length - 1 ? '결과 보기' : '다음 스팟 →'}
+          nextLabel={loaded && cursor === spots.length - 1 ? '결과 보기' : '다음 스팟 →'}
         />
       </main>
     </>

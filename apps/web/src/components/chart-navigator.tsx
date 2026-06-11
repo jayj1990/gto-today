@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ComboDetailSheet, RangeGrid, type ComboMix } from '@gto/ui';
-import { findSpotsByBoard, listPostflopSpots } from '@gto/gto-data';
+import {
+  fetchPairings,
+  fetchPairingSpots,
+  findSpotsByBoard,
+  type PostflopSpot,
+} from '@gto/gto-data';
 import type { FlopCards } from '@gto/poker-core';
 import { BoardPicker } from './board-picker';
 import { BoardMixPanel } from './board-mix-panel';
@@ -100,20 +105,46 @@ export function ChartNavigator({
     !node?.postAllIn;
 
   // Inline board picker state + lookup. Cleared whenever the path
-  // resets via handleRestart (new hand).
+  // resets via handleRestart (new hand). The pairing's spot chunk is
+  // runtime-fetched (one ~5 MB JSON, session-cached) — the full
+  // dataset is never bundled.
   const [pickedFlop, setPickedFlop] = useState<readonly string[]>([]);
   const pairingFromPath = useMemo(() => derivePairing(path), [path]);
-  const postflopPool = useMemo(
-    () =>
-      pairingFromPath
-        ? listPostflopSpots().filter(
-            (s) =>
-              s.context.heroPos === pairingFromPath.defender &&
-              s.context.villainPos === pairingFromPath.opener,
-          )
-        : [],
-    [pairingFromPath],
-  );
+  const [postflopPool, setPostflopPool] = useState<readonly PostflopSpot[]>([]);
+  const [poolState, setPoolState] = useState<'idle' | 'loading' | 'ready' | 'missing'>('idle');
+
+  useEffect(() => {
+    if (!flopReached || !pairingFromPath) {
+      setPostflopPool([]);
+      setPoolState('idle');
+      return;
+    }
+    let cancelled = false;
+    setPoolState('loading');
+    void (async () => {
+      try {
+        const pairings = await fetchPairings();
+        const chunk = pairings.find(
+          (p) => p.heroPos === pairingFromPath.defender && p.villainPos === pairingFromPath.opener,
+        );
+        if (!chunk) {
+          if (!cancelled) setPoolState('missing');
+          return;
+        }
+        const spots = await fetchPairingSpots(chunk.key);
+        if (!cancelled) {
+          setPostflopPool(spots);
+          setPoolState('ready');
+        }
+      } catch {
+        if (!cancelled) setPoolState('missing');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [flopReached, pairingFromPath]);
+
   const flopLookup = useMemo(() => {
     if (pickedFlop.length !== 3 || postflopPool.length === 0) return null;
     return findSpotsByBoard(pickedFlop as unknown as FlopCards, { pool: postflopPool });
@@ -185,10 +216,14 @@ export function ChartNavigator({
                 </p>
               </div>
 
-              {pairingFromPath ? (
+              {pairingFromPath && poolState !== 'missing' ? (
                 <>
                   <BoardPicker selected={pickedFlop} onChange={setPickedFlop} />
-                  {pickedFlop.length < 3 ? (
+                  {poolState === 'loading' ? (
+                    <p className="text-fg-muted text-center font-mono text-[11px] uppercase tracking-[0.18em]">
+                      {pairingFromPath.defender} vs {pairingFromPath.opener} 전략 불러오는 중…
+                    </p>
+                  ) : pickedFlop.length < 3 ? (
                     <p className="text-fg-muted text-center font-mono text-[11px] uppercase tracking-[0.18em]">
                       카드 {pickedFlop.length}/3 · 3장 고르면 자동으로 전략이 나옵니다
                     </p>
@@ -477,13 +512,18 @@ function resolveNode(decisions: DecisionsJson, path: string[]): NodeData | null 
  *  doesn't look like a SRP (no opener, no caller, multi-3bet, …);
  *  the UI then surfaces "no precomputed data" instead of guessing. */
 function derivePairing(path: string[]): { defender: string; opener: string } | null {
+  // Action tokens come straight from the qb-tree labels: 'FOLD',
+  // 'Call' (mixed case!), raise sizes like '2.5bb' / '11.0bb', and
+  // 'AllIn'. Match case-insensitively — the original exact-'CALL'
+  // comparison never matched and the picker showed "no data" on every
+  // line (caught 2026-06-12).
   let lastCaller: string | null = null;
   let lastCallerIdx = -1;
   for (let i = 0; i < path.length; i++) {
     const tok = path[i]!;
     const us = tok.indexOf('_');
     if (us < 0) continue;
-    if (tok.slice(us + 1) === 'CALL') {
+    if (tok.slice(us + 1).toUpperCase() === 'CALL') {
       lastCaller = tok.slice(0, us);
       lastCallerIdx = i;
     }

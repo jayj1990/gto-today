@@ -6,7 +6,6 @@ import {
   type Position,
 } from '@gto/poker-core';
 import { POSTFLOP_SEEDS } from './ranges/postflop-seeds';
-import { SOLVER_SPOTS } from './ranges/solver-spots';
 
 /**
  * Postflop action space. Bet/raise sizes are expressed as a fraction of
@@ -94,16 +93,14 @@ export interface PostflopSpot {
   readonly teachingNote: string;
 }
 
-/** Returns a cloned, deterministic list of all postflop spots. Solver-
- *  generated spots take priority when available; the handcrafted seeds
- *  act as a bootstrap fallback until the overnight batch completes.
- *
- *  `gameType` (optional) filters the pool to either cash (non-MTT
- *  potTypes) or MTT. If the requested format has no spots yet (the
- *  MTT batch is still solving), we fall back to the other format
- *  rather than returning an empty list. */
+/** Synchronous spot list — handcrafted seeds only. The full solver
+ *  dataset (~128K spots) is NOT bundled; fetch it per-pairing via
+ *  spots-loader (fetchPairingSpots / fetchDailyPairingSpots). This
+ *  stays as the instant, offline-safe fallback for first paint and
+ *  tests. (Bundling the full set produced a 57 MB client chunk that
+ *  crashed mobile browsers — 2026-06-12.) */
 export function listPostflopSpots(options: { gameType?: 'cash' | 'mtt' } = {}): PostflopSpot[] {
-  const pool = SOLVER_SPOTS.length > 0 ? SOLVER_SPOTS : POSTFLOP_SEEDS;
+  const pool = POSTFLOP_SEEDS;
   const gameType = options.gameType;
   if (!gameType) return pool.map((s) => ({ ...s, board: [...s.board] }));
   const matches = pool.filter((s) =>
@@ -149,7 +146,9 @@ export function findSpotsByBoard(
     pool?: readonly PostflopSpot[];
   } = {},
 ): BoardLookupResult {
-  const pool = opts.pool ?? (SOLVER_SPOTS.length > 0 ? SOLVER_SPOTS : POSTFLOP_SEEDS);
+  // Callers fetch the relevant pairing chunk via spots-loader and pass
+  // it as `pool`; the seeds default keeps tests + offline paths alive.
+  const pool = opts.pool ?? POSTFLOP_SEEDS;
   const queryCanon = canonicalizeFlop(board);
 
   const filtered = pool.filter((s) => {
@@ -206,10 +205,11 @@ export function findSpotsByBoard(
   };
 }
 
-/** Look up a single seed spot by id. Returns null if not found. */
+/** Look up a single seed spot by id. Returns null if not found.
+ *  Searches the bundled seeds only — solver spots are runtime-fetched
+ *  and surfaces that need them (review, share) persist the full spot. */
 export function getPostflopSpot(id: string): PostflopSpot | null {
-  const pool = SOLVER_SPOTS.length > 0 ? SOLVER_SPOTS : POSTFLOP_SEEDS;
-  const found = pool.find((s) => s.id === id);
+  const found = POSTFLOP_SEEDS.find((s) => s.id === id);
   return found ? { ...found, board: [...found.board] } : null;
 }
 
