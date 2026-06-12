@@ -101,9 +101,9 @@ for PAIR in "${PAIRINGS[@]}"; do
 
   # Commit only if something changed (idempotent re-runs are safe).
   PUSHED=0
-  if ! git diff --quiet packages/gto-data/ 2>/dev/null; then
+  if ! git diff --quiet apps/web/public/data/postflop/ 2>/dev/null; then
     COUNT=$(ls "$REPO/solver-run/outputs/${NAME}_"*.json 2>/dev/null | wc -l)
-    git add packages/gto-data/ >> "$LOG" 2>&1
+    git add apps/web/public/data/postflop/ >> "$LOG" 2>&1
     git commit -m "data(solver): ${NAME} — ${COUNT} boards (all-iso)" >> "$LOG" 2>&1
     if git push origin main >> "$LOG" 2>&1; then
       PUSHED=1
@@ -184,9 +184,9 @@ for PAIR in "${PAIRINGS_3BET[@]}"; do
   }
 
   PUSHED=0
-  if ! git diff --quiet packages/gto-data/ 2>/dev/null; then
+  if ! git diff --quiet apps/web/public/data/postflop/ 2>/dev/null; then
     COUNT=$(ls "$REPO/solver-run/outputs/${NAME}_"*.json 2>/dev/null | wc -l)
-    git add packages/gto-data/ >> "$LOG" 2>&1
+    git add apps/web/public/data/postflop/ >> "$LOG" 2>&1
     git commit -m "data(solver): ${NAME} — ${COUNT} boards (3bet pot)" >> "$LOG" 2>&1
     if git push origin main >> "$LOG" 2>&1; then
       PUSHED=1
