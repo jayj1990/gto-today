@@ -83,7 +83,9 @@ export function PostflopExplorer() {
   const [groupId, setGroupId] = useState(firstWithData);
   const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
 
-  const [exploreMode, setExploreMode] = useState<'texture' | 'search'>('texture');
+  // Default to the 3-card board search — it's the primary use case
+  // ("내 플랍 골라서 전략 보기"). Texture browsing is the secondary path.
+  const [exploreMode, setExploreMode] = useState<'search' | 'texture'>('search');
   const [pickedCards, setPickedCards] = useState<readonly string[]>([]);
   const search = useMemo(() => {
     if (exploreMode !== 'search' || pickedCards.length !== 3) return null;
@@ -120,9 +122,9 @@ export function PostflopExplorer() {
         </p>
       </div>
 
-      {/* Texture vs free-board search */}
+      {/* Free-board search (default) vs texture browsing */}
       <div className="border-hair surface mb-3 inline-flex self-start rounded-[var(--radius-button)] p-1">
-        {(['texture', 'search'] as const).map((m) => {
+        {(['search', 'texture'] as const).map((m) => {
           const active = m === exploreMode;
           return (
             <button
