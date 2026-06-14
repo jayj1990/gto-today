@@ -124,8 +124,13 @@ export function ChartNavigator({
     void (async () => {
       try {
         const pairings = await fetchPairings();
+        const [a, b] = pairingFromPath.players;
+        // Match by unordered player pair + pot type — our chunk's
+        // heroPos is whichever player is OOP, which flips by line.
         const chunk = pairings.find(
-          (p) => p.heroPos === pairingFromPath.defender && p.villainPos === pairingFromPath.opener,
+          (p) =>
+            p.potType === pairingFromPath.potType &&
+            ((p.heroPos === a && p.villainPos === b) || (p.heroPos === b && p.villainPos === a)),
         );
         if (!chunk) {
           if (!cancelled) setPoolState('missing');
@@ -207,7 +212,7 @@ export function ChartNavigator({
                   플랍 도달
                   {pairingFromPath && (
                     <span className="ml-2 font-mono text-[13px] tracking-[0.04em]">
-                      · {pairingFromPath.defender} vs {pairingFromPath.opener}
+                      · {pairingLabel(pairingFromPath)}
                     </span>
                   )}
                 </h2>
@@ -221,7 +226,7 @@ export function ChartNavigator({
                   <BoardPicker selected={pickedFlop} onChange={setPickedFlop} />
                   {poolState === 'loading' ? (
                     <p className="text-fg-muted text-center font-mono text-[11px] uppercase tracking-[0.18em]">
-                      {pairingFromPath.defender} vs {pairingFromPath.opener} 전략 불러오는 중…
+                      {pairingLabel(pairingFromPath)} 전략 불러오는 중…
                     </p>
                   ) : pickedFlop.length < 3 ? (
                     <p className="text-fg-muted text-center font-mono text-[11px] uppercase tracking-[0.18em]">
@@ -233,8 +238,8 @@ export function ChartNavigator({
                         근접 보드 없음
                       </p>
                       <p className="text-fg mt-2 text-[13px]">
-                        {pairingFromPath.defender} vs {pairingFromPath.opener} 페어링에 이 보드와
-                        가까운 사전계산 데이터가 없습니다.
+                        {pairingLabel(pairingFromPath)} 페어링에 이 보드와 가까운 사전계산 데이터가
+                        없습니다.
                       </p>
                     </div>
                   ) : flopLookup ? (
@@ -506,17 +511,20 @@ function resolveNode(decisions: DecisionsJson, path: string[]): NodeData | null 
   return { actor, actions: {}, legal: [] };
 }
 
-/** Walk the preflop path to find the postflop pairing — the most
- *  recent caller is the defender (postflop hero), the most recent
- *  raiser before that call is the opener. Returns null if the path
- *  doesn't look like a SRP (no opener, no caller, multi-3bet, …);
- *  the UI then surfaces "no precomputed data" instead of guessing. */
-function derivePairing(path: string[]): { defender: string; opener: string } | null {
-  // Action tokens come straight from the qb-tree labels: 'FOLD',
-  // 'Call' (mixed case!), raise sizes like '2.5bb' / '11.0bb', and
-  // 'AllIn'. Match case-insensitively — the original exact-'CALL'
-  // comparison never matched and the picker showed "no data" on every
-  // line (caught 2026-06-12).
+/** Postflop pairing the preflop path leads into. The two players are
+ *  the closing caller + the last raiser; potType comes from how many
+ *  raises preceded the call (1 = SRP, 2 = 3bet pot, 3+ = 4bet pot).
+ *  Returns the unordered player set so chunk matching is order-free —
+ *  our data's `heroPos` is whichever player ends up OOP, which varies
+ *  by line. Returns null when the path isn't a heads-up open+call.
+ *
+ *  Tokens are qb-tree labels: 'FOLD', 'Call' (mixed case), raise sizes
+ *  like '2.5bb', 'AllIn'. (The old exact-'CALL' compare never matched;
+ *  and it treated 3bet pots as SRP, so solved 3bet lines like
+ *  UTG-open / SB-3bet / UTG-call missed their chunk — caught 2026-06-13.) */
+function derivePairing(
+  path: string[],
+): { players: [string, string]; potType: 'srp' | '3bp' | '4bp' } | null {
   let lastCaller: string | null = null;
   let lastCallerIdx = -1;
   for (let i = 0; i < path.length; i++) {
@@ -529,19 +537,33 @@ function derivePairing(path: string[]): { defender: string; opener: string } | n
     }
   }
   if (!lastCaller) return null;
-  // Most recent raiser BEFORE the last call.
-  let opener: string | null = null;
-  for (let i = lastCallerIdx - 1; i >= 0; i--) {
+
+  // Count raises up to (and including) the bet the call closed; the
+  // last raiser is the other player in the heads-up pot.
+  let raises = 0;
+  let lastRaiser: string | null = null;
+  for (let i = 0; i < lastCallerIdx; i++) {
     const tok = path[i]!;
     const us = tok.indexOf('_');
     if (us < 0) continue;
     if (isRaiseAction(tok.slice(us + 1))) {
-      opener = tok.slice(0, us);
-      break;
+      raises++;
+      lastRaiser = tok.slice(0, us);
     }
   }
-  if (!opener) return null;
-  return { defender: lastCaller, opener };
+  if (!lastRaiser || raises === 0) return null;
+  if (lastRaiser === lastCaller) return null;
+
+  const potType = raises >= 3 ? '4bp' : raises === 2 ? '3bp' : 'srp';
+  return { players: [lastCaller, lastRaiser], potType };
+}
+
+/** "UTG vs SB" with a 3벳/4벳 tag for non-SRP pots. */
+function pairingLabel(p: { players: [string, string]; potType: 'srp' | '3bp' | '4bp' }): string {
+  const base = `${p.players[0]} vs ${p.players[1]}`;
+  if (p.potType === '3bp') return `${base} ·3벳`;
+  if (p.potType === '4bp') return `${base} ·4벳`;
+  return base;
 }
 
 function nextActor(path: string[]): string | null {
