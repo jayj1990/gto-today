@@ -25,6 +25,8 @@ const INPUT = path.join(ROOT, 'solver-run/outputs');
 // fetchPairingSpots() — nothing is bundled.
 const PUBLIC_DIR = path.join(ROOT, 'apps/web/public/data/postflop');
 const MANIFEST_JSON = path.join(PUBLIC_DIR, 'manifest.json');
+// Full per-board ranges (169-grid data), one file per pairing chunk.
+const RANGES_DIR = path.join(PUBLIC_DIR, 'ranges');
 // Migration fallbacks — earlier layouts, read once if PUBLIC_DIR is
 // empty so no spot is lost on the first run of the new pipeline.
 const OLD_CHUNKS_JSON_DIR = path.join(ROOT, 'packages/gto-data/data/spots-chunks');
@@ -132,6 +134,73 @@ function preflopSummaryKR(heroPos, villainPos, potType) {
   if (potType === '3bp') return `${villainPos} 오픈 · ${heroPos} 3벳 · ${villainPos} 콜`;
   if (potType === 'mtt') return `${villainPos} 오픈 · ${heroPos} 콜 (MTT · 1BB 앤티)`;
   return `${villainPos} 오픈 · ${heroPos} 콜`;
+}
+
+// ─────────────── Full-range extraction (2026-06-13) ───────────────
+// The solver computes the hero's full strategy for EVERY combo in
+// range. We used to keep only ~5 sample combos per board and delete
+// the raw — losing the full 169-grid. Now we also emit a compact
+// per-board range: { canonKey → { board, texture, hands:{handType:{act%}} } }.
+// hands carries integer percentages, only non-zero actions. ~2 MB per
+// pairing — actually smaller than the old 5-combo spots (no per-spot
+// metadata repetition). Action codes: x=check f=fold c=call
+// b33/b50/b75/bpot/bov=bet sizes, r=raise.
+
+const RANK_VAL = { A: 14, K: 13, Q: 12, J: 11, T: 10, 9: 9, 8: 8, 7: 7, 6: 6, 5: 5, 4: 4, 3: 3, 2: 2 };
+
+/** Replicates poker-core canonicalizeFlop().key so range lookups match
+ *  findSpotsByBoard's matchKey exactly: ranks high→low + suit pattern. */
+function canonKeyOf(board) {
+  const cards = board.map((c) => ({ r: c[0], s: c[1] }));
+  cards.sort((a, b) => RANK_VAL[b.r] - RANK_VAL[a.r]);
+  const ranks = cards.map((c) => c.r).join('');
+  const uniq = new Set(cards.map((c) => c.s)).size;
+  const pattern = uniq === 3 ? 'r' : uniq === 1 ? 'mono' : 'tt';
+  return `${ranks}${pattern}`;
+}
+
+/** Short action code for the compact range encoding. */
+function shortAction(label, pot) {
+  if (label === 'CHECK') return 'x';
+  if (label === 'FOLD') return 'f';
+  if (label === 'CALL') return 'c';
+  if (label.startsWith('BET ')) {
+    const b = classifyBet(parseFloat(label.slice(4)), pot);
+    return { bet33: 'b33', bet50: 'b50', bet75: 'b75', bet_pot: 'bpot', bet_overbet: 'bov' }[b];
+  }
+  if (label.startsWith('RAISE ')) return 'r';
+  return null;
+}
+
+/** Build the per-board full range from the root strategy node:
+ *  { handType: { actCode: intPct } } over every combo in hero range. */
+function extractBoardRange(root, pot) {
+  if (!root.strategy || !root.strategy.strategy) return null;
+  const actionList = root.strategy.actions ?? root.actions;
+  if (!actionList) return null;
+  const codes = actionList.map((a) => shortAction(a, pot));
+  if (codes.some((a) => a === null)) return null;
+
+  const agg = {}; // handType → { n, sums:{code:sum} }
+  for (const [combo, freqs] of Object.entries(root.strategy.strategy)) {
+    const s = combo4ToSpot(combo);
+    const ht = s.pair ?? s.label;
+    if (!agg[ht]) agg[ht] = { n: 0, sums: {} };
+    agg[ht].n++;
+    for (let i = 0; i < codes.length; i++) {
+      agg[ht].sums[codes[i]] = (agg[ht].sums[codes[i]] ?? 0) + freqs[i];
+    }
+  }
+  const hands = {};
+  for (const [ht, { n, sums }] of Object.entries(agg)) {
+    const mix = {};
+    for (const [code, sum] of Object.entries(sums)) {
+      const pct = Math.round((sum / n) * 100);
+      if (pct > 0) mix[code] = pct;
+    }
+    hands[ht] = mix;
+  }
+  return hands;
 }
 
 // Walk the solver JSON down to the root-node's strategy block and
@@ -476,6 +545,22 @@ function main() {
   }
   const existingCount = byId.size;
 
+  // Full per-board ranges, merged across runs like spots. Keyed
+  // chunkKey → canonBoardKey → { board, texture, hands }.
+  const rangesByChunk = {};
+  if (fs.existsSync(RANGES_DIR)) {
+    for (const f of fs.readdirSync(RANGES_DIR)) {
+      if (!f.endsWith('.json')) continue;
+      try {
+        rangesByChunk[f.replace(/\.json$/, '')] = JSON.parse(
+          fs.readFileSync(path.join(RANGES_DIR, f), 'utf8'),
+        );
+      } catch (e) {
+        console.warn(`ranges/${f} unparseable — ${e.message}`);
+      }
+    }
+  }
+
   const spots = [];
   for (const f of files) {
     let tree;
@@ -546,6 +631,18 @@ function main() {
     }
     let streetCount = heroPicks.length;
 
+    // Full per-board range for the 169-grid chart. Keyed by canonical
+    // board so the app's findSpotsByBoard matchKey resolves it.
+    const hands = extractBoardRange(root, pot);
+    if (hands) {
+      const ck = chunkKey({ id: `pf_${sourceName}_x` });
+      (rangesByChunk[ck] ??= {})[canonKeyOf(board)] = {
+        board,
+        texture: classifyTexture(board),
+        hands,
+      };
+    }
+
     // Extend into turn + river subtrees when the solver was asked to
     // dump them (set_dump_rounds 3). For flop-only dumps the recursion
     // short-circuits immediately at the first chance_node, so this is
@@ -593,15 +690,31 @@ function main() {
       summary: first?.context?.preflopSummary ?? '',
     });
   }
+  // Write full-range files (one per chunk that has range data) and flag
+  // them in the manifest so the UI knows a 169-grid is available.
+  fs.mkdirSync(RANGES_DIR, { recursive: true });
+  const rangeBoardCount = {};
+  for (const [ck, boards] of Object.entries(rangesByChunk)) {
+    const n = Object.keys(boards).length;
+    if (n === 0) continue;
+    fs.writeFileSync(path.join(RANGES_DIR, `${ck}.json`), JSON.stringify(boards) + '\n', 'utf8');
+    rangeBoardCount[ck] = n;
+  }
+  for (const c of manifestChunks) {
+    c.rangeBoards = rangeBoardCount[c.key] ?? 0;
+  }
+
   fs.writeFileSync(
     MANIFEST_JSON,
-    JSON.stringify({ version: 1, chunks: manifestChunks }, null, 2) + '\n',
+    JSON.stringify({ version: 2, chunks: manifestChunks }, null, 2) + '\n',
     'utf8',
   );
 
-  console.log(`wrote ${chunkKeys.length} chunks + manifest → public/data/postflop/`);
+  console.log(`wrote ${chunkKeys.length} chunks + ${Object.keys(rangeBoardCount).length} range files + manifest`);
   for (const c of manifestChunks) {
-    console.log(`  ${c.key}: ${c.count} spots (${c.heroPos} vs ${c.villainPos}, ${c.potType})`);
+    console.log(
+      `  ${c.key}: ${c.count} spots, ${c.rangeBoards} range boards (${c.heroPos} vs ${c.villainPos}, ${c.potType})`,
+    );
   }
 }
 

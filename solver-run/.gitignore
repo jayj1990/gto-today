@@ -18,3 +18,4 @@ watchdog.log
 # run-full3-SB-vs-BTN.sh). Deterministic, regenerated each tick.
 run-full-*.sh
 run-full3-*.sh
+resolve.conf

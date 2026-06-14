@@ -4,17 +4,20 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   distinctBoards,
   fetchPairings,
+  fetchPairingRanges,
   fetchPairingSpots,
   findSpotsByBoard,
   groupSpotsByTexture,
   TEXTURE_GROUPS,
   type PairingChunkMeta,
+  type PairingRanges,
   type PostflopSpot,
 } from '@gto/gto-data';
 import { canonicalizeFlop, type FlopCards } from '@gto/poker-core';
 import { CardView, cn } from '@gto/ui';
 import { BoardPicker } from './board-picker';
 import { BoardMixPanel } from './board-mix-panel';
+import { RangeChartPanel } from './range-chart-panel';
 
 /**
  * Standalone postflop-strategy explorer. Pairing pill row → 텍스처 탭
@@ -52,15 +55,18 @@ export function PostflopExplorer() {
     };
   }, []);
 
-  // Chunk per selected pairing.
+  // Chunk + full ranges per selected pairing (ranges resolve to {} when
+  // a pairing hasn't been re-solved with full-range data yet).
+  const [ranges, setRanges] = useState<PairingRanges>({});
   useEffect(() => {
     if (!pairingKey) return;
     let cancelled = false;
     setLoadState('loading');
-    void fetchPairingSpots(pairingKey)
-      .then((spots) => {
+    void Promise.all([fetchPairingSpots(pairingKey), fetchPairingRanges(pairingKey)])
+      .then(([spots, rng]) => {
         if (cancelled) return;
         setPairingSpots(spots);
+        setRanges(rng);
         setLoadState('ready');
       })
       .catch(() => {
@@ -286,7 +292,17 @@ export function PostflopExplorer() {
                 })}
               </section>
 
-              {selectedBoard && <BoardMixPanel key={selectedBoard} spots={selectedSpots} />}
+              {selectedBoard &&
+                (() => {
+                  const sel = boards.find((b) => b.key === selectedBoard);
+                  const ck = sel ? canonicalizeFlop(sel.board as unknown as FlopCards).key : '';
+                  const range = ranges[ck];
+                  return range ? (
+                    <RangeChartPanel key={ck} range={range} />
+                  ) : (
+                    <BoardMixPanel key={selectedBoard} spots={selectedSpots} />
+                  );
+                })()}
             </>
           )}
         </>
@@ -314,10 +330,14 @@ export function PostflopExplorer() {
                   {search.match === 'exact' ? '정확 일치' : `근접 일치 · 거리 ${search.distance}`}
                 </p>
                 <p className="text-fg-muted font-mono text-[11px] tabular-nums">
-                  {search.spots.length}개 콤보
+                  {search.matchKey}
                 </p>
               </div>
-              <BoardMixPanel key={search.matchKey} spots={search.spots} />
+              {ranges[search.matchKey] ? (
+                <RangeChartPanel key={search.matchKey} range={ranges[search.matchKey]!} />
+              ) : (
+                <BoardMixPanel key={search.matchKey} spots={search.spots} />
+              )}
             </>
           ) : null}
         </>

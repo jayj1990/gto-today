@@ -13,7 +13,25 @@ set -u
 REPO="C:/Users/Jay/poker-gto-guide"
 LOG="$REPO/solver-run/all-tiers.log"
 
-echo "=== all-tiers start $(date) ===" >> "$LOG"
+# Optional re-solve config (watchdog-safe: re-read on every relaunch).
+# resolve.conf may set:
+#   ONLY_PAIRINGS="BB:CO BB:BTN ..."  — restrict to these pairings
+#   FORCE_RESOLVE=1                    — bypass the git-log skip guard
+# Delete the file to return to steady-state full-chain behaviour.
+ONLY_PAIRINGS=""
+FORCE_RESOLVE=""
+if [ -f "$REPO/solver-run/resolve.conf" ]; then
+  # shellcheck disable=SC1090
+  . "$REPO/solver-run/resolve.conf"
+fi
+
+# True when PAIR ($1) is allowed by ONLY_PAIRINGS (empty = allow all).
+pair_allowed() {
+  [ -z "$ONLY_PAIRINGS" ] && return 0
+  case " $ONLY_PAIRINGS " in *" $1 "*) return 0 ;; *) return 1 ;; esac
+}
+
+echo "=== all-tiers start $(date) [only='${ONLY_PAIRINGS}' force='${FORCE_RESOLVE}'] ===" >> "$LOG"
 
 # Pairing list — each is "DEFENDER:OPENER". 15 pairings ordered by
 # real-game frequency so the most useful data ships first.
@@ -56,13 +74,16 @@ for PAIR in "${PAIRINGS[@]}"; do
   NAME="full_${DEF}_vs_${OPN}"
   RUNNER="$REPO/solver-run/run-${NAME//_/-}.sh"
 
+  cd "$REPO"
+  if ! pair_allowed "$PAIR"; then continue; fi
+
   # Skip pairings already pushed to git. Cleanup empties outputs/, so the
   # per-board "[ ! -s output ]" resume check can't tell the difference
   # between "never solved" and "already shipped". Without this guard a
   # crash + restart would re-solve every prior pairing from scratch
-  # (~117h each).
-  cd "$REPO"
-  if git log --oneline --grep="data(solver): ${NAME} —" 2>/dev/null | grep -q .; then
+  # (~117h each). FORCE_RESOLVE bypasses it for a deliberate re-solve
+  # (e.g. the 2026-06 full-range regeneration).
+  if [ -z "$FORCE_RESOLVE" ] && git log --oneline --grep="data(solver): ${NAME} —" 2>/dev/null | grep -q .; then
     echo "[$(date +%H:%M:%S)] ⊘ ${NAME} already in git, skip" >> "$LOG"
     continue
   fi
@@ -149,7 +170,8 @@ for PAIR in "${PAIRINGS_3BET[@]}"; do
   RUNNER="$REPO/solver-run/run-${NAME//_/-}.sh"
 
   cd "$REPO"
-  if git log --oneline --grep="data(solver): ${NAME} —" 2>/dev/null | grep -q .; then
+  if ! pair_allowed "$PAIR"; then continue; fi
+  if [ -z "$FORCE_RESOLVE" ] && git log --oneline --grep="data(solver): ${NAME} —" 2>/dev/null | grep -q .; then
     echo "[$(date +%H:%M:%S)] ⊘ ${NAME} already in git, skip" >> "$LOG"
     continue
   fi

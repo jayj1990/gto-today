@@ -20,7 +20,18 @@ export interface PairingChunkMeta {
   readonly villainPos: Position;
   readonly potType: PotType;
   readonly summary: string;
+  /** Boards with full 169-range data available (0 = sample-only). */
+  readonly rangeBoards?: number;
 }
+
+/** Compact per-board range: hand-type → action-code → integer percent.
+ *  Codes: x=check f=fold c=call b33/b50/b75/bpot/bov=bet sizes, r=raise. */
+export interface BoardRange {
+  readonly board: readonly string[];
+  readonly texture: string;
+  readonly hands: Readonly<Record<string, Readonly<Record<string, number>>>>;
+}
+export type PairingRanges = Readonly<Record<string, BoardRange>>;
 
 interface SpotsManifest {
   readonly version: number;
@@ -31,6 +42,7 @@ const BASE = '/data/postflop';
 
 let manifestPromise: Promise<readonly PairingChunkMeta[]> | null = null;
 const chunkCache = new Map<string, Promise<PostflopSpot[]>>();
+const rangeCache = new Map<string, Promise<PairingRanges>>();
 
 /** Pairing metadata for every available chunk, ordered by real-game
  *  frequency. Fetched once per session. */
@@ -63,6 +75,20 @@ export function fetchPairingSpots(key: string): Promise<PostflopSpot[]> {
         throw err;
       });
     chunkCache.set(key, p);
+  }
+  return p;
+}
+
+/** Full per-board ranges for one pairing (169-grid data). Resolves to
+ *  an empty map if the pairing has no range file yet (pre full-range
+ *  re-solve) — callers fall back to the sample-spot view. */
+export function fetchPairingRanges(key: string): Promise<PairingRanges> {
+  let p = rangeCache.get(key);
+  if (!p) {
+    p = fetch(`${BASE}/ranges/${key}.json`)
+      .then((r) => (r.ok ? (r.json() as Promise<PairingRanges>) : ({} as PairingRanges)))
+      .catch(() => ({}) as PairingRanges);
+    rangeCache.set(key, p);
   }
   return p;
 }
