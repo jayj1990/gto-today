@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "chunks": [
     {
       "key": "full-bb-btn",
@@ -7,15 +7,17 @@
       "heroPos": "BB",
       "villainPos": "BTN",
       "potType": "srp",
-      "summary": "BTN 오픈 · BB 콜"
+      "summary": "BTN 오픈 · BB 콜",
+      "rangeBoards": 0
     },
     {
       "key": "full-bb-co",
-      "count": 8755,
+      "count": 8775,
       "heroPos": "BB",
       "villainPos": "CO",
       "potType": "srp",
-      "summary": "CO 오픈 · BB 콜"
+      "summary": "CO 오픈 · BB 콜",
+      "rangeBoards": 1161
     },
     {
       "key": "full-bb-mp",
@@ -23,7 +25,8 @@
       "heroPos": "BB",
       "villainPos": "MP",
       "potType": "srp",
-      "summary": "MP 오픈 · BB 콜"
+      "summary": "MP 오픈 · BB 콜",
+      "rangeBoards": 0
     },
     {
       "key": "full-bb-sb",
@@ -31,7 +34,8 @@
       "heroPos": "BB",
       "villainPos": "SB",
       "potType": "srp",
-      "summary": "SB 오픈 · BB 콜"
+      "summary": "SB 오픈 · BB 콜",
+      "rangeBoards": 0
     },
     {
       "key": "full-bb-utg",
@@ -39,7 +43,8 @@
       "heroPos": "BB",
       "villainPos": "UTG",
       "potType": "srp",
-      "summary": "UTG 오픈 · BB 콜"
+      "summary": "UTG 오픈 · BB 콜",
+      "rangeBoards": 0
     },
     {
       "key": "full-btn-co",
@@ -47,7 +52,8 @@
       "heroPos": "BTN",
       "villainPos": "CO",
       "potType": "srp",
-      "summary": "CO 오픈 · BTN 콜"
+      "summary": "CO 오픈 · BTN 콜",
+      "rangeBoards": 0
     },
     {
       "key": "full-btn-mp",
@@ -55,7 +61,8 @@
       "heroPos": "BTN",
       "villainPos": "MP",
       "potType": "srp",
-      "summary": "MP 오픈 · BTN 콜"
+      "summary": "MP 오픈 · BTN 콜",
+      "rangeBoards": 0
     },
     {
       "key": "full-btn-utg",
@@ -63,7 +70,8 @@
       "heroPos": "BTN",
       "villainPos": "UTG",
       "potType": "srp",
-      "summary": "UTG 오픈 · BTN 콜"
+      "summary": "UTG 오픈 · BTN 콜",
+      "rangeBoards": 0
     },
     {
       "key": "full3-co-mp",
@@ -71,7 +79,8 @@
       "heroPos": "CO",
       "villainPos": "MP",
       "potType": "3bp",
-      "summary": "MP 오픈 · CO 3벳 · MP 콜"
+      "summary": "MP 오픈 · CO 3벳 · MP 콜",
+      "rangeBoards": 0
     },
     {
       "key": "full3-co-utg",
@@ -79,7 +88,8 @@
       "heroPos": "CO",
       "villainPos": "UTG",
       "potType": "3bp",
-      "summary": "UTG 오픈 · CO 3벳 · UTG 콜"
+      "summary": "UTG 오픈 · CO 3벳 · UTG 콜",
+      "rangeBoards": 0
     },
     {
       "key": "full3-mp-utg",
@@ -87,7 +97,8 @@
       "heroPos": "MP",
       "villainPos": "UTG",
       "potType": "3bp",
-      "summary": "UTG 오픈 · MP 3벳 · UTG 콜"
+      "summary": "UTG 오픈 · MP 3벳 · UTG 콜",
+      "rangeBoards": 0
     },
     {
       "key": "full3-sb-btn",
@@ -95,7 +106,8 @@
       "heroPos": "SB",
       "villainPos": "BTN",
       "potType": "3bp",
-      "summary": "BTN 오픈 · SB 3벳 · BTN 콜"
+      "summary": "BTN 오픈 · SB 3벳 · BTN 콜",
+      "rangeBoards": 0
     },
     {
       "key": "full3-sb-co",
@@ -103,7 +115,8 @@
       "heroPos": "SB",
       "villainPos": "CO",
       "potType": "3bp",
-      "summary": "CO 오픈 · SB 3벳 · CO 콜"
+      "summary": "CO 오픈 · SB 3벳 · CO 콜",
+      "rangeBoards": 0
     },
     {
       "key": "full3-sb-mp",
@@ -111,7 +124,8 @@
       "heroPos": "SB",
       "villainPos": "MP",
       "potType": "3bp",
-      "summary": "MP 오픈 · SB 3벳 · MP 콜"
+      "summary": "MP 오픈 · SB 3벳 · MP 콜",
+      "rangeBoards": 0
     },
     {
       "key": "full3-sb-utg",
@@ -119,7 +133,8 @@
       "heroPos": "SB",
       "villainPos": "UTG",
       "potType": "3bp",
-      "summary": "UTG 오픈 · SB 3벳 · UTG 콜"
+      "summary": "UTG 오픈 · SB 3벳 · UTG 콜",
+      "rangeBoards": 0
     },
     {
       "key": "legacy",
@@ -127,7 +142,8 @@
       "heroPos": "BB",
       "villainPos": "CO",
       "potType": "srp",
-      "summary": "CO 오픈 · BB 콜"
+      "summary": "CO 오픈 · BB 콜",
+      "rangeBoards": 366
     }
   ]
 }
