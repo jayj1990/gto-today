@@ -5,13 +5,16 @@ import { motion } from 'framer-motion';
 import { ComboDetailSheet, RangeGrid, type ComboMix } from '@gto/ui';
 import {
   fetchPairings,
+  fetchPairingRanges,
   fetchPairingSpots,
   findSpotsByBoard,
+  type PairingRanges,
   type PostflopSpot,
 } from '@gto/gto-data';
 import type { FlopCards } from '@gto/poker-core';
 import { BoardPicker } from './board-picker';
 import { BoardMixPanel } from './board-mix-panel';
+import { RangeChartPanel } from './range-chart-panel';
 import { Skeleton } from './skeleton';
 
 type DecisionsJson = Record<string, Record<string, Record<string, number>>>;
@@ -111,6 +114,7 @@ export function ChartNavigator({
   const [pickedFlop, setPickedFlop] = useState<readonly string[]>([]);
   const pairingFromPath = useMemo(() => derivePairing(path), [path]);
   const [postflopPool, setPostflopPool] = useState<readonly PostflopSpot[]>([]);
+  const [postflopRanges, setPostflopRanges] = useState<PairingRanges>({});
   const [poolState, setPoolState] = useState<'idle' | 'loading' | 'ready' | 'missing'>('idle');
 
   useEffect(() => {
@@ -136,9 +140,13 @@ export function ChartNavigator({
           if (!cancelled) setPoolState('missing');
           return;
         }
-        const spots = await fetchPairingSpots(chunk.key);
+        const [spots, ranges] = await Promise.all([
+          fetchPairingSpots(chunk.key),
+          fetchPairingRanges(chunk.key),
+        ]);
         if (!cancelled) {
           setPostflopPool(spots);
+          setPostflopRanges(ranges);
           setPoolState('ready');
         }
       } catch {
@@ -251,10 +259,17 @@ export function ChartNavigator({
                             : `근접 일치 · 거리 ${flopLookup.distance}`}
                         </p>
                         <p className="text-fg-muted font-mono text-[11px] tabular-nums">
-                          {flopLookup.spots.length}개 콤보
+                          {flopLookup.matchKey}
                         </p>
                       </div>
-                      <BoardMixPanel key={flopLookup.matchKey} spots={flopLookup.spots} />
+                      {postflopRanges[flopLookup.matchKey] ? (
+                        <RangeChartPanel
+                          key={flopLookup.matchKey}
+                          range={postflopRanges[flopLookup.matchKey]!}
+                        />
+                      ) : (
+                        <BoardMixPanel key={flopLookup.matchKey} spots={flopLookup.spots} />
+                      )}
                     </>
                   ) : null}
                 </>
