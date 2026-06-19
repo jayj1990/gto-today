@@ -69,28 +69,34 @@ function rangeFromMix(mix, pick) {
   return parts.join(',');
 }
 
-// OOP = defender (call or raise → we keep the call slice only for
-// SRP postflop since calling BB's open is the usual postflop start).
-const OOP_RANGE = rangeFromMix(defenseChart, (m) => m.call ?? 0);
-const IP_RANGE = rangeFromMix(rfiChart, (m) => m.raise ?? 0);
+// Ranges by ROLE: defender flats (call slice), opener opened (raise slice).
+const DEFENDER_RANGE = rangeFromMix(defenseChart, (m) => m.call ?? 0);
+const OPENER_RANGE = rangeFromMix(rfiChart, (m) => m.raise ?? 0);
 
 // Sanity gate — squeeze positions (SB, CO vs early, MP vs UTG) have
 // call% = 0 in the preflop charts because GTO says they 3bet-or-fold.
-// Running the SRP solver against an empty OOP range produces trivial
-// garbage data (cost: ~22h on 2026-05-07 SB:BTN incident). Refuse to
-// emit input files when this happens — the solver chain will skip
-// this pairing instead of poisoning git with junk.
-if (!OOP_RANGE) {
+// Running the SRP solver against an empty defender range produces
+// trivial garbage (cost: ~22h on 2026-05-07 SB:BTN incident). Refuse.
+if (!DEFENDER_RANGE) {
   console.error(
-    `[gen-input] ABORT: ${defender} vs ${opener} has empty OOP range (call% = 0 across all 169 hands). ` +
-      `This is a squeeze position — solve as 3bet pot, not SRP. Skipping input generation.`,
+    `[gen-input] ABORT: ${defender} vs ${opener} has empty defender range (call% = 0). ` +
+      `Squeeze position — solve as 3bet pot, not SRP. Skipping.`,
   );
   process.exit(4);
 }
-if (!IP_RANGE) {
-  console.error(`[gen-input] ABORT: ${defender} vs ${opener} has empty IP range. Source chart bug.`);
+if (!OPENER_RANGE) {
+  console.error(`[gen-input] ABORT: ${opener} has empty open range. Source chart bug.`);
   process.exit(5);
 }
+
+// SEAT assignment by actual postflop order (earliest acts first = OOP).
+// Role ≠ seat: BB defends OOP, but BTN defends IN POSITION. The old
+// code always put the defender OOP, which mis-seated every BTN-defend
+// pairing (BTN solved as OOP when it acts last). Fixed 2026-06-20.
+const POSTFLOP_ORDER = ['SB', 'BB', 'UTG', 'MP', 'CO', 'BTN'];
+const defenderActsFirst = POSTFLOP_ORDER.indexOf(defender) < POSTFLOP_ORDER.indexOf(opener);
+const OOP_RANGE = defenderActsFirst ? DEFENDER_RANGE : OPENER_RANGE;
+const IP_RANGE = defenderActsFirst ? OPENER_RANGE : DEFENDER_RANGE;
 
 // ─────────────── 1,755 canonical flop generator ───────────────
 // Count proof: 286 rank-triples × 5 suit patterns + 156 pair-kicker

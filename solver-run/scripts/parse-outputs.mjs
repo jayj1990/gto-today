@@ -125,18 +125,29 @@ function classifyTexture(board) {
  * The defender is the hero — they called the open and now decide
  * postflop. The opener is the villain.
  */
+// Filename → ROLES (defender = caller/3bettor, opener = the raiser).
 function pairingFromFilename(name) {
-  // Matches both `full_DEF_vs_OPN_*` (SRP, defender calls) and
-  // `full3_DEF_vs_OPN_*` (3bet pot, defender 3bets / opener calls).
   const m = name.match(/^full3?_([A-Z]{2,3})_vs_([A-Z]{2,3})_/);
-  if (!m) return { heroPos: 'BB', villainPos: 'CO' };
-  return { heroPos: m[1], villainPos: m[2] };
+  if (!m) return { defender: 'BB', opener: 'CO' };
+  return { defender: m[1], opener: m[2] };
 }
 
-function preflopSummaryKR(heroPos, villainPos, potType) {
-  if (potType === '3bp') return `${villainPos} 오픈 · ${heroPos} 3벳 · ${villainPos} 콜`;
-  if (potType === 'mtt') return `${villainPos} 오픈 · ${heroPos} 콜 (MTT · 1BB 앤티)`;
-  return `${villainPos} 오픈 · ${heroPos} 콜`;
+// Postflop acting order — earliest acts first = OOP. heroPos is the OOP
+// seat (whose root strategy we extract), villainPos the IP seat. Role
+// (who opened/3bet) is independent and drives the summary line.
+const POSTFLOP_SEAT_ORDER = ['SB', 'BB', 'UTG', 'MP', 'CO', 'BTN'];
+function seatsFromRoles(defender, opener) {
+  const defFirst =
+    POSTFLOP_SEAT_ORDER.indexOf(defender) < POSTFLOP_SEAT_ORDER.indexOf(opener);
+  return defFirst
+    ? { heroPos: defender, villainPos: opener }
+    : { heroPos: opener, villainPos: defender };
+}
+
+function preflopSummaryKR(opener, defender, potType) {
+  if (potType === '3bp') return `${opener} 오픈 · ${defender} 3벳 · ${opener} 콜`;
+  if (potType === 'mtt') return `${opener} 오픈 · ${defender} 콜 (MTT · 1BB 앤티)`;
+  return `${opener} 오픈 · ${defender} 콜`;
 }
 
 // ─────────────── Full-range extraction (2026-06-13) ───────────────
@@ -348,8 +359,8 @@ function buildSpot(sourceName, board, root, { c, freqs }, meta) {
     ? `이 보드 · 이 핸드에서는 ${actionKR[top] ?? top}이 단독 정답에 가깝습니다.`
     : `혼합 전략 — ${actionKR[top] ?? top}이 가장 빈번하지만 ${sortedMix[1] ? actionKR[sortedMix[1][0]] ?? sortedMix[1][0] : '대체 액션'}도 충분한 비중.`;
 
-  const { heroPos, villainPos, potType } = meta;
-  const preflopSummary = preflopSummaryKR(heroPos, villainPos, potType);
+  const { heroPos, villainPos, potType, opener, defender } = meta;
+  const preflopSummary = preflopSummaryKR(opener, defender, potType);
 
   return {
     id: `pf_${sourceName}_${c}`,
@@ -540,8 +551,8 @@ function buildDeeperSpot(sourceName, board, node, { c, freqs }, meta, street, li
       ? `${street} 결정 · ${actionKR[top] ?? top}이 단독 정답에 가깝습니다.${lineText}`
       : `혼합 전략 — ${actionKR[top] ?? top}이 가장 빈번${sortedMix[1] ? `, 대체는 ${actionKR[sortedMix[1][0]] ?? sortedMix[1][0]}` : ''}.${lineText}`;
 
-  const { heroPos, villainPos, potType } = meta;
-  const preflopSummary = preflopSummaryKR(heroPos, villainPos, potType);
+  const { heroPos, villainPos, potType, opener, defender } = meta;
+  const preflopSummary = preflopSummaryKR(opener, defender, potType);
 
   return {
     id: `pf_${sourceName}_${street}_${board.join('')}_${c}`,
@@ -667,7 +678,10 @@ function main() {
     const is3bet = sourceName.startsWith('full3_');
     const isMTT = sourceName.startsWith('mtt_');
     const potType = is3bet ? '3bp' : isMTT ? 'mtt' : 'srp';
-    const { heroPos, villainPos } = pairingFromFilename(sourceName);
+    const { defender, opener } = pairingFromFilename(sourceName);
+    // heroPos = OOP seat (whose root strategy we extract); opener/
+    // defender carry the role for the summary line.
+    const { heroPos, villainPos } = seatsFromRoles(defender, opener);
     const meta = {
       pot,
       eff,
@@ -675,6 +689,8 @@ function main() {
       potType,
       heroPos,
       villainPos,
+      opener,
+      defender,
     };
 
     const root = tree;
