@@ -27,6 +27,9 @@ const PUBLIC_DIR = path.join(ROOT, 'apps/web/public/data/postflop');
 const MANIFEST_JSON = path.join(PUBLIC_DIR, 'manifest.json');
 // Full per-board ranges (169-grid data), one file per pairing chunk.
 const RANGES_DIR = path.join(PUBLIC_DIR, 'ranges');
+// Full flop node trees, one file PER BOARD (nodes/{chunkKey}/{canonKey}.json)
+// — the whole tree is ~25 KB/board, too big to batch per pairing.
+const NODES_DIR = path.join(PUBLIC_DIR, 'nodes');
 // Migration fallbacks — earlier layouts, read once if PUBLIC_DIR is
 // empty so no spot is lost on the first run of the new pipeline.
 const OLD_CHUNKS_JSON_DIR = path.join(ROOT, 'packages/gto-data/data/spots-chunks');
@@ -201,6 +204,62 @@ function extractBoardRange(root, pot) {
     hands[ht] = mix;
   }
   return hands;
+}
+
+/** Aggregate ONE strategy node's per-combo freqs → handType → {code:pct}. */
+function aggregateNode(node, pot) {
+  const codes = node.strategy.actions.map((a) => shortAction(a, pot));
+  if (codes.some((c) => c === null)) return null;
+  const agg = {};
+  for (const [combo, freqs] of Object.entries(node.strategy.strategy)) {
+    const s = combo4ToSpot(combo);
+    const ht = s.pair ?? s.label;
+    if (!agg[ht]) agg[ht] = { n: 0, sums: {} };
+    agg[ht].n++;
+    for (let i = 0; i < codes.length; i++) {
+      agg[ht].sums[codes[i]] = (agg[ht].sums[codes[i]] ?? 0) + freqs[i];
+    }
+  }
+  const hands = {};
+  for (const [ht, { n, sums }] of Object.entries(agg)) {
+    const mix = {};
+    for (const [code, sum] of Object.entries(sums)) {
+      const pct = Math.round((sum / n) * 100);
+      if (pct > 0) mix[code] = pct;
+    }
+    hands[ht] = mix;
+  }
+  return { actions: codes, hands };
+}
+
+/** Full FLOP node tree — every decision node reachable on the flop with
+ *  the acting player's range. Keyed by action path ('root', 'x',
+ *  'x-b33', 'b75-r', …). `side` is 'oop'/'ip' relative to the root
+ *  (first) actor. Recursion stops at chance nodes (turn) so this is
+ *  flop-only. ~14 nodes / ~25 KB per board → written as one file per
+ *  board (per-pairing would be ~42 MB, too big to fetch). */
+function extractNodeTree(root, pot) {
+  if (!root.strategy || !root.strategy.strategy) return null;
+  const rootPlayer = root.player;
+  const nodes = {};
+  const walk = (n, pathCodes) => {
+    if (!n || !n.strategy || !n.strategy.strategy) return;
+    const agg = aggregateNode(n, pot);
+    if (!agg) return;
+    nodes[pathCodes.join('-') || 'root'] = {
+      side: n.player === rootPlayer ? 'oop' : 'ip',
+      actions: agg.actions,
+      hands: agg.hands,
+    };
+    if (n.childrens) {
+      for (const [label, child] of Object.entries(n.childrens)) {
+        const c = shortAction(label, pot);
+        if (c) walk(child, [...pathCodes, c]);
+      }
+    }
+  };
+  walk(root, []);
+  return Object.keys(nodes).length > 0 ? nodes : null;
 }
 
 // Walk the solver JSON down to the root-node's strategy block and
@@ -634,13 +693,27 @@ function main() {
     // Full per-board range for the 169-grid chart. Keyed by canonical
     // board so the app's findSpotsByBoard matchKey resolves it.
     const hands = extractBoardRange(root, pot);
+    const ck = chunkKey({ id: `pf_${sourceName}_x` });
+    const canon = canonKeyOf(board);
     if (hands) {
-      const ck = chunkKey({ id: `pf_${sourceName}_x` });
-      (rangesByChunk[ck] ??= {})[canonKeyOf(board)] = {
+      (rangesByChunk[ck] ??= {})[canon] = {
         board,
         texture: classifyTexture(board),
         hands,
       };
+    }
+
+    // Full flop node tree → one file per board (written immediately;
+    // too big to accumulate in memory across 1755 boards × pairings).
+    const nodeTree = extractNodeTree(root, pot);
+    if (nodeTree) {
+      const dir = path.join(NODES_DIR, ck);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(
+        path.join(dir, `${canon}.json`),
+        JSON.stringify({ board, texture: classifyTexture(board), nodes: nodeTree }) + '\n',
+        'utf8',
+      );
     }
 
     // Extend into turn + river subtrees when the solver was asked to
