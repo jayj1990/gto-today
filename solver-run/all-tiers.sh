@@ -31,6 +31,18 @@ pair_allowed() {
   case " $ONLY_PAIRINGS " in *" $1 "*) return 0 ;; *) return 1 ;; esac
 }
 
+# True when a chunk ($1, e.g. full-bb-co) already has full node-tree
+# data (the new shape). Makes a FORCE_RESOLVE re-solve idempotent: each
+# pairing re-solves once with the new parser, then this skips it — no
+# infinite re-solve loop while resolve.conf stays in place.
+node_data_present() {
+  local dir="$REPO/apps/web/public/data/postflop/nodes/$1"
+  [ -d "$dir" ] || return 1
+  local n
+  n=$(find "$dir" -name '*.json' 2>/dev/null | wc -l)
+  [ "$n" -ge 1700 ]
+}
+
 echo "=== all-tiers start $(date) [only='${ONLY_PAIRINGS}' force='${FORCE_RESOLVE}'] ===" >> "$LOG"
 
 # Pairing list — each is "DEFENDER:OPENER". 15 pairings ordered by
@@ -76,6 +88,13 @@ for PAIR in "${PAIRINGS[@]}"; do
 
   cd "$REPO"
   if ! pair_allowed "$PAIR"; then continue; fi
+
+  # During a FORCE re-solve, skip pairings that already have full node
+  # data — re-solve each once with the new shape, then stop (no loop).
+  if [ -n "$FORCE_RESOLVE" ] && node_data_present "full-${DEF,,}-${OPN,,}"; then
+    echo "[$(date +%H:%M:%S)] ⊘ ${NAME} node data present, skip" >> "$LOG"
+    continue
+  fi
 
   # Skip pairings already pushed to git. Cleanup empties outputs/, so the
   # per-board "[ ! -s output ]" resume check can't tell the difference
@@ -171,6 +190,10 @@ for PAIR in "${PAIRINGS_3BET[@]}"; do
 
   cd "$REPO"
   if ! pair_allowed "$PAIR"; then continue; fi
+  if [ -n "$FORCE_RESOLVE" ] && node_data_present "full3-${DEF,,}-${OPN,,}"; then
+    echo "[$(date +%H:%M:%S)] ⊘ ${NAME} node data present, skip" >> "$LOG"
+    continue
+  fi
   if [ -z "$FORCE_RESOLVE" ] && git log --oneline --grep="data(solver): ${NAME} —" 2>/dev/null | grep -q .; then
     echo "[$(date +%H:%M:%S)] ⊘ ${NAME} already in git, skip" >> "$LOG"
     continue
