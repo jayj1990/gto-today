@@ -3,12 +3,12 @@
   "chunks": [
     {
       "key": "full-bb-btn",
-      "count": 8620,
+      "count": 8770,
       "heroPos": "BB",
       "villainPos": "BTN",
       "potType": "srp",
       "summary": "BTN 오픈 · BB 콜",
-      "rangeBoards": 0
+      "rangeBoards": 1170
     },
     {
       "key": "full-bb-co",
