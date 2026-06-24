@@ -13,8 +13,7 @@ import {
 } from '@gto/gto-data';
 import type { FlopCards } from '@gto/poker-core';
 import { BoardPicker } from './board-picker';
-import { BoardMixPanel } from './board-mix-panel';
-import { RangeChartPanel } from './range-chart-panel';
+import { BoardResult } from './board-result';
 import { Skeleton } from './skeleton';
 
 type DecisionsJson = Record<string, Record<string, Record<string, number>>>;
@@ -115,6 +114,7 @@ export function ChartNavigator({
   const pairingFromPath = useMemo(() => derivePairing(path), [path]);
   const [postflopPool, setPostflopPool] = useState<readonly PostflopSpot[]>([]);
   const [postflopRanges, setPostflopRanges] = useState<PairingRanges>({});
+  const [chunkKey, setChunkKey] = useState<string>('');
   const [poolState, setPoolState] = useState<'idle' | 'loading' | 'ready' | 'missing'>('idle');
 
   useEffect(() => {
@@ -147,6 +147,7 @@ export function ChartNavigator({
         if (!cancelled) {
           setPostflopPool(spots);
           setPostflopRanges(ranges);
+          setChunkKey(chunk.key);
           setPoolState('ready');
         }
       } catch {
@@ -262,14 +263,13 @@ export function ChartNavigator({
                           {flopLookup.matchKey}
                         </p>
                       </div>
-                      {postflopRanges[flopLookup.matchKey] ? (
-                        <RangeChartPanel
-                          key={flopLookup.matchKey}
-                          range={postflopRanges[flopLookup.matchKey]!}
-                        />
-                      ) : (
-                        <BoardMixPanel key={flopLookup.matchKey} spots={flopLookup.spots} />
-                      )}
+                      <BoardResult
+                        key={flopLookup.matchKey}
+                        pairingKey={chunkKey}
+                        canonKey={flopLookup.matchKey}
+                        range={postflopRanges[flopLookup.matchKey]}
+                        spots={flopLookup.spots}
+                      />
                     </>
                   ) : null}
                 </>

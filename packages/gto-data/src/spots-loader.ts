@@ -33,6 +33,22 @@ export interface BoardRange {
 }
 export type PairingRanges = Readonly<Record<string, BoardRange>>;
 
+/** One decision node in a board's flop game tree. `side` is OOP/IP
+ *  relative to the first actor; `actions` are the codes available; and
+ *  `hands` is the acting player's range (hand-type → action-code → %). */
+export interface FlopNode {
+  readonly side: 'oop' | 'ip';
+  readonly actions: readonly string[];
+  readonly hands: Readonly<Record<string, Readonly<Record<string, number>>>>;
+}
+/** Full flop node tree for one board, keyed by action path
+ *  ('root', 'x', 'x-b33', 'b75-r', …). */
+export interface BoardNodeTree {
+  readonly board: readonly string[];
+  readonly texture: string;
+  readonly nodes: Readonly<Record<string, FlopNode>>;
+}
+
 interface SpotsManifest {
   readonly version: number;
   readonly chunks: readonly PairingChunkMeta[];
@@ -43,6 +59,7 @@ const BASE = '/data/postflop';
 let manifestPromise: Promise<readonly PairingChunkMeta[]> | null = null;
 const chunkCache = new Map<string, Promise<PostflopSpot[]>>();
 const rangeCache = new Map<string, Promise<PairingRanges>>();
+const nodeCache = new Map<string, Promise<BoardNodeTree | null>>();
 
 /** Pairing metadata for every available chunk, ordered by real-game
  *  frequency. Fetched once per session. */
@@ -89,6 +106,26 @@ export function fetchPairingRanges(key: string): Promise<PairingRanges> {
       .then((r) => (r.ok ? (r.json() as Promise<PairingRanges>) : ({} as PairingRanges)))
       .catch(() => ({}) as PairingRanges);
     rangeCache.set(key, p);
+  }
+  return p;
+}
+
+/** Full flop node tree for one board of one pairing. Per-board fetch
+ *  (the tree is ~25 KB; a per-pairing batch is ~42 MB). Resolves null
+ *  when the board has no node data yet (pre full-node re-solve) — the
+ *  caller falls back to the flat range / sample view. `canonKey` is the
+ *  canonicalizeFlop key (e.g. 'AKQr'). */
+export function fetchBoardNodes(
+  pairingKey: string,
+  canonKey: string,
+): Promise<BoardNodeTree | null> {
+  const cacheKey = `${pairingKey}/${canonKey}`;
+  let p = nodeCache.get(cacheKey);
+  if (!p) {
+    p = fetch(`${BASE}/nodes/${pairingKey}/${canonKey}.json`)
+      .then((r) => (r.ok ? (r.json() as Promise<BoardNodeTree>) : null))
+      .catch(() => null);
+    nodeCache.set(cacheKey, p);
   }
   return p;
 }

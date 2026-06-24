@@ -16,8 +16,7 @@ import {
 import { canonicalizeFlop, type FlopCards } from '@gto/poker-core';
 import { CardView, cn } from '@gto/ui';
 import { BoardPicker } from './board-picker';
-import { BoardMixPanel } from './board-mix-panel';
-import { RangeChartPanel } from './range-chart-panel';
+import { BoardResult } from './board-result';
 
 /**
  * Standalone postflop-strategy explorer. Pairing pill row → 텍스처 탭
@@ -296,11 +295,14 @@ export function PostflopExplorer() {
                 (() => {
                   const sel = boards.find((b) => b.key === selectedBoard);
                   const ck = sel ? canonicalizeFlop(sel.board as unknown as FlopCards).key : '';
-                  const range = ranges[ck];
-                  return range ? (
-                    <RangeChartPanel key={ck} range={range} />
-                  ) : (
-                    <BoardMixPanel key={selectedBoard} spots={selectedSpots} />
+                  return (
+                    <BoardResult
+                      key={ck}
+                      pairingKey={pairingKey}
+                      canonKey={ck}
+                      range={ranges[ck]}
+                      spots={selectedSpots}
+                    />
                   );
                 })()}
             </>
@@ -333,11 +335,13 @@ export function PostflopExplorer() {
                   {search.matchKey}
                 </p>
               </div>
-              {ranges[search.matchKey] ? (
-                <RangeChartPanel key={search.matchKey} range={ranges[search.matchKey]!} />
-              ) : (
-                <BoardMixPanel key={search.matchKey} spots={search.spots} />
-              )}
+              <BoardResult
+                key={search.matchKey}
+                pairingKey={pairingKey}
+                canonKey={search.matchKey}
+                range={ranges[search.matchKey]}
+                spots={search.spots}
+              />
             </>
           ) : null}
         </>
