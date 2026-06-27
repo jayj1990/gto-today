@@ -40,7 +40,11 @@ node_data_present() {
   [ -d "$dir" ] || return 1
   local n
   n=$(find "$dir" -name '*.json' 2>/dev/null | wc -l)
-  [ "$n" -ge 1700 ]
+  # A complete pairing yields ~1100-1200 node files (not 1755 — all-fold
+  # / degenerate boards produce no decision tree). 1000 cleanly
+  # separates complete (~1170) from mid-solve partials. (Was 1700, which
+  # no pairing ever reaches → BB:BTN got needlessly re-solved.)
+  [ "$n" -ge 1000 ]
 }
 
 echo "=== all-tiers start $(date) [only='${ONLY_PAIRINGS}' force='${FORCE_RESOLVE}'] ===" >> "$LOG"
