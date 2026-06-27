@@ -17,7 +17,7 @@
       "villainPos": "CO",
       "potType": "srp",
       "summary": "CO 오픈 · BB 콜",
-      "rangeBoards": 1161
+      "rangeBoards": 1182
     },
     {
       "key": "full-bb-mp",
@@ -30,12 +30,12 @@
     },
     {
       "key": "full-bb-sb",
-      "count": 8705,
-      "heroPos": "BB",
-      "villainPos": "SB",
+      "count": 10705,
+      "heroPos": "SB",
+      "villainPos": "BB",
       "potType": "srp",
       "summary": "SB 오픈 · BB 콜",
-      "rangeBoards": 0
+      "rangeBoards": 570
     },
     {
       "key": "full-bb-utg",
