@@ -30,12 +30,12 @@
     },
     {
       "key": "full-bb-sb",
-      "count": 10705,
+      "count": 12410,
       "heroPos": "SB",
       "villainPos": "BB",
       "potType": "srp",
       "summary": "SB 오픈 · BB 콜",
-      "rangeBoards": 570
+      "rangeBoards": 1173
     },
     {
       "key": "full-bb-utg",
