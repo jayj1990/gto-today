@@ -21,12 +21,12 @@
     },
     {
       "key": "full-bb-mp",
-      "count": 8709,
+      "count": 8775,
       "heroPos": "BB",
       "villainPos": "MP",
       "potType": "srp",
       "summary": "MP 오픈 · BB 콜",
-      "rangeBoards": 0
+      "rangeBoards": 1165
     },
     {
       "key": "full-bb-sb",
