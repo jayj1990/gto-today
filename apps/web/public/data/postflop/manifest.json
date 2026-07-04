@@ -39,12 +39,12 @@
     },
     {
       "key": "full-bb-utg",
-      "count": 8630,
+      "count": 8770,
       "heroPos": "BB",
       "villainPos": "UTG",
       "potType": "srp",
       "summary": "UTG 오픈 · BB 콜",
-      "rangeBoards": 0
+      "rangeBoards": 1169
     },
     {
       "key": "full-btn-co",
