@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@gto/ui';
 import { SiteHeader } from '@/components/site-header';
+import type { TableFormat } from '@gto/poker-core';
 import { useLiveStore, type GameType } from '@/lib/live-store';
 
 /**
@@ -14,6 +15,8 @@ import { useLiveStore, type GameType } from '@/lib/live-store';
 export default function LiveSetupPage() {
   const config = useLiveStore((s) => s.config);
   const setGameType = useLiveStore((s) => s.setGameType);
+  const setFormat = useLiveStore((s) => s.setFormat);
+  const format = config.format === '9max' ? '9max' : '6max';
 
   return (
     <>
@@ -30,8 +33,8 @@ export default function LiveSetupPage() {
             GTO 데이터 선택
           </h1>
           <p className="text-fg-muted mt-3 text-[13px]">
-            6맥스 100BB · 캐시(앤티 없음) 와 토너먼트(1BB 앤티) 지원. 추가 스택·오픈 사이즈는 추후
-            업데이트.
+            6맥스·9맥스 100BB · 캐시(앤티 없음) 와 토너먼트(1BB 앤티) 지원. 추가 스택·오픈 사이즈는
+            추후 업데이트.
           </p>
         </header>
 
@@ -67,7 +70,32 @@ export default function LiveSetupPage() {
             </div>
           </FieldSet>
 
-          <InfoRow label="테이블" value="6맥스" locked />
+          <FieldSet label="테이블 인원">
+            <div className="grid grid-cols-2 gap-3">
+              {(['6max', '9max'] as TableFormat[]).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setFormat(k)}
+                  aria-pressed={format === k}
+                  className={cn(
+                    'rounded-[var(--radius-panel)] border p-4 text-left transition-colors active:scale-[0.99]',
+                    format === k
+                      ? 'bg-[color:var(--color-accent)]/10 border-[color:var(--color-accent)]'
+                      : 'border-hair surface hover:bg-[color:var(--color-surface-raised)]',
+                  )}
+                >
+                  <p className="font-display text-[18px] font-bold">
+                    {k === '6max' ? '6맥스' : '9맥스'}
+                  </p>
+                  <p className="text-fg-muted mt-1 text-[12px]">
+                    {k === '6max' ? '솔버 트리 원본' : '풀링 · 멀티웨이 라인 포함'}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </FieldSet>
+
           <InfoRow label="스택" value="100BB" locked />
           <InfoRow label="오픈 사이즈" value="2.5x (SB 3x)" locked />
           {config.gameType === 'mtt' ? (
@@ -93,6 +121,13 @@ export default function LiveSetupPage() {
           <div className="border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 mt-4 rounded-[var(--radius-button)] border px-4 py-3 text-[12px] text-[color:var(--color-gold)]">
             토너먼트 데이터는 캐시 범위를 앤티 효과로 보정한 <strong>근사값</strong>이에요. 정확한
             ChipEV 솔브는 추후 업데이트.
+          </div>
+        )}
+
+        {format === '9max' && (
+          <div className="border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 mt-4 rounded-[var(--radius-button)] border px-4 py-3 text-[12px] text-[color:var(--color-gold)]">
+            9맥스 트리는 6맥스 솔버 트리와 9맥스 오픈 레인지를 결합한 <strong>파생 근사</strong>
+            예요. UTG+1·LJ·HJ는 인접 포지션 전략을 빌려옵니다.
           </div>
         )}
 

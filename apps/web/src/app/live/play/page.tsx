@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@gto/ui';
+import { POSITIONS_BY_FORMAT } from '@gto/poker-core';
 import { SiteHeader } from '@/components/site-header';
 import { ChartNavigator } from '@/components/chart-navigator';
 import { PostflopExplorer } from '@/components/postflop-explorer';
@@ -28,9 +29,10 @@ export default function LivePlayPage() {
 
   const isMtt = config.gameType === 'mtt';
   const typeLabel = isMtt ? '토너먼트 · 1BB 앤티 근사' : '캐시 게임';
-  const dataPath = isMtt
-    ? '/data/preflop/mtt_6max_100bb_qb_decisions.json'
-    : '/data/preflop/6max_100bb_qb_decisions.json';
+  // Only 6max/9max trees exist; anything else falls back to 6max.
+  const format = config.format === '9max' ? '9max' : '6max';
+  const dataPath = `/data/preflop/${isMtt ? 'mtt_' : ''}${format}_100bb_qb_decisions.json`;
+  const positions = POSITIONS_BY_FORMAT[format];
 
   return (
     <>
@@ -39,7 +41,9 @@ export default function LivePlayPage() {
         <header className="mb-3 flex items-baseline justify-between gap-3">
           <div>
             <h1 className="font-display text-[20px] font-bold tracking-[-0.015em]">실전 모드</h1>
-            <p className="text-fg-muted mt-0.5 text-[11px]">{typeLabel} · 6맥스 · 100BB · 2.5x</p>
+            <p className="text-fg-muted mt-0.5 text-[11px]">
+              {typeLabel} · {format === '9max' ? '9맥스' : '6맥스'} · 100BB · 2.5x
+            </p>
           </div>
           <Link
             href="/live"
@@ -73,7 +77,7 @@ export default function LivePlayPage() {
         </div>
 
         {mode === 'preflop' ? (
-          <ChartNavigator key={dataPath} dataPath={dataPath} />
+          <ChartNavigator key={dataPath} dataPath={dataPath} positions={positions} />
         ) : (
           <PostflopExplorer />
         )}

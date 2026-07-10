@@ -33,7 +33,10 @@ const DATA_DIR = join(REPO_ROOT, 'apps', 'web', 'public', 'data', 'preflop');
  *  to act (no prior raise to respond to). */
 const RFI_WIDEN: Record<string, number> = {
   UTG: 0.05,
+  UTG1: 0.06, // 9-max seats interpolate their 6-max neighbours
   MP: 0.08,
+  LJ: 0.09,
+  HJ: 0.1,
   CO: 0.12,
   BTN: 0.06,
   SB: 0.18,
@@ -47,7 +50,10 @@ const RFI_WIDEN: Record<string, number> = {
  *  slightly larger multipliers than non-BB defenders. */
 const DEF_ADJ: Record<string, { callMul: number; raiseMul: number }> = {
   UTG: { callMul: 1.08, raiseMul: 1.03 },
+  UTG1: { callMul: 1.09, raiseMul: 1.03 },
   MP: { callMul: 1.1, raiseMul: 1.03 },
+  LJ: { callMul: 1.11, raiseMul: 1.04 },
+  HJ: { callMul: 1.12, raiseMul: 1.05 },
   CO: { callMul: 1.12, raiseMul: 1.05 },
   BTN: { callMul: 1.15, raiseMul: 1.08 },
   SB: { callMul: 1.18, raiseMul: 1.08 },
@@ -55,13 +61,16 @@ const DEF_ADJ: Record<string, { callMul: number; raiseMul: number }> = {
 
 const BB_DEF_ADJ: Record<string, { callMul: number; raiseMul: number }> = {
   UTG: { callMul: 1.15, raiseMul: 1.05 },
+  UTG1: { callMul: 1.16, raiseMul: 1.05 },
   MP: { callMul: 1.18, raiseMul: 1.05 },
+  LJ: { callMul: 1.19, raiseMul: 1.06 },
+  HJ: { callMul: 1.2, raiseMul: 1.08 },
   CO: { callMul: 1.2, raiseMul: 1.08 },
   BTN: { callMul: 1.2, raiseMul: 1.1 },
   SB: { callMul: 1.25, raiseMul: 1.1 },
 };
 
-const POSITIONS = new Set(['UTG', 'MP', 'CO', 'BTN', 'SB', 'BB']);
+const POSITIONS = new Set(['UTG', 'UTG1', 'MP', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB']);
 
 function clamp01(x: number): number {
   return Math.max(0, Math.min(1, x));
@@ -106,8 +115,10 @@ function classifyAction(a: string): 'fold' | 'call' | 'raise' {
 }
 
 async function main() {
-  const inputPath = join(DATA_DIR, '6max_100bb_qb_decisions.json');
-  const outputPath = join(DATA_DIR, 'mtt_6max_100bb_qb_decisions.json');
+  // `tsx build-mtt-qb-decisions.ts [6max|9max]` — default 6max.
+  const format = process.argv[2] === '9max' ? '9max' : '6max';
+  const inputPath = join(DATA_DIR, `${format}_100bb_qb_decisions.json`);
+  const outputPath = join(DATA_DIR, `mtt_${format}_100bb_qb_decisions.json`);
   const raw = await readFile(inputPath, 'utf8');
   const data: Record<string, Record<string, Record<string, number>>> = JSON.parse(raw);
 
@@ -205,7 +216,7 @@ async function main() {
     rfiWidened++;
   }
 
-  await writeFile(outputPath, JSON.stringify(out, null, 2) + '\n', 'utf8');
+  await writeFile(outputPath, JSON.stringify(out), 'utf8');
   console.log(`✓ wrote ${outputPath}`);
   console.log(`  defense nodes (multiplicative): ${defenseWidened}`);
   console.log(`  RFI nodes (additive bump): ${rfiWidened}`);

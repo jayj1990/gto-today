@@ -31,9 +31,12 @@ const POSTFLOP_ORDER: Record<string, number> = {
   SB: 0,
   BB: 1,
   UTG: 2,
-  MP: 3,
-  CO: 4,
-  BTN: 5,
+  UTG1: 3,
+  MP: 4,
+  LJ: 5,
+  HJ: 6,
+  CO: 7,
+  BTN: 8,
 };
 
 export function deriveRanges(

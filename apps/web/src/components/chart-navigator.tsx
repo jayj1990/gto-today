@@ -20,6 +20,33 @@ type DecisionsJson = Record<string, Record<string, Record<string, number>>>;
 
 const POSITIONS_6MAX: readonly string[] = ['UTG', 'MP', 'CO', 'BTN', 'SB', 'BB'];
 
+/** 9-max-only seats mapped to their nearest 6-max analog — postflop
+ *  chunks are solved for 6-max seat pairs only. */
+const SEAT_ANALOG_6MAX: Record<string, string> = { UTG1: 'UTG', LJ: 'MP', HJ: 'CO' };
+const NB6_ORDER = ['UTG', 'MP', 'CO', 'BTN'] as const;
+
+function prettyPos(p: string): string {
+  return p === 'UTG1' ? 'UTG+1' : p;
+}
+
+/** Map a 9-max player pair onto distinct 6-max seats for postflop
+ *  chunk lookup (e.g. HJ vs BB borrows the CO vs BB solve). */
+function analogPlayers(players: [string, string], order: readonly string[]): [string, string] {
+  let [a6, b6] = [
+    SEAT_ANALOG_6MAX[players[0]] ?? players[0],
+    SEAT_ANALOG_6MAX[players[1]] ?? players[1],
+  ];
+  if (a6 === b6) {
+    const bump = (p: string) =>
+      NB6_ORDER[
+        Math.min(NB6_ORDER.indexOf(p as (typeof NB6_ORDER)[number]) + 1, NB6_ORDER.length - 1)
+      ]!;
+    if (order.indexOf(players[0]) > order.indexOf(players[1])) a6 = bump(a6);
+    else b6 = bump(b6);
+  }
+  return [a6, b6];
+}
+
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'] as const;
 
 interface NodeData {
@@ -37,6 +64,8 @@ interface NodeData {
 export interface ChartNavigatorProps {
   /** Relative path served from /public/data/preflop. */
   dataPath?: string;
+  /** Seat order for the walked tree — defaults to 6-max. */
+  positions?: readonly string[];
   className?: string;
 }
 
@@ -48,6 +77,7 @@ export interface ChartNavigatorProps {
  */
 export function ChartNavigator({
   dataPath = '/data/preflop/6max_100bb_qb_decisions.json',
+  positions = POSITIONS_6MAX,
   className,
 }: ChartNavigatorProps) {
   const [decisions, setDecisions] = useState<DecisionsJson | null>(null);
@@ -73,8 +103,8 @@ export function ChartNavigator({
 
   const node: NodeData | null = useMemo(() => {
     if (!decisions) return null;
-    return resolveNode(decisions, path);
-  }, [decisions, path]);
+    return resolveNode(decisions, path, positions);
+  }, [decisions, path, positions]);
 
   const mixes: Record<string, ComboMix> = useMemo(() => {
     if (!node) return {};
@@ -88,7 +118,10 @@ export function ChartNavigator({
     setPickedFlop([]);
   };
 
-  const seatState = useMemo(() => buildSeatState(path, node?.actor), [path, node?.actor]);
+  const seatState = useMemo(
+    () => buildSeatState(path, node?.actor, positions),
+    [path, node?.actor, positions],
+  );
 
   const [pickedCombo, setPickedCombo] = useState<string | null>(null);
   const pickedMix = pickedCombo ? mixes[pickedCombo] : undefined;
@@ -128,7 +161,7 @@ export function ChartNavigator({
     void (async () => {
       try {
         const pairings = await fetchPairings();
-        const [a, b] = pairingFromPath.players;
+        const [a, b] = analogPlayers(pairingFromPath.players, positions);
         // Match by unordered player pair + pot type — our chunk's
         // heroPos is whichever player is OOP, which flips by line.
         const chunk = pairings.find(
@@ -157,7 +190,7 @@ export function ChartNavigator({
     return () => {
       cancelled = true;
     };
-  }, [flopReached, pairingFromPath]);
+  }, [flopReached, pairingFromPath, positions]);
 
   const flopLookup = useMemo(() => {
     if (pickedFlop.length !== 3 || postflopPool.length === 0) return null;
@@ -292,7 +325,7 @@ export function ChartNavigator({
               <section className="border-[color:var(--color-accent)]/40 bg-[color:var(--color-accent)]/5 mb-3 rounded-[var(--radius-panel)] border p-3">
                 <div className="flex items-baseline gap-2">
                   <span className="font-display text-[20px] font-bold text-[color:var(--color-accent)]">
-                    {node.actor}
+                    {prettyPos(node.actor)}
                   </span>
                   <span className="text-fg-muted text-[12px]">차례</span>
                 </div>
@@ -445,14 +478,18 @@ interface SeatRow {
   label: string;
 }
 
-function buildSeatState(path: string[], activeActor: string | undefined): SeatRow[] {
+function buildSeatState(
+  path: string[],
+  activeActor: string | undefined,
+  positions: readonly string[],
+): SeatRow[] {
   const latestAction = new Map<string, string>();
   for (const tok of path) {
     const us = tok.indexOf('_');
     if (us < 0) continue;
     latestAction.set(tok.slice(0, us), tok.slice(us + 1));
   }
-  return POSITIONS_6MAX.map((pos) => {
+  return positions.map((pos) => {
     const act = latestAction.get(pos);
     if (activeActor === pos) return { pos, status: 'active', label: '차례' };
     if (!act) return { pos, status: 'waiting', label: '대기' };
@@ -462,9 +499,14 @@ function buildSeatState(path: string[], activeActor: string | undefined): SeatRo
 }
 
 function SeatRibbon({ state }: { state: SeatRow[] }) {
-  // One 6-slot grid that spans the viewport — always on one line.
+  // One grid slot per seat, spanning the viewport — always on one line.
+  const compact = state.length > 6;
   return (
-    <section aria-label="포지션별 액션" className="mb-3 grid grid-cols-6 gap-1">
+    <section
+      aria-label="포지션별 액션"
+      className="mb-3 grid gap-1"
+      style={{ gridTemplateColumns: `repeat(${state.length}, minmax(0, 1fr))` }}
+    >
       {state.map((row) => (
         <div
           key={row.pos}
@@ -480,8 +522,17 @@ function SeatRibbon({ state }: { state: SeatRow[] }) {
               'border-[color:var(--color-gold)]/50 bg-[color:var(--color-gold)]/10 text-[color:var(--color-gold)]',
           )}
         >
-          <span className="font-display text-[12px] font-bold leading-none">{row.pos}</span>
-          <span className="mt-0.5 max-w-full truncate leading-none">{row.label}</span>
+          <span
+            className={cn(
+              'font-display font-bold leading-none',
+              compact ? 'text-[10px]' : 'text-[12px]',
+            )}
+          >
+            {prettyPos(row.pos)}
+          </span>
+          <span className={cn('mt-0.5 max-w-full truncate leading-none', compact && 'text-[9px]')}>
+            {row.label}
+          </span>
         </div>
       ))}
     </section>
@@ -490,8 +541,12 @@ function SeatRibbon({ state }: { state: SeatRow[] }) {
 
 /* ─────────── resolve / build helpers ─────────── */
 
-function resolveNode(decisions: DecisionsJson, path: string[]): NodeData | null {
-  const actor = nextActor(path);
+function resolveNode(
+  decisions: DecisionsJson,
+  path: string[],
+  positions: readonly string[],
+): NodeData | null {
+  const actor = nextActor(path, positions);
   if (!actor) return null;
 
   // Special case: if every seat in front of BB has folded and nobody
@@ -502,7 +557,7 @@ function resolveNode(decisions: DecisionsJson, path: string[]): NodeData | null 
     const act = t.slice(t.indexOf('_') + 1);
     return act !== 'FOLD';
   });
-  if (actor === 'BB' && !hasAggression && folds >= 5) {
+  if (actor === 'BB' && !hasAggression && folds >= positions.length - 1) {
     return { actor, actions: {}, legal: [], bbWins: true };
   }
 
@@ -575,13 +630,13 @@ function derivePairing(
 
 /** "UTG vs SB" with a 3벳/4벳 tag for non-SRP pots. */
 function pairingLabel(p: { players: [string, string]; potType: 'srp' | '3bp' | '4bp' }): string {
-  const base = `${p.players[0]} vs ${p.players[1]}`;
+  const base = `${prettyPos(p.players[0])} vs ${prettyPos(p.players[1])}`;
   if (p.potType === '3bp') return `${base} ·3벳`;
   if (p.potType === '4bp') return `${base} ·4벳`;
   return base;
 }
 
-function nextActor(path: string[]): string | null {
+function nextActor(path: string[], order: readonly string[]): string | null {
   const folded = new Set<string>();
   let lastActor: string | null = null;
   for (const tok of path) {
@@ -592,7 +647,6 @@ function nextActor(path: string[]): string | null {
     lastActor = pos;
     if (action === 'FOLD') folded.add(pos);
   }
-  const order = POSITIONS_6MAX;
   const startIdx = lastActor == null ? 0 : (order.indexOf(lastActor) + 1) % order.length;
   for (let off = 0; off < order.length; off++) {
     const cand = order[(startIdx + off) % order.length];
