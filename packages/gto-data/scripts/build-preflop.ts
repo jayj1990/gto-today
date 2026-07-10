@@ -21,6 +21,42 @@ import {
   RFI9_UTG1,
 } from '../src/ranges/rfi-9max-100bb';
 import { BB_VS_BTN, BB_VS_CO, BB_VS_UTG } from '../src/ranges/bb-vs-open-100bb';
+import {
+  JAM10_BTN,
+  JAM10_CO,
+  JAM10_HJ,
+  JAM10_LJ,
+  JAM10_MP,
+  JAM10_SB,
+  JAM10_UTG,
+  JAM10_UTG1,
+  JAM20_BTN,
+  JAM20_CO,
+  JAM20_HJ,
+  JAM20_LJ,
+  JAM20_MP,
+  JAM20_SB,
+  JAM20_UTG,
+  JAM20_UTG1,
+} from '../src/ranges/jam-9max';
+import {
+  RFI9_40_BTN,
+  RFI9_40_CO,
+  RFI9_40_HJ,
+  RFI9_40_LJ,
+  RFI9_40_MP,
+  RFI9_40_SB,
+  RFI9_40_UTG,
+  RFI9_40_UTG1,
+  RFI9_60_BTN,
+  RFI9_60_CO,
+  RFI9_60_HJ,
+  RFI9_60_LJ,
+  RFI9_60_MP,
+  RFI9_60_SB,
+  RFI9_60_UTG,
+  RFI9_60_UTG1,
+} from '../src/ranges/rfi-9max-depths';
 import { allCombos } from '../src/combos';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -41,6 +77,44 @@ const RFI_SEEDS: Record<string, Record<string, number>> = {
   '9max_100bb_rfi_CO': RFI9_CO,
   '9max_100bb_rfi_BTN': RFI9_BTN,
   '9max_100bb_rfi_SB': RFI9_SB,
+
+  // MTT depth ladder — 60BB/40BB opens (see rfi-9max-depths.ts).
+  '9max_60bb_rfi_UTG': RFI9_60_UTG,
+  '9max_60bb_rfi_UTG1': RFI9_60_UTG1,
+  '9max_60bb_rfi_MP': RFI9_60_MP,
+  '9max_60bb_rfi_LJ': RFI9_60_LJ,
+  '9max_60bb_rfi_HJ': RFI9_60_HJ,
+  '9max_60bb_rfi_CO': RFI9_60_CO,
+  '9max_60bb_rfi_BTN': RFI9_60_BTN,
+  '9max_60bb_rfi_SB': RFI9_60_SB,
+
+  '9max_40bb_rfi_UTG': RFI9_40_UTG,
+  '9max_40bb_rfi_UTG1': RFI9_40_UTG1,
+  '9max_40bb_rfi_MP': RFI9_40_MP,
+  '9max_40bb_rfi_LJ': RFI9_40_LJ,
+  '9max_40bb_rfi_HJ': RFI9_40_HJ,
+  '9max_40bb_rfi_CO': RFI9_40_CO,
+  '9max_40bb_rfi_BTN': RFI9_40_BTN,
+  '9max_40bb_rfi_SB': RFI9_40_SB,
+
+  // Short-stack Nash jams — raise = all-in (see jam-9max.ts).
+  '9max_20bb_jam_UTG': JAM20_UTG,
+  '9max_20bb_jam_UTG1': JAM20_UTG1,
+  '9max_20bb_jam_MP': JAM20_MP,
+  '9max_20bb_jam_LJ': JAM20_LJ,
+  '9max_20bb_jam_HJ': JAM20_HJ,
+  '9max_20bb_jam_CO': JAM20_CO,
+  '9max_20bb_jam_BTN': JAM20_BTN,
+  '9max_20bb_jam_SB': JAM20_SB,
+
+  '9max_10bb_jam_UTG': JAM10_UTG,
+  '9max_10bb_jam_UTG1': JAM10_UTG1,
+  '9max_10bb_jam_MP': JAM10_MP,
+  '9max_10bb_jam_LJ': JAM10_LJ,
+  '9max_10bb_jam_HJ': JAM10_HJ,
+  '9max_10bb_jam_CO': JAM10_CO,
+  '9max_10bb_jam_BTN': JAM10_BTN,
+  '9max_10bb_jam_SB': JAM10_SB,
 };
 
 type Mix = { call: number; raise: number; fold: number };

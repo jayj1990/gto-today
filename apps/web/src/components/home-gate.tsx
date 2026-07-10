@@ -194,6 +194,14 @@ export function HomeGate() {
           delay={0.12}
         />
         <PrimaryCard
+          href="/mtt/preflop"
+          eyebrow="MTT · 9맥스 · 5뎁스"
+          title="토너먼트 프리플랍 차트"
+          description="100·60·40BB 오픈 + 20·10BB 올인 Nash. 뎁스별 전 포지션."
+          variant="secondary"
+          delay={0.14}
+        />
+        <PrimaryCard
           href="/mtt/push-fold"
           eyebrow="MTT · 20BB"
           title="올인/폴드 차트"
