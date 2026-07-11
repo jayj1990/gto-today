@@ -417,6 +417,9 @@ export function ChartNavigator({
                   </section>
 
                   <section className="text-fg-muted mb-3 flex flex-wrap justify-center gap-x-3 gap-y-0.5 text-[11px]">
+                    {'AllIn' in node.actions && (
+                      <LegendDot color="var(--color-gold)" label="올인" />
+                    )}
                     <LegendDot color="var(--color-raise)" label="레이즈" />
                     <LegendDot color="var(--color-call)" label="콜" />
                     <LegendDot color="var(--color-fold)" label="폴드" />
@@ -657,18 +660,23 @@ function nextActor(path: string[], order: readonly string[]): string | null {
 
 function buildComboMixes(node: NodeData): Record<string, ComboMix> {
   const out: Record<string, ComboMix> = {};
-  const raiseBand = new Set(Object.keys(node.actions).filter((a) => isRaiseAction(a)));
+  const raiseBand = new Set(
+    Object.keys(node.actions).filter((a) => isRaiseAction(a) && a !== 'AllIn'),
+  );
+  const allinBand = 'AllIn' in node.actions;
   const callBand = 'Call' in node.actions;
   const foldBand = 'FOLD' in node.actions;
 
   for (const combo of enumerateCombos()) {
     let raise = 0;
     for (const a of raiseBand) raise += node.actions[a]?.[combo] ?? 0;
+    const allin = allinBand ? (node.actions['AllIn']?.[combo] ?? 0) : 0;
     const call = callBand ? (node.actions['Call']?.[combo] ?? 0) : 0;
     const foldRaw = foldBand ? (node.actions['FOLD']?.[combo] ?? 0) : 0;
-    const total = raise + call + foldRaw;
+    const total = allin + raise + call + foldRaw;
     if (total <= 0) continue;
     const mix: ComboMix = { raise: raise / total, fold: foldRaw / total };
+    if (allinBand) mix.allin = allin / total;
     if (callBand) mix.call = call / total;
     out[combo] = mix;
   }

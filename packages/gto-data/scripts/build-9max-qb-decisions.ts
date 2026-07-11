@@ -103,17 +103,7 @@ async function main() {
 
   // ── RFI roots: real 9-max open charts, matching /mtt/preflop ──
   for (const pos of [...NB9, 'SB']) {
-    const chart: Record<string, { raise: number; fold: number }> = JSON.parse(
-      await readFile(join(DATA_DIR, `9max_100bb_rfi_${pos}.json`), 'utf8'),
-    );
-    const size = pos === 'SB' ? '3.0bb' : '2.5bb';
-    const raiseMap: ComboFreqs = {};
-    const foldMap: ComboFreqs = {};
-    for (const [combo, m] of Object.entries(chart)) {
-      if (m.raise > 0) raiseMap[combo] = m.raise;
-      if (m.fold > 0) foldMap[combo] = m.fold;
-    }
-    out[pos] = { [size]: raiseMap, FOLD: foldMap };
+    out[pos] = await rfiNode(pos, 100);
   }
 
   // Close over every UI-reachable decision (fills fold-branch nodes the
@@ -138,6 +128,153 @@ async function main() {
   console.log(
     `✓ 9max_100bb_qb_decisions.json — ${Object.keys(out).length} nodes (from ${Object.keys(tree6).length} 6-max), ${(json.length / 1024 / 1024).toFixed(2)} MB`,
   );
+
+  // ── 60/40BB: same tree, depth-correct open ranges. Defense mixes
+  //    ride the 100BB solve — a labeled approximation; postflop-ish
+  //    sizes (4bet 22bb ≈ half a 40BB stack) read as commit-or-fold.
+  for (const depth of [60, 40] as const) {
+    const t: Tree = { ...out };
+    for (const pos of [...NB9, 'SB']) {
+      t[pos] = await rfiNode(pos, depth);
+    }
+    const bad = validate(t);
+    if (bad.length > 0) {
+      console.error(`✗ ${depth}bb tree: ${bad.length} dangling lines`);
+      process.exit(1);
+    }
+    const j = JSON.stringify(t);
+    await writeFile(join(DATA_DIR, `9max_${depth}bb_qb_decisions.json`), j);
+    console.log(`✓ 9max_${depth}bb_qb_decisions.json — ${(j.length / 1024 / 1024).toFixed(2)} MB`);
+  }
+
+  // ── 20/10BB: play collapses to jam-or-fold. Open nodes come from
+  //    the Nash jam charts; calling ranges are synthesised as the top
+  //    slice of a hand-strength order derived from the jam-chart
+  //    nesting (caller needs a tighter range than the jammer — BB 60%,
+  //    SB 55%, others 45% of the jam width; overcalls 60% of that).
+  const strength = await buildStrengthOrder();
+  for (const depth of [20, 10] as const) {
+    const t = await buildJamTree(depth, strength);
+    const bad = validate(t);
+    if (bad.length > 0) {
+      console.error(`✗ ${depth}bb jam tree: ${bad.length} dangling lines`);
+      process.exit(1);
+    }
+    const j = JSON.stringify(t);
+    await writeFile(join(DATA_DIR, `9max_${depth}bb_qb_decisions.json`), j);
+    console.log(
+      `✓ 9max_${depth}bb_qb_decisions.json — ${Object.keys(t).length} nodes, ${(j.length / 1024).toFixed(0)} KB`,
+    );
+  }
+}
+
+/** RFI decision node straight from the emitted chart JSON so the tree
+ *  agrees combo-for-combo with /mtt/preflop. */
+async function rfiNode(pos: string, depth: number): Promise<ActionMap> {
+  const scenario = depth <= 20 ? 'jam' : 'rfi';
+  const chart: Record<string, { raise: number; fold: number }> = JSON.parse(
+    await readFile(join(DATA_DIR, `9max_${depth}bb_${scenario}_${pos}.json`), 'utf8'),
+  );
+  const size = scenario === 'jam' ? 'AllIn' : pos === 'SB' ? '3.0bb' : '2.5bb';
+  const raiseMap: ComboFreqs = {};
+  const foldMap: ComboFreqs = {};
+  for (const [combo, m] of Object.entries(chart)) {
+    if (m.raise > 0) raiseMap[combo] = m.raise;
+    if (m.fold > 0) foldMap[combo] = m.fold;
+  }
+  return { [size]: raiseMap, FOLD: foldMap };
+}
+
+function allCombos(): string[] {
+  const R = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+  const out: string[] = [];
+  for (let i = 0; i < 13; i++) {
+    for (let j = 0; j < 13; j++) {
+      if (i === j) out.push(R[i]! + R[j]!);
+      else if (i < j) out.push(R[i]! + R[j]! + 's');
+      else out.push(R[j]! + R[i]! + 'o');
+    }
+  }
+  return out;
+}
+
+/** Hand-strength order from the 16 Nash jam charts: a combo scores the
+ *  sum of 1/|chart| over every chart containing it, so hands that
+ *  survive the tightest ranges rank highest. */
+async function buildStrengthOrder(): Promise<string[]> {
+  const score = new Map<string, number>();
+  // Tiny hand-rank prior — only breaks ties between combos that sit in
+  // the exact same set of charts (QQ must outrank AQs for calling).
+  const V: Record<string, number> = {
+    A: 14,
+    K: 13,
+    Q: 12,
+    J: 11,
+    T: 10,
+    '9': 9,
+    '8': 8,
+    '7': 7,
+    '6': 6,
+    '5': 5,
+    '4': 4,
+    '3': 3,
+    '2': 2,
+  };
+  const prior = (c: string): number => {
+    const hi = V[c[0]!]!;
+    const lo = V[c[1]!]!;
+    const base = hi === lo ? 20 + hi : hi + lo / 14 + (c.endsWith('s') ? 0.3 : 0);
+    return base * 1e-4;
+  };
+  for (const combo of allCombos()) score.set(combo, prior(combo));
+  for (const depth of [20, 10]) {
+    for (const pos of [...NB9, 'SB']) {
+      const chart: Record<string, { raise: number }> = JSON.parse(
+        await readFile(join(DATA_DIR, `9max_${depth}bb_jam_${pos}.json`), 'utf8'),
+      );
+      const inChart = Object.entries(chart).filter(([, m]) => m.raise > 0);
+      for (const [combo] of inChart) {
+        score.set(combo, (score.get(combo) ?? 0) + 1 / inChart.length);
+      }
+    }
+  }
+  return allCombos().sort((a, b) => (score.get(b) ?? 0) - (score.get(a) ?? 0));
+}
+
+async function buildJamTree(depth: number, strength: string[]): Promise<Tree> {
+  const t: Tree = {};
+  const combos = allCombos();
+  const pure = (set: ReadonlySet<string>): { yes: ComboFreqs; no: ComboFreqs } => {
+    const yes: ComboFreqs = {};
+    const no: ComboFreqs = {};
+    for (const c of combos) (set.has(c) ? yes : no)[c] = 1;
+    return { yes, no };
+  };
+  const callRatio = (seat: string, overcall: boolean): number => {
+    const base = seat === 'BB' ? 0.6 : seat === 'SB' ? 0.55 : 0.45;
+    return overcall ? base * 0.6 : base;
+  };
+
+  const jammers = [...NB9, 'SB'];
+  for (const J of jammers) {
+    t[J] = await rfiNode(J, depth);
+    const jamWidth = Object.keys(t[J]!['AllIn'] ?? {}).length;
+    const jIdx = ORDER9.indexOf(J);
+    for (let x = jIdx + 1; x < ORDER9.length; x++) {
+      const X = ORDER9[x]!;
+      const k = Math.max(1, Math.round(jamWidth * callRatio(X, false)));
+      const callSet = new Set(strength.slice(0, k));
+      const m = pure(callSet);
+      t[`${J}_AllIn_${X}`] = { Call: m.yes, FOLD: m.no };
+      for (let y = x + 1; y < ORDER9.length; y++) {
+        const Y = ORDER9[y]!;
+        const k2 = Math.max(1, Math.round(jamWidth * callRatio(Y, true)));
+        const over = pure(new Set(strength.slice(0, k2)));
+        t[`${J}_AllIn_${X}_Call_${Y}`] = { Call: over.yes, FOLD: over.no };
+      }
+    }
+  }
+  return t;
 }
 
 /* ── validator: mirrors ChartNavigator resolveNode/nextActor ── */

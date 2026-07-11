@@ -3,6 +3,8 @@
 import { useMemo } from 'react';
 
 export interface ComboMix {
+  /** All-in (jam) frequency 0..1 — rendered gold, distinct from raise. */
+  allin?: number;
   /** Raise frequency 0..1. */
   raise: number;
   /** Call frequency 0..1 (vs-open scenarios only). */
@@ -29,10 +31,11 @@ const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'] 
  * The canonical 13×13 preflop grid — GTO Wizard style.
  *
  * Color coding follows the industry convention:
+ *   gold   → all-in
  *   red    → raise
  *   green  → call
  *   blue   → fold
- * Mixed cells show a horizontal stack of all three colors, widths
+ * Mixed cells show a horizontal stack of the colors, widths
  * proportional to each action's frequency.
  */
 export function RangeGrid({
@@ -62,6 +65,7 @@ export function RangeGrid({
       {cells.map(({ combo, mix, inRange }) => {
         const isHighlight = combo === highlight;
         const pct = (n: number) => Math.max(0, Math.min(100, n * 100));
+        const ai = pct(mix.allin ?? 0);
         const r = pct(mix.raise);
         const c = pct(mix.call ?? 0);
         const f = pct(mix.fold);
@@ -75,7 +79,7 @@ export function RangeGrid({
             aria-label={
               inRange === false
                 ? `${combo} — 히어로 범위 밖`
-                : `${combo} — raise ${r.toFixed(0)}%, call ${c.toFixed(0)}%, fold ${f.toFixed(0)}%`
+                : `${combo} — all-in ${ai.toFixed(0)}%, raise ${r.toFixed(0)}%, call ${c.toFixed(0)}%, fold ${f.toFixed(0)}%`
             }
             onClick={onCellClick ? () => onCellClick(combo) : undefined}
             style={{
@@ -106,6 +110,7 @@ export function RangeGrid({
             >
               {inRange !== false && (
                 <>
+                  <div style={{ width: `${ai}%`, background: '#D4AF37' }} />
                   <div style={{ width: `${r}%`, background: '#C8102E' }} />
                   <div style={{ width: `${c}%`, background: '#1F9D55' }} />
                   <div style={{ width: `${f}%`, background: '#2B5F8F' }} />

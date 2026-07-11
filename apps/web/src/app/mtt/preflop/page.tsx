@@ -67,17 +67,22 @@ export default function MttPreflopPage() {
     if (!chart) return {};
     const out: Record<string, ComboMix> = {};
     for (const [combo, m] of Object.entries(chart)) {
-      if (m.raise > 0) out[combo] = { raise: m.raise, fold: m.fold };
+      if (m.raise > 0) {
+        // Jam charts: the "raise" IS an all-in — render it gold.
+        out[combo] = isJam
+          ? { allin: m.raise, raise: 0, fold: m.fold }
+          : { raise: m.raise, fold: m.fold };
+      }
     }
     return out;
-  }, [chart]);
+  }, [chart, isJam]);
 
   const playedCount = Object.keys(mixes).length;
 
   return (
     <>
       <SiteHeader />
-      <main className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4">
+      <main className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-3xl flex-col pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4">
         <header className="mb-3">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-accent)]">
             MTT · 9맥스
@@ -169,7 +174,7 @@ export default function MttPreflopPage() {
                 <span
                   aria-hidden
                   className="inline-block h-2.5 w-2.5 rounded-sm"
-                  style={{ background: 'var(--color-raise)' }}
+                  style={{ background: isJam ? 'var(--color-gold)' : 'var(--color-raise)' }}
                 />
                 {isJam ? '올인' : '레이즈 오픈'}
               </span>

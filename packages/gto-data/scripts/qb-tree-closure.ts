@@ -139,12 +139,29 @@ interface DonorIndexEntry {
   actions: ActionMap;
 }
 
+/** The bet the actor actually faces — the last RAISE in the line.
+ *  A trailing Call doesn't change what's live: after open + call the
+ *  next seat still faces the open, so donors must match on the raise
+ *  size, not the literal "Call" token (the old literal match handed
+ *  overcall spots a deep all-in-chain donor whose range had no AA/KK —
+ *  black premium cells, caught 2026-07-11). */
+function effectiveFacing(line: LineStep[]): string {
+  for (let i = line.length - 1; i >= 0; i--) {
+    const a = line[i]!.action;
+    if (a !== 'Call') return a;
+  }
+  return line[line.length - 1]!.action;
+}
+
 function buildDonorIndex(tree: Tree): DonorIndexEntry[] {
   const out: DonorIndexEntry[] = [];
   for (const [key, actions] of Object.entries(tree)) {
     const parsed = parseKey(key);
     if (!parsed || parsed.line.length === 0) continue;
-    const facing = parsed.line[parsed.line.length - 1]!.action;
+    // Post-all-in nodes carry capped, premium-stripped ranges — never
+    // sane donors for ordinary decisions.
+    if (parsed.line.some((s) => s.action === 'AllIn')) continue;
+    const facing = effectiveFacing(parsed.line);
     const raises = parsed.line.filter((s) => s.action !== 'Call').length;
     out.push({ key, decider: parsed.decider, facing, raises, actions });
   }
@@ -210,7 +227,7 @@ export function closeTree(
         // A truly closed action never reaches here — nextDeciders is
         // empty once every in-hand seat has matched the top bet. Any
         // pending seat needs a real decision node.
-        const facing = line[line.length - 1]!.action;
+        const facing = effectiveFacing(line);
         const raises = line.filter((s) => s.action !== 'Call').length;
         const donor = pickDonor(donorIndex, next, facing, raises);
         if (!donor) {

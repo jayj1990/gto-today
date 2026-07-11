@@ -7,6 +7,10 @@ import { SiteHeader } from '@/components/site-header';
 import type { TableFormat } from '@gto/poker-core';
 import { useLiveStore, type GameType } from '@/lib/live-store';
 
+/** Stack depths with a 9-max decision tree. 20/10BB collapse to
+ *  jam-or-fold (Nash), 60/40BB swap in the depth-correct open ranges. */
+const NINE_MAX_DEPTHS = [100, 60, 40, 20, 10];
+
 /**
  * 실전 모드 setup. Game type is live (cash → TexasSolver qb_ranges,
  * MTT → heuristic-widened ranges approximating 1BB BB-ante). Table /
@@ -16,7 +20,12 @@ export default function LiveSetupPage() {
   const config = useLiveStore((s) => s.config);
   const setGameType = useLiveStore((s) => s.setGameType);
   const setFormat = useLiveStore((s) => s.setFormat);
+  const setStackBB = useLiveStore((s) => s.setStackBB);
   const format = config.format === '9max' ? '9max' : '6max';
+  const depth =
+    format === '9max' && NINE_MAX_DEPTHS.includes(config.stackBB as number)
+      ? (config.stackBB as number)
+      : 100;
 
   return (
     <>
@@ -96,8 +105,44 @@ export default function LiveSetupPage() {
             </div>
           </FieldSet>
 
-          <InfoRow label="스택" value="100BB" locked />
-          <InfoRow label="오픈 사이즈" value="2.5x (SB 3x)" locked />
+          {format === '9max' ? (
+            <FieldSet label="스택 뎁스">
+              <div className="grid grid-cols-5 gap-1.5">
+                {NINE_MAX_DEPTHS.map((d) => {
+                  const active = depth === d;
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setStackBB(d)}
+                      aria-pressed={active}
+                      aria-label={`${d}BB 스택`}
+                      className={cn(
+                        'flex h-12 flex-col items-center justify-center rounded-[var(--radius-button)] border font-mono transition-colors active:scale-[0.98]',
+                        active
+                          ? 'bg-[color:var(--color-accent)]/10 border-[color:var(--color-accent)] text-[color:var(--color-accent)]'
+                          : 'border-hair surface text-fg-muted',
+                      )}
+                    >
+                      <span className="text-[13px] font-semibold">{d}BB</span>
+                      {d <= 20 && (
+                        <span className="text-[9px] uppercase tracking-[0.12em] opacity-80">
+                          올인
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </FieldSet>
+          ) : (
+            <InfoRow label="스택" value="100BB" locked />
+          )}
+          <InfoRow
+            label="오픈 사이즈"
+            value={depth <= 20 ? '올인 or 폴드' : '2.5x (SB 3x)'}
+            locked
+          />
           {config.gameType === 'mtt' ? (
             <InfoRow
               label="앤티"
@@ -126,8 +171,17 @@ export default function LiveSetupPage() {
 
         {format === '9max' && (
           <div className="border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 mt-4 rounded-[var(--radius-button)] border px-4 py-3 text-[12px] text-[color:var(--color-gold)]">
-            9맥스 트리는 6맥스 솔버 트리와 9맥스 오픈 레인지를 결합한 <strong>파생 근사</strong>
-            예요. UTG+1·LJ·HJ는 인접 포지션 전략을 빌려옵니다.
+            {depth <= 20 ? (
+              <>
+                {depth}BB는 <strong>올인 or 폴드</strong> Nash 차트 기반이에요. 올인을 맞은 콜
+                레인지는 Nash 근사값.
+              </>
+            ) : (
+              <>
+                9맥스 트리는 6맥스 솔버 트리와 9맥스 오픈 레인지를 결합한 <strong>파생 근사</strong>
+                예요. UTG+1·LJ·HJ는 인접 포지션 전략을 빌려옵니다.
+              </>
+            )}
           </div>
         )}
 

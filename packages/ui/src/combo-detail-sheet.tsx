@@ -123,10 +123,14 @@ interface Row {
 }
 
 function buildRows(mix: ComboMix): Row[] {
-  const total = (mix.raise || 0) + (mix.call || 0) + (mix.fold || 0);
+  const total = (mix.allin || 0) + (mix.raise || 0) + (mix.call || 0) + (mix.fold || 0);
   // Normalise: if the mix is a fraction (<=1), scale to 0..100.
   const scale = total > 1.5 ? 1 : 100;
-  const rows: Row[] = [{ label: '레이즈', value: (mix.raise ?? 0) * scale, color: '#C8102E' }];
+  const rows: Row[] = [];
+  if (mix.allin !== undefined) {
+    rows.push({ label: '올인', value: mix.allin * scale, color: '#D4AF37' });
+  }
+  rows.push({ label: '레이즈', value: (mix.raise ?? 0) * scale, color: '#C8102E' });
   if (mix.call !== undefined) {
     rows.push({ label: '콜', value: mix.call * scale, color: '#1F9D55' });
   }

@@ -31,8 +31,19 @@ export default function LivePlayPage() {
   const typeLabel = isMtt ? '토너먼트 · 1BB 앤티 근사' : '캐시 게임';
   // Only 6max/9max trees exist; anything else falls back to 6max.
   const format = config.format === '9max' ? '9max' : '6max';
-  const dataPath = `/data/preflop/${isMtt ? 'mtt_' : ''}${format}_100bb_qb_decisions.json`;
+  // Depth trees exist for 9max only. Sub-100BB trees are single-flavor
+  // (the depth charts are MTT-convention), so gameType only picks the
+  // file at 100BB.
+  const depth =
+    format === '9max' && [100, 60, 40, 20, 10].includes(config.stackBB as number)
+      ? (config.stackBB as number)
+      : 100;
+  const dataPath =
+    depth === 100
+      ? `/data/preflop/${isMtt ? 'mtt_' : ''}${format}_100bb_qb_decisions.json`
+      : `/data/preflop/9max_${depth}bb_qb_decisions.json`;
   const positions = POSITIONS_BY_FORMAT[format];
+  const sizeLabel = depth <= 20 ? '올인/폴드' : '2.5x';
 
   return (
     <>
@@ -42,7 +53,7 @@ export default function LivePlayPage() {
           <div>
             <h1 className="font-display text-[20px] font-bold tracking-[-0.015em]">실전 모드</h1>
             <p className="text-fg-muted mt-0.5 text-[11px]">
-              {typeLabel} · {format === '9max' ? '9맥스' : '6맥스'} · 100BB · 2.5x
+              {typeLabel} · {format === '9max' ? '9맥스' : '6맥스'} · {depth}BB · {sizeLabel}
             </p>
           </div>
           <Link
