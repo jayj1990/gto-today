@@ -7,7 +7,7 @@ export default function Loading() {
       <SiteHeader />
       <main
         aria-busy
-        aria-label="실전 설정 불러오는 중"
+        aria-label="스터디 설정 불러오는 중"
         className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-lg flex-col pb-[calc(env(safe-area-inset-bottom)+32px)] pt-8"
       >
         <Skeleton width={60} height={12} />

@@ -43,7 +43,7 @@ export default function NotFound() {
           프리플랍 차트
         </Link>
         <Link href="/live" className="underline-offset-4 hover:underline">
-          실전 모드
+          GTO 스터디
         </Link>
       </nav>
     </main>

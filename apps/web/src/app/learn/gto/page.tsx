@@ -63,7 +63,7 @@ export default function LearnGtoPage() {
         <Section
           eyebrow="HOW"
           title="이 앱은 어떻게 써요?"
-          body="매일 10핸드 퀴즈 풀고 GTO 감을 익혀보세요. 실전에서 힌트가 필요할 때도 적극 활용해 보세요."
+          body="매일 10핸드 퀴즈 풀고 GTO 감을 익혀보세요. 궁금한 스팟은 GTO 스터디에서 트리를 따라가며 확인하세요."
           delay={0.3}
         >
           <AppFlow />
@@ -351,7 +351,11 @@ function AppFlow() {
   const steps = [
     { n: '1', title: '매일 10핸드 퀴즈', body: 'GTO 감을 매일 조금씩 익혀요.\n하루 3~5분.' },
     { n: '2', title: '복습', body: '틀린 스팟만 모아 다시 풀기.\n약점 집중 공략.' },
-    { n: '3', title: '실전에서 활용', body: '게임 중 GTO Today 켜두고 힌트를 얻어보세요.' },
+    {
+      n: '3',
+      title: '스팟 복기',
+      body: '헷갈렸던 스팟을 GTO 스터디에서\n트리로 따라가며 복기해요.',
+    },
   ];
   return (
     <ol className="space-y-2">

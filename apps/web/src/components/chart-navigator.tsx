@@ -423,6 +423,10 @@ export function ChartNavigator({
                     <LegendDot color="var(--color-raise)" label="레이즈" />
                     <LegendDot color="var(--color-call)" label="콜" />
                     <LegendDot color="var(--color-fold)" label="폴드" />
+                    <LegendDot
+                      color="repeating-linear-gradient(135deg, #3a3a3e 0 3px, #2a2a2e 3px 6px)"
+                      label="범위 밖"
+                    />
                   </section>
                 </>
               )}
@@ -452,6 +456,7 @@ export function ChartNavigator({
             open={pickedCombo !== null}
             combo={pickedCombo}
             mix={pickedMix}
+            emptyText="이 라인의 히어로 레인지에 없는 핸드예요. 앞선 액션(폴드·레이즈·콜 분기)에서 이미 갈라졌습니다."
             onClose={() => setPickedCombo(null)}
           />
         </>

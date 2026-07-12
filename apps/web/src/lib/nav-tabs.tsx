@@ -27,7 +27,7 @@ export const NAV_TABS: NavTab[] = [
   },
   {
     href: '/live',
-    label: '실전',
+    label: '스터디',
     match: (p) => p.startsWith('/live'),
     icon: (a) => <IconLive active={a} />,
   },

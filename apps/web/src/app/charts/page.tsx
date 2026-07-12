@@ -19,7 +19,7 @@ export default function ChartsPage() {
 
         <p className="text-fg-muted mt-3 text-[11px]">
           <Link href="/live/play" className="underline-offset-4 hover:underline">
-            실전 모드로 →
+            GTO 스터디로 →
           </Link>
         </p>
       </main>

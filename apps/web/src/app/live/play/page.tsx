@@ -51,7 +51,7 @@ export default function LivePlayPage() {
       <main className="safe-pad-x mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-3xl flex-col pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3">
         <header className="mb-3 flex items-baseline justify-between gap-3">
           <div>
-            <h1 className="font-display text-[20px] font-bold tracking-[-0.015em]">실전 모드</h1>
+            <h1 className="font-display text-[20px] font-bold tracking-[-0.015em]">GTO 스터디</h1>
             <p className="text-fg-muted mt-0.5 text-[11px]">
               {typeLabel} · {format === '9max' ? '9맥스' : '6맥스'} · {depth}BB · {sizeLabel}
             </p>

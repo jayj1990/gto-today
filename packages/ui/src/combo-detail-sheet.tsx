@@ -9,8 +9,10 @@ export interface ComboDetailSheetProps {
   open: boolean;
   /** e.g. "AKs", "AA", "76o". Null closes the sheet. */
   combo: string | null;
-  /** Mix at this spot. If undefined, shown as "데이터 없음". */
+  /** Mix at this spot. If undefined, shown as the empty-state text. */
   mix?: ComboMix | undefined;
+  /** Copy for the no-mix state — defaults to a generic "no data". */
+  emptyText?: string;
   onClose: () => void;
 }
 
@@ -19,7 +21,13 @@ export interface ComboDetailSheetProps {
  * Slide down / drag down below a small threshold to dismiss —
  * matches iOS sheet behaviour, no explicit close button needed.
  */
-export function ComboDetailSheet({ open, combo, mix, onClose }: ComboDetailSheetProps) {
+export function ComboDetailSheet({
+  open,
+  combo,
+  mix,
+  emptyText = '이 스팟의 데이터가 없어요.',
+  onClose,
+}: ComboDetailSheetProps) {
   const rows = mix ? buildRows(mix) : [];
   const top = rows.reduce((a, b) => (b.value > a.value ? b : a), rows[0]!);
 
@@ -70,7 +78,7 @@ export function ComboDetailSheet({ open, combo, mix, onClose }: ComboDetailSheet
 
             {rows.length === 0 ? (
               <p className="border-hair surface text-fg-muted mt-4 rounded-[var(--radius-button)] p-4 text-center text-[12px]">
-                이 스팟의 데이터가 없어요.
+                {emptyText}
               </p>
             ) : (
               <ul className="mt-4 space-y-2">

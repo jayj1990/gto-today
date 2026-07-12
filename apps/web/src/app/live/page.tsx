@@ -36,7 +36,7 @@ export default function LiveSetupPage() {
             ← 홈으로
           </Link>
           <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--color-accent)]">
-            실전 모드 · 설정
+            GTO 스터디 · 설정
           </p>
           <h1 className="font-display mt-2 text-[30px] font-bold tracking-[-0.02em]">
             GTO 데이터 선택
@@ -159,8 +159,17 @@ export default function LiveSetupPage() {
           className="bg-gold-gradient text-noir mt-10 inline-flex h-14 items-center justify-center rounded-[var(--radius-button)] text-center font-semibold shadow-[var(--shadow-card)] ring-1 ring-inset ring-[color:var(--color-gold-deep)] active:scale-[0.98]"
           style={{ touchAction: 'manipulation' }}
         >
-          실전 시작 →
+          스터디 시작 →
         </Link>
+
+        <nav className="text-fg-muted mt-4 flex flex-wrap justify-center gap-x-5 gap-y-1 text-[12px]">
+          <Link href="/mtt/preflop" className="underline-offset-4 hover:underline">
+            토너먼트 프리플랍 차트 →
+          </Link>
+          <Link href="/mtt/push-fold" className="underline-offset-4 hover:underline">
+            올인/폴드 퀴즈 →
+          </Link>
+        </nav>
 
         {config.gameType === 'mtt' && (
           <div className="border-[color:var(--color-gold)]/40 bg-[color:var(--color-gold)]/10 mt-4 rounded-[var(--radius-button)] border px-4 py-3 text-[12px] text-[color:var(--color-gold)]">
@@ -189,6 +198,11 @@ export default function LiveSetupPage() {
           추후 업데이트: 다양한 스택 뎁스 (50BB / 200BB), 추가 오픈 사이즈 (2.25x / 3x), ICM 버블
           모드.
         </div>
+
+        <p className="text-fg-muted mt-4 text-[11px] leading-[1.6]">
+          GTO·today는 학습·복기용 도구예요. 라이브 카드룸은 핸드 진행 중 차트·앱 참조를 금지(TDA
+          규정)하며, 온라인 포커에서 실시간 보조 도구(RTA) 사용은 계정 제재 대상입니다.
+        </p>
       </main>
     </>
   );

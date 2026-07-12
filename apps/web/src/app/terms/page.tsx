@@ -83,7 +83,7 @@ export default function TermsPage() {
           <p>서비스는 다음과 같은 기능을 제공합니다.</p>
           <ul className="text-fg-muted mt-2 list-disc space-y-1 pl-5">
             <li>포커 GTO 전략 학습 콘텐츠 및 일일 퀴즈</li>
-            <li>무한 훈련 모드 및 실전 시뮬레이터</li>
+            <li>GTO 스터디 (프리플랍 트리·차트 탐색)</li>
             <li>포스트플랍 라이브 솔버(베타)</li>
             <li>AI 해설 및 개인화된 학습 기록</li>
           </ul>

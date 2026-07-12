@@ -92,20 +92,24 @@ export function RangeGrid({
               cursor: clickable ? 'pointer' : 'default',
               overflow: 'hidden',
               userSelect: 'none',
-              opacity: inRange === false ? 0.25 : 1,
+              opacity: inRange === false ? 0.45 : 1,
               outline: isHighlight ? '2px solid var(--color-accent)' : 'none',
               outlineOffset: isHighlight ? '1px' : 0,
             }}
           >
-            {/* Stacked background bars. Out-of-range cells render as
-                a flat mid-gray so they don't read as "folded" */}
+            {/* Stacked background bars. Out-of-range cells (the hand
+                left hero's range on an earlier action) render as
+                hatched gray so they don't read as "folded" or empty */}
             <div
               style={{
                 position: 'absolute',
                 inset: 0,
                 display: 'flex',
                 pointerEvents: 'none',
-                background: inRange === false ? '#3a3a3e' : 'transparent',
+                background:
+                  inRange === false
+                    ? 'repeating-linear-gradient(135deg, #3a3a3e 0 3px, #2a2a2e 3px 6px)'
+                    : 'transparent',
               }}
             >
               {inRange !== false && (
