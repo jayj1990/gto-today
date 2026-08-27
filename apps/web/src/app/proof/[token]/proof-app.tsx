@@ -168,19 +168,28 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
     URL.revokeObjectURL(url);
   };
 
-  const openPop = (e: React.MouseEvent | React.KeyboardEvent, t: PopTarget) => {
+  const openPop = (
+    e: React.MouseEvent | React.KeyboardEvent | React.PointerEvent,
+    t: PopTarget,
+  ) => {
     e.stopPropagation();
     if (pop?.t.id === t.id) return setPop(null);
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
     setPop({ t, x: r.left + window.scrollX, y: r.bottom + window.scrollY + 8 });
   };
   useEffect(() => {
-    const close = () => setPop(null);
+    const away = (e: Event) => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest('.pf-pop') || t?.closest('.pf-chg')) return;
+      setPop(null);
+    };
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && setPop(null);
-    document.addEventListener('click', close);
+    // pointerdown 으로 듣는다 — iOS 는 span·div 같은 비대화형 요소의 click 을
+    // 상위로 올려주지 않아서 document 레벨 click 리스너가 아예 안 불린다.
+    document.addEventListener('pointerdown', away);
     document.addEventListener('keydown', esc);
     return () => {
-      document.removeEventListener('click', close);
+      document.removeEventListener('pointerdown', away);
       document.removeEventListener('keydown', esc);
     };
   }, []);
@@ -197,7 +206,10 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
         : `${cls} ${isCustom(v) ? 'done-c' : v === 'r' ? 'done-r' : 'done-a'}`,
       role: 'button' as const,
       tabIndex: 0,
-      onClick: (e: React.MouseEvent) => openPop(e, target),
+      // click 이 아니라 pointerup 이다 — iOS Safari 는 span 같은 비대화형 요소의
+      // click 을 위로 올려주지 않아 React 위임 핸들러가 아예 안 불린다(모바일에서
+      // 눌러도 무반응이던 원인). pointer 이벤트는 요소 종류를 가리지 않는다.
+      onPointerUp: (e: React.PointerEvent) => openPop(e, target),
       onKeyDown: (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -224,10 +236,9 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
     <p key={key}>
       {b.moved && s.move && (
         <>
-          <span
-            className="pf-tag move"
-            role="button"
-            tabIndex={0}
+          <button
+            type="button"
+            className="pf-tag move pf-chg"
             onClick={(e) =>
               openPop(e, {
                 id: s.move as string,
@@ -236,20 +247,9 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
                 i: '맨 뒤로 이동',
               })
             }
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                openPop(e, {
-                  id: s.move as string,
-                  c: 'opt',
-                  d: '원래 순서(두 번째 문단)',
-                  i: '맨 뒤로 이동',
-                });
-              }
-            }}
           >
             {eff(s.move) === 'r' ? '이동 취소됨' : '위치 이동'}
-          </span>{' '}
+          </button>{' '}
         </>
       )}
       {b.seg.map((g, i) => (hasId(g) ? renderSeg(g, i) : <span key={i}>{g.x}</span>))}
@@ -260,52 +260,19 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
     <div className="pf">
       <div className="pf-bar">
         <div className="pf-bar-in">
-          <div className="pf-brand">정다빈 답변 교정지</div>
-          <div className="pf-tally">
-            <span className="a">
-              적용 <b>{tally.a}</b>
-            </span>
-            <span className="r">
-              취소 <b>{tally.r}</b>
-            </span>
-            <span className="c">
-              직접 <b>{tally.c}</b>
-            </span>
-          </div>
-          <div className="pf-spacer" />
           <div className="pf-seg">
-            <button aria-pressed={view === 'proof'} onClick={() => setView('proof')}>
+            <button type="button" aria-pressed={view === 'proof'} onClick={() => setView('proof')}>
               교정 표시
             </button>
-            <button aria-pressed={view === 'final'} onClick={() => setView('final')}>
+            <button type="button" aria-pressed={view === 'final'} onClick={() => setView('final')}>
               최종본
             </button>
           </div>
+          <div className="pf-spacer" />
           <span className={`pf-status ${status.tone}`}>{status.text}</span>
-        </div>
-        <div className="pf-bulk">
-          <div className="pf-bulk-in">
-            <span className="pf-lab">일괄</span>
-            <button className="pf-mini" onClick={() => bulk(() => 'a')}>
-              전체 적용
-            </button>
-            <button className="pf-mini" onClick={() => bulk(() => 'r')}>
-              전체 취소
-            </button>
-            <button className="pf-mini" onClick={() => bulk((g) => (g.c === 'req' ? 'a' : 'r'))}>
-              필수만 적용
-            </button>
-            <button className="pf-mini" onClick={() => bulk(() => null)}>
-              처음으로
-            </button>
-            <div className="pf-spacer" />
-            <button className="pf-mini" onClick={copy}>
-              최종본 복사
-            </button>
-            <button className="pf-mini" onClick={download}>
-              파일로 내려받기
-            </button>
-          </div>
+          <button type="button" className="pf-copy" onClick={copy}>
+            전체 복사
+          </button>
         </div>
       </div>
 
@@ -330,6 +297,33 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
               ))}
             </div>
           </header>
+
+          <div className="pf-tools">
+            <div className="pf-tally">
+              <span className="a">
+                적용 <b>{tally.a}</b>
+              </span>
+              <span className="r">
+                취소 <b>{tally.r}</b>
+              </span>
+              <span className="c">
+                직접 <b>{tally.c}</b>
+              </span>
+            </div>
+            <div className="pf-spacer" />
+            <button type="button" className="pf-mini" onClick={() => bulk(() => 'a')}>
+              전체 적용
+            </button>
+            <button type="button" className="pf-mini" onClick={() => bulk(() => 'r')}>
+              전체 취소
+            </button>
+            <button type="button" className="pf-mini" onClick={() => bulk(() => null)}>
+              처음으로
+            </button>
+            <button type="button" className="pf-mini" onClick={download}>
+              파일로 내려받기
+            </button>
+          </div>
 
           <div className="pf-howto">
             <span>

@@ -55,18 +55,26 @@
 .pf-bar-in {
   max-width: 900px;
   margin: 0 auto;
-  padding: 11px 20px;
+  padding: 9px 16px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
+  gap: 10px;
 }
-.pf-brand {
-  font-family: var(--serif);
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: -0.01em;
+.pf-copy {
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--accent);
+  color: var(--paper);
   white-space: nowrap;
+}
+.pf-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 22px 0 0;
 }
 .pf-tally {
   display: flex;
@@ -124,29 +132,6 @@
 }
 .pf-status.ok {
   color: var(--ok);
-}
-.pf-bulk {
-  border-top: 1px solid var(--rule);
-  background: var(--bg);
-}
-.pf-bulk-in {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 9px 20px;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-  font-size: 12.5px;
-  color: var(--muted);
-}
-.pf-lab {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--faint);
-  margin-right: 2px;
 }
 .pf-mini {
   padding: 4px 11px;
@@ -272,6 +257,8 @@
 .pf-chg {
   border-radius: 3px;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .pf-chg:hover,
 .pf-chg.open {
@@ -510,6 +497,26 @@
 }
 
 @media (max-width: 660px) {
+  /* 좁은 화면에서는 앵커 팝오버 대신 하단 시트 — 문장 끝에서 열었을 때 화면 밖으로
+     밀려나가는 위치 계산을 아예 하지 않게 된다. */
+  .pf-pop {
+    position: fixed;
+    top: auto !important;
+    left: 12px !important;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    max-height: 70dvh;
+    overflow-y: auto;
+  }
+  .pf-pop .acts button {
+    padding: 12px 6px;
+    font-size: 14px;
+  }
+  .pf-pop input {
+    padding: 11px 12px;
+    font-size: 16px;
+  }
   .pf-wrap {
     padding: 32px 16px 100px;
   }
@@ -522,10 +529,14 @@
     line-height: 1.4;
   }
   .pf-bar-in {
-    padding: 10px 16px;
-    gap: 10px;
+    padding: 8px 12px;
+    gap: 8px;
   }
-  .pf-brand {
-    font-size: 14px;
+  .pf-seg button {
+    padding: 7px 11px;
+    font-size: 12.5px;
+  }
+  .pf-status {
+    font-size: 10.5px;
   }
 }
