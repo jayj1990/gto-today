@@ -323,19 +323,38 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
                   <h2 className="pf-q">{s.q}</h2>
                   {blocks.map((b, bi) =>
                     b.t === 'new' ? (
-                      <div className={`pf-blk${eff(b.id) === 'r' ? 'off' : ''}`} key={`n${bi}`}>
+                      // 클래스는 배열로 합친다. 템플릿 리터럴에 " off" 처럼 앞 공백을 두면
+                      // prettier-plugin-tailwindcss 가 공백을 지워 "pf-blkoff" 로 붙어버린다.
+                      <div
+                        className={[
+                          'pf-blk',
+                          b.optIn ? 'suggest' : '',
+                          eff(b.id) === 'r' ? 'off' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        key={`n${bi}`}
+                      >
                         <div className="pf-blk-bar">
                           <span className="pf-tag">{b.tag}</span>
                           <button
+                            type="button"
                             className="pf-mini"
                             onClick={() => set(b.id, eff(b.id) === 'r' ? 'a' : 'r')}
                           >
-                            {eff(b.id) === 'r' ? '적용하기' : '취소하기'}
+                            {eff(b.id) === 'r'
+                              ? b.optIn
+                                ? '이 문단 넣기'
+                                : '적용하기'
+                              : b.optIn
+                                ? '넣지 않기'
+                                : '취소하기'}
                           </button>
                         </div>
                         {b.ps.map((t, i) => (
                           <p key={i}>{t}</p>
                         ))}
+                        {b.addNote && <p className="pf-blk-note">{b.addNote}</p>}
                       </div>
                     ) : null,
                   )}
