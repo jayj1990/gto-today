@@ -328,7 +328,7 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
             </span>
             <span>고른 결과는 자동으로 저장됩니다</span>
             <span>
-              <b>내용 보강</b> 상자는 고칠 곳이 아니라 더 말해볼 만한 곳입니다
+              <b>보강 근거</b> 상자는 고칠 곳이 아니라 더 말해볼 만한 곳입니다
             </span>
           </div>
 
