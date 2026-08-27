@@ -326,52 +326,70 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
 
           {doc.sections.map((s) => {
             const blocks = orderedBlocks(s);
-            const paras = blocks.filter((b): b is Extract<Block, { t: 'p' }> => b.t === 'p');
             return (
               <section className="pf-sec" key={s.n}>
                 <div className="pf-num">{s.n}</div>
                 <div className="pf-col">
                   <h2 className="pf-q">{s.q}</h2>
-                  {blocks.map((b, bi) =>
-                    b.t === 'new' ? (
-                      // 클래스는 배열로 합친다. 템플릿 리터럴에 " off" 처럼 앞 공백을 두면
-                      // prettier-plugin-tailwindcss 가 공백을 지워 "pf-blkoff" 로 붙어버린다.
-                      <div
-                        className={[
-                          'pf-blk',
-                          b.optIn ? 'suggest' : '',
-                          eff(b.id) === 'r' ? 'off' : '',
-                        ]
-                          .filter(Boolean)
-                          .join(' ')}
-                        key={`n${bi}`}
-                      >
-                        <div className="pf-blk-bar">
-                          <span className="pf-tag">{b.tag}</span>
-                          <button
-                            type="button"
-                            className="pf-mini"
-                            onClick={() => set(b.id, eff(b.id) === 'r' ? 'a' : 'r')}
-                          >
-                            {eff(b.id) === 'r'
-                              ? b.optIn
-                                ? '이 문단 넣기'
-                                : '적용하기'
-                              : b.optIn
-                                ? '넣지 않기'
-                                : '취소하기'}
-                          </button>
-                        </div>
-                        {b.ps.map((t, i) => (
-                          <p key={i}>{t}</p>
-                        ))}
-                        {b.addNote && <p className="pf-blk-note">{b.addNote}</p>}
-                      </div>
-                    ) : null,
-                  )}
-                  {paras.length > 0 && (
-                    <div className="pf-body">{paras.map((b, i) => renderPara(b, s, i))}</div>
-                  )}
+                  {(() => {
+                    // 블록을 선언 순서대로 그린다. 연속한 문단은 한 덩어리로 묶고
+                    // 추가 초안은 원래 자리(답변 끝)에 그대로 남긴다.
+                    // 예전에는 문단과 초안을 따로 그려서 초안이 전부 맨 위로 올라갔다.
+                    const out: React.ReactNode[] = [];
+                    let run: Extract<Block, { t: 'p' }>[] = [];
+                    const flush = () => {
+                      if (!run.length) return;
+                      const group = run;
+                      out.push(
+                        <div className="pf-body" key={`body${out.length}`}>
+                          {group.map((b, i) => renderPara(b, s, i))}
+                        </div>,
+                      );
+                      run = [];
+                    };
+                    for (const b of blocks) {
+                      if (b.t === 'p') {
+                        run.push(b);
+                        continue;
+                      }
+                      flush();
+                      const off = eff(b.id) === 'r';
+                      out.push(
+                        <div
+                          className={['pf-blk', b.optIn ? 'suggest' : '', off ? 'off' : '']
+                            .filter(Boolean)
+                            .join(' ')}
+                          key={b.id}
+                        >
+                          <div className="pf-blk-bar">
+                            <span className="pf-tag">{b.tag}</span>
+                            {b.pos && <span className="pf-blk-pos">{b.pos}</span>}
+                            <div className="pf-spacer" />
+                            <button
+                              type="button"
+                              className={off ? 'pf-add' : 'pf-mini'}
+                              onClick={() => set(b.id, off ? 'a' : 'r')}
+                            >
+                              {off
+                                ? b.optIn
+                                  ? '이 문단 넣기'
+                                  : '적용하기'
+                                : b.optIn
+                                  ? '넣지 않기'
+                                  : '취소하기'}
+                            </button>
+                          </div>
+                          {b.why && <p className="pf-blk-why">{b.why}</p>}
+                          {b.ps.map((t, i) => (
+                            <p key={i}>{t}</p>
+                          ))}
+                          {b.addNote && <p className="pf-blk-note">{b.addNote}</p>}
+                        </div>,
+                      );
+                    }
+                    flush();
+                    return out;
+                  })()}
                   {s.note && (
                     <div className="pf-note">
                       {s.noteB && <b>{s.noteB} </b>}
