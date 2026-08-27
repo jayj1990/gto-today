@@ -417,13 +417,7 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
                         continue;
                       }
                       flush();
-                      // 내용 보강은 추가 초안 바로 위에 붙인다. 왜 넣자는 건지 읽고
-                      // 곧바로 초안을 보게 하려는 것.
-                      if (b.optIn && !tipDone) {
-                        tipDone = true;
-                        const el = tipEl();
-                        if (el) out.push(el);
-                      }
+                      const putTipAfter = Boolean(b.optIn) && !tipDone;
                       const off = eff(b.id) === 'r';
                       out.push(
                         <div
@@ -456,6 +450,13 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
                           {b.addNote && <p className="pf-blk-note">{b.addNote}</p>}
                         </div>,
                       );
+                      // 근거는 초안 뒤에 온다. 초안을 먼저 읽고 왜 넣자는 건지
+                      // 보는 편이 순서에 맞다(2026-08-27 Jay).
+                      if (putTipAfter) {
+                        tipDone = true;
+                        const el = tipEl();
+                        if (el) out.push(el);
+                      }
                     }
                     flush();
                     if (!tipDone) {
