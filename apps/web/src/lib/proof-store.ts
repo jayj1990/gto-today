@@ -40,15 +40,19 @@ export async function readDecisions(docToken: string): Promise<Record<string, st
   }
 }
 
+export type WriteResult = 'ok' | 'unconfigured' | 'failed';
+
 export async function writeDecisions(
   docToken: string,
   decisions: Record<string, string>,
-): Promise<boolean> {
-  if (!redis) return false;
+): Promise<WriteResult> {
+  // 둘을 갈라 돌려준다 — 저장이 안 될 때 "환경변수가 없다"와 "Upstash 가 거절했다"는
+  // 대응이 전혀 다른데, 하나의 false 로 뭉치면 프로덕션에서 원인을 못 찾는다.
+  if (!redis) return 'unconfigured';
   try {
     await redis.set(key(docToken), JSON.stringify(decisions));
-    return true;
+    return 'ok';
   } catch {
-    return false;
+    return 'failed';
   }
 }

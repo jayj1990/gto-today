@@ -47,13 +47,20 @@ const nextConfig: NextConfig = {
     //   루트로 들어온 요청만 교정지 경로로 넘긴다. 토큰은 주소창에 드러나지 않고,
     //   /api/proof/* · /_next/* 같은 나머지 경로는 같은 배포를 그대로 탄다.
     //   포커 앱 라우트도 이 호스트에서 열리긴 하지만 알려줄 주소가 루트뿐이라 둔다.
-    return [
-      {
-        source: '/',
-        has: [{ type: 'host' as const, value: 'dabin.gto.today' }],
-        destination: '/proof/dabin-7b248b5dd5f3180d03d0618a',
-      },
-    ];
+    //   beforeFiles 여야 한다. 배열로 반환하면 afterFiles 로 들어가는데,
+    //   afterFiles 는 매칭되는 페이지가 없을 때만 돌아서 실제 파일이 있는 "/" 에서는
+    //   영영 걸리지 않는다(포커 홈이 그대로 떴다).
+    return {
+      beforeFiles: [
+        {
+          source: '/',
+          has: [{ type: 'host' as const, value: 'dabin.gto.today' }],
+          destination: '/proof/dabin-7b248b5dd5f3180d03d0618a',
+        },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
   },
   async headers() {
     // Baseline hardening headers.
