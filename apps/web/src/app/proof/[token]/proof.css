@@ -22,6 +22,8 @@
   --warn-bg: #fcf4dc;
   --warn-line: #d4b451;
   --ok: #1f6b4a;
+  --tip-bg: #e8eef7;
+  --tip-line: #c6d6ea;
   --alt: #0f6a52;
   --alt-bg: #e2f2ec;
   --serif: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
@@ -265,22 +267,23 @@
 }
 .pf-tip {
   max-width: 62ch;
-  margin-top: 10px;
-  padding: 15px 17px;
-  background: var(--paper);
-  border: 1px solid var(--rule);
-  border-left: 3px solid var(--accent);
+  margin-top: 14px;
+  padding: 16px 18px;
+  background: var(--tip-bg);
+  border: 1px solid var(--tip-line);
+  border-left: 4px solid var(--accent);
   border-radius: 0 10px 10px 0;
 }
 .pf-tip p {
-  margin: 9px 0 0;
-  font-size: 13.5px;
+  margin: 10px 0 0;
+  font-size: 14px;
   line-height: 1.8;
   color: var(--fg);
 }
 .pf-tip-sub {
   font-size: 11.5px;
-  color: var(--muted);
+  color: var(--accent);
+  font-weight: 500;
 }
 .pf-tip-lab {
   display: inline-block;
@@ -387,13 +390,19 @@
   border-bottom: 1px solid var(--rule);
 }
 .pf-add {
-  padding: 6px 14px;
-  border-radius: 99px;
-  font-size: 12.5px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 600;
   background: var(--accent);
-  color: var(--paper);
-  white-space: nowrap;
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(16, 24, 32, 0.18);
+}
+.pf-add:hover {
+  filter: brightness(1.1);
+}
+.pf-add:active {
+  transform: translateY(1px);
 }
 .pf-blk-note {
   font-size: 12.5px;
@@ -404,9 +413,15 @@
   border-top: 1px solid var(--rule);
 }
 .pf-blk.off {
-  opacity: 0.42;
   background: var(--sunk);
   border-left-color: var(--faint);
+}
+/* 흐리게 하는 건 본문뿐이다. 머리줄까지 같이 죽이면 넣기 버튼이 눌러도 되는
+   물건으로 안 보인다(2026-08-27 실제 지적). */
+.pf-blk.off > p,
+.pf-blk.off .pf-blk-why,
+.pf-blk.off .pf-blk-note {
+  opacity: 0.5;
 }
 .pf-blk p {
   margin: 0 0 13px;
