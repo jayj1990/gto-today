@@ -85,16 +85,6 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
       return next;
     });
 
-  const bulk = (fn: (g: Change) => string | null) =>
-    setDec(() => {
-      const next: Dec = {};
-      for (const g of changes) {
-        const v = fn(g);
-        if (v !== null) next[g.id] = v;
-      }
-      return next;
-    });
-
   /* 문항별 최종 문단 — 이동 취소 시 원래 자리로 되돌린다 */
   const resolvedSeg = useCallback(
     (g: Extract<Seg, { id: string }>) => {
@@ -158,14 +148,6 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
     } catch {
       flash('복사하지 못했습니다');
     }
-  };
-  const download = () => {
-    const url = URL.createObjectURL(new Blob([finalText()], { type: 'text/plain;charset=utf-8' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = '정다빈_답변_최종본.txt';
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const openPop = (
@@ -310,19 +292,6 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
                 직접 <b>{tally.c}</b>
               </span>
             </div>
-            <div className="pf-spacer" />
-            <button type="button" className="pf-mini" onClick={() => bulk(() => 'a')}>
-              전체 적용
-            </button>
-            <button type="button" className="pf-mini" onClick={() => bulk(() => 'r')}>
-              전체 취소
-            </button>
-            <button type="button" className="pf-mini" onClick={() => bulk(() => null)}>
-              처음으로
-            </button>
-            <button type="button" className="pf-mini" onClick={download}>
-              파일로 내려받기
-            </button>
           </div>
 
           <div className="pf-howto">
