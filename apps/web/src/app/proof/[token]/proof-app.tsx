@@ -400,6 +400,7 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
                   })()}
                   {s.note && (
                     <div className="pf-note">
+                      <span className="pf-note-lab">{s.noteB ? '초안 설명' : '고친 곳 설명'}</span>
                       {s.noteB && <b>{s.noteB} </b>}
                       {s.note}
                     </div>
@@ -407,7 +408,8 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
                   {s.tip && (
                     <div className="pf-tip">
                       <span className="pf-tip-lab">내용 보강</span>
-                      {s.tip}
+                      <span className="pf-tip-sub">고칠 곳이 아니라 더 말해볼 만한 곳입니다</span>
+                      <p>{s.tip}</p>
                     </div>
                   )}
                 </div>
