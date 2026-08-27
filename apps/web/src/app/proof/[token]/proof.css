@@ -366,10 +366,11 @@
   border-radius: 0 10px 10px 0;
   max-width: 62ch;
 }
+/* 켜짐 = 옅은 파랑(최종본에 들어감), 꺼짐 = 회색. 한눈에 갈리게 한다. */
 .pf-blk.suggest {
-  background: transparent;
-  border-left: 3px dashed var(--accent);
-  box-shadow: inset 0 0 0 1px var(--rule);
+  background: var(--tip-bg);
+  border-left: 4px solid var(--accent);
+  box-shadow: none;
 }
 .pf-blk.suggest .pf-tag {
   background: transparent;
@@ -414,15 +415,10 @@
 }
 .pf-blk.off {
   background: var(--sunk);
-  border-left-color: var(--faint);
+  border-left: 4px dashed var(--faint);
 }
-/* 흐리게 하는 건 본문뿐이다. 머리줄까지 같이 죽이면 넣기 버튼이 눌러도 되는
-   물건으로 안 보인다(2026-08-27 실제 지적). */
-.pf-blk.off > p,
-.pf-blk.off .pf-blk-why,
-.pf-blk.off .pf-blk-note {
-  opacity: 0.5;
-}
+/* 꺼져 있어도 본문은 또렷하게 둔다 — 읽고 나서 넣을지 정하는 글이라
+   흐리게 만들면 판단을 못 한다. 켜짐/꺼짐은 배경과 버튼으로만 구분한다. */
 .pf-blk p {
   margin: 0 0 13px;
 }

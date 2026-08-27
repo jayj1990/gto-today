@@ -104,7 +104,7 @@ export const DOCS: Record<string, ProofDoc> = {
             id: 'add-01',
             c: 'chk',
             optIn: true,
-            tag: '추가 답변 초안',
+            tag: '내용 보강 초안',
             why: '질문이 함께 물은 "청년 여성의 불안이나 생존 욕구"가 지금 답변에 없습니다. 이 문단이 그 자리를 채웁니다.',
             pos: '위 답변 끝에 이어 붙습니다',
             ps: [
@@ -305,7 +305,7 @@ export const DOCS: Record<string, ProofDoc> = {
             id: 'add-03',
             c: 'chk',
             optIn: true,
-            tag: '추가 답변 초안',
+            tag: '내용 보강 초안',
             why: '질문의 핵심인 사라 킴과의 대비, 그리고 "설정한 디테일"이 지금 답변에 없습니다. 두 문단이 각각 그 자리를 채웁니다.',
             pos: '위 답변 끝에 이어 붙습니다',
             ps: [
@@ -481,7 +481,7 @@ export const DOCS: Record<string, ProofDoc> = {
             id: 'add-05',
             c: 'chk',
             optIn: true,
-            tag: '추가 답변 초안',
+            tag: '내용 보강 초안',
             why: '"감독님과 가장 많은 대화를 나눈 부분"이 지금 답변에 없습니다. 이 문단이 그 자리를 채웁니다.',
             pos: '위 답변 끝에 이어 붙습니다',
             ps: [
@@ -565,7 +565,7 @@ export const DOCS: Record<string, ProofDoc> = {
             id: 'add-06',
             c: 'chk',
             optIn: true,
-            tag: '추가 답변 초안',
+            tag: '내용 보강 초안',
             why: '질문이 물은 "호흡"을 보여주는 구체적인 대목이 없습니다. 이 문단이 그 자리를 채웁니다.',
             pos: '위 답변 끝에 이어 붙습니다',
             ps: [
@@ -640,7 +640,7 @@ export const DOCS: Record<string, ProofDoc> = {
             id: 'add-07',
             c: 'chk',
             optIn: true,
-            tag: '추가 답변 초안',
+            tag: '내용 보강 초안',
             why: '질문이 함께 물은 "절제하려 했던 요소"가 없습니다. 이 문단이 그 자리를 채웁니다.',
             pos: '위 답변 끝에 이어 붙습니다',
             ps: [
@@ -653,7 +653,7 @@ export const DOCS: Record<string, ProofDoc> = {
       {
         n: '08',
         q: '〈레이디 두아〉가 연기 여정에서 어떤 전환점이 되었나요?',
-        note: '"작품 속에서의"는 번역투에 가깝고 "직업적인"은 굳이 적을 붙일 자리가 아닙니다. 작품명은 질문지 표기에 맞춰 꺾쇠를 붙였습니다.',
+        note: '"작품 속에서의"는 번역투에 가깝고 "직업적인"은 굳이 적을 붙일 자리가 아닙니다. 작품명 표기는 질문지와 맞췄습니다.',
         blocks: [
           {
             t: 'p',
@@ -721,7 +721,7 @@ export const DOCS: Record<string, ProofDoc> = {
             id: 'add-08',
             c: 'chk',
             optIn: true,
-            tag: '추가 답변 초안',
+            tag: '내용 보강 초안',
             why: '"어떤 도전이었는지"가 추상적으로만 남아 있습니다. 이 문단이 변화구라는 표현에 근거를 만들어 줍니다.',
             pos: '위 답변 끝에 이어 붙습니다',
             ps: [
@@ -783,7 +783,7 @@ export const DOCS: Record<string, ProofDoc> = {
             id: 'add-09',
             c: 'chk',
             optIn: true,
-            tag: '추가 답변 초안',
+            tag: '내용 보강 초안',
             why: '벡델데이라는 자리와 연결되는 대목이 없습니다. 이 문단이 그 역할을 합니다.',
             pos: '위 답변 끝에 이어 붙습니다',
             ps: [

@@ -339,6 +339,13 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
                 <div className="pf-num">{s.n}</div>
                 <div className="pf-col">
                   <h2 className="pf-q">{s.q}</h2>
+                  {s.note && (
+                    <div className="pf-note">
+                      <span className="pf-note-lab">{s.noteB ? '초안 설명' : '고친 곳 설명'}</span>
+                      {s.noteB && <b>{s.noteB} </b>}
+                      {s.note}
+                    </div>
+                  )}
                   {(() => {
                     // 블록을 선언 순서대로 그린다. 연속한 문단은 한 덩어리로 묶고
                     // 추가 초안은 원래 자리(답변 끝)에 그대로 남긴다.
@@ -355,12 +362,30 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
                       );
                       run = [];
                     };
+                    let tipDone = false;
+                    const tipEl = () =>
+                      s.tip ? (
+                        <div className="pf-tip" key="tip">
+                          <span className="pf-tip-lab">보강 근거</span>
+                          <span className="pf-tip-sub">
+                            고칠 곳이 아니라 더 말해볼 만한 곳입니다
+                          </span>
+                          <p>{s.tip}</p>
+                        </div>
+                      ) : null;
                     for (const b of blocks) {
                       if (b.t === 'p') {
                         run.push(b);
                         continue;
                       }
                       flush();
+                      // 내용 보강은 추가 초안 바로 위에 붙인다. 왜 넣자는 건지 읽고
+                      // 곧바로 초안을 보게 하려는 것.
+                      if (b.optIn && !tipDone) {
+                        tipDone = true;
+                        const el = tipEl();
+                        if (el) out.push(el);
+                      }
                       const off = eff(b.id) === 'r';
                       out.push(
                         <div
@@ -387,7 +412,6 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
                                   : '취소하기'}
                             </button>
                           </div>
-                          {b.why && <p className="pf-blk-why">{b.why}</p>}
                           {b.ps.map((t, i) => (
                             <p key={i}>{t}</p>
                           ))}
@@ -396,22 +420,12 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
                       );
                     }
                     flush();
+                    if (!tipDone) {
+                      const el = tipEl();
+                      if (el) out.push(el);
+                    }
                     return out;
                   })()}
-                  {s.note && (
-                    <div className="pf-note">
-                      <span className="pf-note-lab">{s.noteB ? '초안 설명' : '고친 곳 설명'}</span>
-                      {s.noteB && <b>{s.noteB} </b>}
-                      {s.note}
-                    </div>
-                  )}
-                  {s.tip && (
-                    <div className="pf-tip">
-                      <span className="pf-tip-lab">내용 보강</span>
-                      <span className="pf-tip-sub">고칠 곳이 아니라 더 말해볼 만한 곳입니다</span>
-                      <p>{s.tip}</p>
-                    </div>
-                  )}
                 </div>
               </section>
             );
