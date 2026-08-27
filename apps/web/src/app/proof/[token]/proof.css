@@ -1,7 +1,11 @@
 /* 공개 교정지 — dabin.gto.today 로 열리는 외부 화면. 로그인 없이 토큰만으로 들어온다.
    포커 앱과 완전히 다른 성격이라 토큰(tokens.css)을 쓰지 않고 .pf 안에 자체 값을 가둔다.
    웹폰트는 쓰지 않는다 — CSP 가 font-src 'self' data: 라 외부 폰트는 리포트 노이즈만 남긴다. */
-.pf {
+/* 팝오버는 createPortal 로 body 에 그려져 .pf 바깥에 산다.
+   변수를 .pf 에만 두면 상속이 끊겨 background/border 가 전부 무효가 되고
+   글자색은 포커 앱 테마를 물려받는다(연하게 떠서 안 보이던 원인). */
+.pf,
+.pf-pop {
   --bg: #f2f4f6;
   --paper: #fbfcfd;
   --sunk: #eaeef2;
@@ -351,6 +355,9 @@
   z-index: 60;
   width: min(340px, calc(100vw - 32px));
   background: var(--paper);
+  color: var(--fg);
+  font-size: 16px;
+  line-height: 1.7;
   border: 1px solid var(--rule);
   border-radius: 12px;
   box-shadow:
