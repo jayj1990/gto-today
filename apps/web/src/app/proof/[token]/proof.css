@@ -377,6 +377,20 @@
   color: var(--accent);
   border-color: var(--accent);
 }
+.pf-moveblk {
+  max-width: 62ch;
+  padding: 14px 16px;
+  background: var(--sunk);
+  border-left: 4px solid var(--ins);
+  border-radius: 0 10px 10px 0;
+}
+.pf-moveblk .pf-body {
+  max-width: none;
+}
+.pf-mini[disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
 .pf-blk-pos {
   font-size: 11.5px;
   color: var(--muted);

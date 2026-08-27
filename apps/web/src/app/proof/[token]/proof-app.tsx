@@ -24,6 +24,9 @@ const hasId = (s: Seg): s is Extract<Seg, { id: string }> => 'id' in s;
 
 export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc; initial: Dec }) {
   const [dec, setDec] = useState<Dec>(initial);
+  // 되돌리기 — 바꾸기 직전 상태를 쌓아 둔다. 잘못 눌렀을 때 빠져나갈 길이 없으면
+  // 사람이 아무것도 못 누른다.
+  const [past, setPast] = useState<Dec[]>([]);
   const [view, setView] = useState<'proof' | 'final'>('proof');
   const [status, setStatus] = useState<{ text: string; tone: '' | 'dirty' | 'ok' }>({
     text: '저장됨',
@@ -93,13 +96,25 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
     return { a, r, c, total: changes.length };
   }, [changes, eff]);
 
-  const set = (id: string, val: string | null) =>
+  const commit = (make: (prev: Dec) => Dec) =>
     setDec((prev) => {
+      setPast((p) => [...p.slice(-49), prev]);
+      return make(prev);
+    });
+  const set = (id: string, val: string | null) =>
+    commit((prev) => {
       const next = { ...prev };
       if (val === null) delete next[id];
       else next[id] = val;
       return next;
     });
+  const undo = () => {
+    if (!past.length) return;
+    const prev = past[past.length - 1];
+    setPast((p) => p.slice(0, -1));
+    setDec(prev ?? {});
+  };
+  const resetAll = () => commit(() => ({}));
 
   /* 문항별 최종 문단 — 이동 취소 시 원래 자리로 되돌린다 */
   const resolvedSeg = useCallback(
@@ -232,24 +247,6 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
 
   const renderPara = (b: Extract<Block, { t: 'p' }>, s: Section, key: number) => (
     <p key={key}>
-      {b.moved && s.move && (
-        <>
-          <button
-            type="button"
-            className="pf-tag move pf-chg"
-            onClick={(e) =>
-              openPop(e, {
-                id: s.move as string,
-                c: 'opt',
-                d: '원래 순서(두 번째 문단)',
-                i: '맨 뒤로 이동',
-              })
-            }
-          >
-            {eff(s.move) === 'r' ? '이동 취소됨' : '위치 이동'}
-          </button>{' '}
-        </>
-      )}
       {b.seg.map((g, i) => (hasId(g) ? renderSeg(g, i) : <span key={i}>{g.x}</span>))}
     </p>
   );
@@ -268,6 +265,15 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
           </div>
           <div className="pf-spacer" />
           <span className={`pf-status ${status.tone}`}>{status.text}</span>
+          <button
+            type="button"
+            className="pf-mini"
+            onClick={undo}
+            disabled={!past.length}
+            title="바로 전 상태로"
+          >
+            되돌리기
+          </button>
           <button type="button" className="pf-copy" onClick={copy}>
             전체 복사
           </button>
@@ -308,6 +314,10 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
                 직접 <b>{tally.c}</b>
               </span>
             </div>
+            <div className="pf-spacer" />
+            <button type="button" className="pf-mini" onClick={resetAll}>
+              처음 상태로
+            </button>
           </div>
 
           <div className="pf-howto">
@@ -375,6 +385,34 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
                       ) : null;
                     for (const b of blocks) {
                       if (b.t === 'p') {
+                        // 순서를 바꾼 문단은 따로 상자에 담아 무엇을 어디로 옮겼는지 적는다.
+                        // 예전에는 문단 앞에 "위치 이동" 배지만 붙어 있어 뜻이 안 통했다.
+                        if (b.moved && s.move) {
+                          flush();
+                          const back = eff(s.move) === 'r';
+                          out.push(
+                            <div className="pf-moveblk" key={`mv${out.length}`}>
+                              <div className="pf-blk-bar">
+                                <span className="pf-tag move">문단 순서 바꿈</span>
+                                <span className="pf-blk-pos">
+                                  {back
+                                    ? '원래 자리에 그대로 있습니다'
+                                    : '원래는 첫 문단 바로 뒤에 있던 문단입니다'}
+                                </span>
+                                <div className="pf-spacer" />
+                                <button
+                                  type="button"
+                                  className={back ? 'pf-add' : 'pf-mini'}
+                                  onClick={() => set(s.move as string, back ? 'a' : 'r')}
+                                >
+                                  {back ? '맨 뒤로 옮기기' : '원래 자리로'}
+                                </button>
+                              </div>
+                              <div className="pf-body">{renderPara(b, s, 0)}</div>
+                            </div>,
+                          );
+                          continue;
+                        }
                         run.push(b);
                         continue;
                       }
