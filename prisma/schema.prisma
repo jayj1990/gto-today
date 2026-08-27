@@ -74,3 +74,15 @@ model VerificationToken {
   @@unique([identifier, token])
   @@index([expires])
 }
+
+// 교정지 결정 — dabin.gto.today 등 /proof/[token] 화면이 쓰는 유일한 상태.
+//   문서 본문은 코드(app/proof/[token]/doc.ts)에 있고 여기 담기는 건
+//   "어느 수정을 적용/취소했나"뿐이라 토큰당 한 행이면 충분하다.
+//   원래 Upstash Redis 에 넣으려 했는데 그 DB 가 사라져 있어서(DNS ENOTFOUND)
+//   이미 붙어 있고 살아 있는 Neon 으로 옮겼다.
+// ⚠️ 이 레포는 prisma/migrations 가 없다. db push 대신 수동 DDL 로 만들었다.
+model ProofDecision {
+  token     String   @id
+  decisions Json
+  updatedAt DateTime @updatedAt
+}

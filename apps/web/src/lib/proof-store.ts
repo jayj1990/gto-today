@@ -1,56 +1,39 @@
-import { Redis } from '@upstash/redis';
+import { prisma } from '@/lib/prisma';
 
 /**
- * 교정지 결정 저장소 — Upstash Redis 문자열 키 하나.
+ * 교정지 결정 저장소 — ProofDecision 한 행(토큰당).
  *
  * 문서 본문은 코드(app/proof/[token]/doc.ts)에 있고, 여기 담는 건
- * "어느 수정을 적용/취소했나"뿐이라 Postgres 테이블을 새로 팔 이유가 없다.
- * TTL 없음 — 행사가 끝나도 무엇을 확정했는지 되짚을 수 있어야 한다.
+ * "어느 수정을 적용/취소했나"뿐이다. TTL 없음 — 행사가 끝나도 무엇을
+ * 확정했는지 되짚을 수 있어야 한다.
  *
- * explain-cache 와 같은 이유로 env 두 개가 다 있고 URL 이 https 일 때만 붙인다.
- * Vercel 의 Sensitive 플래그가 빌드 타임에 마스킹 문자열을 흘려서
- * Redis.fromEnv() 가 UrlError 로 빌드를 통째로 깨뜨린 전례가 있다.
+ * 처음에는 Upstash Redis 로 갔는데 그 DB 가 사라져 있었다(호스트가 DNS 에서
+ * ENOTFOUND). 같은 자격증명을 쓰는 explain-cache 도 그래서 무력화된 상태다.
+ * Neon 은 살아 있고 인증이 이미 그 위에서 돌아가니 저장은 여기로 모은다.
  */
-const url = process.env['UPSTASH_REDIS_REST_URL'];
-const token = process.env['UPSTASH_REDIS_REST_TOKEN'];
-const ready =
-  typeof url === 'string' &&
-  url.startsWith('https://') &&
-  typeof token === 'string' &&
-  token.length > 0;
+export type WriteResult = 'ok' | 'failed';
 
-const redis = ready ? new Redis({ url: url as string, token: token as string }) : null;
-
-export const proofStoreReady = ready;
-
-const key = (docToken: string) => `proof:${docToken}`;
-
-export async function readDecisions(docToken: string): Promise<Record<string, string>> {
-  if (!redis) return {};
+export async function readDecisions(token: string): Promise<Record<string, string>> {
   try {
-    const raw = await redis.get<Record<string, string> | string>(key(docToken));
-    if (!raw) return {};
-    const obj = typeof raw === 'string' ? (JSON.parse(raw) as unknown) : raw;
-    return obj && typeof obj === 'object' && !Array.isArray(obj)
-      ? (obj as Record<string, string>)
-      : {};
+    const row = await prisma.proofDecision.findUnique({ where: { token } });
+    const v = row?.decisions;
+    return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, string>) : {};
   } catch {
     // 저장소가 흔들려도 교정지는 열려야 한다 — 기본값(전부 적용)으로 보여준다.
     return {};
   }
 }
 
-export type WriteResult = 'ok' | 'unconfigured' | 'failed';
-
 export async function writeDecisions(
-  docToken: string,
+  token: string,
   decisions: Record<string, string>,
 ): Promise<WriteResult> {
-  // 둘을 갈라 돌려준다 — 저장이 안 될 때 "환경변수가 없다"와 "Upstash 가 거절했다"는
-  // 대응이 전혀 다른데, 하나의 false 로 뭉치면 프로덕션에서 원인을 못 찾는다.
-  if (!redis) return 'unconfigured';
   try {
-    await redis.set(key(docToken), JSON.stringify(decisions));
+    await prisma.proofDecision.upsert({
+      where: { token },
+      create: { token, decisions },
+      update: { decisions },
+    });
     return 'ok';
   } catch {
     return 'failed';

@@ -47,10 +47,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
 
   const result = await writeDecisions(token, clean);
   if (result !== 'ok') {
-    return NextResponse.json(
-      { error: result === 'unconfigured' ? 'store_unconfigured' : 'save_failed' },
-      { status: 503 },
-    );
+    return NextResponse.json({ error: 'save_failed' }, { status: 503 });
   }
   return NextResponse.json({ ok: true, saved: Object.keys(clean).length });
 }
