@@ -308,6 +308,9 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
               <b>노란색</b> 확인이 필요한 곳
             </span>
             <span>고른 결과는 자동으로 저장됩니다</span>
+            <span>
+              <b>내용 보강</b> 상자는 고칠 곳이 아니라 더 말해볼 만한 곳입니다
+            </span>
           </div>
 
           {doc.sections.map((s) => {
@@ -343,6 +346,12 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
                     <div className="pf-note">
                       {s.noteB && <b>{s.noteB} </b>}
                       {s.note}
+                    </div>
+                  )}
+                  {s.tip && (
+                    <div className="pf-tip">
+                      <span className="pf-tip-lab">내용 보강</span>
+                      {s.tip}
                     </div>
                   )}
                 </div>
