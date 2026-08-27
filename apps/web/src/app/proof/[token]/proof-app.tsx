@@ -27,7 +27,15 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
   const [pop, setPop] = useState<{ t: PopTarget; x: number; y: number } | null>(null);
   const first = useRef(true);
 
-  const eff = useCallback((id: string) => dec[id] ?? 'a', [dec]);
+  // 추가 답변 초안은 내가 쓴 문장이라 켜는 건 화자가 직접 해야 한다 → 기본 꺼짐.
+  // 교정은 반대로 기본 적용. 마침표 하나 넣자고 스무 번 누르게 할 이유가 없다.
+  const defaults = useMemo(() => {
+    const map: Record<string, 'a' | 'r'> = {};
+    for (const sec of doc.sections)
+      for (const b of sec.blocks) if (b.t === 'new' && b.optIn) map[b.id] = 'r';
+    return map;
+  }, [doc]);
+  const eff = useCallback((id: string) => dec[id] ?? defaults[id] ?? 'a', [dec, defaults]);
 
   /* 결정이 바뀌면 자동 저장 */
   useEffect(() => {
@@ -56,8 +64,11 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
     const out: Change[] = [];
     for (const s of doc.sections) {
       for (const b of s.blocks) {
-        if (b.t === 'new') out.push({ id: b.id, c: b.c });
-        else for (const g of b.seg) if (hasId(g)) out.push({ id: g.id, c: g.c });
+        if (b.t === 'new') {
+          if (!b.optIn) out.push({ id: b.id, c: b.c });
+          continue;
+        }
+        for (const g of b.seg) if (hasId(g)) out.push({ id: g.id, c: g.c });
       }
       if (s.move) out.push({ id: s.move, c: 'opt' });
     }
