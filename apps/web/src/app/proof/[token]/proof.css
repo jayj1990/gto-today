@@ -22,6 +22,8 @@
   --warn-bg: #fcf4dc;
   --warn-line: #d4b451;
   --ok: #1f6b4a;
+  --alt: #0f6a52;
+  --alt-bg: #e2f2ec;
   --serif: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
   --sans: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -305,6 +307,15 @@
   font-weight: 600;
   padding: 1px 3px;
   border-radius: 3px;
+}
+.pf-chg.alt ins {
+  color: var(--alt);
+  background: var(--alt-bg);
+}
+.pf-chg.done-alt {
+  background: var(--alt-bg);
+  box-shadow: inset 0 -2px 0 var(--alt);
+  padding: 0 1px;
 }
 .pf-chg.chk del,
 .pf-chg.chk ins {

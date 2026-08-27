@@ -8,7 +8,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Block, Cat, ProofDoc, Section, Seg } from './doc';
 
-const CATN: Record<Cat, string> = { req: '필수 수정', opt: '선택 수정', chk: '확인 필요' };
+const CATN: Record<Cat, string> = {
+  req: '오류 수정',
+  opt: '다듬기',
+  alt: '표현 제안',
+  chk: '확인 필요',
+};
 
 type Dec = Record<string, string>; // "a" | "r" | "c:<직접 입력한 문구>"
 type Change = { id: string; c: Cat };
@@ -314,6 +319,9 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
             </span>
             <span>
               <b>파란 강조</b> 넣은 부분
+            </span>
+            <span>
+              <b>초록 강조</b> 표현을 통째로 바꿔 본 제안
             </span>
             <span>
               <b>노란색</b> 확인이 필요한 곳
