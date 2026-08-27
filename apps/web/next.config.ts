@@ -42,6 +42,19 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '*.kakaocdn.net' },
     ],
   },
+  async rewrites() {
+    // dabin.gto.today — 교정지 전용 서브도메인.
+    //   루트로 들어온 요청만 교정지 경로로 넘긴다. 토큰은 주소창에 드러나지 않고,
+    //   /api/proof/* · /_next/* 같은 나머지 경로는 같은 배포를 그대로 탄다.
+    //   포커 앱 라우트도 이 호스트에서 열리긴 하지만 알려줄 주소가 루트뿐이라 둔다.
+    return [
+      {
+        source: '/',
+        has: [{ type: 'host' as const, value: 'dabin.gto.today' }],
+        destination: '/proof/dabin-7b248b5dd5f3180d03d0618a',
+      },
+    ];
+  },
   async headers() {
     // Baseline hardening headers.
     const securityHeaders = [
