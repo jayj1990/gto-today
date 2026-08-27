@@ -8,7 +8,7 @@
 export type Cat = 'req' | 'opt' | 'alt' | 'chk';
 export type Seg = { x: string } | { id: string; c: Cat; d: string; i: string };
 export type Block =
-  | { t: 'p'; moved?: boolean; seg: Seg[] }
+  | { t: 'p'; seg: Seg[] }
   | {
       t: 'new';
       id: string;
@@ -26,7 +26,6 @@ export type Section = {
   note?: string;
   noteB?: string;
   tip?: string;
-  move?: string;
   blocks: Block[];
 };
 export type ProofDoc = {
@@ -345,8 +344,7 @@ export const DOCS: Record<string, ProofDoc> = {
       {
         n: '05',
         q: '감독님과 가장 많은 대화를 나눈 부분, 반영된 아이디어가 있었나요?',
-        note: '마침표가 여섯 군데 빠져 있어 한 문단이 통째로 이어집니다. 겸양으로 시작하면 "아이디어가 반영된 디테일"이라는 질문과 어긋나서, 구체 사례를 앞으로 당기고 겸양을 맺음말로 옮겼습니다. 문장은 그대로 두고 순서만 움직였습니다.',
-        move: 'e-move',
+        note: '원문이 마침표 없이 한 문단으로 이어져 있어 여섯 군데를 끊었습니다. 문단 나눔은 읽기 편하라고 한 것이고 순서는 원문 그대로입니다.',
         blocks: [
           {
             t: 'p',
@@ -377,16 +375,30 @@ export const DOCS: Record<string, ProofDoc> = {
             t: 'p',
             seg: [
               {
-                x: '실제로도 친구였던 가이 배우와 이번 작품을 통해 오랜만에 다시 만나게 되었는데 감독님께서 자유롭게 리허설할 수 있는 환경을 만들어 주신 덕분에 다양한 시도를 ',
+                x: '제가 아이디어를 더할 장면이 많지는 않아서 그 안에서 효은이가 지닌 소신과 이야기의 핵심을 오롯이 전달하는 데 집중하며 캐릭터의 중심을 잡아가려고 했습니다',
               },
               {
                 id: 'e2',
+                c: 'req',
+                d: '',
+                i: '.',
+              },
+            ],
+          },
+          {
+            t: 'p',
+            seg: [
+              {
+                x: '실제로도 친구였던 가이 배우와 이번 작품을 통해 오랜만에 다시 만나게 되었는데 감독님께서 자유롭게 리허설할 수 있는 환경을 만들어 주신 덕분에 다양한 시도를 ',
+              },
+              {
+                id: 'e3',
                 c: 'opt',
                 d: '할 수 있었던 것 같아요',
                 i: '할 수 있었어요',
               },
               {
-                id: 'e3',
+                id: 'e4',
                 c: 'req',
                 d: '',
                 i: '.',
@@ -395,7 +407,7 @@ export const DOCS: Record<string, ProofDoc> = {
                 x: ' 이 친구들이 ',
               },
               {
-                id: 'e4',
+                id: 'e5',
                 c: 'req',
                 d: '할법한',
                 i: '할 법한',
@@ -404,13 +416,13 @@ export const DOCS: Record<string, ProofDoc> = {
                 x: ' 애드리브나 행동들도 이야기 나눠보고 무거운 분위기 속에서 어떻게 하면 잠시나마 환기가 될까 ',
               },
               {
-                id: 'e5',
+                id: 'e6',
                 c: 'opt',
                 d: '고민도 들었어요',
                 i: '고민도 많이 했어요',
               },
               {
-                id: 'e6',
+                id: 'e7',
                 c: 'req',
                 d: '',
                 i: '.',
@@ -419,7 +431,7 @@ export const DOCS: Record<string, ProofDoc> = {
                 x: ' ',
               },
               {
-                id: 'e7',
+                id: 'e8',
                 c: 'opt',
                 d: '일을 할 때',
                 i: '일할 때',
@@ -428,7 +440,7 @@ export const DOCS: Record<string, ProofDoc> = {
                 x: ' 보이는 모습과 집에서 친구와 함께할 때의 모습 사이에 ',
               },
               {
-                id: 'e8',
+                id: 'e9',
                 c: 'opt',
                 d: '선명한 온도 차가',
                 i: '온도 차가',
@@ -437,7 +449,7 @@ export const DOCS: Record<string, ProofDoc> = {
                 x: ' 크면 재밌을 ',
               },
               {
-                id: 'e9',
+                id: 'e10',
                 c: 'req',
                 d: '거',
                 i: '것',
@@ -446,7 +458,7 @@ export const DOCS: Record<string, ProofDoc> = {
                 x: ' 같아서 친근하고 생동감 있는 모습들이 살도록 신경 썼어요',
               },
               {
-                id: 'e10',
+                id: 'e11',
                 c: 'req',
                 d: '',
                 i: '.',
@@ -455,7 +467,7 @@ export const DOCS: Record<string, ProofDoc> = {
                 x: ' ',
               },
               {
-                id: 'e11',
+                id: 'e12',
                 c: 'opt',
                 d: '여담으로는',
                 i: '여담으로',
@@ -464,7 +476,7 @@ export const DOCS: Record<string, ProofDoc> = {
                 x: ' 둘만의 구호를 만들어 대사할 때 외치기도 했는데 최종적으로 방송에서는 ',
               },
               {
-                id: 'e12',
+                id: 'e13',
                 c: 'opt',
                 d: '볼 수는 없게',
                 i: '볼 수 없게',
@@ -473,24 +485,9 @@ export const DOCS: Record<string, ProofDoc> = {
                 x: ' 되었어요',
               },
               {
-                id: 'e13',
+                id: 'e14',
                 c: 'opt',
                 d: ' ㅎㅎ',
-                i: '.',
-              },
-            ],
-          },
-          {
-            t: 'p',
-            moved: true,
-            seg: [
-              {
-                x: '제가 아이디어를 더할 장면이 많지는 않아서 그 안에서 효은이가 지닌 소신과 이야기의 핵심을 오롯이 전달하는 데 집중하며 캐릭터의 중심을 잡아가려고 했습니다',
-              },
-              {
-                id: 'e14',
-                c: 'req',
-                d: '',
                 i: '.',
               },
             ],

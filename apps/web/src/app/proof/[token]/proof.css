@@ -377,16 +377,6 @@
   color: var(--accent);
   border-color: var(--accent);
 }
-.pf-moveblk {
-  max-width: 62ch;
-  padding: 14px 16px;
-  background: var(--sunk);
-  border-left: 4px solid var(--ins);
-  border-radius: 0 10px 10px 0;
-}
-.pf-moveblk .pf-body {
-  max-width: none;
-}
 .pf-mini[disabled] {
   opacity: 0.4;
   cursor: default;
@@ -457,12 +447,6 @@
   background: var(--warn-bg);
   color: var(--warn);
   border: 1px solid var(--warn-line);
-}
-.pf-tag.move {
-  background: var(--ins-bg);
-  color: var(--ins);
-  border-color: var(--ins);
-  cursor: pointer;
 }
 
 /* 팝오버 */

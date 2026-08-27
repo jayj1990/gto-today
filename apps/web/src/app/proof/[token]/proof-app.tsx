@@ -78,7 +78,6 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
         }
         for (const g of b.seg) if (hasId(g)) out.push({ id: g.id, c: g.c });
       }
-      if (s.move) out.push({ id: s.move, c: 'opt' });
     }
     return out;
   }, [doc]);
@@ -125,18 +124,9 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
     },
     [eff],
   );
-  const orderedBlocks = useCallback(
-    (s: Section) => {
-      const blocks = s.blocks.slice();
-      if (s.move && eff(s.move) === 'r') {
-        const mi = blocks.findIndex((b) => b.t === 'p' && b.moved);
-        const moved = mi > 0 ? blocks.splice(mi, 1)[0] : undefined;
-        if (moved) blocks.splice(1, 0, moved);
-      }
-      return blocks;
-    },
-    [eff],
-  );
+  // 블록은 선언 순서가 곧 최종 순서다. 문단 순서를 바꾸는 기능은 헷갈린다는
+  // 이유로 걷어냈다(2026-08-27).
+  const orderedBlocks = useCallback((sec: Section) => sec.blocks, []);
   const sectionParas = useCallback(
     (s: Section) => {
       const out: string[] = [];
@@ -385,34 +375,6 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
                       ) : null;
                     for (const b of blocks) {
                       if (b.t === 'p') {
-                        // 순서를 바꾼 문단은 따로 상자에 담아 무엇을 어디로 옮겼는지 적는다.
-                        // 예전에는 문단 앞에 "위치 이동" 배지만 붙어 있어 뜻이 안 통했다.
-                        if (b.moved && s.move) {
-                          flush();
-                          const back = eff(s.move) === 'r';
-                          out.push(
-                            <div className="pf-moveblk" key={`mv${out.length}`}>
-                              <div className="pf-blk-bar">
-                                <span className="pf-tag move">문단 순서 바꿈</span>
-                                <span className="pf-blk-pos">
-                                  {back
-                                    ? '원래 자리에 그대로 있습니다'
-                                    : '원래는 첫 문단 바로 뒤에 있던 문단입니다'}
-                                </span>
-                                <div className="pf-spacer" />
-                                <button
-                                  type="button"
-                                  className={back ? 'pf-add' : 'pf-mini'}
-                                  onClick={() => set(s.move as string, back ? 'a' : 'r')}
-                                >
-                                  {back ? '맨 뒤로 옮기기' : '원래 자리로'}
-                                </button>
-                              </div>
-                              <div className="pf-body">{renderPara(b, s, 0)}</div>
-                            </div>,
-                          );
-                          continue;
-                        }
                         run.push(b);
                         continue;
                       }

@@ -23,7 +23,6 @@ function knownIds(token: string): Set<string> | null {
       if (b.t === 'new') ids.add(b.id);
       else for (const g of b.seg as Seg[]) if ('id' in g) ids.add(g.id);
     }
-    if (s.move) ids.add(s.move);
   }
   return ids;
 }
