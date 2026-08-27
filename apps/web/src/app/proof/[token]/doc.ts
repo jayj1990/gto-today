@@ -138,8 +138,6 @@ export const DOCS: Record<string, ProofDoc> = {
       {
         n: '02',
         q: '캐릭터를 이해하기 위한 본인만의 연구 방법이 있을까요?',
-        noteB: '확인 필요.',
-        note: '원문 "친근하게 다가가고자 노력했어요"에는 다가가는 대상이 없습니다. 관객 쪽으로 읽고 "보는 분들에게"를 넣었는데, 캐릭터에게 다가간다는 뜻이었다면 방향이 다릅니다.',
         blocks: [
           {
             t: 'p',
@@ -200,12 +198,6 @@ export const DOCS: Record<string, ProofDoc> = {
               },
               {
                 x: ' ',
-              },
-              {
-                id: 'b7',
-                c: 'chk',
-                d: '',
-                i: '보는 분들에게 ',
               },
               {
                 x: '친근하게 다가가',
