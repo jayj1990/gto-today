@@ -363,12 +363,15 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
                       run = [];
                     };
                     let tipDone = false;
-                    const tipEl = () =>
+                    // 초안 뒤에 붙을 때와 초안 없이 홀로 설 때 문구가 달라야 한다.
+                    const tipEl = (afterDraft: boolean) =>
                       s.tip ? (
                         <div className="pf-tip" key="tip">
                           <span className="pf-tip-lab">보강 근거</span>
                           <span className="pf-tip-sub">
-                            고칠 곳이 아니라 더 말해볼 만한 곳입니다
+                            {afterDraft
+                              ? '위 초안을 왜 넣자고 하는지'
+                              : '고칠 곳이 아니라 더 말해볼 만한 곳입니다'}
                           </span>
                           <p>{s.tip}</p>
                         </div>
@@ -416,13 +419,13 @@ export function ProofApp({ token, doc, initial }: { token: string; doc: ProofDoc
                       // 보는 편이 순서에 맞다(2026-08-27 Jay).
                       if (putTipAfter) {
                         tipDone = true;
-                        const el = tipEl();
+                        const el = tipEl(true);
                         if (el) out.push(el);
                       }
                     }
                     flush();
                     if (!tipDone) {
-                      const el = tipEl();
+                      const el = tipEl(false);
                       if (el) out.push(el);
                     }
                     return out;
