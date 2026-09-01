@@ -57,6 +57,13 @@ const nextConfig: NextConfig = {
           has: [{ type: 'host' as const, value: 'dabin.gto.today' }],
           destination: '/proof/dabin-7b248b5dd5f3180d03d0618a',
         },
+        {
+          // ananti.gto.today — 아난티 예약 선점 도구(Jay 전용, /ananti).
+          //   같은 이유로 beforeFiles. API 는 /api/ananti/* 그대로 탄다.
+          source: '/',
+          has: [{ type: 'host' as const, value: 'ananti.gto.today' }],
+          destination: '/ananti',
+        },
       ],
       afterFiles: [],
       fallback: [],
@@ -105,9 +112,10 @@ const nextConfig: NextConfig = {
     const csp = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://*.vercel-insights.com https://vercel.live",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://lh3.googleusercontent.com https://ssl.pstatic.net https://*.kakaocdn.net",
-      "font-src 'self' data:",
+      // jsdelivr(Pretendard) + cdn.ananti.kr(객실 썸네일) — /ananti 전용 페이지가 쓴다.
+      "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+      "img-src 'self' data: blob: https://lh3.googleusercontent.com https://ssl.pstatic.net https://*.kakaocdn.net https://cdn.ananti.kr",
+      "font-src 'self' data: https://cdn.jsdelivr.net",
       "connect-src 'self' https://*.vercel-insights.com https://vitals.vercel-insights.com https://vercel.live wss://ws-us3.pusher.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
       "frame-src 'self' https://vercel.live",
       "frame-ancestors 'none'",

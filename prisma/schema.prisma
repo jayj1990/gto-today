@@ -86,3 +86,36 @@ model ProofDecision {
   decisions Json
   updatedAt DateTime @updatedAt
 }
+
+// 아난티 예약 선점 — ananti.gto.today 가 쓰는 요청 큐.
+//   실제 예약 실행은 맥북 launchd 러너(~/bin/ananti-keeper.cjs)가 하고,
+//   여기엔 "언제 어느 객실을 잡아달라"는 요청과 그 결과만 담는다.
+//   stayDate 는 체크인일(YYYYMMDD, 1박 고정). 오픈 전이면 WAITING 으로
+//   대기하다가 오픈 월요일 10:00 에 러너가 집어간다.
+// ⚠️ 이 레포 규칙대로 db push 금지, scripts/ddl-ananti.mjs 수동 DDL.
+model AnantiRequest {
+  id        String   @id @default(cuid())
+  platform  String   // 'chord'(가평) | 'cove'(부산)
+  roomName  String   // 객실 카드 라벨 그대로. 예) 더 하우스 확장 (킹2+트윈)
+  stayDate  String   // 체크인 YYYYMMDD (1박)
+  source    String   @default("manual") // manual | sweep
+  status    String   @default("WAITING") // WAITING | BOOKED | EXPIRED | CANCELLED
+  folio     String?  // 예약번호
+  amount    Int?     // 결제 금액(원)
+  lastError String?
+  attempts  Int      @default(0)
+  lastTryAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([platform, roomName, stayDate])
+  @@index([status, stayDate])
+}
+
+model AnantiConfig {
+  id            Int      @id @default(1)
+  sweepEnabled  Boolean  @default(false)
+  sweepPlatform String   @default("chord")
+  sweepRoom     String   @default("더 하우스 확장 (킹2+트윈)")
+  updatedAt     DateTime @updatedAt
+}

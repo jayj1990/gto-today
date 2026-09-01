@@ -1,0 +1,577 @@
+/* ananti.gto.today — 아난티 예약 화면 무드의 전용 스타일.
+   민트 사이드 패널 + 화이트 본문 + 얇은 라인, Pretendard. */
+
+.root {
+  --mint: #4ecdc0;
+  --mint-deep: #3db9ac;
+  --mint-panel: #5ad0c4;
+  --mint-tint: #e9faf7;
+  --pink-tint: #fbe9ec;
+  --yellow-tint: #fdf6dc;
+  --ink: #17181a;
+  --sub: #8a8f98;
+  --line: #e8eaed;
+  font-family:
+    'Pretendard',
+    -apple-system,
+    'Apple SD Gothic Neo',
+    sans-serif;
+  letter-spacing: -0.3px;
+  color: var(--ink);
+  min-height: 100vh;
+  background: #fff;
+  display: flex;
+}
+
+/* ── 좌측 민트 패널 ─────────────────────────── */
+.side {
+  width: 340px;
+  min-height: 100vh;
+  background: var(--mint-panel);
+  color: #fff;
+  padding: 44px 36px;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+.wordmark {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 21px;
+  letter-spacing: 0.42em;
+  font-weight: 500;
+}
+.wordmarkSub {
+  margin-top: 6px;
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.sideTitle {
+  margin-top: 88px;
+  font-size: 27px;
+  line-height: 1.45;
+  font-weight: 600;
+}
+.sideDesc {
+  margin-top: 18px;
+  font-size: 13.5px;
+  line-height: 1.7;
+  opacity: 0.92;
+}
+.sideFoot {
+  margin-top: auto;
+  font-size: 11px;
+  opacity: 0.7;
+  letter-spacing: 0.08em;
+}
+.logout {
+  margin-top: 10px;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: #fff;
+  font-size: 11px;
+  padding: 6px 14px;
+  cursor: pointer;
+  width: fit-content;
+}
+
+/* ── 본문 ─────────────────────────── */
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 48px 56px 140px;
+  max-width: 1000px;
+}
+.secTitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.legend {
+  display: flex;
+  gap: 14px;
+  font-size: 11.5px;
+  color: var(--sub);
+  font-weight: 400;
+}
+.legend i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+.section {
+  margin-bottom: 56px;
+}
+
+/* 달력 */
+.calWrap {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+.calNav {
+  border: none;
+  background: none;
+  font-size: 20px;
+  color: var(--sub);
+  cursor: pointer;
+  padding: 6px 10px;
+  margin-top: 4px;
+}
+.cal {
+  flex: 1;
+}
+.calHead {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+.calGrid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.calGrid th {
+  font-size: 11.5px;
+  color: var(--sub);
+  font-weight: 500;
+  padding: 6px 0;
+}
+.calGrid td {
+  text-align: center;
+  padding: 0;
+  height: 40px;
+  font-size: 13px;
+  cursor: default;
+}
+.day {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  position: relative;
+}
+.dPassed {
+  color: #c8ccd2;
+}
+.dOpen {
+  background: var(--pink-tint);
+}
+.dWait {
+  background: var(--yellow-tint);
+}
+.dSel .day span {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--mint);
+  color: #fff;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+.openHint {
+  margin-top: 14px;
+  font-size: 12.5px;
+  color: var(--sub);
+  line-height: 1.6;
+}
+.openHint b {
+  color: var(--mint-deep);
+  font-weight: 600;
+}
+
+/* 지점 칩 */
+.chips {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.chip {
+  border: 1px solid var(--mint);
+  color: var(--mint-deep);
+  background: #fff;
+  border-radius: 999px;
+  padding: 10px 22px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.chipOn {
+  background: var(--mint);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 객실 그룹/카드 */
+.group {
+  margin-bottom: 34px;
+}
+.groupImg {
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 16 / 7;
+  object-fit: cover;
+  display: block;
+  margin-bottom: 6px;
+}
+.groupImgPh {
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 16 / 7;
+  background: linear-gradient(135deg, #eef4f3, #dce9e7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sub);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.groupName {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 10px 0 12px;
+}
+.roomGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+.roomCard {
+  border: 1px solid var(--line);
+  padding: 14px 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #fff;
+  text-align: left;
+  font-family: inherit;
+}
+.roomCardOn {
+  background: var(--mint);
+  border-color: var(--mint);
+  color: #fff;
+}
+.roomName {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.roomMeta {
+  font-size: 11px;
+  color: var(--mint-deep);
+}
+.roomCardOn .roomMeta {
+  color: rgba(255, 255, 255, 0.85);
+}
+.roomPrice {
+  font-size: 14px;
+  font-weight: 700;
+}
+.roomPrice small {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--sub);
+}
+.roomCardOn .roomPrice small {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 하단 고정 바 */
+.bottomBar {
+  position: fixed;
+  left: 340px;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  z-index: 50;
+}
+.btnGhost {
+  flex: 1;
+  background: #17181a;
+  color: #fff;
+  border: none;
+  padding: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btnGo {
+  flex: 1.4;
+  background: var(--mint);
+  color: #fff;
+  border: none;
+  padding: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btnGo:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* 요청 현황 */
+.reqRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid var(--line);
+  padding: 14px 18px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+.reqDate {
+  font-weight: 700;
+  min-width: 120px;
+}
+.reqRoom {
+  flex: 1;
+  min-width: 200px;
+}
+.reqRoom small {
+  color: var(--sub);
+  display: block;
+  font-size: 11px;
+  margin-top: 2px;
+}
+.chipStatus {
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.stWait {
+  background: var(--yellow-tint);
+  color: #9a7d1f;
+}
+.stTry {
+  background: var(--pink-tint);
+  color: #c2566a;
+}
+.stBooked {
+  background: var(--mint-tint);
+  color: var(--mint-deep);
+}
+.stMuted {
+  background: #f1f2f4;
+  color: var(--sub);
+}
+.reqErr {
+  width: 100%;
+  font-size: 11.5px;
+  color: #c2566a;
+}
+.reqCancel {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--sub);
+  font-size: 11.5px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.empty {
+  border: 1px dashed var(--line);
+  padding: 28px;
+  text-align: center;
+  color: var(--sub);
+  font-size: 13px;
+}
+
+/* 자동 선점 카드 */
+.sweep {
+  border: 1px solid var(--line);
+  padding: 22px 24px;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.sweepInfo {
+  flex: 1;
+  min-width: 260px;
+}
+.sweepTitle {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.sweepDesc {
+  font-size: 12.5px;
+  color: var(--sub);
+  line-height: 1.6;
+}
+.sweepCtrl {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.select {
+  border: 1px solid var(--line);
+  padding: 9px 12px;
+  font-size: 12.5px;
+  font-family: inherit;
+  background: #fff;
+  max-width: 240px;
+}
+.toggle {
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  border: none;
+  background: #d7dade;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.toggleOn {
+  background: var(--mint);
+}
+.toggle i {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.2s;
+}
+.toggleOn i {
+  left: 23px;
+}
+
+/* 안내 */
+.notice {
+  background: var(--mint-tint);
+  padding: 16px 20px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: #2c6f66;
+}
+
+/* 토스트 */
+.toast {
+  position: fixed;
+  bottom: 92px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #17181a;
+  color: #fff;
+  font-size: 13px;
+  padding: 12px 22px;
+  border-radius: 4px;
+  z-index: 90;
+  max-width: 90vw;
+}
+
+/* ── 로그인 ─────────────────────────── */
+.loginRoot {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  font-family:
+    'Pretendard',
+    -apple-system,
+    sans-serif;
+}
+.loginBox {
+  width: 320px;
+  text-align: center;
+}
+.loginMark {
+  font-family: Georgia, serif;
+  font-size: 24px;
+  letter-spacing: 0.42em;
+  margin-bottom: 4px;
+}
+.loginSub {
+  font-size: 10.5px;
+  letter-spacing: 0.32em;
+  color: var(--sub, #8a8f98);
+  text-transform: uppercase;
+  margin-bottom: 40px;
+}
+.loginInput {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #e8eaed;
+  padding: 13px 4px;
+  font-size: 14px;
+  margin-bottom: 6px;
+  font-family: inherit;
+  outline: none;
+}
+.loginInput:focus {
+  border-bottom-color: #17181a;
+}
+.loginBtn {
+  width: 100%;
+  background: #17181a;
+  color: #fff;
+  border: none;
+  padding: 15px;
+  font-size: 14px;
+  margin-top: 28px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.loginErr {
+  color: #c2566a;
+  font-size: 12px;
+  margin-top: 14px;
+}
+
+/* 모바일 */
+@media (max-width: 900px) {
+  .root {
+    flex-direction: column;
+  }
+  .side {
+    width: auto;
+    min-height: 0;
+    height: auto;
+    position: static;
+    padding: 28px 24px;
+  }
+  .sideTitle {
+    margin-top: 24px;
+    font-size: 21px;
+  }
+  .main {
+    padding: 28px 20px 140px;
+  }
+  .calWrap {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .calNav {
+    display: none;
+  }
+  .bottomBar {
+    left: 0;
+  }
+}
