@@ -575,3 +575,17 @@
     left: 0;
   }
 }
+
+/* v2 — 공식 로고 이미지, 기간(연박 범위) 선택 */
+.logoImg {
+  height: 20px;
+  display: block;
+}
+.loginLogo {
+  height: 24px;
+  display: block;
+  margin: 0 auto 6px;
+}
+.dRange {
+  background: #d9f3ef;
+}

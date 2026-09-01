@@ -1,7 +1,9 @@
 'use client';
 
 // ananti.gto.today — 예약 선점 화면 (Jay 전용).
-// 날짜 선택 → 지점 → 객실 → 선점 요청. 실제 예약 실행은 맥북 러너가 한다.
+// 날짜(기간 가능) → 지점 → 객실(여러 개 가능) → 선점 요청.
+// 기간을 잡으면 각 밤을 1박씩, 객실을 여러 개 고르면 객실별로 전부 등록해서
+// 되는 조합은 다 잡는다. 실제 예약 실행·취소는 맥북 러너가 한다.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   CATALOG,
@@ -32,12 +34,17 @@ interface Config {
   sweepRoom: string;
 }
 
+const LOGO_WHITE = 'https://cdn.ananti.kr/plf/ui/img/symbol-ananti__white.png';
+const LOGO_BLACK = 'https://cdn.ananti.kr/plf/ui/img/symbol-ananti__black.png';
+
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 const fmtDate = (v: string) =>
   `${v.slice(0, 4)}.${v.slice(4, 6)}.${v.slice(6, 8)} (${DOW[parseYmd(v).getUTCDay()]})`;
 const fmtShort = (v: string) =>
   `${+v.slice(4, 6)}/${+v.slice(6, 8)}(${DOW[parseYmd(v).getUTCDay()]})`;
 const fmtWon = (n: number) => n.toLocaleString('ko-KR');
+const nightsBetween = (a: string, b: string) =>
+  Math.round((parseYmd(b).getTime() - parseYmd(a).getTime()) / 86_400_000);
 
 export default function AnantiApp({ initialAuthed }: { initialAuthed: boolean }) {
   const [authed, setAuthed] = useState(initialAuthed);
@@ -66,7 +73,8 @@ function Login({ onOk }: { onOk: () => void }) {
   return (
     <div className={s.loginRoot}>
       <form className={s.loginBox} onSubmit={submit}>
-        <div className={s.loginMark}>ANANTI</div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className={s.loginLogo} src={LOGO_BLACK} alt="ANANTI" />
         <div className={s.loginSub}>keeper</div>
         <input
           className={s.loginInput}
@@ -96,14 +104,16 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
   const [config, setConfig] = useState<Config | null>(null);
   const [platform, setPlatform] = useState('chord');
   const [selDate, setSelDate] = useState<string | null>(null);
-  const [selRoom, setSelRoom] = useState<string | null>(null);
+  const [selEnd, setSelEnd] = useState<string | null>(null);
+  const [selRooms, setSelRooms] = useState<string[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [monthOff, setMonthOff] = useState(0);
   const [toast, setToast] = useState('');
   const [busy, setBusy] = useState(false);
 
   const say = (m: string) => {
     setToast(m);
-    setTimeout(() => setToast(''), 3500);
+    setTimeout(() => setToast(''), 4500);
   };
 
   const load = useCallback(async () => {
@@ -144,34 +154,86 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
     });
   }, [monthOff]);
 
-  const submitReq = async () => {
-    if (!selDate || !selRoom) return;
-    setBusy(true);
-    const r = await fetch('/api/ananti/requests', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ platform, roomName: selRoom, stayDate: selDate }),
-    });
-    const j = await r.json();
-    setBusy(false);
-    if (!r.ok) {
-      say(j.error || '등록에 실패했습니다.');
-      return;
+  // 날짜 클릭: 첫 클릭=체크인, 더 뒤 날짜 클릭=체크아웃, 그 외=다시 시작
+  const pickDay = (v: string) => {
+    if (!selDate || selEnd) {
+      setSelDate(v);
+      setSelEnd(null);
+    } else if (v > selDate) {
+      setSelEnd(v);
+    } else {
+      setSelDate(v);
+      setSelEnd(null);
     }
-    say(
-      isOpen(selDate)
-        ? '등록됐습니다. 이미 열린 날짜라 10분 안에 예약을 시도합니다.'
-        : `등록됐습니다. ${fmtShort(openInfo(selDate).openYmd)} 10:00 오픈과 동시에 시도합니다.`,
-    );
-    setSelRoom(null);
+  };
+
+  const nights = selDate ? (selEnd ? nightsBetween(selDate, selEnd) : 1) : 0;
+  const totalRows = nights * selRooms.length;
+
+  const submitReq = async () => {
+    if (!selDate || !selRooms.length) return;
+    setBusy(true);
+    let created = 0;
+    let skipped = 0;
+    let firstErr = '';
+    for (const room of selRooms) {
+      const r = await fetch('/api/ananti/requests', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          platform,
+          roomName: room,
+          stayDate: selDate,
+          endDate: selEnd || undefined,
+        }),
+      });
+      const j = await r.json();
+      if (!r.ok) {
+        firstErr = firstErr || j.error || '등록 실패';
+        continue;
+      }
+      created += j.created || 0;
+      skipped += j.skipped || 0;
+    }
+    if (editingId && created > 0) {
+      await fetch(`/api/ananti/requests/${editingId}`, { method: 'DELETE' });
+      setEditingId(null);
+    }
+    setBusy(false);
+    if (created === 0) {
+      say(firstErr || '전부 이미 등록돼 있어요.');
+    } else {
+      const when = isOpen(selDate)
+        ? '열린 날짜는 10분 안에 시도합니다.'
+        : `${fmtShort(openInfo(selDate).openYmd)} 10:00 오픈에 맞춰 시도합니다.`;
+      say(`${created}건 등록했습니다.${skipped ? ` (중복 ${skipped}건 건너뜀)` : ''} ${when}`);
+    }
+    setSelRooms([]);
+    setSelEnd(null);
     load();
   };
 
-  const cancelReq = async (id: string) => {
-    const r = await fetch(`/api/ananti/requests/${id}`, { method: 'DELETE' });
-    const j = await r.json();
-    if (!r.ok) say(j.error || '취소에 실패했습니다.');
+  const cancelReq = async (r: Req) => {
+    if (r.status === 'BOOKED') {
+      const ok = window.confirm(
+        '아난티에 접수된 예약을 실제로 취소합니다. 미결제(결제대기) 건만 자동 취소되고, 이미 결제한 건은 실패로 돌아옵니다. 진행할까요?',
+      );
+      if (!ok) return;
+    }
+    const res = await fetch(`/api/ananti/requests/${r.id}`, { method: 'DELETE' });
+    const j = await res.json();
+    say(j.message || j.error || (res.ok ? '처리했습니다.' : '실패했습니다.'));
     load();
+  };
+
+  const editReq = (r: Req) => {
+    setPlatform(r.platform);
+    setSelRooms([r.roomName]);
+    setSelDate(r.stayDate);
+    setSelEnd(null);
+    setEditingId(r.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    say('내용을 바꾼 뒤 하단 버튼으로 등록하세요. 등록되면 기존 요청은 자동 취소됩니다.');
   };
 
   const saveConfig = async (patch: Partial<Config>) => {
@@ -184,14 +246,17 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
   };
 
   const cat = getPlatform(platform);
-  const active = reqs.filter((r) => r.status === 'WAITING' || r.status === 'BOOKED');
-  const done = reqs.filter((r) => r.status !== 'WAITING' && r.status !== 'BOOKED');
+  const active = reqs.filter(
+    (r) => r.status === 'WAITING' || r.status === 'BOOKED' || r.status === 'CANCEL_REQUESTED',
+  );
+  const done = reqs.filter((r) => !active.includes(r));
 
   return (
     <div className={s.root}>
       <aside className={s.side}>
         <div>
-          <div className={s.wordmark}>ANANTI</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className={s.logoImg} src={LOGO_WHITE} alt="ANANTI" />
           <div className={s.wordmarkSub}>keeper</div>
         </div>
         <h1 className={s.sideTitle}>
@@ -202,8 +267,8 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
           선점합니다.
         </h1>
         <p className={s.sideDesc}>
-          투숙일이 속한 주는 4주 전 월요일 오전 10시에 열립니다. 원하는 날짜를 미리 등록해 두면 오픈
-          시각에 맞춰 자동으로 예약을 넣고, 이미 열린 날짜는 10분 간격으로 바로 시도합니다.
+          투숙일이 속한 주는 4주 전 월요일 오전 10시에 열립니다. 기간을 잡고 객실을 여러 개 고르면
+          되는 조합을 1박씩 전부 접수하고, 이미 열린 날짜는 10분 간격으로 바로 시도합니다.
         </p>
         <div className={s.sideFoot}>
           jay 전용 · 예약 접수 후 당일 자정까지 결제 필요
@@ -227,7 +292,7 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
             날짜 선택
             <span className={s.legend}>
               <span>
-                <i style={{ background: 'var(--pink-tint)', backgroundColor: '#f6cdd4' }} />
+                <i style={{ backgroundColor: '#f6cdd4' }} />
                 예약 열림
               </span>
               <span>
@@ -265,16 +330,19 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
                           if (!v) return <td key={i} />;
                           const passed = v < today;
                           const open = !passed && isOpen(v);
+                          const inRange =
+                            selDate && selEnd && v > selDate && v < selEnd ? s.dRange : '';
                           const cls = [
                             passed ? s.dPassed : open ? s.dOpen : s.dWait,
-                            v === selDate ? s.dSel : '',
+                            inRange,
+                            v === selDate || v === selEnd ? s.dSel : '',
                           ].join(' ');
                           return (
                             <td key={i} className={cls}>
                               <button
                                 className={s.day}
                                 disabled={passed}
-                                onClick={() => setSelDate(v)}
+                                onClick={() => pickDay(v)}
                                 title={
                                   open
                                     ? '지금 예약 가능 구간'
@@ -302,13 +370,21 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
           </div>
           {selDate && (
             <p className={s.openHint}>
-              선택한 날짜는 <b>{fmtDate(selDate)} 1박</b>입니다.{' '}
-              {isOpen(selDate) ? (
-                '이미 예약이 열린 구간이라 등록 즉시 시도합니다.'
+              {selEnd ? (
+                <>
+                  <b>
+                    {fmtDate(selDate)} - {fmtDate(selEnd)} ({nights}박)
+                  </b>
+                  입니다. 각 밤을 1박씩 나눠 등록하니 되는 날만 잡히고, 결제도 필요한 날만 하시면
+                  됩니다. 체크아웃 날짜를 다시 고르려면 원하는 날짜를 한 번 더 눌러 새로 시작하세요.
+                </>
               ) : (
                 <>
-                  이 날짜는 <b>{fmtShort(openInfo(selDate).openYmd)} 오전 10:00</b>에 열리는데,
-                  등록해 두시면 그 시각에 맞춰 자동으로 예약을 넣습니다.
+                  <b>{fmtDate(selDate)} 1박</b>입니다. 뒤의 날짜를 한 번 더 누르면 기간(연박
+                  범위)으로 바뀝니다.{' '}
+                  {isOpen(selDate)
+                    ? '이미 열린 구간이라 등록 즉시 시도합니다.'
+                    : `${fmtShort(openInfo(selDate).openYmd)} 오전 10:00 오픈에 맞춰 자동 시도합니다.`}
                 </>
               )}
             </p>
@@ -325,7 +401,7 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
                 className={`${s.chip} ${platform === k ? s.chipOn : ''}`}
                 onClick={() => {
                   setPlatform(k);
-                  setSelRoom(null);
+                  setSelRooms([]);
                 }}
               >
                 {v.short}
@@ -334,9 +410,12 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
           </div>
         </section>
 
-        {/* 객실 선택 */}
+        {/* 객실 선택 (다중) */}
         <section className={s.section}>
-          <h2 className={s.secTitle}>객실 선택</h2>
+          <h2 className={s.secTitle}>
+            객실 선택
+            <span className={s.legend}>여러 개를 고르면 전부 시도합니다</span>
+          </h2>
           {cat.groups.map((g) => (
             <div className={s.group} key={g.key}>
               {g.img ? (
@@ -347,25 +426,32 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
               )}
               <div className={s.groupName}>{g.label}</div>
               <div className={s.roomGrid}>
-                {g.rooms.map((r) => (
-                  <button
-                    key={r.name}
-                    className={`${s.roomCard} ${selRoom === r.name ? s.roomCardOn : ''}`}
-                    onClick={() => setSelRoom(r.name)}
-                  >
-                    <span className={s.roomName}>{r.name}</span>
-                    <span className={s.roomMeta}>{cat.short} 정회원 요금</span>
-                    <span className={s.roomPrice}>
-                      {r.price ? (
-                        <>
-                          {fmtWon(r.price)} ~ <small>/ 1박 기준 (세금포함)</small>
-                        </>
-                      ) : (
-                        <small>요금은 실행 시 확인</small>
-                      )}
-                    </span>
-                  </button>
-                ))}
+                {g.rooms.map((r) => {
+                  const on = selRooms.includes(r.name);
+                  return (
+                    <button
+                      key={r.name}
+                      className={`${s.roomCard} ${on ? s.roomCardOn : ''}`}
+                      onClick={() =>
+                        setSelRooms((prev) =>
+                          on ? prev.filter((n) => n !== r.name) : [...prev, r.name],
+                        )
+                      }
+                    >
+                      <span className={s.roomName}>{r.name}</span>
+                      <span className={s.roomMeta}>{cat.short} 정회원 요금</span>
+                      <span className={s.roomPrice}>
+                        {r.price ? (
+                          <>
+                            {fmtWon(r.price)} ~ <small>/ 1박 기준 (세금포함)</small>
+                          </>
+                        ) : (
+                          <small>요금은 실행 시 확인</small>
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -376,15 +462,15 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
           <h2 className={s.secTitle}>선점 현황</h2>
           {active.length === 0 && <div className={s.empty}>등록된 선점 요청이 없습니다.</div>}
           {active.map((r) => (
-            <ReqRow key={r.id} r={r} onCancel={cancelReq} />
+            <ReqRow key={r.id} r={r} onCancel={cancelReq} onEdit={editReq} />
           ))}
           {done.length > 0 && (
             <>
               <h2 className={s.secTitle} style={{ marginTop: 28 }}>
                 지난 요청
               </h2>
-              {done.slice(-8).map((r) => (
-                <ReqRow key={r.id} r={r} onCancel={cancelReq} />
+              {done.slice(-10).map((r) => (
+                <ReqRow key={r.id} r={r} onCancel={cancelReq} onEdit={editReq} />
               ))}
             </>
           )}
@@ -444,8 +530,8 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
 
         <div className={s.notice}>
           선점된 예약은 미결제 상태로 잡히며, 접수 당일 자정까지 아난티에서 결제(또는 현장 결제
-          등록)하지 않으면 자동 취소됩니다. 예약이 잡히면 이 화면의 선점 현황에 예약번호가 표시되니
-          결제만 하시면 됩니다.
+          등록)하지 않으면 자동 취소됩니다. 예약이 잡히면 아난티봇이 슬랙 DM으로 알려드리고, 이
+          화면의 선점 현황에도 예약번호가 표시됩니다.
         </div>
       </main>
 
@@ -454,14 +540,20 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
           className={s.btnGhost}
           onClick={() => {
             setSelDate(null);
-            setSelRoom(null);
+            setSelEnd(null);
+            setSelRooms([]);
+            setEditingId(null);
           }}
         >
           처음부터 다시
         </button>
-        <button className={s.btnGo} disabled={!selDate || !selRoom || busy} onClick={submitReq}>
-          {selDate && selRoom
-            ? `${fmtShort(selDate)} · ${selRoom} 선점 요청`
+        <button
+          className={s.btnGo}
+          disabled={!selDate || !selRooms.length || busy}
+          onClick={submitReq}
+        >
+          {selDate && selRooms.length
+            ? `${fmtShort(selDate)}${selEnd ? ` - ${fmtShort(selEnd)}` : ''} · 객실 ${selRooms.length}종 · ${totalRows}건 ${editingId ? '수정 등록' : '선점 요청'}`
             : '날짜와 객실을 선택해 주세요'}
         </button>
       </div>
@@ -471,18 +563,28 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
   );
 }
 
-function ReqRow({ r, onCancel }: { r: Req; onCancel: (id: string) => void }) {
+function ReqRow({
+  r,
+  onCancel,
+  onEdit,
+}: {
+  r: Req;
+  onCancel: (r: Req) => void;
+  onEdit: (r: Req) => void;
+}) {
   const open = isOpen(r.stayDate);
   const chip =
     r.status === 'BOOKED'
       ? { cls: s.stBooked, label: '예약 완료' }
-      : r.status === 'WAITING' && open
-        ? { cls: s.stTry, label: '시도 중' }
-        : r.status === 'WAITING'
-          ? { cls: s.stWait, label: `${fmtShort(openInfo(r.stayDate).openYmd)} 10:00 오픈 대기` }
-          : r.status === 'EXPIRED'
-            ? { cls: s.stMuted, label: '기간 지남' }
-            : { cls: s.stMuted, label: '취소됨' };
+      : r.status === 'CANCEL_REQUESTED'
+        ? { cls: s.stTry, label: '취소 진행 중' }
+        : r.status === 'WAITING' && open
+          ? { cls: s.stTry, label: '시도 중' }
+          : r.status === 'WAITING'
+            ? { cls: s.stWait, label: `${fmtShort(openInfo(r.stayDate).openYmd)} 10:00 오픈 대기` }
+            : r.status === 'EXPIRED'
+              ? { cls: s.stMuted, label: '기간 지남' }
+              : { cls: s.stMuted, label: '취소됨' };
   return (
     <div className={s.reqRow}>
       <span className={s.reqDate}>{fmtDate(r.stayDate)}</span>
@@ -495,19 +597,29 @@ function ReqRow({ r, onCancel }: { r: Req; onCancel: (id: string) => void }) {
         </small>
       </span>
       <span className={`${s.chipStatus} ${chip.cls}`}>{chip.label}</span>
-      {r.status === 'BOOKED' && (
+      {(r.status === 'BOOKED' || r.status === 'CANCEL_REQUESTED') && r.folio && (
         <span className={s.reqRoom}>
           예약번호 {r.folio}
           {r.amount ? ` · ${r.amount.toLocaleString('ko-KR')}원` : ''}
-          <small>오늘 접수된 건이면 자정 전까지 결제해 주세요.</small>
+          {r.status === 'BOOKED' && <small>접수 당일 자정 전까지 결제해 주세요.</small>}
         </span>
       )}
       {r.status === 'WAITING' && (
-        <button className={s.reqCancel} onClick={() => onCancel(r.id)}>
-          요청 취소
+        <>
+          <button className={s.reqCancel} onClick={() => onEdit(r)}>
+            수정
+          </button>
+          <button className={s.reqCancel} onClick={() => onCancel(r)}>
+            요청 취소
+          </button>
+        </>
+      )}
+      {r.status === 'BOOKED' && (
+        <button className={s.reqCancel} onClick={() => onCancel(r)}>
+          예약 취소
         </button>
       )}
-      {r.status === 'WAITING' && r.lastError && (
+      {r.lastError && (r.status === 'WAITING' || r.status === 'BOOKED') && (
         <span className={s.reqErr}>최근 시도: {r.lastError}</span>
       )}
     </div>
