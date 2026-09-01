@@ -51,8 +51,15 @@ export async function GET(req: Request) {
   const due = waiting.filter(
     (r) => isOpen(r.stayDate) && (force || !r.lastTryAt || r.lastTryAt < cooldown),
   );
+  // 취소는 5분 유예(cancelAt)가 지난 것만 러너에 넘긴다 — 그 사이 되돌리기 가능.
+  // CANCEL_REQUESTED 는 유예 도입 전 구상태 호환용.
   const cancelJobs = await prisma.anantiRequest.findMany({
-    where: { status: 'CANCEL_REQUESTED' },
+    where: {
+      OR: [
+        { status: 'CANCEL_PENDING', cancelAt: { lte: new Date() } },
+        { status: 'CANCEL_REQUESTED' },
+      ],
+    },
     orderBy: [{ stayDate: 'asc' }],
   });
   return NextResponse.json({ config, due, cancelJobs, waitingCount: waiting.length });

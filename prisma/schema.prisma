@@ -105,6 +105,7 @@ model AnantiRequest {
   lastError String?
   attempts  Int      @default(0)
   lastTryAt DateTime?
+  cancelAt  DateTime? // BOOKED 취소 유예: 이 시각이 지나면 러너가 실취소(실수 방지 5분)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -26,11 +26,12 @@ export async function POST(req: Request) {
   let data;
   if (body.action === 'cancel') {
     data = body.ok
-      ? { status: 'CANCELLED', lastError: null, lastTryAt: new Date() }
+      ? { status: 'CANCELLED', lastError: null, lastTryAt: new Date(), cancelAt: null }
       : {
           status: 'BOOKED',
           lastError: (body.error || '취소 실패').slice(0, 300),
           lastTryAt: new Date(),
+          cancelAt: null,
         };
   } else {
     data = body.ok

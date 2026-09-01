@@ -1,9 +1,9 @@
 'use client';
 
 // ananti.gto.today — 예약 선점 화면 (Jay 전용).
-// 날짜(기간 가능) → 지점 → 객실(여러 개 가능) → 선점 요청.
-// 기간을 잡으면 각 밤을 1박씩, 객실을 여러 개 고르면 객실별로 전부 등록해서
-// 되는 조합은 다 잡는다. 실제 예약 실행·취소는 맥북 러너가 한다.
+// 메인은 예약 플로우(날짜→지점→객실)만, 선점 현황·지난 요청·자동 선점은
+// 우측 상단 햄버거 서랍으로 분리. 취소는 확인 팝업+스피너+다중 선택+되돌리기,
+// 예약 완료 건은 5분 유예(CANCEL_PENDING) 후 러너가 실취소한다.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   CATALOG,
@@ -27,11 +27,18 @@ interface Req {
   amount: number | null;
   lastError: string | null;
   attempts: number;
+  cancelAt: string | null;
 }
 interface Config {
   sweepEnabled: boolean;
   sweepPlatform: string;
   sweepRoom: string;
+}
+interface Confirm {
+  title: string;
+  msg: string;
+  okLabel: string;
+  onOk: () => void;
 }
 
 const LOGO_WHITE = 'https://cdn.ananti.kr/plf/ui/img/symbol-ananti__white.png';
@@ -110,10 +117,16 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
   const [monthOff, setMonthOff] = useState(0);
   const [toast, setToast] = useState('');
   const [busy, setBusy] = useState(false);
+  const [drawer, setDrawer] = useState(false);
+  const [checked, setChecked] = useState<string[]>([]);
+  const [rowBusy, setRowBusy] = useState<string[]>([]);
+  const [confirm, setConfirm] = useState<Confirm | null>(null);
+  const [undoIds, setUndoIds] = useState<string[]>([]);
+  const [now, setNow] = useState(Date.now());
 
   const say = (m: string) => {
     setToast(m);
-    setTimeout(() => setToast(''), 4500);
+    setTimeout(() => setToast(''), 5000);
   };
 
   const load = useCallback(async () => {
@@ -134,12 +147,15 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
   useEffect(() => {
     load();
     const t = setInterval(load, 60_000);
-    return () => clearInterval(t);
+    const tick = setInterval(() => setNow(Date.now()), 15_000);
+    return () => {
+      clearInterval(t);
+      clearInterval(tick);
+    };
   }, [load]);
 
   const today = ymd(kstNow());
 
-  // 달력 두 달치
   const months = useMemo(() => {
     const base = kstNow();
     return [0, 1].map((i) => {
@@ -154,7 +170,6 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
     });
   }, [monthOff]);
 
-  // 날짜 클릭: 첫 클릭=체크인, 더 뒤 날짜 클릭=체크아웃, 그 외=다시 시작
   const pickDay = (v: string) => {
     if (!selDate || selEnd) {
       setSelDate(v);
@@ -213,16 +228,70 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
     load();
   };
 
-  const cancelReq = async (r: Req) => {
-    if (r.status === 'BOOKED') {
-      const ok = window.confirm(
-        '아난티에 접수된 예약을 실제로 취소합니다. 미결제(결제대기) 건만 자동 취소되고, 이미 결제한 건은 실패로 돌아옵니다. 진행할까요?',
-      );
-      if (!ok) return;
+  // ── 취소(단건·다건 공용 실행부) ──
+  const runCancel = async (targets: Req[]) => {
+    setRowBusy((prev) => [...prev, ...targets.map((t) => t.id)]);
+    const undone: string[] = [];
+    let pending = 0;
+    let failed = 0;
+    for (const r of targets) {
+      const res = await fetch(`/api/ananti/requests/${r.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        failed++;
+        continue;
+      }
+      if (r.status === 'WAITING') undone.push(r.id);
+      else pending++;
     }
-    const res = await fetch(`/api/ananti/requests/${r.id}`, { method: 'DELETE' });
+    setRowBusy((prev) => prev.filter((id) => !targets.some((t) => t.id === id)));
+    setChecked([]);
+    const parts = [];
+    if (undone.length) parts.push(`요청 ${undone.length}건 취소`);
+    if (pending) parts.push(`예약 ${pending}건은 5분 뒤 실취소`);
+    if (failed) parts.push(`${failed}건 실패`);
+    say(parts.join(' · ') || '처리했습니다.');
+    if (undone.length) {
+      setUndoIds(undone);
+      setTimeout(() => setUndoIds([]), 12_000);
+    }
+    load();
+  };
+
+  const askCancel = (targets: Req[]) => {
+    if (!targets.length) return;
+    const hasBooked = targets.some((t) => t.status === 'BOOKED');
+    const title = targets.length === 1 ? '취소할까요?' : `${targets.length}건을 취소할까요?`;
+    const msg = hasBooked
+      ? '예약 완료 건은 바로 지우지 않고 5분 유예 후 아난티에서 실제 취소됩니다. 유예 중엔 되돌릴 수 있고, 미결제(결제대기) 건만 자동 취소돼요.'
+      : '대기 중인 선점 요청을 취소합니다. 취소 직후 되돌리기로 복구할 수 있어요.';
+    setConfirm({
+      title,
+      msg,
+      okLabel: '취소 진행',
+      onOk: () => {
+        setConfirm(null);
+        runCancel(targets);
+      },
+    });
+  };
+
+  const undo = async (ids: string[]) => {
+    setUndoIds([]);
+    let ok = 0;
+    for (const id of ids) {
+      const r = await fetch(`/api/ananti/requests/${id}`, { method: 'POST' });
+      if (r.ok) ok++;
+    }
+    say(`${ok}건 되돌렸습니다.`);
+    load();
+  };
+
+  const restorePending = async (r: Req) => {
+    setRowBusy((prev) => [...prev, r.id]);
+    const res = await fetch(`/api/ananti/requests/${r.id}`, { method: 'POST' });
     const j = await res.json();
-    say(j.message || j.error || (res.ok ? '처리했습니다.' : '실패했습니다.'));
+    setRowBusy((prev) => prev.filter((id) => id !== r.id));
+    say(j.message || j.error || '처리했습니다.');
     load();
   };
 
@@ -232,6 +301,7 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
     setSelDate(r.stayDate);
     setSelEnd(null);
     setEditingId(r.id);
+    setDrawer(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     say('내용을 바꾼 뒤 하단 버튼으로 등록하세요. 등록되면 기존 요청은 자동 취소됩니다.');
   };
@@ -246,13 +316,21 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
   };
 
   const cat = getPlatform(platform);
-  const active = reqs.filter(
-    (r) => r.status === 'WAITING' || r.status === 'BOOKED' || r.status === 'CANCEL_REQUESTED',
-  );
-  const done = reqs.filter((r) => !active.includes(r));
+  const ACTIVE = ['WAITING', 'BOOKED', 'CANCEL_PENDING', 'CANCEL_REQUESTED'];
+  const active = reqs.filter((r) => ACTIVE.includes(r.status));
+  const done = reqs.filter((r) => !ACTIVE.includes(r.status));
+  const checkedReqs = active.filter((r) => checked.includes(r.id));
 
   return (
     <div className={s.root}>
+      {/* 우측 상단 햄버거 */}
+      <button className={s.hamburger} onClick={() => setDrawer(true)} aria-label="선점 현황 열기">
+        <span />
+        <span />
+        <span />
+        {active.length > 0 && <em className={s.hamBadge}>{active.length}</em>}
+      </button>
+
       <aside className={s.side}>
         <div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -268,7 +346,8 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
         </h1>
         <p className={s.sideDesc}>
           투숙일이 속한 주는 4주 전 월요일 오전 10시에 열립니다. 기간을 잡고 객실을 여러 개 고르면
-          되는 조합을 1박씩 전부 접수하고, 이미 열린 날짜는 10분 간격으로 바로 시도합니다.
+          되는 조합을 1박씩 전부 접수하고, 이미 열린 날짜는 10분 간격으로 바로 시도합니다. 매일
+          00:25-00:36에는 자정 취소분도 사냥합니다.
         </p>
         <div className={s.sideFoot}>
           jay 전용 · 예약 접수 후 당일 자정까지 결제 필요
@@ -376,12 +455,12 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
                     {fmtDate(selDate)} - {fmtDate(selEnd)} ({nights}박)
                   </b>
                   입니다. 각 밤을 1박씩 나눠 등록하니 되는 날만 잡히고, 결제도 필요한 날만 하시면
-                  됩니다. 체크아웃 날짜를 다시 고르려면 원하는 날짜를 한 번 더 눌러 새로 시작하세요.
+                  됩니다.
                 </>
               ) : (
                 <>
-                  <b>{fmtDate(selDate)} 1박</b>입니다. 뒤의 날짜를 한 번 더 누르면 기간(연박
-                  범위)으로 바뀝니다.{' '}
+                  <b>{fmtDate(selDate)} 1박</b>입니다. 뒤의 날짜를 한 번 더 누르면 기간으로
+                  바뀝니다.{' '}
                   {isOpen(selDate)
                     ? '이미 열린 구간이라 등록 즉시 시도합니다.'
                     : `${fmtShort(openInfo(selDate).openYmd)} 오전 10:00 오픈에 맞춰 자동 시도합니다.`}
@@ -456,85 +535,121 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
             </div>
           ))}
         </section>
-
-        {/* 요청 현황 */}
-        <section className={s.section}>
-          <h2 className={s.secTitle}>선점 현황</h2>
-          {active.length === 0 && <div className={s.empty}>등록된 선점 요청이 없습니다.</div>}
-          {active.map((r) => (
-            <ReqRow key={r.id} r={r} onCancel={cancelReq} onEdit={editReq} />
-          ))}
-          {done.length > 0 && (
-            <>
-              <h2 className={s.secTitle} style={{ marginTop: 28 }}>
-                지난 요청
-              </h2>
-              {done.slice(-10).map((r) => (
-                <ReqRow key={r.id} r={r} onCancel={cancelReq} onEdit={editReq} />
-              ))}
-            </>
-          )}
-        </section>
-
-        {/* 자동 선점 */}
-        <section className={s.section}>
-          <h2 className={s.secTitle}>매주 자동 선점</h2>
-          <div className={s.sweep}>
-            <div className={s.sweepInfo}>
-              <div className={s.sweepTitle}>월요일 10:00 새로 열리는 주 전체 잡기</div>
-              <p className={s.sweepDesc}>
-                켜두면 매주 월요일 오전 10시에 새로 열리는 주(월-일) 7일을 아래 객실로 1박씩 전부
-                접수합니다. 결제하지 않은 건은 그날 자정에 자동 취소되니 필요한 날만 골라 결제하시면
-                됩니다.
-              </p>
-            </div>
-            <div className={s.sweepCtrl}>
-              <select
-                className={s.select}
-                value={config?.sweepPlatform || 'chord'}
-                onChange={(e) => {
-                  const p = e.target.value;
-                  const first = getPlatform(p).groups[0]?.rooms[0]?.name || '';
-                  saveConfig({ sweepPlatform: p, sweepRoom: first });
-                }}
-              >
-                {Object.entries(CATALOG).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v.short}
-                  </option>
-                ))}
-              </select>
-              <select
-                className={s.select}
-                value={config?.sweepRoom || ''}
-                onChange={(e) => saveConfig({ sweepRoom: e.target.value })}
-              >
-                {getPlatform(config?.sweepPlatform || 'chord').groups.flatMap((g) =>
-                  g.rooms.map((r) => (
-                    <option key={r.name} value={r.name}>
-                      {r.name}
-                    </option>
-                  )),
-                )}
-              </select>
-              <button
-                className={`${s.toggle} ${config?.sweepEnabled ? s.toggleOn : ''}`}
-                onClick={() => saveConfig({ sweepEnabled: !config?.sweepEnabled })}
-                aria-label="자동 선점 켜기/끄기"
-              >
-                <i />
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <div className={s.notice}>
-          선점된 예약은 미결제 상태로 잡히며, 접수 당일 자정까지 아난티에서 결제(또는 현장 결제
-          등록)하지 않으면 자동 취소됩니다. 예약이 잡히면 아난티봇이 슬랙 DM으로 알려드리고, 이
-          화면의 선점 현황에도 예약번호가 표시됩니다.
-        </div>
       </main>
 
+      {/* ── 서랍: 선점 현황 / 지난 요청 / 자동 선점 ── */}
+      {drawer && <div className={s.backdrop} onClick={() => setDrawer(false)} />}
+      <div className={`${s.drawer} ${drawer ? s.drawerOpen : ''}`}>
+        <div className={s.drawerHead}>
+          <b>선점 현황</b>
+          <button className={s.drawerClose} onClick={() => setDrawer(false)} aria-label="닫기">
+            ×
+          </button>
+        </div>
+
+        {checkedReqs.length > 0 && (
+          <div className={s.bulkBar}>
+            {checkedReqs.length}건 선택
+            <button className={s.bulkCancel} onClick={() => askCancel(checkedReqs)}>
+              선택 취소
+            </button>
+            <button className={s.bulkClear} onClick={() => setChecked([])}>
+              해제
+            </button>
+          </div>
+        )}
+
+        {active.length === 0 && <div className={s.empty}>등록된 선점 요청이 없습니다.</div>}
+        {active.map((r) => (
+          <ReqRow
+            key={r.id}
+            r={r}
+            now={now}
+            busy={rowBusy.includes(r.id)}
+            checked={checked.includes(r.id)}
+            onCheck={(on) =>
+              setChecked((prev) => (on ? [...prev, r.id] : prev.filter((id) => id !== r.id)))
+            }
+            onCancel={() => askCancel([r])}
+            onEdit={() => editReq(r)}
+            onRestore={() => restorePending(r)}
+          />
+        ))}
+
+        {done.length > 0 && (
+          <>
+            <div className={s.drawerSub}>지난 요청</div>
+            {done.slice(-12).map((r) => (
+              <ReqRow
+                key={r.id}
+                r={r}
+                now={now}
+                busy={rowBusy.includes(r.id)}
+                checked={false}
+                onCheck={() => {}}
+                onCancel={() => {}}
+                onEdit={() => editReq(r)}
+                onRestore={() => restorePending(r)}
+              />
+            ))}
+          </>
+        )}
+
+        <div className={s.drawerSub}>매주 자동 선점</div>
+        <div className={s.sweep}>
+          <div className={s.sweepInfo}>
+            <div className={s.sweepTitle}>월요일 10:00 새로 열리는 주 전체 잡기</div>
+            <p className={s.sweepDesc}>
+              켜두면 매주 월요일 오전 10시에 새로 열리는 주(월-일) 7일을 아래 객실로 1박씩 전부
+              접수합니다. 결제하지 않은 건은 그날 자정에 자동 취소됩니다.
+            </p>
+          </div>
+          <div className={s.sweepCtrl}>
+            <select
+              className={s.select}
+              value={config?.sweepPlatform || 'chord'}
+              onChange={(e) => {
+                const p = e.target.value;
+                const first = getPlatform(p).groups[0]?.rooms[0]?.name || '';
+                saveConfig({ sweepPlatform: p, sweepRoom: first });
+              }}
+            >
+              {Object.entries(CATALOG).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v.short}
+                </option>
+              ))}
+            </select>
+            <select
+              className={s.select}
+              value={config?.sweepRoom || ''}
+              onChange={(e) => saveConfig({ sweepRoom: e.target.value })}
+            >
+              {getPlatform(config?.sweepPlatform || 'chord').groups.flatMap((g) =>
+                g.rooms.map((r) => (
+                  <option key={r.name} value={r.name}>
+                    {r.name}
+                  </option>
+                )),
+              )}
+            </select>
+            <button
+              className={`${s.toggle} ${config?.sweepEnabled ? s.toggleOn : ''}`}
+              onClick={() => saveConfig({ sweepEnabled: !config?.sweepEnabled })}
+              aria-label="자동 선점 켜기/끄기"
+            >
+              <i />
+            </button>
+          </div>
+        </div>
+
+        <div className={s.notice}>
+          선점된 예약은 미결제 상태로 잡히며, 접수 당일 자정까지 결제(또는 현장 결제 등록)하지
+          않으면 자동 취소됩니다. 예약이 잡히면 아난티봇이 슬랙 DM으로 알려드립니다.
+        </div>
+      </div>
+
+      {/* 하단 고정 바 */}
       <div className={s.bottomBar}>
         <button
           className={s.btnGhost}
@@ -558,35 +673,92 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
         </button>
       </div>
 
-      {toast && <div className={s.toast}>{toast}</div>}
+      {/* 확인 팝업 */}
+      {confirm && (
+        <>
+          <div className={s.backdrop} onClick={() => setConfirm(null)} />
+          <div className={s.modal}>
+            <b>{confirm.title}</b>
+            <p>{confirm.msg}</p>
+            <div className={s.modalBtns}>
+              <button className={s.modalGhost} onClick={() => setConfirm(null)}>
+                닫기
+              </button>
+              <button className={s.modalOk} onClick={confirm.onOk}>
+                {confirm.okLabel}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* 토스트 + 되돌리기 */}
+      {(toast || undoIds.length > 0) && (
+        <div className={s.toast}>
+          {toast}
+          {undoIds.length > 0 && (
+            <button className={s.undoBtn} onClick={() => undo(undoIds)}>
+              되돌리기
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 function ReqRow({
   r,
+  now,
+  busy,
+  checked,
+  onCheck,
   onCancel,
   onEdit,
+  onRestore,
 }: {
   r: Req;
-  onCancel: (r: Req) => void;
-  onEdit: (r: Req) => void;
+  now: number;
+  busy: boolean;
+  checked: boolean;
+  onCheck: (on: boolean) => void;
+  onCancel: () => void;
+  onEdit: () => void;
+  onRestore: () => void;
 }) {
   const open = isOpen(r.stayDate);
+  const cancelLeft = r.cancelAt
+    ? Math.max(0, Math.ceil((new Date(r.cancelAt).getTime() - now) / 60_000))
+    : 0;
   const chip =
     r.status === 'BOOKED'
       ? { cls: s.stBooked, label: '예약 완료' }
-      : r.status === 'CANCEL_REQUESTED'
-        ? { cls: s.stTry, label: '취소 진행 중' }
-        : r.status === 'WAITING' && open
-          ? { cls: s.stTry, label: '시도 중' }
-          : r.status === 'WAITING'
-            ? { cls: s.stWait, label: `${fmtShort(openInfo(r.stayDate).openYmd)} 10:00 오픈 대기` }
-            : r.status === 'EXPIRED'
-              ? { cls: s.stMuted, label: '기간 지남' }
-              : { cls: s.stMuted, label: '취소됨' };
+      : r.status === 'CANCEL_PENDING'
+        ? { cls: s.stTry, label: cancelLeft > 0 ? `${cancelLeft}분 뒤 취소` : '곧 취소 실행' }
+        : r.status === 'CANCEL_REQUESTED'
+          ? { cls: s.stTry, label: '취소 진행 중' }
+          : r.status === 'WAITING' && open
+            ? { cls: s.stTry, label: '시도 중' }
+            : r.status === 'WAITING'
+              ? {
+                  cls: s.stWait,
+                  label: `${fmtShort(openInfo(r.stayDate).openYmd)} 10:00 오픈 대기`,
+                }
+              : r.status === 'EXPIRED'
+                ? { cls: s.stMuted, label: '기간 지남' }
+                : { cls: s.stMuted, label: '취소됨' };
+  const checkable = r.status === 'WAITING' || r.status === 'BOOKED';
   return (
     <div className={s.reqRow}>
+      {checkable && (
+        <input
+          type="checkbox"
+          className={s.reqCheck}
+          checked={checked}
+          onChange={(e) => onCheck(e.target.checked)}
+          aria-label="선택"
+        />
+      )}
       <span className={s.reqDate}>{fmtDate(r.stayDate)}</span>
       <span className={s.reqRoom}>
         {r.roomName}
@@ -594,29 +766,38 @@ function ReqRow({
           {CATALOG[r.platform]?.short || r.platform}
           {r.source === 'sweep' ? ' · 자동 선점' : ''}
           {r.attempts > 0 ? ` · 시도 ${r.attempts}회` : ''}
+          {r.folio ? ` · 예약번호 ${r.folio}` : ''}
+          {r.amount ? ` · ${r.amount.toLocaleString('ko-KR')}원` : ''}
         </small>
       </span>
-      <span className={`${s.chipStatus} ${chip.cls}`}>{chip.label}</span>
-      {(r.status === 'BOOKED' || r.status === 'CANCEL_REQUESTED') && r.folio && (
-        <span className={s.reqRoom}>
-          예약번호 {r.folio}
-          {r.amount ? ` · ${r.amount.toLocaleString('ko-KR')}원` : ''}
-          {r.status === 'BOOKED' && <small>접수 당일 자정 전까지 결제해 주세요.</small>}
-        </span>
+      {busy ? (
+        <span className={s.spinner} aria-label="처리 중" />
+      ) : (
+        <span className={`${s.chipStatus} ${chip.cls}`}>{chip.label}</span>
       )}
-      {r.status === 'WAITING' && (
+      {!busy && r.status === 'WAITING' && (
         <>
-          <button className={s.reqCancel} onClick={() => onEdit(r)}>
+          <button className={s.reqCancel} onClick={onEdit}>
             수정
           </button>
-          <button className={s.reqCancel} onClick={() => onCancel(r)}>
-            요청 취소
+          <button className={s.reqCancel} onClick={onCancel}>
+            취소
           </button>
         </>
       )}
-      {r.status === 'BOOKED' && (
-        <button className={s.reqCancel} onClick={() => onCancel(r)}>
+      {!busy && r.status === 'BOOKED' && (
+        <button className={s.reqCancel} onClick={onCancel}>
           예약 취소
+        </button>
+      )}
+      {!busy && r.status === 'CANCEL_PENDING' && cancelLeft > 0 && (
+        <button className={s.reqCancel} onClick={onRestore}>
+          되돌리기
+        </button>
+      )}
+      {!busy && r.status === 'CANCELLED' && r.stayDate >= ymd(kstNow()) && (
+        <button className={s.reqCancel} onClick={onRestore}>
+          되살리기
         </button>
       )}
       {r.lastError && (r.status === 'WAITING' || r.status === 'BOOKED') && (
