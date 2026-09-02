@@ -784,3 +784,23 @@
   cursor: pointer;
   font-family: inherit;
 }
+
+/* v4 — 주간 스윕 객실 다중 선택 */
+.sweepRooms {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 6px 14px;
+  max-height: 180px;
+  overflow-y: auto;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+.sweepRoomItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  line-height: 1.4;
+}

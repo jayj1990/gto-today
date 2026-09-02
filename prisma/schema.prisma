@@ -117,6 +117,7 @@ model AnantiConfig {
   id            Int      @id @default(1)
   sweepEnabled  Boolean  @default(false)
   sweepPlatform String   @default("chord")
-  sweepRoom     String   @default("더 하우스 확장 (킹2+트윈)")
+  sweepRoom     String   @default("더 하우스 확장 (킹2+트윈)") // 구버전 호환(sweepRooms[0] 미러)
+  sweepRooms    Json     @default("[]") // 주간 스윕 대상 객실 배열(다중 선택)
   updatedAt     DateTime @updatedAt
 }

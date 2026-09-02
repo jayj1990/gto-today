@@ -28,17 +28,23 @@ export async function GET(req: Request) {
   const config = await prisma.anantiConfig.findUnique({ where: { id: 1 } });
   const isMonday = now.getUTCDay() === 1;
   if (config?.sweepEnabled && isMonday) {
+    const rooms =
+      Array.isArray(config.sweepRooms) && config.sweepRooms.length
+        ? (config.sweepRooms as string[])
+        : [config.sweepRoom];
     const base = parseYmd(today);
     const sweepRows = [];
     for (let i = 28; i <= 34; i++) {
       const d = new Date(base);
       d.setUTCDate(d.getUTCDate() + i);
-      sweepRows.push({
-        platform: config.sweepPlatform,
-        roomName: config.sweepRoom,
-        stayDate: ymd(d),
-        source: 'sweep',
-      });
+      for (const roomName of rooms) {
+        sweepRows.push({
+          platform: config.sweepPlatform,
+          roomName,
+          stayDate: ymd(d),
+          source: 'sweep',
+        });
+      }
     }
     await prisma.anantiRequest.createMany({ data: sweepRows, skipDuplicates: true });
   }

@@ -33,6 +33,7 @@ interface Config {
   sweepEnabled: boolean;
   sweepPlatform: string;
   sweepRoom: string;
+  sweepRooms: string[] | null;
 }
 interface Confirm {
   title: string;
@@ -600,8 +601,8 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
           <div className={s.sweepInfo}>
             <div className={s.sweepTitle}>월요일 10:00 새로 열리는 주 전체 잡기</div>
             <p className={s.sweepDesc}>
-              켜두면 매주 월요일 오전 10시에 새로 열리는 주(월-일) 7일을 아래 객실로 1박씩 전부
-              접수합니다. 결제하지 않은 건은 그날 자정에 자동 취소됩니다.
+              켜두면 매주 월요일 오전 10시에 새로 열리는 주(월-일) 7일을 아래에서 고른 객실 전부로
+              1박씩 접수합니다. 결제하지 않은 건은 그날 자정에 자동 취소됩니다.
             </p>
           </div>
           <div className={s.sweepCtrl}>
@@ -611,7 +612,7 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
               onChange={(e) => {
                 const p = e.target.value;
                 const first = getPlatform(p).groups[0]?.rooms[0]?.name || '';
-                saveConfig({ sweepPlatform: p, sweepRoom: first });
+                saveConfig({ sweepPlatform: p, sweepRooms: first ? [first] : [] });
               }}
             >
               {Object.entries(CATALOG).map(([k, v]) => (
@@ -619,19 +620,6 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
                   {v.short}
                 </option>
               ))}
-            </select>
-            <select
-              className={s.select}
-              value={config?.sweepRoom || ''}
-              onChange={(e) => saveConfig({ sweepRoom: e.target.value })}
-            >
-              {getPlatform(config?.sweepPlatform || 'chord').groups.flatMap((g) =>
-                g.rooms.map((r) => (
-                  <option key={r.name} value={r.name}>
-                    {r.name}
-                  </option>
-                )),
-              )}
             </select>
             <button
               className={`${s.toggle} ${config?.sweepEnabled ? s.toggleOn : ''}`}
@@ -641,6 +629,35 @@ function Keeper({ onLogout }: { onLogout: () => void }) {
               <i />
             </button>
           </div>
+          <div className={s.sweepRooms}>
+            {getPlatform(config?.sweepPlatform || 'chord').groups.flatMap((g) =>
+              g.rooms.map((r) => {
+                const list = config?.sweepRooms || [];
+                const on = list.includes(r.name);
+                return (
+                  <label key={r.name} className={s.sweepRoomItem}>
+                    <input
+                      type="checkbox"
+                      className={s.reqCheck}
+                      checked={on}
+                      onChange={() =>
+                        saveConfig({
+                          sweepRooms: on ? list.filter((n) => n !== r.name) : [...list, r.name],
+                        })
+                      }
+                    />
+                    {r.name}
+                  </label>
+                );
+              }),
+            )}
+          </div>
+          {(config?.sweepRooms?.length || 0) > 1 && (
+            <p className={s.sweepDesc}>
+              객실 {config?.sweepRooms?.length}종 × 7일 = 매주 최대{' '}
+              {(config?.sweepRooms?.length || 0) * 7}건씩 접수됩니다.
+            </p>
+          )}
         </div>
 
         <div className={s.notice}>
