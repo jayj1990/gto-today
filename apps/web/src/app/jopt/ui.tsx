@@ -1,0 +1,1016 @@
+'use client';
+
+// jopt.gto.today — JOPT 2026 Sapporo #02 원정 플래너.
+// 실좌표(위경도)를 아이소메트릭으로 투영한 LEGO 스타일 삿포로 맵 위에
+// 일자별 동선·핀·이동 애니메이션을 얹는다. 도시 배경은 SVG를 명령형으로
+// 1회 생성하고(빌딩 200여 개), 경로·핀·여행자만 day/sel 에 반응해 다시 그린다.
+import { useCallback, useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
+import s from './jopt.module.css';
+
+/* ---------- 데이터 ---------- */
+type Mode = 'walk' | 'jr' | 'subway' | 'taxi';
+
+interface Place {
+  nm: string;
+  lng: number;
+  lat: number;
+  img: string;
+  pos: string;
+}
+
+const PL = {
+  station: {
+    nm: 'JR 삿포로역',
+    lng: 141.3508,
+    lat: 43.0687,
+    img: '/jopt/master.png',
+    pos: '50% 8%',
+  },
+  house: {
+    nm: '삿포로 하우스 (숙소)',
+    lng: 141.348,
+    lat: 43.07,
+    img: '/jopt/master.png',
+    pos: '20% 15%',
+  },
+  factory: {
+    nm: '삿포로 팩토리 홀',
+    lng: 141.3654,
+    lat: 43.0662,
+    img: '/jopt/factory.png',
+    pos: '50% 45%',
+  },
+  nijo: { nm: '니조시장', lng: 141.3585, lat: 43.0576, img: '/jopt/master.png', pos: '70% 75%' },
+  tv: { nm: '삿포로 TV타워', lng: 141.3565, lat: 43.0611, img: '/jopt/master.png', pos: '52% 48%' },
+  odori: { nm: '오도리공원', lng: 141.354, lat: 43.0605, img: '/jopt/master.png', pos: '35% 50%' },
+  clock: {
+    nm: '삿포로 시계탑',
+    lng: 141.3536,
+    lat: 43.0626,
+    img: '/jopt/master.png',
+    pos: '40% 35%',
+  },
+  susukino: {
+    nm: '스스키노',
+    lng: 141.3532,
+    lat: 43.0554,
+    img: '/jopt/master.png',
+    pos: '30% 88%',
+  },
+} satisfies Record<string, Place>;
+
+type PlaceId = keyof typeof PL;
+
+interface Stop {
+  p: PlaceId;
+  t: string;
+  stay: string;
+  mode: Mode;
+  mv: string;
+  note: string;
+  badge?: 'main' | 'free';
+  opt?: boolean;
+}
+
+interface DayPlan {
+  label: string;
+  date: string;
+  km: number;
+  min: number;
+  initialSel: number;
+  stops: Stop[];
+}
+
+const DAYS: DayPlan[] = [
+  {
+    label: 'Day 1',
+    date: '9/21 월',
+    km: 5.1,
+    min: 75,
+    initialSel: 2,
+    stops: [
+      {
+        p: 'station',
+        t: '13:20',
+        stay: '10분',
+        mode: 'jr',
+        mv: 'JR 쾌속 에어포트 40분 · ¥1,150',
+        note: '신치토세공항 11:50 도착 → 입국 후 이동',
+      },
+      {
+        p: 'house',
+        t: '13:30',
+        stay: '20분',
+        mode: 'walk',
+        mv: '도보 10분 · 0.4km',
+        note: '짐 맡기기 (체크인은 저녁)',
+      },
+      {
+        p: 'factory',
+        t: '14:00',
+        stay: '14:00-18:00',
+        mode: 'walk',
+        mv: '도보 20분 · 1.8km',
+        note: 'JOPT 메인 Day 1B 레이트 레지 · 바우처 ① / 탈락 시 18:00 Day 1C 터보 · 바우처 ②',
+        badge: 'main',
+      },
+      {
+        p: 'nijo',
+        t: '대안',
+        stay: '40분',
+        mode: 'walk',
+        mv: '도보 18분 · 1.5km',
+        note: '조기 탈락 시 낮 루프 · 07:00-17:00',
+        opt: true,
+      },
+      {
+        p: 'tv',
+        t: '대안',
+        stay: '40분',
+        mode: 'walk',
+        mv: '도보 8분 · 0.6km',
+        note: '전망대 09:00-22:00',
+        opt: true,
+      },
+      {
+        p: 'odori',
+        t: '대안',
+        stay: '20분',
+        mode: 'walk',
+        mv: '도보 3분 · 0.2km',
+        note: '오도리공원 산책',
+        opt: true,
+      },
+      {
+        p: 'clock',
+        t: '대안',
+        stay: '15분',
+        mode: 'walk',
+        mv: '도보 4분 · 0.2km',
+        note: '시계탑 · 08:45-17:10',
+        opt: true,
+      },
+      {
+        p: 'susukino',
+        t: '저녁',
+        stay: '90분',
+        mode: 'walk',
+        mv: '도보 12분 · 0.8km',
+        note: '저녁 · 라멘 요코초',
+      },
+    ],
+  },
+  {
+    label: 'Day 2',
+    date: '9/22 화',
+    km: 1.8,
+    min: 20,
+    initialSel: 1,
+    stops: [
+      { p: 'house', t: '10:00', stay: '-', mode: 'walk', mv: '기상 · 준비', note: '' },
+      {
+        p: 'factory',
+        t: '11:00',
+        stay: '11:00-23:00',
+        mode: 'walk',
+        mv: '도보 20분 · 1.8km',
+        note: '백 성공 시 메인 Day 2 리스타트 / 15:00 Crown 새틀 ¥20,000 · 16:00 Crown ¥200,000 · 20:00 6-Max ¥60,000 (자비)',
+        badge: 'main',
+      },
+    ],
+  },
+  {
+    label: 'Day 3',
+    date: '9/23 수',
+    km: 2.6,
+    min: 35,
+    initialSel: 1,
+    stops: [
+      { p: 'house', t: '10:00', stay: '-', mode: 'walk', mv: '기상 · 준비', note: '' },
+      {
+        p: 'factory',
+        t: '11:00',
+        stay: '11:00-18:00',
+        mode: 'walk',
+        mv: '도보 20분 · 1.8km',
+        note: 'NLH Bullet 필수 · 바우처 ③ (탈락 시 ④ 재엔트리) / 12:00 NLH Sapporo ¥50,000 자비 · 16:00 Last Party ¥6,000',
+        badge: 'main',
+      },
+      {
+        p: 'susukino',
+        t: '19:00',
+        stay: '120분',
+        mode: 'subway',
+        mv: '지하철 버스센터마에 → 오도리 환승 · 8분',
+        note: '대회 마무리 회식',
+      },
+    ],
+  },
+  {
+    label: 'Day 4',
+    date: '9/24 목',
+    km: 3.4,
+    min: 50,
+    initialSel: 0,
+    stops: [
+      {
+        p: 'nijo',
+        t: '10:00',
+        stay: '60분',
+        mode: 'walk',
+        mv: '숙소에서 도보 20분',
+        note: '카이센동 아침 · 07:00-17:00',
+        badge: 'free',
+      },
+      {
+        p: 'odori',
+        t: '11:30',
+        stay: '40분',
+        mode: 'walk',
+        mv: '도보 6분 · 0.4km',
+        note: '오도리공원 산책',
+        badge: 'free',
+      },
+      {
+        p: 'tv',
+        t: '12:20',
+        stay: '40분',
+        mode: 'walk',
+        mv: '도보 3분 · 0.2km',
+        note: '전망대 · 09:00-22:00',
+        badge: 'free',
+      },
+      {
+        p: 'factory',
+        t: '14:00',
+        stay: '90분',
+        mode: 'walk',
+        mv: '도보 12분 · 0.9km',
+        note: '삿포로 팩토리 쇼핑 · 10:00-20:00',
+        badge: 'free',
+      },
+      {
+        p: 'susukino',
+        t: '18:00',
+        stay: '자유',
+        mode: 'subway',
+        mv: '지하철 8분',
+        note: '마지막 밤',
+        badge: 'free',
+      },
+    ],
+  },
+  {
+    label: 'Day 5',
+    date: '9/25 금',
+    km: 0.4,
+    min: 10,
+    initialSel: 1,
+    stops: [
+      {
+        p: 'house',
+        t: '09:15',
+        stay: '-',
+        mode: 'walk',
+        mv: '체크아웃',
+        note: '짐 정리 · 09:15 출발',
+      },
+      {
+        p: 'station',
+        t: '09:30',
+        stay: '-',
+        mode: 'walk',
+        mv: '도보 10분 · 0.4km',
+        note: 'JR 쾌속 에어포트 09:30 → 신치토세 10:15 → 12:55 ZE0626 → 16:00 인천',
+        badge: 'main',
+      },
+    ],
+  },
+];
+
+/* ---------- 투영 ---------- */
+const W = 141.342;
+const N = 43.0725;
+const MX = 81375;
+const MY = 110950;
+const ISX = 0.866;
+const ISY = 0.5;
+const XMAX = (141.372 - W) * MX;
+const YMAX = (N - 43.05) * MY;
+
+const mtr = (lng: number, lat: number) => ({ x: (lng - W) * MX, y: (N - lat) * MY });
+const iso = (x: number, y: number) => ({ X: (x - y) * ISX, Y: (x + y) * ISY });
+const proj = (lng: number, lat: number) => {
+  const a = mtr(lng, lat);
+  return iso(a.x, a.y);
+};
+
+const NS = 'http://www.w3.org/2000/svg';
+function mk(tag: string, attrs: Record<string, string | number>, parent: Element): SVGElement {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
+  parent.appendChild(e);
+  return e as SVGElement;
+}
+function shade(hex: string, f: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.min(255, (n >> 16) * f) | 0;
+  const g = Math.min(255, ((n >> 8) & 255) * f) | 0;
+  const b = Math.min(255, (n & 255) * f) | 0;
+  return `rgb(${r},${g},${b})`;
+}
+
+const MODE_STYLE: Record<Mode, { stroke: string; w: number; dash: string }> = {
+  walk: { stroke: '#0B5B9F', w: 4.5, dash: '1 9' },
+  jr: { stroke: '#0AA396', w: 6, dash: '' },
+  subway: { stroke: '#E08A1E', w: 5.5, dash: '' },
+  taxi: { stroke: '#5A6672', w: 4.5, dash: '10 7' },
+};
+
+const legPathD = (a: Place, b: Place): string => {
+  const A = mtr(a.lng, a.lat);
+  const B = mtr(b.lng, b.lat);
+  const p0 = iso(A.x, A.y);
+  const m1 = iso(B.x, A.y);
+  const p1 = iso(B.x, B.y);
+  return `M${p0.X},${p0.Y} L${m1.X},${m1.Y} L${p1.X},${p1.Y}`;
+};
+
+/* ---------- 도시 빌드 (1회) ---------- */
+interface CityRefs {
+  gRoute: SVGElement;
+  gPins: SVGElement;
+  trav: SVGElement;
+  stopLife: () => void;
+}
+
+function buildCity(svg: SVGSVGElement): CityRefs {
+  const world = mk('g', {}, svg);
+  const gGround = mk('g', {}, world);
+  const gCity = mk('g', {}, world);
+  const gRoute = mk('g', {}, world);
+  const gLife = mk('g', {}, world);
+  const gPins = mk('g', {}, world);
+
+  // 바닥
+  const corners = [
+    iso(-150, -150),
+    iso(XMAX + 150, -150),
+    iso(XMAX + 150, YMAX + 150),
+    iso(-150, YMAX + 150),
+  ];
+  mk(
+    'polygon',
+    { points: corners.map((p) => `${p.X},${p.Y}`).join(' '), fill: '#E8EBE6' },
+    gGround,
+  );
+
+  // 도로 격자 (조·초메 근사 130m)
+  for (let x = 60; x < XMAX; x += 130) {
+    const a = iso(x, 0);
+    const b = iso(x, YMAX);
+    mk(
+      'line',
+      { x1: a.X, y1: a.Y, x2: b.X, y2: b.Y, stroke: '#CBD1CB', 'stroke-width': 7 },
+      gGround,
+    );
+  }
+  for (let y = 60; y < YMAX; y += 130) {
+    const a = iso(0, y);
+    const b = iso(XMAX, y);
+    mk(
+      'line',
+      { x1: a.X, y1: a.Y, x2: b.X, y2: b.Y, stroke: '#CBD1CB', 'stroke-width': 7 },
+      gGround,
+    );
+  }
+  // 에키마에도리
+  const ekimae = mtr(141.352, 0).x;
+  {
+    const a = iso(ekimae, 0);
+    const b = iso(ekimae, YMAX);
+    mk(
+      'line',
+      { x1: a.X, y1: a.Y, x2: b.X, y2: b.Y, stroke: '#BEC5BE', 'stroke-width': 16 },
+      gGround,
+    );
+  }
+  // 소세이강
+  const sosei = mtr(141.357, 0).x;
+  {
+    const a = iso(sosei, 0);
+    const b = iso(sosei, YMAX);
+    mk(
+      'line',
+      {
+        x1: a.X,
+        y1: a.Y,
+        x2: b.X,
+        y2: b.Y,
+        stroke: '#9FC4DD',
+        'stroke-width': 22,
+        'stroke-linecap': 'round',
+      },
+      gGround,
+    );
+    mk(
+      'line',
+      { x1: a.X, y1: a.Y, x2: b.X, y2: b.Y, stroke: '#B9D8EC', 'stroke-width': 12 },
+      gGround,
+    );
+  }
+  // 오도리공원 녹지축
+  {
+    const y = mtr(0, 43.0605).y;
+    const x1 = mtr(141.3435, 0).x;
+    const x2 = mtr(141.3563, 0).x;
+    const c = [iso(x1, y - 42), iso(x2, y - 42), iso(x2, y + 42), iso(x1, y + 42)];
+    mk('polygon', { points: c.map((p) => `${p.X},${p.Y}`).join(' '), fill: '#A6C48E' }, gGround);
+    for (let x = x1 + 40; x < x2; x += 85) {
+      const t = iso(x, y);
+      mk('circle', { cx: t.X, cy: t.Y - 7, r: 7, fill: '#6E9E5B' }, gGround);
+      mk('rect', { x: t.X - 1.5, y: t.Y - 2, width: 3, height: 6, fill: '#7A5B41' }, gGround);
+    }
+  }
+
+  // 빌딩 (결정적 의사난수)
+  let seed = 7;
+  const rnd = () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  interface Bld {
+    x: number;
+    y: number;
+    w: number;
+    d: number;
+    h: number;
+    c: string;
+  }
+  const box = (b: Bld, g: Element) => {
+    const cs = [
+      [b.x - b.w / 2, b.y - b.d / 2],
+      [b.x + b.w / 2, b.y - b.d / 2],
+      [b.x + b.w / 2, b.y + b.d / 2],
+      [b.x - b.w / 2, b.y + b.d / 2],
+    ].map((p) => iso(p[0] ?? 0, p[1] ?? 0));
+    const tp = cs.map((p) => ({ X: p.X, Y: p.Y - b.h * ISY * 1.15 }));
+    const c1 = cs[1]!,
+      c2 = cs[2]!,
+      c3 = cs[3]!;
+    const t1 = tp[1]!,
+      t2 = tp[2]!,
+      t3 = tp[3]!;
+    mk(
+      'polygon',
+      {
+        points: `${c1.X},${c1.Y} ${c2.X},${c2.Y} ${t2.X},${t2.Y} ${t1.X},${t1.Y}`,
+        fill: shade(b.c, 0.82),
+      },
+      g,
+    );
+    mk(
+      'polygon',
+      {
+        points: `${c2.X},${c2.Y} ${c3.X},${c3.Y} ${t3.X},${t3.Y} ${t2.X},${t2.Y}`,
+        fill: shade(b.c, 0.62),
+      },
+      g,
+    );
+    mk('polygon', { points: tp.map((p) => `${p.X},${p.Y}`).join(' '), fill: b.c }, g);
+  };
+  const pal = ['#DCD6CB', '#CFD5DA', '#D9CFC4', '#C9CFD6', '#E0DAD0', '#D2D8D2'];
+  const blds: Bld[] = [];
+  const parkY = mtr(0, 43.0605).y;
+  const parkX2 = mtr(141.3563, 0).x;
+  for (let bx = 60; bx < XMAX - 130; bx += 130) {
+    for (let by = 60; by < YMAX - 130; by += 130) {
+      const cx = bx + 65;
+      const cy = by + 65;
+      if (Math.abs(cy - parkY) < 60 && cx < parkX2) continue;
+      if (Math.abs(cx - sosei) < 28) continue;
+      if (rnd() < 0.36) continue;
+      const n = 1 + ((rnd() * 2) | 0);
+      for (let i = 0; i < n; i++) {
+        const ox = (rnd() - 0.5) * 54;
+        const oy = (rnd() - 0.5) * 54;
+        blds.push({
+          x: cx + ox,
+          y: cy + oy,
+          w: 26 + rnd() * 30,
+          d: 26 + rnd() * 30,
+          h: 10 + rnd() * 38,
+          c: pal[(rnd() * pal.length) | 0] ?? '#DCD6CB',
+        });
+      }
+    }
+  }
+  // 랜드마크
+  const fm = mtr(141.3654, 43.0662);
+  blds.push({ x: fm.x - 70, y: fm.y, w: 150, d: 56, h: 26, c: '#B5654F' });
+  blds.push({ x: fm.x + 55, y: fm.y - 8, w: 60, d: 60, h: 34, c: '#BFD9E8' });
+  blds.push({ x: fm.x - 10, y: fm.y - 48, w: 16, d: 16, h: 92, c: '#A6543F' });
+  const st = mtr(141.3508, 43.0687);
+  blds.push({ x: st.x, y: st.y, w: 190, d: 70, h: 30, c: '#C6CFD8' });
+  blds.push({ x: st.x + 70, y: st.y + 8, w: 56, d: 56, h: 150, c: '#B9C4CF' });
+  const cl = mtr(141.3536, 43.0626);
+  blds.push({ x: cl.x, y: cl.y, w: 30, d: 22, h: 16, c: '#F0EDE4' });
+  blds.sort((a, b) => a.x + a.y - (b.x + b.y)).forEach((b) => box(b, gCity));
+  // TV타워
+  {
+    const t = mtr(141.3565, 43.0611);
+    const b = iso(t.x, t.y);
+    box({ x: t.x, y: t.y, w: 26, d: 26, h: 10, c: '#C9CFD6' }, gCity);
+    mk(
+      'line',
+      { x1: b.X, y1: b.Y - 11, x2: b.X, y2: b.Y - 96, stroke: '#C2452F', 'stroke-width': 5 },
+      gCity,
+    );
+    mk(
+      'line',
+      { x1: b.X - 11, y1: b.Y - 9, x2: b.X, y2: b.Y - 96, stroke: '#C2452F', 'stroke-width': 2.4 },
+      gCity,
+    );
+    mk(
+      'line',
+      { x1: b.X + 11, y1: b.Y - 9, x2: b.X, y2: b.Y - 96, stroke: '#C2452F', 'stroke-width': 2.4 },
+      gCity,
+    );
+    mk('rect', { x: b.X - 9, y: b.Y - 72, width: 18, height: 8, rx: 2, fill: '#E8E4DA' }, gCity);
+    mk('circle', { cx: b.X, cy: b.Y - 98, r: 2.6, fill: '#C2452F' }, gCity);
+  }
+
+  // 살아있는 도시: 차량 + 보행자
+  const carCols = ['#2A2A2E', '#C8CCD2', '#4B7A3B', '#2A2A2E', '#B99A2E'];
+  interface Actor {
+    vert: boolean;
+    off: number;
+    t: number;
+    v: number;
+    el: SVGElement;
+  }
+  const cars: Actor[] = [];
+  const peds: Actor[] = [];
+  for (let i = 0; i < 7; i++) {
+    const g = mk('g', {}, gLife);
+    const c = carCols[i % 5] ?? '#2A2A2E';
+    mk('ellipse', { cx: 0, cy: 2.6, rx: 5.6, ry: 2.4, fill: 'rgba(0,0,0,.18)' }, g);
+    mk('rect', { x: -5.5, y: -4, width: 11, height: 6.5, rx: 2.2, fill: c }, g);
+    mk('rect', { x: -2.6, y: -6, width: 5.2, height: 3.4, rx: 1.4, fill: shade(c, 1.45) }, g);
+    cars.push({
+      vert: i % 2 === 0,
+      off: 60 + 130 * (2 + ((rnd() * 10) | 0)),
+      t: rnd(),
+      v: 0.00035 + rnd() * 0.0004,
+      el: g,
+    });
+  }
+  for (let i = 0; i < 10; i++) {
+    const d = mk('circle', { r: 2.1, fill: i % 3 ? '#3E4A55' : '#0B5B9F' }, gLife);
+    peds.push({
+      vert: i % 2 === 0,
+      off: 60 + 130 * (1 + ((rnd() * 11) | 0)),
+      t: rnd(),
+      v: 0.00006 + rnd() * 0.00007,
+      el: d,
+    });
+  }
+  let lifeRaf = 0;
+  const tick = () => {
+    for (const c of cars) {
+      c.t = (c.t + c.v) % 1;
+      const p = iso(c.vert ? c.off : c.t * XMAX, c.vert ? c.t * YMAX : c.off);
+      c.el.setAttribute('transform', `translate(${p.X},${p.Y})`);
+    }
+    for (const pd of peds) {
+      pd.t = (pd.t + pd.v) % 1;
+      const p = iso(pd.vert ? pd.off + 5 : pd.t * XMAX, pd.vert ? pd.t * YMAX : pd.off + 5);
+      pd.el.setAttribute('cx', String(p.X));
+      pd.el.setAttribute('cy', String(p.Y));
+    }
+    lifeRaf = requestAnimationFrame(tick);
+  };
+  lifeRaf = requestAnimationFrame(tick);
+
+  // 여행자 캐릭터
+  const trav = mk('g', {}, gPins);
+  mk('ellipse', { cx: 0, cy: 2.5, rx: 6, ry: 2.6, fill: 'rgba(8,58,102,.3)' }, trav);
+  mk('rect', { x: -3.6, y: -10, width: 7.2, height: 8.4, rx: 2.4, fill: '#0B5B9F' }, trav);
+  mk('circle', { cx: 0, cy: -13.4, r: 4.2, fill: '#F2C89B' }, trav);
+  mk(
+    'path',
+    { d: 'M-4.4,-14.6 A4.5,4.5 0 0 1 4.4,-14.6 L4.4,-13.2 L-4.4,-13.2 Z', fill: '#083A66' },
+    trav,
+  );
+  mk('rect', { x: -2.2, y: -9, width: 4.4, height: 5, rx: 1.4, fill: '#fff', opacity: 0.9 }, trav);
+
+  return { gRoute, gPins, trav, stopLife: () => cancelAnimationFrame(lifeRaf) };
+}
+
+function drawPin(
+  g: SVGElement,
+  pt: { X: number; Y: number },
+  n: number,
+  opt: boolean,
+  on: boolean,
+  onClick: () => void,
+): void {
+  const G = mk('g', { transform: `translate(${pt.X},${pt.Y})`, cursor: 'pointer' }, g);
+  G.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    onClick();
+  });
+  mk('ellipse', { cx: 0, cy: 2, rx: 9, ry: 4, fill: 'rgba(8,58,102,.25)' }, G);
+  const h = on ? 34 : 26;
+  const r = on ? 12 : 9.5;
+  mk(
+    'path',
+    {
+      d: `M0,0 C-${r},-${h * 0.55} -${r},-${h} 0,-${h} C${r},-${h} ${r},-${h * 0.55} 0,0`,
+      fill: opt ? '#fff' : '#0B5B9F',
+      stroke: opt ? '#B0432F' : '#fff',
+      'stroke-width': opt ? 2 : 2.2,
+    },
+    G,
+  );
+  mk(
+    'circle',
+    { cx: 0, cy: -h + (on ? 11 : 8.5), r: on ? 8.6 : 6.8, fill: opt ? '#B0432F' : '#fff' },
+    G,
+  );
+  const t = mk(
+    'text',
+    {
+      x: 0,
+      y: -h + (on ? 14.6 : 11.4),
+      'text-anchor': 'middle',
+      'font-size': on ? 11 : 9,
+      'font-weight': 800,
+      fill: opt ? '#fff' : '#0B5B9F',
+    },
+    G,
+  );
+  t.textContent = String(n);
+  if (on) {
+    const ring = mk(
+      'circle',
+      { cx: 0, cy: 2, r: 14, fill: 'none', stroke: '#0B5B9F', 'stroke-width': 2, opacity: 0.55 },
+      G,
+    );
+    ring.innerHTML =
+      '<animate attributeName="r" values="10;20" dur="1.6s" repeatCount="indefinite"/>' +
+      '<animate attributeName="opacity" values=".6;0" dur="1.6s" repeatCount="indefinite"/>';
+  }
+}
+
+/* ---------- 컴포넌트 ---------- */
+export function JoptPlanner() {
+  const [day, setDay] = useState(0);
+  const [sel, setSel] = useState(2);
+  const [detailOpen, setDetailOpen] = useState(true);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const cityRef = useRef<CityRefs | null>(null);
+  const vbRef = useRef({ x: -800, y: 300, w: 2400, h: 1500 });
+  const dragRef = useRef<{
+    x: number;
+    y: number;
+    vb: { x: number; y: number; w: number; h: number };
+  } | null>(null);
+  const travRaf = useRef(0);
+
+  const D = DAYS[day] ?? DAYS[0]!;
+  const stop = D.stops[sel] ?? D.stops[0]!;
+  const place = PL[stop.p];
+
+  const applyVB = useCallback(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const vb = vbRef.current;
+    const r = window.innerWidth / window.innerHeight;
+    const vw = vb.h * r > vb.w ? vb.h * r : vb.w;
+    const vh = vw / r;
+    svg.setAttribute('viewBox', `${vb.x - (vw - vb.w) / 2} ${vb.y - (vh - vb.h) / 2} ${vw} ${vh}`);
+  }, []);
+
+  const fitDay = useCallback(
+    (di: number) => {
+      const plan = DAYS[di] ?? DAYS[0]!;
+      const pts = plan.stops.map((st) => proj(PL[st.p].lng, PL[st.p].lat));
+      const xs = pts.map((p) => p.X);
+      const ys = pts.map((p) => p.Y);
+      const x0 = Math.min(...xs) - 260;
+      const x1 = Math.max(...xs) + 260;
+      const y0 = Math.min(...ys) - 220;
+      const y1 = Math.max(...ys) + 160;
+      vbRef.current = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+      applyVB();
+    },
+    [applyVB],
+  );
+
+  const zoom = useCallback(
+    (f: number, cx?: number, cy?: number) => {
+      const vb = vbRef.current;
+      const px = cx ?? window.innerWidth / 2;
+      const py = cy ?? window.innerHeight / 2;
+      const k = vb.w / window.innerWidth;
+      const mx = vb.x + px * k;
+      const my = vb.y + py * k * (vb.h / vb.w) * (window.innerWidth / window.innerHeight);
+      vb.w *= f;
+      vb.h *= f;
+      vb.x = mx - (mx - vb.x) * f;
+      vb.y = my - (my - vb.y) * f;
+      applyVB();
+    },
+    [applyVB],
+  );
+
+  // 도시 1회 빌드 + 생명 루프
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const city = buildCity(svg);
+    cityRef.current = city;
+    fitDay(0);
+    const onResize = () => applyVB();
+    window.addEventListener('resize', onResize);
+    return () => {
+      city.stopLife();
+      window.removeEventListener('resize', onResize);
+      svg.innerHTML = '';
+      cityRef.current = null;
+    };
+  }, [applyVB, fitDay]);
+
+  // 휠 줌 + 핀치 (passive:false 필요)
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    let pinch = 0;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      zoom(e.deltaY > 0 ? 1.12 : 0.89, e.clientX, e.clientY);
+    };
+    const onTS = (e: TouchEvent) => {
+      const t0 = e.touches[0];
+      const t1 = e.touches[1];
+      if (t0 && t1) pinch = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
+    };
+    const onTM = (e: TouchEvent) => {
+      const t0 = e.touches[0];
+      const t1 = e.touches[1];
+      if (pinch && t0 && t1) {
+        const d = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
+        zoom(pinch / d, (t0.clientX + t1.clientX) / 2, (t0.clientY + t1.clientY) / 2);
+        pinch = d;
+      }
+    };
+    const onTE = () => {
+      pinch = 0;
+    };
+    wrap.addEventListener('wheel', onWheel, { passive: false });
+    wrap.addEventListener('touchstart', onTS, { passive: true });
+    wrap.addEventListener('touchmove', onTM, { passive: true });
+    wrap.addEventListener('touchend', onTE);
+    return () => {
+      wrap.removeEventListener('wheel', onWheel);
+      wrap.removeEventListener('touchstart', onTS);
+      wrap.removeEventListener('touchmove', onTM);
+      wrap.removeEventListener('touchend', onTE);
+    };
+  }, [zoom]);
+
+  // 경로 + 핀 + 여행자 (day/sel 반응)
+  useEffect(() => {
+    const city = cityRef.current;
+    if (!city) return;
+    const plan = DAYS[day] ?? DAYS[0]!;
+    city.gRoute.innerHTML = '';
+    // trav 를 제외한 핀 제거
+    Array.from(city.gPins.children).forEach((ch) => {
+      if (ch !== city.trav) ch.remove();
+    });
+    plan.stops.forEach((st, i) => {
+      if (i === 0) return;
+      const prev = plan.stops[i - 1];
+      if (!prev || prev.p === st.p) return;
+      const m = MODE_STYLE[st.mode];
+      const attrs: Record<string, string | number> = {
+        d: legPathD(PL[prev.p], PL[st.p]),
+        fill: 'none',
+        stroke: m.stroke,
+        'stroke-width': i === sel ? m.w + 2 : m.w,
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+        opacity: st.opt ? 0.55 : 0.95,
+      };
+      if (m.dash) attrs['stroke-dasharray'] = m.dash;
+      const pth = mk('path', attrs, city.gRoute);
+      if (i === sel) {
+        if (!m.dash) pth.setAttribute('stroke-dasharray', '30 14');
+        pth.innerHTML =
+          '<animate attributeName="stroke-dashoffset" values="60;0" dur="1.2s" repeatCount="indefinite"/>';
+      }
+    });
+    plan.stops.forEach((st, i) => {
+      drawPin(
+        city.gPins,
+        proj(PL[st.p].lng, PL[st.p].lat),
+        i + 1,
+        Boolean(st.opt),
+        i === sel,
+        () => {
+          setSel(i);
+          setDetailOpen(true);
+        },
+      );
+    });
+    // 여행자: 이전 정거장 → 선택 정거장 왕복 애니메이션
+    cancelAnimationFrame(travRaf.current);
+    const cur = plan.stops[sel] ?? plan.stops[0]!;
+    const prv = plan.stops[Math.max(0, sel - 1)] ?? cur;
+    const tmp = mk(
+      'path',
+      { d: legPathD(PL[prv.p], PL[cur.p]), fill: 'none' },
+      city.gRoute,
+    ) as SVGPathElement;
+    const L = tmp.getTotalLength();
+    if (L > 1) {
+      let t0 = 0;
+      const run = (ts: number) => {
+        if (!t0) t0 = ts;
+        const k = ((ts - t0) / 4200) % 1;
+        const pt = tmp.getPointAtLength(k * L);
+        city.trav.setAttribute('transform', `translate(${pt.x},${pt.y})`);
+        travRaf.current = requestAnimationFrame(run);
+      };
+      travRaf.current = requestAnimationFrame(run);
+    } else {
+      const pt = proj(PL[cur.p].lng, PL[cur.p].lat);
+      city.trav.setAttribute('transform', `translate(${pt.X},${pt.Y - 6})`);
+    }
+    return () => cancelAnimationFrame(travRaf.current);
+  }, [day, sel]);
+
+  const onDayClick = (i: number) => {
+    setDay(i);
+    setSel((DAYS[i] ?? DAYS[0]!).initialSel);
+    fitDay(i);
+  };
+  const onSelect = (i: number) => {
+    setSel(i);
+    setDetailOpen(true);
+    const plan = DAYS[day] ?? DAYS[0]!;
+    const st = plan.stops[i];
+    if (st) {
+      const pt = proj(PL[st.p].lng, PL[st.p].lat);
+      vbRef.current.x = pt.X - vbRef.current.w / 2;
+      vbRef.current.y = pt.Y - vbRef.current.h / 2;
+      applyVB();
+    }
+  };
+
+  return (
+    <div className={s.root}>
+      <div
+        ref={wrapRef}
+        className={s.map}
+        onPointerDown={(e) => {
+          dragRef.current = { x: e.clientX, y: e.clientY, vb: { ...vbRef.current } };
+          (e.target as Element).setPointerCapture?.(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          const d = dragRef.current;
+          if (!d) return;
+          const k = vbRef.current.w / window.innerWidth;
+          vbRef.current.x = d.vb.x - (e.clientX - d.x) * k;
+          vbRef.current.y = d.vb.y - (e.clientY - d.y) * k;
+          applyVB();
+        }}
+        onPointerUp={() => {
+          dragRef.current = null;
+        }}
+      >
+        <svg ref={svgRef} xmlns={NS} />
+      </div>
+
+      <header className={s.top}>
+        <div className={s.brand}>
+          <span className={s.clover}>♣</span>
+          <span>
+            JOPT SAPPORO 2026
+            <small>LEGO 원정 플래너 · 9/21 - 9/25</small>
+          </span>
+        </div>
+        <nav className={s.tabs}>
+          {DAYS.map((dp, i) => (
+            <button
+              key={dp.label}
+              type="button"
+              className={i === day ? s.tabOn : s.tab}
+              onClick={() => onDayClick(i)}
+              aria-label={`${dp.label} ${dp.date}`}
+              aria-pressed={i === day}
+            >
+              {dp.label}
+              <small>{dp.date}</small>
+            </button>
+          ))}
+        </nav>
+      </header>
+
+      <aside className={s.panel}>
+        {D.stops.map((st, i) => (
+          <button
+            key={`${st.p}-${i}`}
+            type="button"
+            className={[s.card, i === sel ? s.cardOn : '', st.opt ? s.cardOpt : ''].join(' ')}
+            onClick={() => onSelect(i)}
+            aria-pressed={i === sel}
+          >
+            <span className={s.row1}>
+              <span className={s.no}>{i + 1}</span>
+              <span className={s.nm}>{PL[st.p].nm}</span>
+              {st.badge === 'main' && <span className={s.badgeMain}>MAIN</span>}
+              {st.badge === 'free' && <span className={s.badgeFree}>자유</span>}
+              {st.opt && <span className={s.badgeOpt}>대안</span>}
+              <span className={s.tm}>{st.t}</span>
+            </span>
+            <span className={s.mode}>
+              <span className={`${s.mline} ${s[`ml_${st.mode}`] ?? ''}`} />
+              {st.mv}
+            </span>
+            {st.note && <span className={s.note}>{st.note}</span>}
+          </button>
+        ))}
+      </aside>
+
+      <div className={s.zoom}>
+        <button type="button" onClick={() => zoom(0.8)} aria-label="확대">
+          +
+        </button>
+        <button type="button" onClick={() => zoom(1.25)} aria-label="축소">
+          −
+        </button>
+        <button type="button" onClick={() => fitDay(day)} aria-label="전체 보기">
+          ◎
+        </button>
+      </div>
+
+      {detailOpen && (
+        <section className={s.detail} aria-label="장소 상세">
+          <button
+            type="button"
+            className={s.x}
+            onClick={() => setDetailOpen(false)}
+            aria-label="닫기"
+          >
+            ✕
+          </button>
+          <div className={s.dimg}>
+            <Image
+              src={place.img}
+              alt={place.nm}
+              fill
+              sizes="300px"
+              style={{ objectFit: 'cover', objectPosition: place.pos }}
+            />
+          </div>
+          <div className={s.dbody}>
+            <h3>
+              <span className={s.dno}>{sel + 1}</span>
+              {place.nm}
+            </h3>
+            <dl className={s.meta}>
+              <dt>방문 시간</dt>
+              <dd>{stop.t}</dd>
+              <dt>체류</dt>
+              <dd>{stop.stay}</dd>
+              <dt>이동</dt>
+              <dd>{stop.mv}</dd>
+              <dt>메모</dt>
+              <dd>{stop.note || '-'}</dd>
+            </dl>
+          </div>
+        </section>
+      )}
+
+      <footer className={s.stats}>
+        <span>
+          도보 <b>약 {D.km}km</b>
+        </span>
+        <span className={s.sep}>|</span>
+        <span>
+          이동 <b>약 {D.min}분</b>
+        </span>
+        <span className={s.sep}>|</span>
+        <span>
+          일정 <b>{D.stops.length}곳</b>
+        </span>
+        <a href="/jopt/process">제작 과정 보기 (Phase 0-1) →</a>
+      </footer>
+    </div>
+  );
+}

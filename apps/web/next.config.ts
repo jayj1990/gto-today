@@ -64,6 +64,12 @@ const nextConfig: NextConfig = {
           has: [{ type: 'host' as const, value: 'ananti.gto.today' }],
           destination: '/ananti',
         },
+        {
+          // jopt.gto.today — JOPT 2026 삿포로 원정 LEGO 플래너(/jopt).
+          source: '/',
+          has: [{ type: 'host' as const, value: 'jopt.gto.today' }],
+          destination: '/jopt',
+        },
       ],
       afterFiles: [],
       fallback: [],

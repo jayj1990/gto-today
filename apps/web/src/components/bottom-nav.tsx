@@ -15,7 +15,7 @@ import { cn } from '@gto/ui';
  * so the desktop strip in SiteHeader renders from the same source.
  */
 
-const SUPPRESSED = ['/onboarding', '/signin'];
+const SUPPRESSED = ['/onboarding', '/signin', '/jopt'];
 
 export function BottomNav() {
   const pathname = usePathname() ?? '/';
