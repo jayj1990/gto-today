@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from 'next';
 // jopt.gto.today — JOPT 2026 Sapporo #02 원정 플래너 (Jay 개인 일정 포함, 검색 노출 금지).
 const TITLE = 'JOPT SAPPORO 2026 · 원정 일정표';
 const DESC =
-  '9/22 자유일 동선 — 니조시장 카이센동, 파르코·미츠코시, 오도리 산책, 19:30 샤브샤브, 위스키. 지도·전화·면세 정보까지 한 페이지.';
+  '9/22 자유일 동선 — 숙소 옆 토리톤 스시, 니조시장, 오도리 산책, 파르코·미츠코시, 19:30 샤브샤브, 위스키, 밤 홀덤 캐시게임. 지도·전화·면세 정보까지 한 페이지.';
 const OG = 'https://jopt.gto.today/jopt/og.jpg';
 
 // 링크 미리보기(카톡·아이메시지)가 루트의 gto.today OG 를 물려받아 엉뚱하게 떴다(2026-09-22 Jay).
