@@ -196,6 +196,99 @@ const STOPS: Stop[] = [
   },
 ];
 
+interface InfoCard {
+  title: string;
+  lines: string[];
+  tels?: { label: string; tel: string }[];
+}
+// 참고 정보 — 9/22 확인값. 택시 요금은 2025-12-17 개정(초승 ¥600/1.05km), 면세는 2026-11-01 리펀드 방식 전환.
+const INFO: InfoCard[] = [
+  {
+    title: '면세',
+    lines: [
+      '같은 매장에서 당일 ¥5,000(세전) 이상 사면 면세, 여권 원본 필수.',
+      '10월 31일까지는 매장에서 바로 세금을 빼 주고, 11월 1일부터는 출국할 때 돌려받는 방식으로 바뀝니다.',
+      '파르코 · 미츠코시 · 돈키 · 酒屋 C&C 전부 면세 대응.',
+    ],
+  },
+  {
+    title: '위스키 정가 (2026년 4월 개정, 세금 포함)',
+    lines: [
+      '야마자키 NV ¥8,250 · 야마자키 12년 ¥17,600 · 야마자키 18년 ¥67,100 · 히비키 하모니 ¥8,800.',
+      '정가로 만날 곳은 미츠코시 B1, 빅카메라 6F 빅주판(도큐백화점), 편의점 180ml 미니보틀. 돈키는 1.5-2배.',
+      '오늘 못 구하면 9월 25일 신치토세 국제선 면세점이 마지막 기회.',
+    ],
+  },
+  {
+    title: '택시',
+    lines: [
+      '초승 ¥600(1.05km), 이후 ¥100씩 올라갑니다. 숙소에서 니조시장이나 스스키노까지 ¥1,300 안팎.',
+      '8명이면 두 대로 나눠 타고, GO 앱으로 부를 수 있습니다. 현금과 카드 모두 됩니다.',
+    ],
+  },
+  {
+    title: '지하철',
+    lines: [
+      '난보쿠선 삿포로 → 오도리 → 스스키노가 각각 한 정거장, ¥210.',
+      '샤브샤브 레터스는 도호선 호스이스스키노역 4번 출구 1분, 酒屋 C&C는 스스키노역 5번 출구 2분.',
+    ],
+  },
+  {
+    title: '예약 · 전화',
+    lines: ['8명이라 샤브샤브는 미리 전화해 두는 게 안전합니다.'],
+    tels: [
+      { label: '다이이치 카이센마루', tel: '05054564038' },
+      { label: '샤브샤브 레터스', tel: '0112069779' },
+      { label: '酒屋 C&C', tel: '0115181351' },
+      { label: '맥주 박물관 투어', tel: '0117481876' },
+      { label: '비어가든 예약센터', tel: '0570098346' },
+    ],
+  },
+  {
+    title: '긴급',
+    lines: ['경찰 110 · 구급 119.', '주삿포로 대한민국 총영사관은 北2条西12, 평일 08:45-17:30.'],
+    tels: [
+      { label: '총영사관', tel: '+81112180288' },
+      { label: '영사콜센터 24시간', tel: '+82232100404' },
+    ],
+  },
+  {
+    title: '날씨 · 준비물',
+    lines: [
+      '흐림, 낮 20도, 밤 13도. 밤에 약한 비가 올 수 있어서 편의점 비닐우산(¥500 안팎)이면 충분합니다.',
+      '여권, 엔화 현금(니조시장 일부 가게는 현금), 보조배터리.',
+    ],
+  },
+  {
+    title: '내일 JOPT (9/23 수)',
+    lines: [
+      '11:00 NLH Bullet #47 · 레이트 레지 14:55 · 바우처 ③④.',
+      '12:00 NLH Sapporo #49 ¥50,000 (레지 15:30) · 16:00 Last Party #52 ¥6,000.',
+      '숙소에서 팩토리 홀까지 걸어서 15분, 10:30 출발.',
+    ],
+  },
+];
+
+// 처음 만든 LEGO 렌더 컷 — Jay 가 아까워해서 갤러리로 남긴다(2026-09-22 13:00).
+const LEGO: { src: string; cap: string }[] = [
+  { src: '/jopt/lego/city.jpg', cap: '삿포로 도심 한 장' },
+  { src: '/jopt/lego/taxi.jpg', cap: '13:00 숙소 출발' },
+  { src: '/jopt/lego/kaisendon.jpg', cap: '카이센동' },
+  { src: '/jopt/lego/nijo.jpg', cap: '니조시장' },
+  { src: '/jopt/lego/depart.jpg', cap: '백화점' },
+  { src: '/jopt/lego/walk.jpg', cap: '오도리공원 · TV타워' },
+  { src: '/jopt/lego/shabu.jpg', cap: '샤브샤브' },
+  { src: '/jopt/lego/donki.jpg', cap: '돈키호테' },
+  { src: '/jopt/lego/whisky.jpg', cap: '위스키 샵' },
+  { src: '/jopt/lego/home.jpg', cap: '귀가 택시' },
+  { src: '/jopt/lego/bullet.jpg', cap: '내일 Bullet' },
+];
+
+const fmtTel = (t: string) =>
+  t.startsWith('+')
+    ? t.replace(/^(\+\d{2})(\d{1,2})(\d{3,4})(\d{4})$/, '$1 $2-$3-$4')
+    : t.replace(/^(\d{2,4})(\d{3,4})(\d{4})$/, '$1-$2-$3');
+
 const gmap = (q: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 /** 오늘 동선 전체를 구글맵 경로로(경유지 최대 9곳). */
@@ -514,7 +607,7 @@ export function TodayItinerary() {
                         href={`tel:${st.tel}`}
                         aria-label={`${st.title} 전화`}
                       >
-                        전화 {st.tel.replace(/^(\d{2,3})(\d{3,4})(\d{4})$/, '$1-$2-$3')}
+                        전화 {fmtTel(st.tel)}
                       </a>
                     )}
                   </div>
@@ -523,6 +616,39 @@ export function TodayItinerary() {
             </article>
           ))}
         </div>
+
+        <section className={s.infoSec}>
+          <div className={s.secHead}>
+            <h2>알아두면 좋은 것</h2>
+            <small>면세 · 위스키 정가 · 택시 · 지하철 · 전화 · 긴급</small>
+          </div>
+          <div className={s.infoGrid}>
+            {INFO.map((c) => (
+              <div key={c.title} className={`${s.infoCard} ${s.reveal}`} data-reveal>
+                <h3>{c.title}</h3>
+                <ul>
+                  {c.lines.map((l) => (
+                    <li key={l.slice(0, 20)}>{l}</li>
+                  ))}
+                </ul>
+                {c.tels && (
+                  <div className={s.telRow}>
+                    {c.tels.map((t) => (
+                      <a
+                        key={t.tel}
+                        className={s.telChip}
+                        href={`tel:${t.tel}`}
+                        aria-label={`${t.label} 전화`}
+                      >
+                        {t.label} <b className={s.num}>{fmtTel(t.tel)}</b>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
 
         <section className={s.tomorrow}>
           <div className={s.reveal} data-reveal>
@@ -573,6 +699,21 @@ export function TodayItinerary() {
           </div>
         </section>
 
+        <section className={`${s.gallerySec} ${s.reveal}`} data-reveal>
+          <div className={s.secHead}>
+            <h2>LEGO 삿포로 컷</h2>
+            <small>처음 만든 렌더 11장 · 옆으로 넘기기</small>
+          </div>
+          <div className={s.gallery}>
+            {LEGO.map((g) => (
+              <figure key={g.src} className={s.gItem}>
+                <Image src={g.src} alt={g.cap} fill sizes="(max-width: 720px) 80vw, 520px" />
+                <figcaption>{g.cap}</figcaption>
+              </figure>
+            ))}
+          </div>
+        </section>
+
         <footer className={`${s.foot} ${s.reveal}`} data-reveal>
           <div className={s.footLinks}>
             <Link href="/jopt/map">LEGO 동선 지도</Link>
@@ -588,7 +729,8 @@ export function TodayItinerary() {
           2026. 9. 22 12:45 JST 기준. 영업시간·평점은 Google Places 와 각 매장 공식 사이트에서
           확인한 값이고 재고와 대기는 현장에서 달라집니다. 사진은 Google Maps 이용자 사진이며
           작성자를 카드에 적었습니다(팩토리 홀 Kiyomi Maeda, 커버 楊傑銘, 스플래시 マーキー). 지도
-          ©2026 Google.
+          ©2026 Google. LEGO 컷은 Higgsfield 마스터 렌더를 참조해 gpt-image-1 로 만든 연출
+          이미지입니다.
         </footer>
       </main>
     </div>

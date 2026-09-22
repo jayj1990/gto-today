@@ -385,9 +385,13 @@
 }
 .secHead {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 10px;
+  gap: 4px 10px;
   margin: 8px 0 18px;
+}
+.secHead h2 {
+  white-space: nowrap;
 }
 .secHead h2 {
   margin: 0;
@@ -685,6 +689,108 @@
 }
 .stop.move .title::before {
   display: none;
+}
+
+/* ---------- 참고 정보 ---------- */
+.infoSec {
+  margin-top: 36px;
+}
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+.infoCard {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 14px 16px 14px;
+  box-shadow: var(--shadow);
+}
+.infoCard h3 {
+  margin: 0 0 6px;
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--jnavy);
+  padding-left: 9px;
+  border-left: 3px solid var(--jblue);
+  line-height: 1.3;
+}
+.infoCard ul {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink);
+}
+.infoCard li + li {
+  margin-top: 3px;
+}
+.telRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.telChip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink-2);
+  border-radius: var(--r-pill);
+  padding: 6px 11px;
+  font-size: 12px;
+  text-decoration: none;
+}
+.telChip b {
+  color: var(--jblue);
+  font-weight: 800;
+}
+
+/* ---------- LEGO 갤러리 ---------- */
+.gallerySec {
+  margin-top: 36px;
+}
+.gallery {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  margin: 0 -18px;
+  padding: 2px 18px 10px;
+  scrollbar-width: none;
+}
+.gallery::-webkit-scrollbar {
+  display: none;
+}
+.gItem {
+  position: relative;
+  flex: 0 0 78%;
+  max-width: 520px;
+  aspect-ratio: 3 / 2;
+  margin: 0;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  scroll-snap-align: start;
+  background: var(--jnavy);
+  box-shadow: var(--shadow);
+}
+.gItem img {
+  object-fit: cover;
+}
+.gItem figcaption {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  background: rgba(8, 58, 102, 0.75);
+  color: #fff;
+  border-radius: var(--r-pill);
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  backdrop-filter: blur(4px);
 }
 
 /* ---------- 내일 · 안내 ---------- */
