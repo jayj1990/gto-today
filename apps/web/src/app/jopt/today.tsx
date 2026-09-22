@@ -11,13 +11,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import s from './today.module.css';
 
-type Tag = 'move' | 'food' | 'shop' | 'walk' | 'whisky';
+type Tag = 'move' | 'food' | 'shop' | 'walk' | 'whisky' | 'poker';
 const TAG_LABEL: Record<Tag, string> = {
   move: '이동',
   food: '식사',
   shop: '쇼핑',
   walk: '산책',
   whisky: '위스키',
+  poker: '홀덤',
 };
 const TAG_CLASS: Record<Tag, string> = {
   move: s.tagWalk ?? '',
@@ -25,6 +26,7 @@ const TAG_CLASS: Record<Tag, string> = {
   shop: s.tagShop ?? '',
   walk: s.tagWalk ?? '',
   whisky: s.tagWhisky ?? '',
+  poker: s.tagPoker ?? '',
 };
 
 interface Stop {
@@ -190,9 +192,23 @@ const STOPS: Stop[] = [
     tag: 'move',
     title: '택시로 숙소',
     meta: '택시 10분 · ¥1,300 안팎',
-    desc: ['10분, 1,300엔 안팎입니다. 내일 11시 불렛이니 일찍 자는 게 이깁니다.'],
+    desc: ['10분, 1,300엔 안팎입니다. 도착하면 바로 캐시게임 세팅.'],
     map: HOME_Q,
     mapLabel: '숙소 지도',
+  },
+  {
+    key: 'cash',
+    time: '22:45',
+    tag: 'poker',
+    title: '숙소 홀덤 캐시게임',
+    img: '/jopt/lego/bullet.jpg',
+    alt: 'LEGO 포커 홀 연출 컷',
+    credit: 'LEGO 연출 컷',
+    meta: '블라인드 1,000 / 1,000 · 바이인 10만 원 (100BB)',
+    desc: [
+      '귀가하면 바로 홀덤 캐시게임입니다. 블라인드 1,000/1,000에 바이인은 10만 원, 100BB 스택으로 시작합니다.',
+      '내일 11시 불렛이 있으니 마감 시간은 미리 정해 두는 게 좋습니다.',
+    ],
   },
 ];
 
@@ -317,7 +333,6 @@ function nowStopIndex(): number | null {
     const [h, m] = st.time.split(':').map(Number);
     if ((h ?? 0) * 60 + (m ?? 0) <= hm) idx = i;
   });
-  if (idx !== null && hm >= 23 * 60) return null;
   return idx;
 }
 
@@ -479,7 +494,7 @@ export function TodayItinerary() {
             오후 1시에 숙소에서 택시로 나가서 니조시장 카이센동으로 점심을 시작하고 파르코와
             미츠코시를 돈 뒤 다누키코지와 오도리공원을 걷다가 저녁 7시 30분에 스스키노에서
             샤브샤브를 먹습니다. 돈키호테에서 시세를 본 다음 酒屋 C&amp;C에서 위스키를 사고 택시로
-            돌아옵니다.
+            돌아와 숙소에서 홀덤 캐시게임을 엽니다.
           </p>
           <div className={s.chips}>
             <span className={s.chip}>
@@ -490,6 +505,9 @@ export function TodayItinerary() {
             </span>
             <span className={s.chip}>
               <em>저녁</em>19:30 샤브샤브 예약
+            </span>
+            <span className={s.chip}>
+              <em>밤</em>홀덤 캐시 1,000/1,000
             </span>
             <span className={s.chip}>
               <em>내일</em>11:00 Bullet
@@ -546,7 +564,7 @@ export function TodayItinerary() {
 
         <div className={s.secHead}>
           <h2>오늘 동선</h2>
-          <small>10곳 · 도보 약 3km · 택시 2회</small>
+          <small>11곳 · 도보 약 3km · 택시 2회 · 밤 캐시게임</small>
         </div>
 
         <div ref={tlRef} className={s.tl}>

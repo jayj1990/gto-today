@@ -631,6 +631,9 @@
 .tagWalk {
   color: var(--jblue);
 }
+.tagPoker {
+  color: var(--red);
+}
 
 /* ---------- 동선 지도 ---------- */
 .mapSec {
