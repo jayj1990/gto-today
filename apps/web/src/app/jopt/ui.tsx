@@ -261,18 +261,9 @@ const DAYS: DayPlan[] = [
         badge: 'shop',
       },
       {
-        p: 'donki',
-        t: '16:50',
-        stay: '30분',
-        mode: 'walk',
-        mv: '도보 5분',
-        note: '시세 확인용 (정가의 1.5-2배) · 24시간',
-        badge: 'whisky',
-      },
-      {
         p: 'tv',
-        t: '17:20',
-        stay: '85분',
+        t: '16:50',
+        stay: '115분',
         mode: 'walk',
         mv: '다누키코지 → 오도리공원 산책',
         note: '일몰 17:30 안팎 · TV타워 점등',
@@ -288,17 +279,26 @@ const DAYS: DayPlan[] = [
         badge: 'food',
       },
       {
-        p: 'cc',
+        p: 'donki',
         t: '21:00',
         stay: '30분',
         mode: 'walk',
-        mv: '도보 4분 · 0.3km',
+        mv: '샤브샤브에서 도보 5분',
+        note: 'C&C 가기 전 시세 확인용 (정가의 1.5-2배) · 24시간',
+        badge: 'whisky',
+      },
+      {
+        p: 'cc',
+        t: '21:35',
+        stay: '25분',
+        mode: 'walk',
+        mv: '도보 6분 · 0.4km',
         note: '면세 · 월-토 15:00-23:00 · 011-518-1351',
         badge: 'whisky',
       },
       {
         p: 'house',
-        t: '21:40',
+        t: '22:05',
         stay: '-',
         mode: 'taxi',
         mv: '택시 10분 · ¥1,300 안팎',
@@ -907,9 +907,14 @@ export function JoptPlanner() {
     if (!svg) return;
     const vb = vbRef.current;
     const r = window.innerWidth / window.innerHeight;
+    // 요청 사각형을 화면 비율에 맞춰 넓힌 뒤, 그 결과를 vb 에 되써서 이후 줌·드래그가 같은 기준을 쓴다.
     const vw = vb.h * r > vb.w ? vb.h * r : vb.w;
     const vh = vw / r;
-    svg.setAttribute('viewBox', `${vb.x - (vw - vb.w) / 2} ${vb.y - (vh - vb.h) / 2} ${vw} ${vh}`);
+    vb.x -= (vw - vb.w) / 2;
+    vb.y -= (vh - vb.h) / 2;
+    vb.w = vw;
+    vb.h = vh;
+    svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
     const k = pinScaleFor(vw);
     pinScaleRef.current = k;
     const city = cityRef.current;
@@ -941,13 +946,15 @@ export function JoptPlanner() {
       const vb = vbRef.current;
       const px = cx ?? window.innerWidth / 2;
       const py = cy ?? window.innerHeight / 2;
+      // applyVB 가 vb 를 화면 비율로 정규화해 두므로 x·y 배율이 같다.
       const k = vb.w / window.innerWidth;
       const mx = vb.x + px * k;
-      const my = vb.y + py * k * (vb.h / vb.w) * (window.innerWidth / window.innerHeight);
-      vb.w *= f;
-      vb.h *= f;
-      vb.x = mx - (mx - vb.x) * f;
-      vb.y = my - (my - vb.y) * f;
+      const my = vb.y + py * k;
+      const nf = Math.max(0.12, Math.min(6, (vb.w * f) / 2400)) / (vb.w / 2400); // 줌 범위 제한
+      vb.w *= nf;
+      vb.h *= nf;
+      vb.x = mx - (mx - vb.x) * nf;
+      vb.y = my - (my - vb.y) * nf;
       applyVB();
     },
     [applyVB],

@@ -2,8 +2,9 @@
 
 // jopt.gto.today — 9/22(화) 자유일 일정표 원페이저.
 //   스플래시(마스터 렌더) → 커버(도심 렌더 + 패럴랙스) → 타임라인(정거장마다 LEGO 장면 렌더)
-//   → 내일 Bullet 카드 → 목·금 안내. 장면 이미지는 Jay 의 Higgsfield 마스터 렌더를 스타일 참조로
-//   gpt-image-1 에서 생성(2026-09-22, public/jopt/today/*.jpg).
+//   → 내일 Bullet 카드 → 목·금 안내. 사진은 Google Places API 의 이용자 사진(작성자 표기 필수)이고
+//   동선 지도는 Google Static Maps 로 뽑아 public/jopt/today/ 에 둔다. 처음엔 LEGO 렌더 장면을 썼는데
+//   Jay 가 실제 사진을 원해서 바꿨다(2026-09-22 12:30). 돈키는 샤브샤브 뒤·C&C 앞(12:45 Jay).
 //   "지금" 표시는 JST 기준 현재 시각이 9/22 일 때만 켠다.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
@@ -32,8 +33,11 @@ interface Stop {
   until?: string;
   tag: Tag;
   title: string;
-  img: string;
-  alt: string;
+  /** 없으면 사진 없는 짧은 카드(택시 이동) */
+  img?: string;
+  alt?: string;
+  /** Google Maps 이용자 사진 작성자 — Places API 약관상 표기 */
+  credit?: string;
   meta?: string;
   desc: string[];
   map?: string;
@@ -49,8 +53,6 @@ const STOPS: Stop[] = [
     time: '13:00',
     tag: 'move',
     title: '숙소 출발 (택시)',
-    img: '/jopt/today/taxi.jpg',
-    alt: '숙소 앞에 선 택시와 일행',
     meta: '택시 10분 · ¥1,300 안팎 · 목적지 二条市場',
     desc: [
       '여권을 꼭 챙기세요. 면세 카운터도, 위스키 정가 판매점의 1인 1병 확인도 전부 여권으로 합니다. 낮 20도에 흐림이고 밤에 약한 비가 올 수 있어서 얇은 겉옷 하나면 됩니다.',
@@ -65,8 +67,9 @@ const STOPS: Stop[] = [
     tag: 'food',
     title: '다이이치 카이센마루 · 카이센동',
     img: '/jopt/today/kaisendon.jpg',
-    alt: '시장 카운터에서 카이센동을 내주는 장면',
-    meta: '니조시장 안 (南3条東1-8-2) · 카이센동 31종 · 1인 ¥4,999 이하 · 050-5456-4038',
+    alt: '다이이치 카이센마루의 카이센동',
+    credit: '김민재',
+    meta: '니조시장 안 (南3条東1-8-2) · 화 07:00-15:00 · 카이센동 31종 · 1인 ¥4,999 이하 · 구글 4.6 (698) · 050-5456-4038',
     desc: [
       '니조시장 안에 있는 카이센동 전문점입니다. 카이센동 31종이 있고 1인 예산은 5,000엔 안쪽입니다. 8명이 한 번에 앉기 어려우면 두 팀으로 나눠 들어가는 게 빠릅니다. 게, 성게, 연어알은 가격표가 붙은 것으로 고르세요.',
     ],
@@ -80,7 +83,8 @@ const STOPS: Stop[] = [
     tag: 'walk',
     title: '니조시장 구경',
     img: '/jopt/today/nijo.jpg',
-    alt: '붉은 차양이 늘어선 니조시장 골목',
+    alt: '니조시장 골목',
+    credit: 'Franek Kosmider',
     meta: '07:00-18:00 · 가게 대부분 17시 전후 마감',
     desc: [
       '점심 먹은 자리에서 바로 이어집니다. 시장은 7시부터 18시까지 열지만 가게 대부분이 17시 전후로 문을 닫습니다. 게와 멜론은 공항 면세보다 여기가 싸고 무거운 건 택배 접수가 됩니다.',
@@ -93,8 +97,9 @@ const STOPS: Stop[] = [
     until: '15:50',
     tag: 'shop',
     title: '삿포로 파르코',
-    img: '/jopt/today/depart.jpg',
-    alt: '백화점 정문과 쇼핑백을 든 사람들',
+    img: '/jopt/today/parco.jpg',
+    alt: '삿포로 파르코 외관',
+    credit: 'G C',
     meta: '南1条西3 · 10:00-20:00 · 니조시장에서 도보 10분 · 면세',
     desc: [
       '니조시장에서 걸어서 10분입니다. 꼼데가르송, 비비안 웨스트우드, 유나이티드 애로우즈, 디젤, 포터가 있고 면세가 됩니다. 20시까지 엽니다.',
@@ -107,8 +112,9 @@ const STOPS: Stop[] = [
     until: '16:50',
     tag: 'shop',
     title: '삿포로 미츠코시',
-    img: '/jopt/today/depart.jpg',
-    alt: '백화점 정문과 쇼핑백을 든 사람들',
+    img: '/jopt/today/mitsukoshi.jpg',
+    alt: '삿포로 미츠코시 지하 식품관',
+    credit: 'narick boxx',
     meta: '파르코 길 건너 · 10:00-19:00 (B2-1F 19:30) · 루이비통 삿포로 1호점',
     desc: [
       '파르코 바로 길 건너입니다. 삿포로 루이비통 1호점이 여기 있고 1층에 티파니와 불가리 같은 주얼리 부티크가 모여 있습니다. 지하 1층 주류 코너에서 야마자키와 히비키 재고를 물어보세요. 정가면 보통 1인 1병입니다. 19시에 닫으니 이 시간이 마지막 여유입니다.',
@@ -116,30 +122,17 @@ const STOPS: Stop[] = [
     map: '札幌三越',
   },
   {
-    key: 'donki',
-    time: '16:50',
-    until: '17:20',
-    tag: 'whisky',
-    title: '돈키호테 다누키코지',
-    img: '/jopt/today/donki.jpg',
-    alt: '펭귄 간판이 걸린 돈키호테 입구',
-    meta: '南3条西4 · 24시간 · 미츠코시에서 도보 5분',
-    desc: [
-      '미츠코시에서 걸어서 5분, 24시간 영업입니다. 야마자키와 히비키가 거의 항상 있지만 정가의 1.5배에서 2배라 사지는 말고 시세만 보세요. 오가는 편의점에서 야마자키나 하쿠슈 180ml 미니보틀이 보이면 그건 정가라 바로 집으면 됩니다.',
-    ],
-    map: 'ドン・キホーテ 狸小路店',
-  },
-  {
     key: 'walk',
-    time: '17:20',
+    time: '16:50',
     until: '18:45',
     tag: 'walk',
     title: '산책 · 다누키코지에서 오도리공원',
     img: '/jopt/today/walk.jpg',
-    alt: '해 질 녘 오도리공원과 불 켜진 TV타워',
+    alt: '가을 오도리공원',
+    credit: '楊傑銘',
     meta: '일몰 17:30 안팎 · TV타워 전망대 09:00-22:00',
     desc: [
-      '다누키코지 상점가를 따라 서쪽으로 걷다가 오도리공원으로 올라갑니다. 해가 17시 30분쯤 지니까 TV타워 불이 켜지는 걸 보기 좋은 시간입니다. 전망대는 22시까지 열고 올라가지 않아도 공원 끝에서 보는 야경이 충분합니다.',
+      '미츠코시에서 다누키코지까지 걸어서 5분입니다. 상점가를 따라 서쪽으로 걷다가 오도리공원으로 올라갑니다. 해가 17시 30분쯤 지니까 TV타워 불이 켜지는 걸 보기 좋은 시간입니다. 전망대는 22시까지 열고 올라가지 않아도 공원 끝에서 보는 야경이 충분합니다.',
     ],
     map: 'さっぽろテレビ塔',
   },
@@ -150,8 +143,9 @@ const STOPS: Stop[] = [
     tag: 'food',
     title: '샤브샤브 레터스 스스키노점',
     img: '/jopt/today/shabu.jpg',
-    alt: '각자 냄비를 앞에 둔 샤브샤브 저녁',
-    meta: '南5条西2-8-10 氷雪の門ビル 1F · 17:00-24:00 (LO 23:30) · 평균 ¥3,500 · 011-206-9779',
+    alt: '샤브샤브 레터스의 고기와 냄비',
+    credit: '김만자',
+    meta: '南5条西2-8-10 氷雪の門ビル 1F · 17:00-24:00 (LO 23:30) · 평균 ¥3,500 · 구글 4.7 (1,083) · 011-206-9779',
     desc: [
       '남5조서2 효세츠노몬 빌딩 1층입니다. 1인 1냄비 방식이라 육수와 고기를 각자 고르고 평균 예산은 3,500엔입니다. 17시부터 24시까지 열고 마지막 주문은 23시 30분입니다. 8명이니 전화로 예약해 두세요.',
     ],
@@ -159,16 +153,32 @@ const STOPS: Stop[] = [
     tel: '0112069779',
   },
   {
-    key: 'whisky',
+    key: 'donki',
     time: '21:00',
-    until: '21:40',
+    until: '21:30',
+    tag: 'whisky',
+    title: 'MEGA 돈키호테 다누키코지 본점',
+    img: '/jopt/today/donki.jpg',
+    alt: 'MEGA 돈키호테 삿포로 다누키코지 본점 외관',
+    credit: 'MEGAドン・キホーテ 札幌狸小路本店',
+    meta: '南3条西4 · 24시간 · 샤브샤브에서 도보 5분 · 구글 3.8 (8,163)',
+    desc: [
+      '샤브샤브에서 걸어서 5분, 24시간 영업입니다. C&C에 가기 전에 들러 야마자키와 히비키 시세만 보세요. 거의 항상 있지만 정가의 1.5배에서 2배라 여기서 사면 손해입니다. 오가는 편의점에서 야마자키나 하쿠슈 180ml 미니보틀이 보이면 그건 정가라 바로 집으면 됩니다.',
+    ],
+    map: 'ドン・キホーテ 狸小路店',
+  },
+  {
+    key: 'whisky',
+    time: '21:35',
+    until: '22:00',
     tag: 'whisky',
     title: '사카야 C&C · 위스키',
     img: '/jopt/today/whisky.jpg',
-    alt: '밤거리 주류점에서 위스키를 건네받는 장면',
-    meta: '南5条西4-9-3 ライラックビル 1F · 월-토 15:00-23:00 · 일·공휴일 휴무 · 면세 · 011-518-1351',
+    alt: '酒屋 C&C 입구',
+    credit: '酒屋Ｃ＆Ｃ',
+    meta: '南5条西4-9-3 ライラックビル 1F · 월-토 15:00-23:00 · 일·공휴일 휴무 · 면세 · 구글 4.1 (63) · 011-518-1351',
     desc: [
-      '샤브샤브에서 걸어서 4분, 남5조서4 라일락 빌딩 1층입니다. 리커즈 카메하타가 직영하는 주류점이고 면세가 됩니다. 월요일부터 토요일까지 15시에서 23시에 열고 일요일과 공휴일은 쉽니다.',
+      '돈키에서 걸어서 6분, 남5조서4 라일락 빌딩 1층입니다. 리커즈 카메하타가 직영하는 주류점이고 면세가 됩니다. 월요일부터 토요일까지 15시에서 23시에 열고 일요일과 공휴일은 쉽니다.',
       '정가는 야마자키 NV 8,250엔, 야마자키 12년 17,600엔, 히비키 하모니 8,800엔입니다. 이보다 비싸면 프리미엄이 붙은 것이니 그 차이를 보고 결정하세요.',
     ],
     map: '酒屋C&C ライラックビル 南5条西4丁目 札幌',
@@ -176,11 +186,9 @@ const STOPS: Stop[] = [
   },
   {
     key: 'home',
-    time: '21:40',
+    time: '22:05',
     tag: 'move',
     title: '택시로 숙소',
-    img: '/jopt/today/home.jpg',
-    alt: '비 오는 밤 네온 거리를 달리는 택시',
     meta: '택시 10분 · ¥1,300 안팎',
     desc: ['10분, 1,300엔 안팎입니다. 내일 11시 불렛이니 일찍 자는 게 이깁니다.'],
     map: HOME_Q,
@@ -190,6 +198,21 @@ const STOPS: Stop[] = [
 
 const gmap = (q: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+/** 오늘 동선 전체를 구글맵 경로로(경유지 최대 9곳). */
+const ROUTE_URL =
+  'https://www.google.com/maps/dir/?api=1' +
+  `&origin=${encodeURIComponent('二条市場 札幌')}` +
+  `&destination=${encodeURIComponent('酒屋C&C ライラックビル 南5条西4丁目 札幌')}` +
+  `&waypoints=${encodeURIComponent(
+    [
+      '札幌PARCO',
+      '札幌三越',
+      'さっぽろテレビ塔',
+      'しゃぶしゃぶ れたす 札幌すすきの店',
+      'ドン・キホーテ 狸小路店',
+    ].join('|'),
+  )}` +
+  '&travelmode=walking';
 
 /** JST 기준 현재 시각. 9/22 가 아니면 null. */
 function nowStopIndex(): number | null {
@@ -337,7 +360,7 @@ export function TodayItinerary() {
         <div ref={coverImgRef} className={s.coverImgWrap}>
           <Image
             src="/jopt/today/cover.jpg"
-            alt="LEGO 미니어처로 만든 삿포로 도심"
+            alt="가을 오도리공원과 삿포로 도심"
             fill
             priority
             sizes="100vw"
@@ -361,8 +384,8 @@ export function TodayItinerary() {
           </div>
           <p className={s.coverLead}>
             오후 1시에 숙소에서 택시로 나가서 니조시장 카이센동으로 점심을 시작하고 파르코와
-            미츠코시를 돈 뒤 다누키코지를 걷다가 저녁 7시에 스스키노에서 샤브샤브를 먹습니다.
-            마지막으로 위스키를 사서 택시로 돌아옵니다.
+            미츠코시를 돈 뒤 다누키코지와 오도리공원을 걷다가 저녁 7시에 스스키노에서 샤브샤브를
+            먹습니다. 돈키호테에서 시세를 본 다음 酒屋 C&amp;C에서 위스키를 사고 택시로 돌아옵니다.
           </p>
           <div className={s.chips}>
             <span className={s.chip}>
@@ -400,6 +423,33 @@ export function TodayItinerary() {
       </div>
 
       <main className={s.wrap}>
+        <section className={`${s.mapSec} ${s.reveal}`} data-reveal>
+          <div className={s.secHead}>
+            <h2>동선 지도</h2>
+            <small>
+              H 숙소 → 1 니조시장 → 2 파르코 → 3 미츠코시 → 4 TV타워 → 5 샤브샤브 → 6 돈키 → 7
+              C&amp;C
+            </small>
+          </div>
+          <a
+            className={s.mapCard}
+            href={ROUTE_URL}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="오늘 동선을 구글맵 경로로 열기"
+          >
+            <Image
+              src="/jopt/today/route-map.jpg"
+              alt="오늘 동선을 표시한 구글 지도"
+              width={1280}
+              height={840}
+              sizes="(max-width: 720px) 100vw, 680px"
+              className={s.mapImg}
+            />
+            <span className={s.mapCta}>구글맵에서 경로 열기</span>
+          </a>
+        </section>
+
         <div className={s.secHead}>
           <h2>오늘 동선</h2>
           <small>10곳 · 도보 약 3km · 택시 2회</small>
@@ -413,21 +463,30 @@ export function TodayItinerary() {
             <article
               key={st.key}
               data-reveal
-              className={`${s.stop} ${s.reveal} ${i === nowIdx ? s.now : ''}`}
+              className={`${s.stop} ${s.reveal} ${i === nowIdx ? s.now : ''} ${st.img ? '' : s.move}`}
               aria-current={i === nowIdx ? 'step' : undefined}
             >
               <span className={s.dot} aria-hidden="true" />
               <div className={s.card}>
-                <div className={s.figure}>
-                  <Image src={st.img} alt={st.alt} fill sizes="(max-width: 720px) 100vw, 680px" />
-                  <span className={`${s.figTime} ${s.num}`}>
-                    {st.time}
-                    {st.until && <small>- {st.until}</small>}
-                  </span>
-                  <span className={`${s.figTag} ${TAG_CLASS[st.tag]}`}>{TAG_LABEL[st.tag]}</span>
-                </div>
+                {st.img && (
+                  <div className={s.figure}>
+                    <Image
+                      src={st.img}
+                      alt={st.alt ?? st.title}
+                      fill
+                      sizes="(max-width: 720px) 100vw, 680px"
+                    />
+                    <span className={`${s.figTime} ${s.num}`}>
+                      {st.time}
+                      {st.until && <small>- {st.until}</small>}
+                    </span>
+                    <span className={`${s.figTag} ${TAG_CLASS[st.tag]}`}>{TAG_LABEL[st.tag]}</span>
+                    {st.credit && <span className={s.credit}>사진 Google Maps · {st.credit}</span>}
+                  </div>
+                )}
                 <div className={s.body}>
                   <h3 className={s.title}>
+                    {!st.img && <span className={`${s.moveTime} ${s.num}`}>{st.time}</span>}
                     {st.title}
                     {i === nowIdx && <span className={s.nowBadge}>지금</span>}
                   </h3>
@@ -474,7 +533,7 @@ export function TodayItinerary() {
             <div className={s.tmCard}>
               <Image
                 src="/jopt/today/bullet.jpg"
-                alt="벽돌 건물 안 포커 토너먼트 홀"
+                alt="담쟁이로 덮인 삿포로 팩토리 벽돌 건물"
                 fill
                 sizes="(max-width: 720px) 100vw, 680px"
               />
@@ -526,9 +585,10 @@ export function TodayItinerary() {
               JOPT Players Guide
             </a>
           </div>
-          2026. 9. 22 12:00 JST 기준. 영업시간·가격은 각 매장 공식 사이트와 예약 사이트에서 확인한
-          값이고 재고와 대기는 현장에서 달라집니다. 장면 이미지는 LEGO 스타일로 생성한 연출
-          컷입니다.
+          2026. 9. 22 12:45 JST 기준. 영업시간·평점은 Google Places 와 각 매장 공식 사이트에서
+          확인한 값이고 재고와 대기는 현장에서 달라집니다. 사진은 Google Maps 이용자 사진이며
+          작성자를 카드에 적었습니다(팩토리 홀 Kiyomi Maeda, 커버 楊傑銘, 스플래시 マーキー). 지도
+          ©2026 Google.
         </footer>
       </main>
     </div>
