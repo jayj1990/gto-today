@@ -263,7 +263,7 @@ const DAYS: DayPlan[] = [
       {
         p: 'tv',
         t: '16:50',
-        stay: '115분',
+        stay: '145분',
         mode: 'walk',
         mv: '다누키코지 → 오도리공원 산책',
         note: '일몰 17:30 안팎 · TV타워 점등',
@@ -271,16 +271,16 @@ const DAYS: DayPlan[] = [
       },
       {
         p: 'letus',
-        t: '19:00',
+        t: '19:30',
         stay: '120분',
         mode: 'walk',
         mv: '도보 12분 · 0.9km',
-        note: '1인 1냄비 · 평균 ¥3,500 · 17:00-24:00 · 예약 011-206-9779',
+        note: '19:30 8명 예약 완료 · 1인 1냄비 · 평균 ¥3,500 · 011-206-9779',
         badge: 'food',
       },
       {
         p: 'donki',
-        t: '21:00',
+        t: '21:30',
         stay: '30분',
         mode: 'walk',
         mv: '샤브샤브에서 도보 5분',
@@ -289,7 +289,7 @@ const DAYS: DayPlan[] = [
       },
       {
         p: 'cc',
-        t: '21:35',
+        t: '22:05',
         stay: '25분',
         mode: 'walk',
         mv: '도보 6분 · 0.4km',
@@ -298,7 +298,7 @@ const DAYS: DayPlan[] = [
       },
       {
         p: 'house',
-        t: '22:05',
+        t: '22:35',
         stay: '-',
         mode: 'taxi',
         mv: '택시 10분 · ¥1,300 안팎',

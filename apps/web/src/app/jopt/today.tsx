@@ -124,7 +124,7 @@ const STOPS: Stop[] = [
   {
     key: 'walk',
     time: '16:50',
-    until: '18:45',
+    until: '19:15',
     tag: 'walk',
     title: '산책 · 다누키코지에서 오도리공원',
     img: '/jopt/today/walk.jpg',
@@ -138,8 +138,8 @@ const STOPS: Stop[] = [
   },
   {
     key: 'shabu',
-    time: '19:00',
-    until: '21:00',
+    time: '19:30',
+    until: '21:30',
     tag: 'food',
     title: '샤브샤브 레터스 스스키노점',
     img: '/jopt/today/shabu.jpg',
@@ -147,15 +147,15 @@ const STOPS: Stop[] = [
     credit: '김만자',
     meta: '南5条西2-8-10 氷雪の門ビル 1F · 17:00-24:00 (LO 23:30) · 평균 ¥3,500 · 구글 4.7 (1,083) · 011-206-9779',
     desc: [
-      '남5조서2 효세츠노몬 빌딩 1층입니다. 1인 1냄비 방식이라 육수와 고기를 각자 고르고 평균 예산은 3,500엔입니다. 17시부터 24시까지 열고 마지막 주문은 23시 30분입니다. 8명이니 전화로 예약해 두세요.',
+      '남5조서2 효세츠노몬 빌딩 1층입니다. 1인 1냄비 방식이라 육수와 고기를 각자 고르고 평균 예산은 3,500엔입니다. 17시부터 24시까지 열고 마지막 주문은 23시 30분입니다. 19시 30분에 8명으로 예약해 두었습니다.',
     ],
     map: 'しゃぶしゃぶ れたす 札幌すすきの店',
     tel: '0112069779',
   },
   {
     key: 'donki',
-    time: '21:00',
-    until: '21:30',
+    time: '21:30',
+    until: '22:00',
     tag: 'whisky',
     title: 'MEGA 돈키호테 다누키코지 본점',
     img: '/jopt/today/donki.jpg',
@@ -169,8 +169,8 @@ const STOPS: Stop[] = [
   },
   {
     key: 'whisky',
-    time: '21:35',
-    until: '22:00',
+    time: '22:05',
+    until: '22:30',
     tag: 'whisky',
     title: '사카야 C&C · 위스키',
     img: '/jopt/today/whisky.jpg',
@@ -186,7 +186,7 @@ const STOPS: Stop[] = [
   },
   {
     key: 'home',
-    time: '22:05',
+    time: '22:35',
     tag: 'move',
     title: '택시로 숙소',
     meta: '택시 10분 · ¥1,300 안팎',
@@ -235,7 +235,7 @@ const INFO: InfoCard[] = [
   },
   {
     title: '예약 · 전화',
-    lines: ['8명이라 샤브샤브는 미리 전화해 두는 게 안전합니다.'],
+    lines: ['샤브샤브 레터스는 19:30에 8명으로 예약해 두었습니다.'],
     tels: [
       { label: '다이이치 카이센마루', tel: '05054564038' },
       { label: '샤브샤브 레터스', tel: '0112069779' },
@@ -317,7 +317,7 @@ function nowStopIndex(): number | null {
     const [h, m] = st.time.split(':').map(Number);
     if ((h ?? 0) * 60 + (m ?? 0) <= hm) idx = i;
   });
-  if (idx !== null && hm >= 22 * 60 + 30) return null;
+  if (idx !== null && hm >= 23 * 60) return null;
   return idx;
 }
 
@@ -477,8 +477,9 @@ export function TodayItinerary() {
           </div>
           <p className={s.coverLead}>
             오후 1시에 숙소에서 택시로 나가서 니조시장 카이센동으로 점심을 시작하고 파르코와
-            미츠코시를 돈 뒤 다누키코지와 오도리공원을 걷다가 저녁 7시에 스스키노에서 샤브샤브를
-            먹습니다. 돈키호테에서 시세를 본 다음 酒屋 C&amp;C에서 위스키를 사고 택시로 돌아옵니다.
+            미츠코시를 돈 뒤 다누키코지와 오도리공원을 걷다가 저녁 7시 30분에 스스키노에서
+            샤브샤브를 먹습니다. 돈키호테에서 시세를 본 다음 酒屋 C&amp;C에서 위스키를 사고 택시로
+            돌아옵니다.
           </p>
           <div className={s.chips}>
             <span className={s.chip}>
@@ -488,7 +489,7 @@ export function TodayItinerary() {
               <em>날씨</em>흐림 20° / 13°
             </span>
             <span className={s.chip}>
-              <em>저녁</em>19:00 샤브샤브
+              <em>저녁</em>19:30 샤브샤브 예약
             </span>
             <span className={s.chip}>
               <em>내일</em>11:00 Bullet
