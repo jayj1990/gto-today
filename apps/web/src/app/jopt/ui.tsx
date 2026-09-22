@@ -915,7 +915,8 @@ export function JoptPlanner() {
 
   const D = DAYS[day] ?? DAYS[0]!;
   const stop = D.stops[sel] ?? D.stops[0]!;
-  const place = PL[stop.p];
+  // PL 은 리터럴 유니온이라 tel 이 없는 멤버에서 접근이 막힌다 → 공통 타입으로 넓힌다.
+  const place: Place = PL[stop.p];
 
   const applyVB = useCallback(() => {
     const svg = svgRef.current;
