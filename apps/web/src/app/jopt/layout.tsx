@@ -2,9 +2,8 @@ import type { Metadata, Viewport } from 'next';
 
 // jopt.gto.today — JOPT 2026 Sapporo #02 원정 플래너 (Jay 개인 일정 포함, 검색 노출 금지).
 export const metadata: Metadata = {
-  title: 'JOPT SAPPORO 2026 · LEGO 원정 플래너',
-  description:
-    'JOPT 2026 Sapporo #02 원정 일정을 LEGO 미니어처 삿포로 3D 맵으로 보는 인터랙티브 플래너',
+  title: 'JOPT SAPPORO 2026 · 원정 일정표',
+  description: 'JOPT 2026 Sapporo #02 원정 일정표 — LEGO 미니어처 삿포로 렌더로 보는 하루 동선',
   robots: { index: false, follow: false },
 };
 
