@@ -497,7 +497,10 @@ export function TodayItinerary() {
         <div className={s.coverShade} />
         <div className={s.coverTop}>
           <span>JOPT SAPPORO 2026</span>
-          <Link href="/jopt/map">LEGO 지도</Link>
+          <span className={s.coverTopLinks}>
+            <Link href="/jopt/settle">정산</Link>
+            <Link href="/jopt/map">LEGO 지도</Link>
+          </span>
         </div>
         <div className={s.coverBody}>
           <div className={s.coverEyebrow}>Day 2 · Free Day</div>
@@ -754,6 +757,7 @@ export function TodayItinerary() {
 
         <footer className={`${s.foot} ${s.reveal}`} data-reveal>
           <div className={s.footLinks}>
+            <Link href="/jopt/settle">삿포로 정산</Link>
             <Link href="/jopt/map">LEGO 동선 지도</Link>
             <Link href="/jopt/process">제작 과정</Link>
             <a
