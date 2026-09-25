@@ -460,7 +460,7 @@ export function Settle() {
         <section className={s.sec}>
           <div className={s.secHead}>
             <h2>영수증</h2>
-            <small>대한항공카드 청구 캡처 5장 · 누르면 크게</small>
+            <small>대한항공카드 청구 캡처 {RECEIPTS.length}장 · 누르면 크게</small>
           </div>
           <div className={s.rGrid}>
             {RECEIPTS.map((r) => {

@@ -55,7 +55,6 @@ export const EXPENSES: Expense[] = [
       { name: '스티브예' },
       { name: '민아' },
     ],
-    receipt: 'r1',
     note: '3만엔으로 확정(2026-09-26 재호). 6명 5,000엔씩. 카드 청구 261,543원.',
   },
   {
@@ -222,17 +221,8 @@ export interface Receipt {
   note?: string;
 }
 
-// 카드 앱 캡처 5장(2026-09-25 Jay). 청구 원화 ÷ 현지 엔화로 환율을 역산할 수 있다.
+// 카드 앱 캡처(2026-09-25 Jay). 야키토리(串鳥) 캡처는 Jay 가 빼 달라고 해서 뺐다(2026-09-26). 청구 원화 ÷ 현지 엔화로 환율을 역산할 수 있다.
 export const RECEIPTS: Receipt[] = [
-  {
-    id: 'r1',
-    src: '/jopt/settle/r1.webp',
-    merchant: 'KUSHIDORI SAPPORO STAT',
-    krw: 261543,
-    at: '9/21 22:14',
-    expense: 'yakitori',
-    note: '3만엔 기준 872원/100엔.',
-  },
   {
     id: 'r2',
     src: '/jopt/settle/r2.webp',
