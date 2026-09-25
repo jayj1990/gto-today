@@ -2,7 +2,7 @@
 // 금액·인원은 여기서만 고친다. 화면(settle.tsx)은 이 파일을 읽어 손익과 송금 목록을 계산할 뿐이다.
 //   - 엔화 지출은 현지 결제, 원화 지출(숙소·한국 택시)은 태균이 원화로 낸 것.
 //   - 커피숍 메모의 "홍석"은 오타, 징기스칸의 "홍성"과 같은 사람(2026-09-26 Jay 확정) → 홍성으로 통일.
-//   - 빠니는 동행 1명이 있어 징기스칸에서 2인분 부담(+1).
+//   - 징기스칸 양고기(39,061엔, 스티브예 결제)는 스티브예 형이 사기로 해서 뺐다(2026-09-26 Jay). 그 항목에만 있던 빠니도 명단에서 뺌.
 
 export type Cur = 'JPY' | 'KRW';
 
@@ -17,7 +17,6 @@ export const PEOPLE = [
   '준수',
   '민지',
   '홍성',
-  '빠니',
 ] as const;
 export type Person = (typeof PEOPLE)[number];
 
@@ -29,7 +28,7 @@ export interface Expense {
   cur: Cur;
   total: number;
   payer: Person;
-  /** 균등 분담 명단. weight 가 있으면 그만큼 몫(빠니 +1 = 2). 나머지 1엔 단위는 결제자가 진다. */
+  /** 균등 분담 명단. weight 가 있으면 그만큼 몫(동행 +1 = 2). 나머지 1엔 단위는 결제자가 진다. */
   even?: { name: Person; weight?: number }[];
   /** 직접 지정 몫. 합이 total 과 같아야 한다(빠지는 사람 = 0). */
   shares?: Partial<Record<Person, number>>;
@@ -118,25 +117,6 @@ export const EXPENSES: Expense[] = [
     payer: '지나',
     shares: { 재호: 1250 },
     note: '지나가 대신 결제. 재호가 지나에게 갚을 몫.',
-  },
-  {
-    id: 'jingisukan',
-    title: '징기스칸 양고기',
-    date: '9/23 (수)',
-    cur: 'JPY',
-    total: 39061,
-    payer: '스티브예',
-    even: [
-      { name: '스티브예' },
-      { name: '홍성' },
-      { name: '재호' },
-      { name: '서원' },
-      { name: '민아' },
-      { name: '지나' },
-      { name: '지후' },
-      { name: '빠니', weight: 2 },
-    ],
-    note: '9명 몫(빠니 +1). 1인 4,340엔, 빠니 8,680엔, 남는 1엔은 스티브예가.',
   },
   {
     id: 'coffee',

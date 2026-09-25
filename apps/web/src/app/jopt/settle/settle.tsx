@@ -262,7 +262,9 @@ export function Settle() {
         </div>
 
         <header className={s.hero}>
-          <div className={s.eyebrow}>9/21-25 · 11명 · {EXPENSES.length}건</div>
+          <div className={s.eyebrow}>
+            9/21-25 · {PEOPLE.length}명 · {EXPENSES.length}건
+          </div>
           <h1 className={s.title}>
             삿포로
             <br />
@@ -520,7 +522,11 @@ export function Settle() {
         <section className={s.sec}>
           <div className={s.secHead}>
             <h2>항목별 내역</h2>
-            <small>누르면 사람별 부담이 펼쳐집니다</small>
+            <small>
+              {me
+                ? `${me} 포함 항목은 파란 줄 · 누르면 펼쳐집니다`
+                : '누르면 사람별 부담이 펼쳐집니다'}
+            </small>
           </div>
           <div className={s.exps}>
             {EXPENSES.map((e) => (
@@ -645,8 +651,11 @@ function ExpenseCard({
   const shares = shareMap(e);
   const rows = [...shares.entries()].sort((a, b) => b[1] - a[1]);
   const mineShare = me ? (shares.get(me) ?? 0) : 0;
+  // 내가 낸 항목이거나 내 몫이 있는 항목은 카드째 파란 줄로, 나와 무관한 항목은 흐리게(2026-09-26 Jay)
+  const involved = me !== null && (e.payer === me || mineShare > 0);
+  const mark = me === null ? '' : involved ? s.expMine : s.expOut;
   return (
-    <article className={`${s.exp} ${open ? s.expOpen : ''}`}>
+    <article className={`${s.exp} ${open ? s.expOpen : ''} ${mark}`}>
       <button type="button" className={s.expHead} onClick={onToggle} aria-expanded={open}>
         <span className={s.expTitle}>
           <b>{e.title}</b>
@@ -655,7 +664,8 @@ function ExpenseCard({
         <span className={s.expRight}>
           <b className={s.num}>{fmt(e.total, e.cur)}</b>
           <small>
-            {e.payer} 결제{me && mineShare ? ` · 내 몫 ${fmt(mineShare, e.cur)}` : ''}
+            {e.payer === me ? '내가 결제' : `${e.payer} 결제`}
+            {me && mineShare ? ` · 내 몫 ${fmt(mineShare, e.cur)}` : ''}
           </small>
         </span>
       </button>

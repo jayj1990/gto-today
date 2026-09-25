@@ -464,6 +464,22 @@
   border-color: var(--jsky);
   box-shadow: var(--shadow);
 }
+/* 이름을 고른 뒤: 내가 포함된 항목은 송금 목록(.trMine)과 같은 파란 줄, 무관한 항목은 흐리게 */
+.expMine {
+  border-color: var(--jblue);
+  box-shadow: inset 3px 0 0 var(--jblue);
+}
+.expMine.expOpen {
+  box-shadow:
+    inset 3px 0 0 var(--jblue),
+    var(--shadow);
+}
+.expMine .expTitle b {
+  color: var(--jnavy);
+}
+.expOut {
+  opacity: 0.55;
+}
 .expHead {
   appearance: none;
   width: 100%;

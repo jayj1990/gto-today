@@ -23,8 +23,6 @@ describe('jopt settle', () => {
     expect(shareMap(by['yakitori']!).get('서원')).toBe(5000);
     expect(shareMap(by['unidon']!).get('준수')).toBe(9240);
     expect(shareMap(by['unidon']!).get('태균')).toBe(8140);
-    expect(shareMap(by['jingisukan']!).get('빠니')).toBe(8680);
-    expect(shareMap(by['jingisukan']!).get('스티브예')).toBe(4341);
     expect(shareMap(by['coffee']!).get('민지')).toBe(880);
     expect(shareMap(by['conv']!).get('재호')).toBe(1647);
   });
@@ -51,7 +49,7 @@ describe('jopt settle', () => {
       expect(t.amount).toBeGreaterThan(0);
     }
     for (const p of PEOPLE) expect(bal.get(p), p).toBe(0);
-    // 0 이 아닌 사람 수 - 1 이 상한. 받을 사람 3명(재호·태균·스티브예)이라 8-10건 사이로 나온다.
+    // 0 이 아닌 사람 수 - 1 이 상한. 받을 사람 2명(재호·태균)이라 인원-1건 안쪽으로 나온다.
     const nz = nets.filter((n) => n.net !== 0).length;
     expect(tr.length).toBeLessThanOrEqual(nz - 1);
   });
