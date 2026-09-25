@@ -28,7 +28,6 @@ import {
   type Transfer,
 } from './calc';
 
-type Mode = 'krw' | 'split';
 interface PaidMark {
   amount: number;
   at: number;
@@ -36,13 +35,11 @@ interface PaidMark {
 interface State {
   paid: Record<string, PaidMark>;
   rate?: number;
-  mode?: Mode;
   updatedAt: number;
 }
 interface Patch {
   paid?: Record<string, { amount: number } | null>;
   rate?: number;
-  mode?: Mode;
 }
 
 const LS_ME = 'jopt-settle-me';
@@ -59,7 +56,6 @@ function applyPatch(prev: State, p: Patch): State {
     }
   }
   if (typeof p.rate === 'number') next.rate = p.rate;
-  if (p.mode) next.mode = p.mode;
   return next;
 }
 
@@ -85,7 +81,6 @@ export function Settle() {
 
   // 환율은 890원/100엔 고정(2026-09-26 Jay). 예전에 서버에 저장된 환율 값은 무시한다.
   const rate = DEFAULT_RATE;
-  const mode: Mode = state.mode ?? 'krw';
 
   // ---- 불러오기: 서버 → 실패하면 localStorage
   useEffect(() => {
@@ -189,12 +184,10 @@ export function Settle() {
   // ---- 계산
   const jpyNets = useMemo(() => netsFor(EXPENSES, 'JPY'), []);
   const krwNets = useMemo(() => netsFor(EXPENSES, 'KRW'), []);
+  // 원화로 합쳐서만 정산한다(엔·원 따로 모드는 2026-09-26 Jay 가 뺌)
   const transfers = useMemo<Transfer[]>(
-    () =>
-      mode === 'krw'
-        ? settleTransfers(combinedNets(EXPENSES, rate), 'KRW')
-        : [...settleTransfers(jpyNets, 'JPY'), ...settleTransfers(krwNets, 'KRW')],
-    [mode, rate, jpyNets, krwNets],
+    () => settleTransfers(combinedNets(EXPENSES, rate), 'KRW'),
+    [rate],
   );
   const doneCount = transfers.filter((t) => state.paid[transferKey(t)]).length;
 
@@ -218,7 +211,7 @@ export function Settle() {
   const copyText = async () => {
     const lines = [
       '삿포로 정산 (9/21-25)',
-      mode === 'krw' ? `엔화는 ${rate}원/100엔으로 환산` : '엔·원 따로',
+      `엔화는 ${rate}원/100엔으로 환산`,
       '',
       ...transfers.map(
         (t) =>
@@ -298,31 +291,13 @@ export function Settle() {
                 <div>
                   <div className={s.meLabel}>보낼 돈</div>
                   <div className={`${s.meBig} ${s.num}`}>
-                    {mySend.length === 0
-                      ? '없음'
-                      : mode === 'krw'
-                        ? fmt(sumBy(mySend, 'KRW'), 'KRW')
-                        : [
-                            sumBy(mySend, 'JPY') ? fmt(sumBy(mySend, 'JPY'), 'JPY') : null,
-                            sumBy(mySend, 'KRW') ? fmt(sumBy(mySend, 'KRW'), 'KRW') : null,
-                          ]
-                            .filter(Boolean)
-                            .join(' + ')}
+                    {mySend.length === 0 ? '없음' : fmt(sumBy(mySend, 'KRW'), 'KRW')}
                   </div>
                 </div>
                 <div>
                   <div className={s.meLabel}>받을 돈</div>
                   <div className={`${s.meBig} ${s.num}`}>
-                    {myRecv.length === 0
-                      ? '없음'
-                      : mode === 'krw'
-                        ? fmt(sumBy(myRecv, 'KRW'), 'KRW')
-                        : [
-                            sumBy(myRecv, 'JPY') ? fmt(sumBy(myRecv, 'JPY'), 'JPY') : null,
-                            sumBy(myRecv, 'KRW') ? fmt(sumBy(myRecv, 'KRW'), 'KRW') : null,
-                          ]
-                            .filter(Boolean)
-                            .join(' + ')}
+                    {myRecv.length === 0 ? '없음' : fmt(sumBy(myRecv, 'KRW'), 'KRW')}
                   </div>
                 </div>
               </div>
@@ -364,45 +339,12 @@ export function Settle() {
           )}
         </section>
 
-        {/* 설정 */}
-        <section className={s.sec}>
-          <div className={s.secHead}>
-            <h2>계산 방식</h2>
-            <small>엔화는 890원/100엔 고정 · 카드 청구액 기준</small>
-          </div>
-          <div className={s.ctrl}>
-            <div className={s.seg} role="radiogroup" aria-label="정산 모드">
-              <button
-                type="button"
-                role="radio"
-                aria-checked={mode === 'krw'}
-                className={mode === 'krw' ? s.segOn : ''}
-                onClick={() => mode !== 'krw' && void patch({ mode: 'krw' })}
-              >
-                원화로 합쳐서
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={mode === 'split'}
-                className={mode === 'split' ? s.segOn : ''}
-                onClick={() => mode !== 'split' && void patch({ mode: 'split' })}
-              >
-                엔·원 따로
-              </button>
-            </div>
-            <span className={s.rate}>
-              환율 <b className={s.num}>{DEFAULT_RATE}</b>원 / 100엔 고정
-            </span>
-          </div>
-        </section>
-
         {/* 송금 목록 */}
         <section className={s.sec}>
           <div className={s.secHead}>
             <h2>누가 누구에게</h2>
             <small>
-              {transfers.length}건 중 {doneCount}건 완료
+              {transfers.length}건 중 {doneCount}건 완료 · 엔화 {DEFAULT_RATE}원/100엔
             </small>
           </div>
           <ul className={s.list}>
@@ -420,7 +362,6 @@ export function Settle() {
                     <b>{t.from}</b>
                     <span className={s.arrow}>→</span>
                     <b>{t.to}</b>
-                    {t.cur === 'JPY' && mode === 'split' && <em className={s.tag}>엔</em>}
                   </div>
                   <div className={`${s.trAmt} ${s.num}`}>
                     {fmt(t.amount, t.cur)}

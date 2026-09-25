@@ -257,58 +257,6 @@
   transform: scale(0.97);
 }
 
-/* ---------- 계산 방식 ---------- */
-.ctrl {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-.seg {
-  display: inline-flex;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r-pill);
-  padding: 3px;
-}
-.seg button {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  color: var(--ink-2);
-  border-radius: var(--r-pill);
-  padding: 7px 13px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.seg .segOn {
-  background: var(--jnavy);
-  color: #fff;
-}
-.rate {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--ink-2);
-  font-weight: 700;
-}
-.rate input {
-  width: 72px;
-  padding: 7px 9px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--card);
-  color: var(--ink);
-  font: inherit;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-.rate input:disabled {
-  opacity: 0.45;
-}
-
 /* ---------- 송금 목록 ---------- */
 .list {
   list-style: none;

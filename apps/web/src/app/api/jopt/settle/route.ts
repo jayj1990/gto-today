@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
-// /api/jopt/settle — 삿포로 정산 공유 상태(보냈어요 체크·환율·모드). Postgres KvBlob 한 행.
+// /api/jopt/settle — 삿포로 정산 공유 상태(보냈어요 체크). Postgres KvBlob 한 행. 환율은 코드에 고정, 모드는 없앰(2026-09-26).
 // 인증 없음: jopt.gto.today 는 검색 노출 금지된 비공개 링크이고 참가자 11명이 각자 폰에서 체크만 한다.
 // 처음엔 Upstash 였는데 프로덕션 Redis 호스트가 사라져(2026-09-25) Prisma 로 바꿨다.
 // DB 가 안 닿으면 shared:false 를 돌려주고 화면은 localStorage 로 대신한다.
@@ -17,8 +17,6 @@ export interface PaidMark {
 }
 export interface SettleState {
   paid: Record<string, PaidMark>;
-  rate?: number;
-  mode?: 'krw' | 'split';
   updatedAt: number;
 }
 
@@ -55,8 +53,6 @@ export async function GET() {
 interface Patch {
   /** key → 표시(amount) 또는 null(해제) */
   paid?: Record<string, { amount: number } | null>;
-  rate?: number;
-  mode?: 'krw' | 'split';
 }
 
 export async function PUT(req: Request) {
@@ -76,9 +72,6 @@ export async function PUT(req: Request) {
         state.paid[key] = { amount: Math.round(v.amount), at: Date.now() };
     }
   }
-  if (typeof body.rate === 'number' && body.rate >= 500 && body.rate <= 1500)
-    state.rate = Math.round(body.rate * 10) / 10;
-  if (body.mode === 'krw' || body.mode === 'split') state.mode = body.mode;
   state.updatedAt = Date.now();
   try {
     await save(state);
