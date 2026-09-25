@@ -270,8 +270,8 @@ export const RECEIPTS: Receipt[] = [
   },
 ];
 
-/** 기본 환율(원/100엔). 요이치야 886·로손 868 의 사이값. 화면에서 바꿀 수 있다. */
-export const DEFAULT_RATE = 880;
+/** 환율(원/100엔). 890 고정(2026-09-26 Jay). 카드 청구 역산은 요이치야 886·로손 868. */
+export const DEFAULT_RATE = 890;
 
 export const CHECKS: string[] = [
   '야키토리는 메모대로 3만엔으로 계산했습니다. 카드 청구 261,543원을 환율로 나누면 약 29,500엔이라 실제 계산서 확인이 필요합니다.',

@@ -79,12 +79,12 @@ export function Settle() {
   const [state, setState] = useState<State>(EMPTY);
   /** null = 아직 모름, true = 서버 공유, false = 이 기기만 */
   const [shared, setShared] = useState<boolean | null>(null);
-  const [rateInput, setRateInput] = useState(String(DEFAULT_RATE));
   const [open, setOpen] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
-  const rate = state.rate ?? DEFAULT_RATE;
+  // 환율은 890원/100엔 고정(2026-09-26 Jay). 예전에 서버에 저장된 환율 값은 무시한다.
+  const rate = DEFAULT_RATE;
   const mode: Mode = state.mode ?? 'krw';
 
   // ---- 불러오기: 서버 → 실패하면 localStorage
@@ -104,7 +104,6 @@ export function Settle() {
         if (j.shared && j.state) {
           setShared(true);
           setState({ ...EMPTY, ...j.state, paid: j.state.paid ?? {} });
-          if (j.state.rate) setRateInput(String(j.state.rate));
           return;
         }
       } catch {
@@ -136,7 +135,6 @@ export function Settle() {
       if (raw) {
         const st = JSON.parse(raw) as State;
         setState({ ...EMPTY, ...st, paid: st.paid ?? {} });
-        if (st.rate) setRateInput(String(st.rate));
       }
     } catch {
       /* ignore */
@@ -205,16 +203,6 @@ export function Settle() {
     list.filter((t) => t.cur === cur).reduce((a, t) => a + t.amount, 0);
   const mySend = mine.filter((t) => t.from === me && !state.paid[transferKey(t)]);
   const myRecv = mine.filter((t) => t.to === me && !state.paid[transferKey(t)]);
-
-  const commitRate = () => {
-    const v = Number(rateInput);
-    if (!Number.isFinite(v) || v < 500 || v > 1500) {
-      setRateInput(String(rate));
-      setToast('환율은 500-1500원/100엔 사이로 넣어 주세요.');
-      return;
-    }
-    if (v !== rate) void patch({ rate: v });
-  };
 
   const togglePaid = (t: Transfer) => {
     const key = transferKey(t);
@@ -380,7 +368,7 @@ export function Settle() {
         <section className={s.sec}>
           <div className={s.secHead}>
             <h2>계산 방식</h2>
-            <small>환율은 카드 청구액에서 역산한 868-886원/100엔 사이</small>
+            <small>엔화는 890원/100엔 고정 · 카드 청구액 기준</small>
           </div>
           <div className={s.ctrl}>
             <div className={s.seg} role="radiogroup" aria-label="정산 모드">
@@ -403,25 +391,9 @@ export function Settle() {
                 엔·원 따로
               </button>
             </div>
-            <label className={s.rate}>
-              <span>환율</span>
-              <input
-                type="number"
-                inputMode="decimal"
-                min={500}
-                max={1500}
-                step={1}
-                value={rateInput}
-                onChange={(e) => setRateInput(e.target.value)}
-                onBlur={commitRate}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                }}
-                aria-label="원/100엔 환율"
-                disabled={mode !== 'krw'}
-              />
-              <span>원 / 100엔</span>
-            </label>
+            <span className={s.rate}>
+              환율 <b className={s.num}>{DEFAULT_RATE}</b>원 / 100엔 고정
+            </span>
           </div>
         </section>
 
