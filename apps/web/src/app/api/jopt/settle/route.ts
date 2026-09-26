@@ -15,8 +15,17 @@ export interface PaidMark {
   amount: number;
   at: number;
 }
+/** 받는 사람 송금처 — 토스 아이디·은행·계좌. 스크립트(scripts/jopt-settle-pay.mjs)로만 넣고 클라이언트는 못 바꾼다. */
+export interface PayInfo {
+  toss?: string;
+  kakao?: string;
+  bank?: string;
+  acct?: string;
+}
 export interface SettleState {
   paid: Record<string, PaidMark>;
+  /** 이름 → 송금처. 없으면 버튼이 안 뜬다. */
+  pay?: Record<string, PayInfo>;
   updatedAt: number;
 }
 
@@ -64,6 +73,7 @@ export async function PUT(req: Request) {
     console.error('[jopt/settle] db read failed', err);
     return NextResponse.json({ shared: false, state: null }, { status: 503 });
   }
+  // 🔴 body.pay 는 받지 않는다 — 인증이 없어서 누구나 남의 계좌를 자기 것으로 바꿀 수 있게 된다.
   if (body.paid && typeof body.paid === 'object') {
     for (const [key, v] of Object.entries(body.paid)) {
       if (!/^[^>]+>[^>]+>(JPY|KRW)$/.test(key)) continue;

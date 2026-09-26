@@ -20,11 +20,15 @@ import {
 import {
   combinedNets,
   fmt,
+  hasPay,
   jpyToKrw,
   netsFor,
+  payAccount,
+  payUrl,
   settleTransfers,
   shareMap,
   transferKey,
+  type PayInfo,
   type Transfer,
 } from './calc';
 
@@ -34,12 +38,12 @@ interface PaidMark {
 }
 interface State {
   paid: Record<string, PaidMark>;
-  rate?: number;
+  /** 받는 사람 송금처(서버에서만 넣는다) */
+  pay?: Record<string, PayInfo>;
   updatedAt: number;
 }
 interface Patch {
   paid?: Record<string, { amount: number } | null>;
-  rate?: number;
 }
 
 const LS_ME = 'jopt-settle-me';
@@ -55,7 +59,6 @@ function applyPatch(prev: State, p: Patch): State {
       else next.paid[k] = { amount: v.amount, at: Date.now() };
     }
   }
-  if (typeof p.rate === 'number') next.rate = p.rate;
   return next;
 }
 
@@ -328,6 +331,14 @@ export function Settle() {
                         >
                           {paid ? '완료' : iSend ? '보냈어요' : '받았어요'}
                         </button>
+                        {iSend && !paid && (
+                          <PayActions
+                            to={t.to}
+                            amount={t.amount}
+                            info={state.pay?.[t.to]}
+                            onToast={setToast}
+                          />
+                        )}
                       </li>
                     );
                   })}
@@ -379,6 +390,14 @@ export function Settle() {
                   >
                     {paid ? `완료 ${fmtDay(paid.at)}` : '보냈어요'}
                   </button>
+                  {me === t.from && !paid && (
+                    <PayActions
+                      to={t.to}
+                      amount={t.amount}
+                      info={state.pay?.[t.to]}
+                      onToast={setToast}
+                    />
+                  )}
                 </li>
               );
             })}
@@ -612,5 +631,45 @@ function ExpenseCard({
         </div>
       )}
     </article>
+  );
+}
+
+// 보내는 사람에게만 뜨는 송금 액션 — 토스 링크(금액까지 채워짐)와 계좌 복사. 받는 사람 송금처가 없으면 안 뜬다.
+function PayActions({
+  to,
+  amount,
+  info,
+  onToast,
+}: {
+  to: Person;
+  amount: number;
+  info: PayInfo | undefined;
+  onToast: (msg: string) => void;
+}) {
+  if (!hasPay(info)) return null;
+  const url = payUrl(info, amount);
+  const acct = payAccount(info);
+  const copy = async () => {
+    if (!acct) return;
+    try {
+      await navigator.clipboard.writeText(`${acct} ${to}`);
+      onToast(`${to} 계좌를 복사했습니다.`);
+    } catch {
+      onToast('복사가 막혔습니다. 길게 눌러 복사해 주세요.');
+    }
+  };
+  return (
+    <div className={s.payRow}>
+      {url && (
+        <a className={s.btn} href={url} target="_blank" rel="noreferrer">
+          토스로 {fmt(amount, 'KRW')} 보내기
+        </a>
+      )}
+      {acct && (
+        <button type="button" className={s.btnGhost} onClick={copy}>
+          계좌 복사 · <span className={s.num}>{acct}</span>
+        </button>
+      )}
+    </div>
   );
 }

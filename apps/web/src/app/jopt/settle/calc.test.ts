@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_RATE, EXPENSES, PEOPLE, type Expense } from './data';
-import { combinedNets, netsFor, settleTransfers, shareMap } from './calc';
+import { combinedNets, netsFor, payAccount, payUrl, settleTransfers, shareMap } from './calc';
 
 // 데이터 정합성 + 정산 계산이 성립하는지(손익 합 0, 송금 후 전원 0). data.ts 를 고칠 때 같이 돈다.
 describe('jopt settle', () => {
@@ -64,5 +64,17 @@ describe('jopt settle', () => {
       }
       for (const p of PEOPLE) expect(bal.get(p), `${cur} ${p}`).toBe(0);
     }
+  });
+
+  it('송금 링크 — 토스 아이디는 toss.me, 계좌는 토스 앱 딥링크에 숫자만', () => {
+    expect(payUrl({ toss: 'taegyun' }, 569491)).toBe('https://toss.me/taegyun/569491');
+    expect(payUrl({ toss: 'https://toss.me/jay/' }, 100)).toBe('https://toss.me/jay/100');
+    expect(payUrl({ bank: '토스뱅크', acct: '1000-1234-5678' }, 7832.4)).toBe(
+      'supertoss://send?amount=7832&bank=%ED%86%A0%EC%8A%A4%EB%B1%85%ED%81%AC&accountNo=100012345678&origin=qr',
+    );
+    expect(payUrl({ kakao: 'qr.kakaopay.com/abc' }, 1)).toBe('https://qr.kakaopay.com/abc');
+    expect(payUrl(undefined, 1)).toBeNull();
+    expect(payAccount({ bank: '국민', acct: '123-45' })).toBe('국민 123-45');
+    expect(payAccount({ toss: 'x' })).toBeNull();
   });
 });

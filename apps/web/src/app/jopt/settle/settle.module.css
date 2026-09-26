@@ -219,6 +219,9 @@
 .btnGhost,
 .btnDone {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
   border-radius: var(--r-pill);
   padding: 7px 12px;
   font-size: 12.5px;
@@ -349,6 +352,21 @@
 }
 .act:active {
   transform: scale(0.98);
+}
+
+/* 보내는 사람 줄 아래 송금 액션 — 토스 링크 + 계좌 복사 */
+.payRow {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+.meList li {
+  flex-wrap: wrap;
+}
+.meList .payRow {
+  flex-basis: 100%;
 }
 
 /* ---------- 표 ---------- */

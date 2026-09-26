@@ -183,3 +183,63 @@ export function fmt(n: number, cur: Cur): string {
   const abs = Math.abs(n).toLocaleString('ko-KR');
   return `${n < 0 ? '-' : ''}${abs}${cur === 'JPY' ? '엔' : '원'}`;
 }
+
+// ---------- 송금처 ----------
+// Poker Today(currentive-web src/app/poker/lib.ts payUrl)의 한국 계좌 분기만 옮겼다.
+// 받는 사람의 송금 정보는 /api/jopt/settle 이 KvBlob 에서 읽어 준다(클라이언트는 못 바꾼다).
+export interface PayInfo {
+  /** 토스 아이디(toss.me/아이디) 또는 토스 QR 링크(supertoss://…) */
+  toss?: string;
+  /** 카카오페이 개인 송금 링크(https://qr.kakaopay.com/…) */
+  kakao?: string;
+  bank?: string;
+  acct?: string;
+}
+
+export function hasPay(v?: PayInfo | null): v is PayInfo {
+  return !!(v?.toss || v?.kakao || v?.acct);
+}
+
+function tossAccountUrl(bank: string, acct: string, amount: number): string {
+  const q = new URLSearchParams({
+    amount: String(Math.max(0, Math.round(amount))),
+    bank,
+    // 하이픈을 넣어 저장했어도 토스 링크에는 숫자만 넘어가야 앱이 계좌를 알아본다
+    accountNo: acct.replace(/[^0-9]/g, ''),
+    origin: 'qr',
+  });
+  return `supertoss://send?${q.toString()}`;
+}
+
+/** 금액까지 채워진 송금 링크. 토스 아이디 → toss.me, 계좌 → 토스 앱 딥링크(모바일 전용), 카카오페이 링크 순. */
+export function payUrl(info: PayInfo | undefined, amountKrw: number): string | null {
+  if (!info) return null;
+  const amt = Math.max(0, Math.round(amountKrw));
+  const raw = (info.toss ?? '').trim();
+  if (raw.startsWith('supertoss://')) {
+    try {
+      const q = new URLSearchParams(raw.split('?')[1] ?? '');
+      const bank = q.get('bank') ?? info.bank ?? '';
+      const acct = q.get('accountNo') ?? info.acct ?? '';
+      if (acct) return tossAccountUrl(bank, acct, amt);
+    } catch {
+      /* 형식이 깨졌으면 아래 규칙으로 */
+    }
+  }
+  const id = raw
+    .replace(/^https?:\/\/toss\.me\//i, '')
+    .replace(/^@/, '')
+    .split('/')[0];
+  if (id && !id.includes(':')) return `https://toss.me/${encodeURIComponent(id)}/${amt}`;
+  const acct = (info.acct ?? '').replace(/[^0-9]/g, '');
+  if (acct) return tossAccountUrl(info.bank ?? '', acct, amt);
+  const kakao = (info.kakao ?? '').trim();
+  if (kakao) return kakao.startsWith('http') ? kakao : `https://${kakao}`;
+  return null;
+}
+
+/** 복사용 송금처 문자열("은행 계좌번호"). 계좌가 없으면 null. */
+export function payAccount(info: PayInfo | undefined): string | null {
+  if (!info?.acct) return null;
+  return [info.bank, info.acct].filter(Boolean).join(' ');
+}
