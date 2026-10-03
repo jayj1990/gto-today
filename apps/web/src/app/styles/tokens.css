@@ -34,6 +34,10 @@
   --color-raise-deep: #7f0a1b; /* all-in escalation — deeper than raise */
   --color-call: #1f9d55;
   --color-fold: #2b5f8f;
+  /* 체크는 콜(초록)과 폴드(파랑) 사이 청록. 림프는 패시브지만 레인지에
+     남은 액션이라 둘 중 어느 쪽 색도 빌리지 않는다. */
+  --color-check: #2f8f8f;
+  --color-limp: #7a6fb0;
   --color-warning: #e6a817;
   --color-info: #4a9eff;
 

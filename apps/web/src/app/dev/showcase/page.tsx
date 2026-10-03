@@ -3,6 +3,7 @@ import { SiteHeader } from '@/components/site-header';
 import { MotionDemo } from '@/components/showcase/motion-demo';
 import { PokerTableDemo } from '@/components/showcase/poker-table-demo';
 import { RangeDemo } from '@/components/showcase/range-demo';
+import { BluffRangeDemo } from '@/components/showcase/bluff-range-demo';
 
 export const metadata = { title: 'Showcase' };
 
@@ -93,6 +94,10 @@ export default function ShowcasePage() {
 
         <Section title="06 · Preflop range (live GTO data)">
           <RangeDemo />
+        </Section>
+
+        <Section title="06b · 액션 확장 (밸류 / 블러프 / 체크 / 림프 / 올인)">
+          <BluffRangeDemo />
         </Section>
 
         <Section title="07 · Gradients">

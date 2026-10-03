@@ -1,4 +1,4 @@
-import type { CardCode, ComboKey, Position, TableFormat } from '@gto/poker-core';
+import type { ActionBreakdown, CardCode, ComboKey, Position, TableFormat } from '@gto/poker-core';
 import { RANKS, SUITS } from '@gto/poker-core';
 import { allCombos } from './combos';
 import { getPreflopChart, type PreflopStrategyJson } from './preflop';
@@ -12,6 +12,7 @@ import { listPostflopSpots, type PostflopSpot } from './postflop';
 import { fetchDailyPairingSpots } from './spots-loader';
 import {
   availableActionsFromNode,
+  breakdownForCombo,
   callSizeFromPreActions,
   collapseForCombo,
   getQbTree,
@@ -66,6 +67,12 @@ export interface TrainingSpot {
   /** Deeper reraise lines include a non-trivial all-in option. */
   readonly gtoAllIn?: number;
   readonly correctAnswer: 'raise' | 'call' | 'fold' | 'allin' | 'mixed';
+  /**
+   * 설명용 세부 내역 — 레이즈 사이즈별, 그리고 차트가 적어줬다면 밸류/블러프까지.
+   * 채점은 이걸 안 본다(위의 gto* 네 칸으로만 한다). 버튼을 늘리지 않고
+   * 설명만 깊게 하려는 분리다. collapseToGraded 로 접으면 gto* 와 같아야 한다.
+   */
+  readonly breakdown?: ActionBreakdown;
   /** Which action buttons the UI should offer the user. */
   readonly availableActions: readonly AvailableAction[];
 }
@@ -476,6 +483,12 @@ function buildAdvancedSpot(
     gtoFold: mix.fold,
     gtoCall: mix.call,
     gtoAllIn: mix.allin,
+    // 같은 노드를 접지 않고 한 번 더 읽는다 — 레이즈 사이즈가 둘 이상이면
+    // 결과 화면이 "레이즈 55%" 대신 "2.5bb 40% · 8.5bb 15%" 로 말해준다.
+    ...(() => {
+      const b = breakdownForCombo(raw, picked.combo);
+      return b ? { breakdown: b } : {};
+    })(),
     correctAnswer,
     // Trust the actual node's action set over the scenario default —
     // BB cold-4bet nodes have no "call" option, for instance.

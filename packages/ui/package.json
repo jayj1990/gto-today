@@ -16,6 +16,8 @@
     "./count-up": "./src/count-up.tsx",
     "./poker-table": "./src/poker-table.tsx",
     "./range-grid": "./src/range-grid.tsx",
+    "./range-legend": "./src/range-legend.tsx",
+    "./preflop-action": "./src/preflop-action.ts",
     "./touch-button": "./src/touch-button.tsx",
     "./motion": "./src/motion.ts"
   },
@@ -40,6 +42,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "typescript": "^5.7.3",
-    "rimraf": "^6.0.1"
+    "rimraf": "^6.0.1",
+    "@gto/poker-core": "workspace:*"
   }
 }

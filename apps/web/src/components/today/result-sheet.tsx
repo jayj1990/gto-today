@@ -2,7 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChipToss, MixBar, cn, playWin, type MixBarSegment } from '@gto/ui';
+import {
+  ChipToss,
+  MixBar,
+  actionFill,
+  actionLabelFull,
+  cn,
+  playWin,
+  type MixBarSegment,
+} from '@gto/ui';
+import { bluffShareOfAggression, gradedKindOf } from '@gto/poker-core';
 import { sheetUp } from '@gto/ui/motion';
 import type { AnswerGrade, GradedAction, TrainingSpot } from '@gto/gto-data';
 import { track } from '@/lib/analytics';
@@ -71,10 +80,48 @@ function dominantAction(spot: TrainingSpot): GradedAction {
   return 'fold';
 }
 
+/**
+ * 세부 내역이 있으면 그걸로 막대를 만든다.
+ *
+ * 레이즈 사이즈가 둘 이상이면 "레이즈 55%" 한 줄 대신 "레이즈 2.5bb 40% ·
+ * 레이즈 8.5bb 15%" 두 줄이 된다. 차트가 블러프까지 적어줬다면 사선 무늬가
+ * 그대로 막대에 들어온다. 채점은 이 함수를 안 본다.
+ */
+function buildBreakdownSegments(spot: TrainingSpot, top: GradedAction | null): MixBarSegment[] {
+  const b = spot.breakdown;
+  if (!b) return [];
+  const rows = b.actions
+    .map((spec) => ({
+      spec,
+      value: (b.mix[spec.key] ?? 0) * 100,
+      graded: gradedKindOf(spec.kind),
+    }))
+    .filter((r) => r.value >= 1);
+  if (rows.length < 2) return [];
+  // 같은 채점 단위가 여러 줄로 쪼개질 수 있으므로(레이즈 2.5bb / 8.5bb),
+  // 정답 표시는 그중 가장 큰 줄 하나에만 붙인다.
+  let domIdx = -1;
+  let domVal = -1;
+  rows.forEach((r, i) => {
+    if (r.graded === top && r.value > domVal) {
+      domVal = r.value;
+      domIdx = i;
+    }
+  });
+  return rows.map((r, i) => ({
+    label: actionLabelFull(r.spec),
+    value: r.value,
+    color: actionFill(r.spec),
+    dominant: i === domIdx,
+  }));
+}
+
 /** Segment builder — picks the action set visible on this scenario
  *  and drops actions with freq < 1% so the bar doesn't show "0.0%"
  *  rows that carry no information. */
 function buildSegments(spot: TrainingSpot, top: GradedAction | null): MixBarSegment[] {
+  const detailed = buildBreakdownSegments(spot, top);
+  if (detailed.length > 0) return detailed;
   const raw: Array<{ label: string; value: number; color: string; action: GradedAction }> = [
     { label: '레이즈', value: spot.gtoRaise * 100, color: 'var(--color-raise)', action: 'raise' },
     { label: '콜', value: (spot.gtoCall ?? 0) * 100, color: 'var(--color-call)', action: 'call' },
@@ -177,6 +224,8 @@ export function ResultSheet({
     }
   };
   const segments: MixBarSegment[] = spot ? buildSegments(spot, top) : [];
+  // 차트가 밸류/블러프를 적어준 경우에만 나온다. 빈도만 보고 추정하지 않는다.
+  const bluffShare = spot?.breakdown ? bluffShareOfAggression(spot.breakdown) : null;
 
   // Build the headline based on grade. Colour is grade-bound (not
   // action-bound) so a wrong answer always reads RED even when the
@@ -283,6 +332,12 @@ export function ResultSheet({
                 segments={segments}
                 highlightColor={grade === 'acceptable' ? 'var(--color-call)' : 'var(--color-gold)'}
               />
+              {bluffShare !== null && (
+                <p className="text-fg-muted mt-3 text-[12px]">
+                  올리는 빈도 가운데 블러프가{' '}
+                  <span className="text-fg font-mono">{Math.round(bluffShare * 100)}%</span>입니다.
+                </p>
+              )}
               {userAnswer && (
                 <p className="text-fg-muted mt-4 font-mono text-[12px]">
                   내 선택: <span className="text-fg">{ACTION_LABEL[userAnswer]}</span>

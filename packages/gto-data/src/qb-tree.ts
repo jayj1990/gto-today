@@ -1,4 +1,4 @@
-import type { ComboKey, Position, TableFormat } from '@gto/poker-core';
+import type { ActionBreakdown, ActionSpec, ComboKey, Position, TableFormat } from '@gto/poker-core';
 import type { PreAction, Scenario, TrainingSpot } from './spot-generator';
 
 /**
@@ -205,6 +205,65 @@ export function collapseForCombo(
     allin: allin / total,
     raiseSizes,
   };
+}
+
+/**
+ * 같은 노드를 "접지 않고" 읽는다 — 레이즈 사이즈를 하나로 합치지 않는다.
+ *
+ * collapseForCombo 는 2.5bb 와 8.5bb 를 둘 다 `raise` 한 칸에 더해버린다.
+ * 채점에는 그게 맞지만 설명에는 손해다. 솔버가 "40%는 2.5bb, 15%는 8.5bb"
+ * 라고 말하고 있는데 화면에는 "레이즈 55%"만 남으니까. 여기서는 사이즈마다
+ * 액션을 하나씩 만들어 그 정보를 살린다.
+ *
+ * intent(밸류/블러프)는 넣지 않는다. 빈도만 보고는 알 수 없고, 차트 저자가
+ * 범례에 적어줘야 하는 값이다. 그런 차트가 들어오면 그때 spec 에 붙는다.
+ */
+export function breakdownForCombo(
+  node: Record<string, Record<string, number>>,
+  combo: ComboKey,
+): ActionBreakdown | null {
+  const actions: ActionSpec[] = [];
+  const mix: Record<string, number> = {};
+  let total = 0;
+
+  // 사이즈 오름차순으로 — 작은 레이즈가 왼쪽에 와야 막대가 읽힌다.
+  const raises: Array<{ key: string; size: number; freq: number }> = [];
+  let fold = 0;
+  let call = 0;
+  let allin = 0;
+
+  for (const a of Object.keys(node)) {
+    const freq = node[a]?.[combo] ?? 0;
+    if (freq <= 0) continue;
+    total += freq;
+    if (a === 'FOLD') fold += freq;
+    else if (a === 'Call') call += freq;
+    else if (a === 'AllIn') allin += freq;
+    else {
+      const m = a.match(/^([\d.]+)bb$/);
+      if (m) raises.push({ key: `raise_${a}`, size: parseFloat(m[1]!), freq });
+    }
+  }
+  if (total <= 0) return null;
+
+  raises.sort((x, y) => x.size - y.size);
+  for (const r of raises) {
+    actions.push({ key: r.key, kind: 'raise', label: '레이즈', size: `${r.size}bb` });
+    mix[r.key] = r.freq / total;
+  }
+  if (allin > 0) {
+    actions.push({ key: 'allin', kind: 'jam', label: '올인' });
+    mix['allin'] = allin / total;
+  }
+  if (call > 0) {
+    actions.push({ key: 'call', kind: 'call', label: '콜' });
+    mix['call'] = call / total;
+  }
+  if (fold > 0) {
+    actions.push({ key: 'fold', kind: 'fold', label: '폴드' });
+    mix['fold'] = fold / total;
+  }
+  return { actions, mix };
 }
 
 export function availableActionsFor(scenario: Scenario): TrainingSpot['availableActions'] {

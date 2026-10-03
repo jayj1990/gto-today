@@ -1,7 +1,14 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import type { ComboMix } from './range-grid';
+import { cellSegments, type ComboMix } from './range-grid';
+import {
+  actionFill,
+  actionLabel,
+  LEGACY_ACTIONS,
+  type ActionSpec,
+  type ComboActions,
+} from './preflop-action';
 import { cn } from './cn';
 import { sheetUp } from './motion';
 
@@ -11,6 +18,9 @@ export interface ComboDetailSheetProps {
   combo: string | null;
   /** Mix at this spot. If undefined, shown as the empty-state text. */
   mix?: ComboMix | undefined;
+  /** 블러프까지 구분하는 새 경로 — 차트 범례와 이 콤보의 액션별 빈도. */
+  actions?: readonly ActionSpec[] | undefined;
+  cell?: ComboActions | undefined;
   /** Copy for the no-mix state — defaults to a generic "no data". */
   emptyText?: string;
   onClose: () => void;
@@ -25,10 +35,12 @@ export function ComboDetailSheet({
   open,
   combo,
   mix,
+  actions,
+  cell,
   emptyText = '이 스팟의 데이터가 없어요.',
   onClose,
 }: ComboDetailSheetProps) {
-  const rows = mix ? buildRows(mix) : [];
+  const rows = cell ? buildActionRows(actions ?? LEGACY_ACTIONS, cell) : mix ? buildRows(mix) : [];
   const top = rows.reduce((a, b) => (b.value > a.value ? b : a), rows[0]!);
 
   return (
@@ -128,6 +140,23 @@ interface Row {
   label: string;
   value: number; // percent 0..100
   color: string;
+}
+
+/**
+ * 새 경로 — 범례 순서대로 액션 줄을 만든다. 빈도 0 인 액션은 뺀다.
+ * 블러프/밸류는 같은 색에 무늬로 갈리므로 막대도 격자와 같은 fill 을 쓴다.
+ */
+function buildActionRows(specs: readonly ActionSpec[], cell: ComboActions): Row[] {
+  const segs = cellSegments(specs, cell);
+  const byKey = new Map(specs.map((s) => [s.key, s]));
+  return segs.map((s) => {
+    const spec = byKey.get(s.key);
+    return {
+      label: spec ? actionLabel(spec) : s.label,
+      value: s.pct,
+      color: spec ? actionFill(spec) : s.fill,
+    };
+  });
 }
 
 function buildRows(mix: ComboMix): Row[] {

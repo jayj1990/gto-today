@@ -29,6 +29,8 @@ export const colors = {
   raiseDeep: '#7F0A1B', // all-in escalation — deeper than raise
   call: '#1F9D55',
   fold: '#2B5F8F', // blue — matches in-app chart fold color for consistency
+  check: '#2F8F8F', // teal — between call-green and fold-blue
+  limp: '#7A6FB0', // passive but still in range — borrows neither call nor fold
   warning: '#E6A817',
   info: '#4A9EFF',
 
