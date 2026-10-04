@@ -63,17 +63,16 @@ export function actionLabel(spec: ActionSpec): string {
 }
 
 /**
- * 의도까지 붙인 라벨.
+ * 라벨 아래 붙일 둘째 줄 — 사이즈와 의도.
  *
- * 범례는 스와치 무늬로 밸류와 블러프가 갈리지만, 막대 차트에서는 같은
- * 사이즈의 두 줄이 글자로만 보면 똑같아진다("레이즈 8.5bb" 두 번).
- * 그래서 막대 쪽은 이쪽을 쓴다.
+ * 한 줄에 "레이즈 8.5bb 블러프"를 다 넣으면 좁은 라벨 칸에서 세 줄로
+ * 제멋대로 접힌다. 액션 이름은 첫 줄에 두고 나머지를 여기로 내리면
+ * 모든 줄이 두 줄 안에서 끝난다. 붙일 게 없으면 undefined.
  */
-export function actionLabelFull(spec: ActionSpec): string {
-  const base = actionLabel(spec);
-  if (spec.intent === 'bluff') return `${base} 블러프`;
-  if (spec.intent === 'thin') return `${base} 씬밸류`;
-  return base;
+export function actionSublabel(spec: ActionSpec): string | undefined {
+  const intent = spec.intent === 'bluff' ? '블러프' : spec.intent === 'thin' ? '씬밸류' : null;
+  const parts = [spec.size, intent].filter(Boolean);
+  return parts.length > 0 ? parts.join(' ') : undefined;
 }
 
 /**

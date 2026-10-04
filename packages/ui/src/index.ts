@@ -11,7 +11,7 @@ export {
   actionFill,
   actionSwatchFill,
   actionLabel,
-  actionLabelFull,
+  actionSublabel,
   usedActions,
   LEGACY_ACTIONS,
 } from './preflop-action';

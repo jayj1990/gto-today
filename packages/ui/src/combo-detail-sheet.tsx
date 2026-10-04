@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { cellSegments, type ComboMix } from './range-grid';
 import {
   actionFill,
-  actionLabel,
+  actionSublabel,
   LEGACY_ACTIONS,
   type ActionSpec,
   type ComboActions,
@@ -98,17 +98,27 @@ export function ComboDetailSheet({
                   const isTop = r === top && r.value > 0;
                   return (
                     <li
-                      key={r.label}
+                      // 밸류와 블러프가 같은 이름으로 두 줄 올 수 있다.
+                      key={`${r.label}-${r.sub ?? ''}`}
                       className="grid items-center gap-2"
-                      style={{ gridTemplateColumns: '48px minmax(0, 1fr) 48px' }}
+                      style={{
+                        gridTemplateColumns: 'minmax(64px, max-content) minmax(0, 1fr) 48px',
+                      }}
                     >
-                      <span
-                        className={cn(
-                          'text-right font-mono text-[13px]',
-                          isTop ? 'text-on-primary font-bold' : 'text-fg-muted',
+                      <span className="flex flex-col items-end leading-tight">
+                        <span
+                          className={cn(
+                            'whitespace-nowrap font-mono text-[13px]',
+                            isTop ? 'text-on-primary font-bold' : 'text-fg-muted',
+                          )}
+                        >
+                          {r.label}
+                        </span>
+                        {r.sub && (
+                          <span className="text-fg-muted whitespace-nowrap font-mono text-[10px] opacity-80">
+                            {r.sub}
+                          </span>
                         )}
-                      >
-                        {r.label}
                       </span>
                       <div className="relative h-3 overflow-hidden rounded-full bg-[color:var(--color-border)]">
                         <div
@@ -138,6 +148,8 @@ export function ComboDetailSheet({
 
 interface Row {
   label: string;
+  /** 라벨 아래 작게 붙는 둘째 줄 — 사이즈와 의도. */
+  sub?: string;
   value: number; // percent 0..100
   color: string;
 }
@@ -151,10 +163,13 @@ function buildActionRows(specs: readonly ActionSpec[], cell: ComboActions): Row[
   const byKey = new Map(specs.map((s) => [s.key, s]));
   return segs.map((s) => {
     const spec = byKey.get(s.key);
+    const sub = spec ? actionSublabel(spec) : undefined;
     return {
-      label: spec ? actionLabel(spec) : s.label,
+      // 액션 이름만 첫 줄에. 사이즈와 의도는 아래 줄로 내려 두 줄로 고정한다.
+      label: spec ? spec.label : s.label,
       value: s.pct,
       color: spec ? actionFill(spec) : s.fill,
+      ...(sub ? { sub } : {}),
     };
   });
 }
