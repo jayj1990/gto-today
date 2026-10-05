@@ -20,27 +20,13 @@ import {
 const SB_LIMP_ACTIONS: readonly ActionSpec[] = [
   { key: 'jam', kind: 'jam', label: '올인' },
   { key: 'raise_value', kind: 'raise', intent: 'value', size: '3.5x', label: '레이즈' },
-  {
-    key: 'raise_bluff',
-    kind: 'raise',
-    intent: 'bluff',
-    size: '3.5x',
-    label: '레이즈',
-    note: '블러프',
-  },
+  { key: 'raise_bluff', kind: 'raise', intent: 'bluff', size: '3.5x', label: '레이즈' },
   { key: 'check', kind: 'check', label: '체크 비하인드' },
 ];
 
 const OPEN_ACTIONS: readonly ActionSpec[] = [
   { key: 'raise_value', kind: 'raise', intent: 'value', size: '2.5x', label: '오픈' },
-  {
-    key: 'raise_bluff',
-    kind: 'raise',
-    intent: 'bluff',
-    size: '2.5x',
-    label: '오픈',
-    note: '블러프',
-  },
+  { key: 'raise_bluff', kind: 'raise', intent: 'bluff', size: '2.5x', label: '오픈' },
   { key: 'limp', kind: 'limp', label: '림프' },
   { key: 'fold', kind: 'fold', label: '폴드' },
 ];

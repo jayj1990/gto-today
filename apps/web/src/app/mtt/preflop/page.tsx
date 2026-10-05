@@ -75,16 +75,19 @@ export default function MttPreflopPage() {
     [isJam],
   );
 
+  // 폴드만 하는 핸드도 셀에 넣는다. 빼면 "범위 밖" 빗금으로 그려져서 범례의
+  // 파란 "폴드"와 안 맞았다 — 스터디·푸시폴드 차트처럼 파랑 = 폴드로 통일.
   const cells = useMemo<Record<string, ComboActions>>(() => {
     if (!chart) return {};
     const out: Record<string, ComboActions> = {};
-    for (const [combo, m] of Object.entries(chart)) {
-      if (m.raise > 0) out[combo] = { raise: m.raise, fold: m.fold };
-    }
+    for (const [combo, m] of Object.entries(chart)) out[combo] = { raise: m.raise, fold: m.fold };
     return out;
   }, [chart]);
 
-  const playedCount = Object.keys(cells).length;
+  const playedCount = useMemo(
+    () => (chart ? Object.values(chart).filter((m) => m.raise > 0).length : 0),
+    [chart],
+  );
 
   return (
     <>

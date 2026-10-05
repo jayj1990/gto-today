@@ -2,13 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { cellSegments, type ComboMix } from './range-grid';
-import {
-  actionFill,
-  actionSublabel,
-  LEGACY_ACTIONS,
-  type ActionSpec,
-  type ComboActions,
-} from './preflop-action';
+import { LEGACY_ACTIONS, type ActionSpec, type ComboActions } from './preflop-action';
 import { cn } from './cn';
 import { sheetUp } from './motion';
 
@@ -93,32 +87,38 @@ export function ComboDetailSheet({
                 {emptyText}
               </p>
             ) : (
-              <ul className="mt-4 space-y-2">
+              // 라벨 열은 가장 긴 라벨("레이즈 8.5bb 블러프")에 맞춰 늘어나고
+              // 줄은 안 꺾는다. 줄마다 subgrid 로 열을 물려받아 막대 시작점이
+              // 일직선 — 줄마다 격자를 따로 두면 "콜"과 "레이즈 11bb"가
+              // 어긋난다. mix-bar 와 같은 구조.
+              <ul
+                className="mt-4"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'max-content minmax(0, 1fr) 48px',
+                  columnGap: 8,
+                  rowGap: 8,
+                }}
+              >
                 {rows.map((r) => {
                   const isTop = r === top && r.value > 0;
                   return (
                     <li
-                      // 밸류와 블러프가 같은 이름으로 두 줄 올 수 있다.
-                      key={`${r.label}-${r.sub ?? ''}`}
-                      className="grid items-center gap-2"
+                      key={r.label}
                       style={{
-                        gridTemplateColumns: 'minmax(64px, max-content) minmax(0, 1fr) 48px',
+                        display: 'grid',
+                        gridTemplateColumns: 'subgrid',
+                        gridColumn: '1 / -1',
+                        alignItems: 'center',
                       }}
                     >
-                      <span className="flex flex-col items-end leading-tight">
-                        <span
-                          className={cn(
-                            'whitespace-nowrap font-mono text-[13px]',
-                            isTop ? 'text-on-primary font-bold' : 'text-fg-muted',
-                          )}
-                        >
-                          {r.label}
-                        </span>
-                        {r.sub && (
-                          <span className="text-fg-muted whitespace-nowrap font-mono text-[10px] opacity-80">
-                            {r.sub}
-                          </span>
+                      <span
+                        className={cn(
+                          'whitespace-nowrap text-right font-mono text-[13px] leading-tight',
+                          isTop ? 'text-on-primary font-bold' : 'text-fg-muted',
                         )}
+                      >
+                        {r.label}
                       </span>
                       <div className="relative h-3 overflow-hidden rounded-full bg-[color:var(--color-border)]">
                         <div
@@ -148,8 +148,6 @@ export function ComboDetailSheet({
 
 interface Row {
   label: string;
-  /** 라벨 아래 작게 붙는 둘째 줄 — 사이즈와 의도. */
-  sub?: string;
   value: number; // percent 0..100
   color: string;
 }
@@ -157,21 +155,11 @@ interface Row {
 /**
  * 새 경로 — 범례 순서대로 액션 줄을 만든다. 빈도 0 인 액션은 뺀다.
  * 블러프/밸류는 같은 색에 무늬로 갈리므로 막대도 격자와 같은 fill 을 쓴다.
+ * 라벨은 범례와 같은 한 줄("레이즈 8.5bb 블러프") — cellSegments 가 격자와
+ * 같은 라벨·fill 을 이미 만들어 준다.
  */
 function buildActionRows(specs: readonly ActionSpec[], cell: ComboActions): Row[] {
-  const segs = cellSegments(specs, cell);
-  const byKey = new Map(specs.map((s) => [s.key, s]));
-  return segs.map((s) => {
-    const spec = byKey.get(s.key);
-    const sub = spec ? actionSublabel(spec) : undefined;
-    return {
-      // 액션 이름만 첫 줄에. 사이즈와 의도는 아래 줄로 내려 두 줄로 고정한다.
-      label: spec ? spec.label : s.label,
-      value: s.pct,
-      color: spec ? actionFill(spec) : s.fill,
-      ...(sub ? { sub } : {}),
-    };
-  });
+  return cellSegments(specs, cell).map((s) => ({ label: s.label, value: s.pct, color: s.fill }));
 }
 
 function buildRows(mix: ComboMix): Row[] {

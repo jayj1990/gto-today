@@ -340,7 +340,11 @@ export function ChartNavigator({
                   >
                     {node.legal.map((act) => {
                       const color = actionColour(act);
+                      // 셋부터는 버튼을 낮추고 글자를 줄이되 "레이즈 8.5bb"는
+                      // 아직 한 줄에 들어간다. 넷(폴드·콜·레이즈·올인)이면
+                      // 360px 폰에서 넘치므로 그때만 사이즈만 적는다.
                       const compact = node.legal.length >= 3;
+                      const sizeOnly = node.legal.length >= 4;
                       const isAllIn = act === 'AllIn';
                       const cls = cn(
                         'text-on-primary whitespace-nowrap rounded-[var(--radius-button)] border font-mono font-bold shadow-[var(--shadow-card)] active:scale-[0.98]',
@@ -366,7 +370,7 @@ export function ChartNavigator({
                             }}
                             transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut' }}
                           >
-                            {prettyAction(act, compact)}
+                            {prettyAction(act, sizeOnly)}
                           </motion.button>
                         );
                       }
@@ -378,7 +382,7 @@ export function ChartNavigator({
                           className={cls}
                           style={style}
                         >
-                          {prettyAction(act, compact)}
+                          {prettyAction(act, sizeOnly)}
                         </button>
                       );
                     })}
@@ -507,7 +511,9 @@ function buildSeatState(
     if (activeActor === pos) return { pos, status: 'active', label: '차례' };
     if (!act) return { pos, status: 'waiting', label: '대기' };
     if (act === 'FOLD') return { pos, status: 'folded', label: '폴드' };
-    return { pos, status: 'acted', label: prettyAction(act) };
+    // 좌석 칸은 6-9 등분이라 "레이즈 2.5bb"가 "레이즈 2…"로 잘린다.
+    // 골드 칸 = 공격한 자리이니 사이즈만 적어도 뜻이 선다.
+    return { pos, status: 'acted', label: prettyAction(act, true) };
   });
 }
 
@@ -688,7 +694,7 @@ function buildChartData(node: NodeData): {
 
   const actions: ActionSpec[] = [];
   for (const r of raiseKeys) {
-    actions.push({ key: r.key, kind: 'raise', label: '레이즈', size: r.key });
+    actions.push({ key: r.key, kind: 'raise', label: '레이즈', size: prettySize(r.key) });
   }
   if ('AllIn' in node.actions) actions.push({ key: 'AllIn', kind: 'jam', label: '올인' });
   if ('Call' in node.actions) actions.push({ key: 'Call', kind: 'call', label: '콜' });
@@ -750,11 +756,20 @@ function actionColour(a: string): string {
   return 'var(--color-fg-muted)';
 }
 
+/**
+ * 트리 키("20.0bb", "8.5bb")를 보이는 사이즈로. 소수점 뒤 0 은 떼서
+ * "20bb" — 좁은 칸(좌석 리본·버튼 넷)에서 글자 하나가 줄바꿈을 가른다.
+ */
+function prettySize(a: string): string {
+  return `${parseFloat(a)}bb`;
+}
+
+/** compact 는 사이즈만("8.5bb") — 좌석 리본처럼 "레이즈"가 안 들어가는 칸용. */
 function prettyAction(a: string, compact = false): string {
   if (a === 'FOLD') return '폴드';
   if (a === 'Call') return '콜';
   if (a === 'AllIn') return '올인';
-  if (a.endsWith('bb')) return compact ? a : `레이즈 ${a}`;
+  if (a.endsWith('bb')) return compact ? prettySize(a) : `레이즈 ${prettySize(a)}`;
   return a;
 }
 

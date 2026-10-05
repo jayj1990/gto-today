@@ -6,7 +6,7 @@ import {
   ChipToss,
   MixBar,
   actionFill,
-  actionSublabel,
+  actionLabel,
   cn,
   playWin,
   type MixBarSegment,
@@ -108,17 +108,13 @@ function buildBreakdownSegments(spot: TrainingSpot, top: GradedAction | null): M
       domIdx = i;
     }
   });
-  return rows.map((r, i) => {
-    const sub = actionSublabel(r.spec);
-    return {
-      // 액션 이름은 첫 줄, 사이즈와 의도는 둘째 줄. 줄바꿈을 흐름에 안 맡긴다.
-      label: r.spec.label,
-      value: r.value,
-      color: actionFill(r.spec),
-      dominant: i === domIdx,
-      ...(sub ? { sublabel: sub } : {}),
-    };
-  });
+  return rows.map((r, i) => ({
+    // 범례와 같은 한 줄 라벨("레이즈 8.5bb 블러프"). 막대가 줄을 안 꺾는다.
+    label: actionLabel(r.spec),
+    value: r.value,
+    color: actionFill(r.spec),
+    dominant: i === domIdx,
+  }));
 }
 
 /** Segment builder — picks the action set visible on this scenario

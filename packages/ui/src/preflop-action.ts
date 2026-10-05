@@ -65,22 +65,16 @@ function fillFor(spec: ActionSpec, stripe: number): string {
   return c;
 }
 
-/** 라벨 + 사이즈를 한 줄로. 범례와 상세 시트가 같은 문자열을 쓰게 한다. */
-export function actionLabel(spec: ActionSpec): string {
-  return spec.size ? `${spec.label} ${spec.size}` : spec.label;
-}
-
 /**
- * 라벨 아래 붙일 둘째 줄 — 사이즈와 의도.
+ * 라벨 + 사이즈 + 의도를 한 줄로 — "레이즈 8.5bb 블러프".
  *
- * 한 줄에 "레이즈 8.5bb 블러프"를 다 넣으면 좁은 라벨 칸에서 세 줄로
- * 제멋대로 접힌다. 액션 이름은 첫 줄에 두고 나머지를 여기로 내리면
- * 모든 줄이 두 줄 안에서 끝난다. 붙일 게 없으면 undefined.
+ * 범례·믹스 막대·상세 시트가 전부 이 문자열 하나를 쓴다. 줄을 나누는
+ * 대신 칸을 max-content 로 늘리고 nowrap 을 거는 쪽이 어느 화면에서든
+ * 같은 모양으로 읽힌다(둘로 쪼갰더니 좁은 시트에서 어색하게 떴다).
  */
-export function actionSublabel(spec: ActionSpec): string | undefined {
+export function actionLabel(spec: ActionSpec): string {
   const intent = spec.intent === 'bluff' ? '블러프' : spec.intent === 'thin' ? '씬밸류' : null;
-  const parts = [spec.size, intent].filter(Boolean);
-  return parts.length > 0 ? parts.join(' ') : undefined;
+  return [spec.label, spec.size, intent].filter(Boolean).join(' ');
 }
 
 /**

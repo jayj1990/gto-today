@@ -34,7 +34,7 @@ export default function PushFoldPage() {
             올인/폴드
           </h1>
           <p className="text-fg-muted mt-2 text-[13px] leading-[1.55]">
-            숏스택 (~20BB 이하)에서는 레이즈 사이즈 의미가 사라져요.
+            숏스택 (~20BB 이하)에서는 레이즈 사이즈 의미가 사라져요.{' '}
             <span className="text-fg">올인 or 폴드</span> 두 결정만 남습니다.
           </p>
         </header>
