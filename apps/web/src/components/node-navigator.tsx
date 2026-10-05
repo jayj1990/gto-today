@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import type { BoardNodeTree, FlopNode } from '@gto/gto-data';
-import { cn, RangeGrid, type ComboMix } from '@gto/ui';
+import { actionFill, cn, RangeGrid, RangeLegend } from '@gto/ui';
+import { collectCodes, postflopActions, postflopSpec } from '@/lib/postflop-actions';
 
 /**
  * GTO Wizard-style flop node browser. Walk the line by tapping an
@@ -11,39 +12,6 @@ import { cn, RangeGrid, type ComboMix } from '@gto/ui';
  * cell for the exact action mix. Backed by the per-board node tree
  * (both players, every flop line).
  */
-
-const ACTION_LABEL: Record<string, string> = {
-  x: '체크',
-  c: '콜',
-  f: '폴드',
-  b33: '33% 벳',
-  b50: '50% 벳',
-  b75: '75% 벳',
-  bpot: '팟 벳',
-  bov: '오버벳',
-  r: '레이즈',
-};
-
-function actionColor(code: string): string {
-  if (code === 'f') return 'var(--color-fold)';
-  if (code === 'x' || code === 'c') return 'var(--color-call)';
-  return 'var(--color-raise)';
-}
-
-/** Compact node mix → RangeGrid's raise/call/fold buckets. */
-function toComboMix(hand: Record<string, number>): ComboMix {
-  let raise = 0;
-  let call = 0;
-  let fold = 0;
-  for (const [code, pct] of Object.entries(hand)) {
-    const v = pct / 100;
-    if (code === 'f') fold += v;
-    else if (code === 'x' || code === 'c') call += v;
-    else raise += v;
-  }
-  const total = raise + call + fold || 1;
-  return { raise: raise / total, call: call / total, fold: fold / total };
-}
 
 export function NodeNavigator({ tree }: { tree: BoardNodeTree }) {
   // The action line as a list of codes; '' (empty list) = root.
@@ -63,12 +31,8 @@ export function NodeNavigator({ tree }: { tree: BoardNodeTree }) {
     });
   }, [node, line, tree]);
 
-  const mixes = useMemo(() => {
-    if (!node) return {};
-    const out: Record<string, ComboMix> = {};
-    for (const [ht, hand] of Object.entries(node.hands)) out[ht] = toComboMix(hand);
-    return out;
-  }, [node]);
+  // 빈도는 퍼센트. 격자가 합으로 정규화하므로 그대로 넘긴다.
+  const actions = useMemo(() => postflopActions(collectCodes(node?.hands ?? {})), [node]);
 
   if (!node) return null;
 
@@ -115,9 +79,9 @@ export function NodeNavigator({ tree }: { tree: BoardNodeTree }) {
                 setPicked(null);
               }}
               className="font-mono text-[11px]"
-              style={{ color: actionColor(code) }}
+              style={{ color: actionFill(postflopSpec(code)) }}
             >
-              {ACTION_LABEL[code] ?? code}
+              {postflopSpec(code).label}
             </button>
           </span>
         ))}
@@ -137,13 +101,16 @@ export function NodeNavigator({ tree }: { tree: BoardNodeTree }) {
       </p>
 
       <div className="mt-3">
-        <RangeGrid mixes={mixes} onCellClick={setPicked} highlight={picked ?? undefined} />
+        <RangeGrid
+          actions={actions}
+          cells={node.hands}
+          onCellClick={setPicked}
+          highlight={picked ?? undefined}
+        />
       </div>
 
       <section className="text-fg-muted mt-2 flex flex-wrap justify-center gap-x-3 gap-y-0.5 text-[11px]">
-        <LegendDot color="var(--color-raise)" label="벳·레이즈" />
-        <LegendDot color="var(--color-call)" label="체크·콜" />
-        <LegendDot color="var(--color-fold)" label="폴드" />
+        <RangeLegend actions={actions} cells={node.hands} className="gap-x-3 gap-y-0.5" />
       </section>
 
       {/* Drill into the next action */}
@@ -163,9 +130,9 @@ export function NodeNavigator({ tree }: { tree: BoardNodeTree }) {
                 <span
                   aria-hidden
                   className="inline-block h-2 w-2 rounded-sm"
-                  style={{ background: actionColor(a) }}
+                  style={{ background: actionFill(postflopSpec(a)) }}
                 />
-                {ACTION_LABEL[a] ?? a} →
+                {postflopSpec(a).label} →
               </button>
             ))}
           </div>
@@ -196,12 +163,12 @@ export function NodeNavigator({ tree }: { tree: BoardNodeTree }) {
                   style={{ gridTemplateColumns: '64px minmax(0, 1fr) 48px' }}
                 >
                   <span className="text-fg-muted text-right font-mono text-[11px]">
-                    {ACTION_LABEL[code] ?? code}
+                    {postflopSpec(code).label}
                   </span>
                   <div className="relative h-2.5 overflow-hidden rounded-full bg-[color:var(--color-border)]">
                     <div
                       className="h-full rounded-full"
-                      style={{ width: `${pct}%`, background: actionColor(code) }}
+                      style={{ width: `${pct}%`, background: actionFill(postflopSpec(code)) }}
                     />
                   </div>
                   <span className="text-fg text-right font-mono text-[11px] tabular-nums">
@@ -217,18 +184,5 @@ export function NodeNavigator({ tree }: { tree: BoardNodeTree }) {
         </p>
       )}
     </section>
-  );
-}
-
-function LegendDot({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span
-        aria-hidden
-        className="inline-block h-2.5 w-2.5 rounded-sm"
-        style={{ background: color }}
-      />
-      {label}
-    </span>
   );
 }

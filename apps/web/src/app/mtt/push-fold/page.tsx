@@ -10,7 +10,8 @@ import {
   type TrainingSpot,
 } from '@gto/gto-data';
 import type { CardCode, ComboKey, Position } from '@gto/poker-core';
-import { RangeGrid, cn, type ComboMix } from '@gto/ui';
+import { RangeGrid, RangeLegend, cn } from '@gto/ui';
+import type { ActionSpec, ComboActions } from '@gto/poker-core';
 import { SiteHeader } from '@/components/site-header';
 import { HandCard } from '@/components/today/hand-card';
 import { ActionBar, type ActionKind } from '@/components/today/action-bar';
@@ -73,14 +74,21 @@ export default function PushFoldPage() {
   );
 }
 
+// 푸시는 올인이므로 종류를 jam 으로 준다. MTT 차트 화면과 색이 같아야
+// "골드 = 올인"이 앱 전체에서 한 뜻으로 읽힌다.
+const PUSH_FOLD_ACTIONS: readonly ActionSpec[] = [
+  { key: 'push', kind: 'jam', label: '올인' },
+  { key: 'fold', kind: 'fold', label: '폴드' },
+];
+
 function ChartView() {
   const [pos, setPos] = useState<PushFoldPosition>('BTN');
 
-  const mixes = useMemo<Record<string, ComboMix>>(() => {
+  const cells = useMemo<Record<string, ComboActions>>(() => {
     const chart = PUSH_FOLD_20BB[pos];
-    const out: Record<string, ComboMix> = {};
+    const out: Record<string, ComboActions> = {};
     for (const [combo, entry] of Object.entries(chart) as Array<[string, PushFoldEntry]>) {
-      out[combo] = { raise: entry.push, fold: entry.fold };
+      out[combo] = { push: entry.push, fold: entry.fold };
     }
     return out;
   }, [pos]);
@@ -124,18 +132,23 @@ function ChartView() {
       <p className="text-fg-muted mb-2 text-center font-mono text-[11px]">
         {pos} · 올인 <span className="text-fg font-semibold">{pushCount}</span>개 / 169
         <span className="mx-2">·</span>
-        <span className="text-[color:var(--color-raise)]">올인</span> vs{' '}
+        <span className="text-[color:var(--color-gold)]">올인</span> vs{' '}
         <span className="text-[color:var(--color-fold)]">폴드</span>
       </p>
 
-      <RangeGrid mixes={mixes} />
+      <RangeGrid actions={PUSH_FOLD_ACTIONS} cells={cells} />
+      <RangeLegend
+        actions={PUSH_FOLD_ACTIONS}
+        cells={cells}
+        className="text-fg-muted mt-2 justify-center gap-x-3 gap-y-0.5"
+      />
 
       <div className="border-hair surface text-fg-muted mt-4 rounded-[var(--radius-button)] p-3 text-[12px] leading-[1.55]">
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]">
           사용법
         </p>
         <p className="mt-1">
-          포지션 탭을 누르면 그 자리에서 올인해도 되는 핸드가 레드로 표시돼요. 블루는 폴드. 스택이
+          포지션 탭을 누르면 그 자리에서 올인해도 되는 핸드가 골드로 표시돼요. 블루는 폴드. 스택이
           얕을수록 레인지가 넓어지고, SB가 가장 공격적.
         </p>
         <p className="mt-2 text-[11px]">※ BB 디펜스 / vs 올인 콜 레인지는 추후 업데이트 예정.</p>

@@ -26,6 +26,13 @@ export interface ActionSpec {
   readonly intent?: PreflopActionIntent;
   /** "3.5x", "8.5bb", "올인" 처럼 사람이 읽는 사이즈. */
   readonly size?: string;
+  /**
+   * 같은 종류 안에서의 색 농도(0..1). 벳 사이즈가 커질수록 1 에 가깝게 준다.
+   *
+   * 포스트플랍은 1/3벳부터 오버벳까지 전부 raise 라서 종류만으로는 다 같은
+   * 빨강이 된다. 크기 순서를 색의 진하기로 옮겨야 격자에서 구분이 된다.
+   */
+  readonly shade?: number;
   /** 범례·상세 시트에 그대로 쓰는 한국어 라벨. */
   readonly label: string;
   /** "올인에는 폴드" 같은 꼬리말. 범례에만 작게 붙는다. */

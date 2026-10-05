@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { RangeGrid, type ComboMix } from '@gto/ui';
+import { RangeGrid, RangeLegend } from '@gto/ui';
+import type { ActionSpec, ComboActions } from '@gto/poker-core';
 import { getPreflopChart } from '@gto/gto-data';
 import type { Position } from '@gto/poker-core';
 
@@ -18,9 +19,14 @@ const POSITIONS: { id: Position; label: string; openPct: string }[] = [
  * Switches positions live, no re-fetch thanks to the in-memory cache in
  * @gto/gto-data.
  */
+const RFI_ACTIONS: readonly ActionSpec[] = [
+  { key: 'raise', kind: 'raise', label: '레이즈 오픈' },
+  { key: 'fold', kind: 'fold', label: '폴드' },
+];
+
 export function RangeDemo() {
   const [position, setPosition] = useState<Position>('BTN');
-  const [mixes, setMixes] = useState<Record<string, ComboMix>>({});
+  const [cells, setCells] = useState<Record<string, ComboActions>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,14 +36,14 @@ export function RangeDemo() {
       .then((chart) => {
         if (cancelled) return;
         if (!chart) {
-          setMixes({});
+          setCells({});
           return;
         }
-        const out: Record<string, ComboMix> = {};
+        const out: Record<string, ComboActions> = {};
         for (const [k, v] of Object.entries(chart)) {
           out[k] = { raise: v.raise, fold: v.fold };
         }
-        setMixes(out);
+        setCells(out);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -47,7 +53,7 @@ export function RangeDemo() {
     };
   }, [position]);
 
-  const playedCount = Object.values(mixes).filter((m) => m.raise > 0).length;
+  const playedCount = Object.values(cells).filter((c) => (c['raise'] ?? 0) > 0).length;
 
   return (
     <div className="space-y-5">
@@ -75,7 +81,10 @@ export function RangeDemo() {
       </div>
 
       <div className="flex items-start gap-6">
-        <RangeGrid mixes={mixes} highlight="AA" />
+        <div className="space-y-2">
+          <RangeGrid actions={RFI_ACTIONS} cells={cells} highlight="AA" />
+          <RangeLegend actions={RFI_ACTIONS} cells={cells} />
+        </div>
         <dl className="space-y-3 text-[13px]">
           <div>
             <dt className="text-fg-muted font-mono text-[11px] uppercase tracking-[0.16em]">

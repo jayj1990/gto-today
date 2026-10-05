@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { cn, RangeGrid, type ComboMix } from '@gto/ui';
+import { cn, RangeGrid, RangeLegend } from '@gto/ui';
+import type { ActionSpec, ComboActions } from '@gto/poker-core';
 import { SiteHeader } from '@/components/site-header';
 
 /**
@@ -63,21 +64,27 @@ export default function MttPreflopPage() {
     };
   }, [chartKey]);
 
-  const mixes = useMemo<Record<string, ComboMix>>(() => {
+  // 20BB 이하 차트의 "레이즈"는 사실 올인이라 종류를 jam 으로 준다(골드).
+  const actions = useMemo<ActionSpec[]>(
+    () => [
+      isJam
+        ? { key: 'raise', kind: 'jam', label: '올인' }
+        : { key: 'raise', kind: 'raise', label: '레이즈 오픈' },
+      { key: 'fold', kind: 'fold', label: '폴드' },
+    ],
+    [isJam],
+  );
+
+  const cells = useMemo<Record<string, ComboActions>>(() => {
     if (!chart) return {};
-    const out: Record<string, ComboMix> = {};
+    const out: Record<string, ComboActions> = {};
     for (const [combo, m] of Object.entries(chart)) {
-      if (m.raise > 0) {
-        // Jam charts: the "raise" IS an all-in — render it gold.
-        out[combo] = isJam
-          ? { allin: m.raise, raise: 0, fold: m.fold }
-          : { raise: m.raise, fold: m.fold };
-      }
+      if (m.raise > 0) out[combo] = { raise: m.raise, fold: m.fold };
     }
     return out;
-  }, [chart, isJam]);
+  }, [chart]);
 
-  const playedCount = Object.keys(mixes).length;
+  const playedCount = Object.keys(cells).length;
 
   return (
     <>
@@ -168,24 +175,12 @@ export default function MttPreflopPage() {
               <span className="text-fg font-semibold tabular-nums">{playedCount}</span>
               /169 핸드
             </p>
-            <RangeGrid mixes={mixes} />
-            <section className="text-fg-muted mt-2 flex flex-wrap justify-center gap-x-3 gap-y-0.5 text-[11px]">
-              <span className="inline-flex items-center gap-1.5">
-                <span
-                  aria-hidden
-                  className="inline-block h-2.5 w-2.5 rounded-sm"
-                  style={{ background: isJam ? 'var(--color-gold)' : 'var(--color-raise)' }}
-                />
-                {isJam ? '올인' : '레이즈 오픈'}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span
-                  aria-hidden
-                  className="inline-block h-2.5 w-2.5 rounded-sm bg-[color:var(--color-border)]"
-                />
-                폴드
-              </span>
-            </section>
+            <RangeGrid actions={actions} cells={cells} />
+            <RangeLegend
+              actions={actions}
+              cells={cells}
+              className="text-fg-muted mt-2 justify-center gap-x-3 gap-y-0.5"
+            />
 
             <div className="border-hair surface text-fg-muted mt-4 rounded-[var(--radius-button)] p-3 text-[12px] leading-[1.55]">
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-accent)]">
