@@ -11,12 +11,14 @@
     "./preflop": "./src/preflop.ts",
     "./postflop": "./src/postflop.ts",
     "./combos": "./src/combos.ts",
-    "./spot-generator": "./src/spot-generator.ts"
+    "./spot-generator": "./src/spot-generator.ts",
+    "./chart-library": "./src/chart-library.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "build": "tsx scripts/build-preflop.ts",
+    "build:rye": "tsx scripts/build-rye.ts",
     "solve:preflop": "tsx scripts/parse-texassolver.ts",
     "clean": "rimraf dist .turbo generated"
   },

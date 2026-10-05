@@ -14,3 +14,6 @@ pnpm-lock.yaml
 packages/gto-data/src/ranges/solver-spots.ts
 packages/gto-data/src/ranges/solver-spots/
 packages/gto-data/data/spots-chunks/
+
+# RYE 영상에서 추출한 격자 원본(한 격자 한 줄). build-rye.ts 입력.
+packages/gto-data/data/rye/

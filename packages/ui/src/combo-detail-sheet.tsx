@@ -17,6 +17,12 @@ export interface ComboDetailSheetProps {
   cell?: ComboActions | undefined;
   /** Copy for the no-mix state — defaults to a generic "no data". */
   emptyText?: string;
+  /**
+   * false 면 막대와 퍼센트를 숨기고 액션 목록만 보인다. RYE 오픈 차트처럼
+   * 한 칸의 분할이 빈도가 아니라 "깊으면 콜, 얕으면 4벳 올인" 같은 스택
+   * 조건일 때 "50.0%" 는 거짓말이다.
+   */
+  percent?: boolean | undefined;
   onClose: () => void;
 }
 
@@ -32,6 +38,7 @@ export function ComboDetailSheet({
   actions,
   cell,
   emptyText = '이 스팟의 데이터가 없어요.',
+  percent = true,
   onClose,
 }: ComboDetailSheetProps) {
   const rows = cell ? buildActionRows(actions ?? LEGACY_ACTIONS, cell) : mix ? buildRows(mix) : [];
@@ -95,16 +102,18 @@ export function ComboDetailSheet({
                 className="mt-4"
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'max-content minmax(0, 1fr) 48px',
+                  gridTemplateColumns: percent
+                    ? 'max-content minmax(0, 1fr) 48px'
+                    : '12px minmax(0, 1fr)',
                   columnGap: 8,
                   rowGap: 8,
                 }}
               >
                 {rows.map((r) => {
-                  const isTop = r === top && r.value > 0;
+                  const isTop = percent && r === top && r.value > 0;
                   return (
                     <li
-                      key={r.label}
+                      key={r.key}
                       style={{
                         display: 'grid',
                         gridTemplateColumns: 'subgrid',
@@ -112,28 +121,55 @@ export function ComboDetailSheet({
                         alignItems: 'center',
                       }}
                     >
+                      {/* 퍼센트를 숨기면 막대 대신 색 견본으로 격자와 잇는다 */}
+                      {!percent && (
+                        <span
+                          aria-hidden
+                          style={{
+                            display: 'inline-block',
+                            width: 12,
+                            height: 12,
+                            borderRadius: 3,
+                            background: r.color,
+                          }}
+                        />
+                      )}
                       <span
                         className={cn(
-                          'whitespace-nowrap text-right font-mono text-[13px] leading-tight',
-                          isTop ? 'text-on-primary font-bold' : 'text-fg-muted',
+                          'whitespace-nowrap font-mono text-[13px] leading-tight',
+                          percent ? 'text-right' : 'text-left',
+                          isTop
+                            ? 'text-on-primary font-bold'
+                            : percent
+                              ? 'text-fg-muted'
+                              : 'text-fg',
                         )}
                       >
                         {r.label}
-                      </span>
-                      <div className="relative h-3 overflow-hidden rounded-full bg-[color:var(--color-border)]">
-                        <div
-                          className="h-full rounded-full transition-[width] duration-500 ease-out"
-                          style={{ width: `${r.value}%`, background: r.color }}
-                        />
-                      </div>
-                      <span
-                        className={cn(
-                          'text-right font-mono text-[13px] tabular-nums',
-                          isTop ? 'text-on-primary font-bold' : 'font-semibold',
+                        {r.note && (
+                          <span className="text-fg-muted block text-[11px] font-normal">
+                            {r.note}
+                          </span>
                         )}
-                      >
-                        {r.value.toFixed(1)}%
                       </span>
+                      {percent && (
+                        <>
+                          <div className="relative h-3 overflow-hidden rounded-full bg-[color:var(--color-border)]">
+                            <div
+                              className="h-full rounded-full transition-[width] duration-500 ease-out"
+                              style={{ width: `${r.value}%`, background: r.color }}
+                            />
+                          </div>
+                          <span
+                            className={cn(
+                              'text-right font-mono text-[13px] tabular-nums',
+                              isTop ? 'text-on-primary font-bold' : 'font-semibold',
+                            )}
+                          >
+                            {r.value.toFixed(1)}%
+                          </span>
+                        </>
+                      )}
                     </li>
                   );
                 })}
@@ -147,7 +183,10 @@ export function ComboDetailSheet({
 }
 
 interface Row {
+  key: string;
   label: string;
+  /** 범례 꼬리말("30bb 미만일 때"). 조건부 계획은 이게 있어야 읽힌다. */
+  note?: string | undefined;
   value: number; // percent 0..100
   color: string;
 }
@@ -159,7 +198,13 @@ interface Row {
  * 같은 라벨·fill 을 이미 만들어 준다.
  */
 function buildActionRows(specs: readonly ActionSpec[], cell: ComboActions): Row[] {
-  return cellSegments(specs, cell).map((s) => ({ label: s.label, value: s.pct, color: s.fill }));
+  return cellSegments(specs, cell).map((s) => ({
+    key: s.key,
+    label: s.label,
+    note: specs.find((a) => a.key === s.key)?.note,
+    value: s.pct,
+    color: s.fill,
+  }));
 }
 
 function buildRows(mix: ComboMix): Row[] {
@@ -168,12 +213,12 @@ function buildRows(mix: ComboMix): Row[] {
   const scale = total > 1.5 ? 1 : 100;
   const rows: Row[] = [];
   if (mix.allin !== undefined) {
-    rows.push({ label: '올인', value: mix.allin * scale, color: '#D4AF37' });
+    rows.push({ key: 'allin', label: '올인', value: mix.allin * scale, color: '#D4AF37' });
   }
-  rows.push({ label: '레이즈', value: (mix.raise ?? 0) * scale, color: '#C8102E' });
+  rows.push({ key: 'raise', label: '레이즈', value: (mix.raise ?? 0) * scale, color: '#C8102E' });
   if (mix.call !== undefined) {
-    rows.push({ label: '콜', value: mix.call * scale, color: '#1F9D55' });
+    rows.push({ key: 'call', label: '콜', value: mix.call * scale, color: '#1F9D55' });
   }
-  rows.push({ label: '폴드', value: (mix.fold ?? 0) * scale, color: '#2B5F8F' });
+  rows.push({ key: 'fold', label: '폴드', value: (mix.fold ?? 0) * scale, color: '#2B5F8F' });
   return rows;
 }

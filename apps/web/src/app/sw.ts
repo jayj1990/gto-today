@@ -20,7 +20,7 @@ declare const self: ServiceWorkerGlobalScope;
  *
  * 1. `/api/**` — network-only. Auth, AI explain, debug probes must never
  *    be served from cache; stale answers / broken sessions = bad UX.
- * 2. `/data/preflop/**` — stale-while-revalidate. The 100-300KB JSON
+ * 2. `/data/preflop/**`, `/data/rye/**` — stale-while-revalidate. The 100-300KB JSON
  *    files rarely change; serving the cache instantly + refreshing in
  *    the background makes repeat visits feel native-app-fast while
  *    still letting new solver batches propagate within ~1 minute.
@@ -51,6 +51,14 @@ const serwist = new Serwist({
       matcher: ({ url }) => url.pathname.startsWith('/data/preflop/'),
       handler: new StaleWhileRevalidate({
         cacheName: 'gto-preflop-data',
+        plugins: [new ExpirationPlugin({ maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 30 })],
+      }),
+    },
+    {
+      // RYE 차트 56장 — preflop 캐시와 자리를 다투지 않게 따로 둔다.
+      matcher: ({ url }) => url.pathname.startsWith('/data/rye/'),
+      handler: new StaleWhileRevalidate({
+        cacheName: 'gto-rye-data',
         plugins: [new ExpirationPlugin({ maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 30 })],
       }),
     },

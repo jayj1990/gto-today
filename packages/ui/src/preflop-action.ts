@@ -46,9 +46,9 @@ export function actionSwatchFill(spec: ActionSpec): string {
   return fillFor(spec, 2);
 }
 
-/** 종류 색에 농도를 입힌 바탕색. shade 가 클수록 어둡다. */
+/** 종류 색에 농도를 입힌 바탕색. shade 가 클수록 어둡다. 차트가 색을 들고 오면 그 색. */
 function baseColor(spec: ActionSpec): string {
-  const c = KIND_COLOR[spec.kind];
+  const c = spec.color ?? KIND_COLOR[spec.kind];
   const shade = Math.max(0, Math.min(1, spec.shade ?? 0));
   if (shade === 0) return c;
   return `color-mix(in oklab, ${c} ${Math.round(100 - shade * 45)}%, #000)`;

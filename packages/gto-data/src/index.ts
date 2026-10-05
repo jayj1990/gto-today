@@ -8,6 +8,7 @@ export * from './spots-loader';
 export * from './bb-defense';
 export * from './qb-tree';
 export * from './range-derive';
+export * from './chart-library';
 export {
   PUSH_FOLD_20BB,
   PUSH_FOLD_POSITIONS,
