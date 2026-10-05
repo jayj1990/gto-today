@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ComboDetailSheet, RangeGrid, type ComboMix } from '@gto/ui';
+import { ComboDetailSheet, RangeGrid, RangeLegend } from '@gto/ui';
+import type { ActionSpec, ComboActions } from '@gto/poker-core';
 import {
   fetchPairings,
   fetchPairingRanges,
@@ -106,9 +107,9 @@ export function ChartNavigator({
     return resolveNode(decisions, path, positions);
   }, [decisions, path, positions]);
 
-  const mixes: Record<string, ComboMix> = useMemo(() => {
-    if (!node) return {};
-    return buildComboMixes(node);
+  const chart = useMemo(() => {
+    if (!node) return { actions: [] as ActionSpec[], cells: {} as Record<string, ComboActions> };
+    return buildChartData(node);
   }, [node]);
 
   const handleAction = (action: string) => setPath((p) => [...p, `${node?.actor}_${action}`]);
@@ -124,7 +125,7 @@ export function ChartNavigator({
   );
 
   const [pickedCombo, setPickedCombo] = useState<string | null>(null);
-  const pickedMix = pickedCombo ? mixes[pickedCombo] : undefined;
+  const pickedCell = pickedCombo ? chart.cells[pickedCombo] : undefined;
 
   // A preflop "flop reached" state = someone raised, someone called,
   // no more preflop decisions. Detected when resolveNode can't find a
@@ -401,9 +402,10 @@ export function ChartNavigator({
               ) : (
                 <>
                   <section className="mb-2">
-                    {Object.keys(mixes).length > 0 ? (
+                    {Object.keys(chart.cells).length > 0 ? (
                       <RangeGrid
-                        mixes={mixes}
+                        actions={chart.actions}
+                        cells={chart.cells}
                         onCellClick={(c) => setPickedCombo(c)}
                         className="w-full"
                       />
@@ -416,13 +418,15 @@ export function ChartNavigator({
                     )}
                   </section>
 
-                  <section className="text-fg-muted mb-3 flex flex-wrap justify-center gap-x-3 gap-y-0.5 text-[11px]">
-                    {'AllIn' in node.actions && (
-                      <LegendDot color="var(--color-gold)" label="올인" />
-                    )}
-                    <LegendDot color="var(--color-raise)" label="레이즈" />
-                    <LegendDot color="var(--color-call)" label="콜" />
-                    <LegendDot color="var(--color-fold)" label="폴드" />
+                  {/* 범례는 이 노드가 실제로 쓰는 액션만 보여준다. 레이즈가
+                      사이즈별로 갈리면 그대로 갈려 나오고, 차트가 블러프를
+                      적어준 경우 사선 무늬까지 여기에 뜬다. */}
+                  <section className="text-fg-muted mb-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 text-[11px]">
+                    <RangeLegend
+                      actions={chart.actions}
+                      cells={chart.cells}
+                      className="justify-center gap-x-3 gap-y-0.5"
+                    />
                     <LegendDot
                       color="repeating-linear-gradient(135deg, #3a3a3e 0 3px, #2a2a2e 3px 6px)"
                       label="범위 밖"
@@ -455,7 +459,8 @@ export function ChartNavigator({
           <ComboDetailSheet
             open={pickedCombo !== null}
             combo={pickedCombo}
-            mix={pickedMix}
+            actions={chart.actions}
+            cell={pickedCell}
             emptyText="이 라인의 히어로 레인지에 없는 핸드예요. 앞선 액션(폴드·레이즈·콜 분기)에서 이미 갈라졌습니다."
             onClose={() => setPickedCombo(null)}
           />
@@ -663,29 +668,48 @@ function nextActor(path: string[], order: readonly string[]): string | null {
   return null;
 }
 
-function buildComboMixes(node: NodeData): Record<string, ComboMix> {
-  const out: Record<string, ComboMix> = {};
-  const raiseBand = new Set(
-    Object.keys(node.actions).filter((a) => isRaiseAction(a) && a !== 'AllIn'),
-  );
-  const allinBand = 'AllIn' in node.actions;
-  const callBand = 'Call' in node.actions;
-  const foldBand = 'FOLD' in node.actions;
+/**
+ * 노드 하나를 격자가 쓸 범례 + 169칸으로 바꾼다.
+ *
+ * 예전 buildComboMixes 는 "2.5bb"와 "8.5bb"를 `raise` 한 칸에 더해버렸다.
+ * 여기서는 사이즈마다 액션을 하나씩 만들어 솔버가 말한 것을 그대로 남긴다.
+ * 밸류/블러프는 넣지 않는다 — 빈도만 보고는 알 수 없고, 차트 저자가 범례에
+ * 적어줘야 하는 값이다. 그런 차트가 들어오면 여기에 intent 가 붙는다.
+ */
+function buildChartData(node: NodeData): {
+  actions: ActionSpec[];
+  cells: Record<string, ComboActions>;
+} {
+  const raiseKeys = Object.keys(node.actions)
+    .filter((a) => isRaiseAction(a) && a !== 'AllIn')
+    .map((a) => ({ key: a, size: parseFloat(a) }))
+    // 작은 레이즈가 왼쪽에 와야 셀 안에서 막대가 읽힌다.
+    .sort((x, y) => x.size - y.size);
 
-  for (const combo of enumerateCombos()) {
-    let raise = 0;
-    for (const a of raiseBand) raise += node.actions[a]?.[combo] ?? 0;
-    const allin = allinBand ? (node.actions['AllIn']?.[combo] ?? 0) : 0;
-    const call = callBand ? (node.actions['Call']?.[combo] ?? 0) : 0;
-    const foldRaw = foldBand ? (node.actions['FOLD']?.[combo] ?? 0) : 0;
-    const total = allin + raise + call + foldRaw;
-    if (total <= 0) continue;
-    const mix: ComboMix = { raise: raise / total, fold: foldRaw / total };
-    if (allinBand) mix.allin = allin / total;
-    if (callBand) mix.call = call / total;
-    out[combo] = mix;
+  const actions: ActionSpec[] = [];
+  for (const r of raiseKeys) {
+    actions.push({ key: r.key, kind: 'raise', label: '레이즈', size: r.key });
   }
-  return out;
+  if ('AllIn' in node.actions) actions.push({ key: 'AllIn', kind: 'jam', label: '올인' });
+  if ('Call' in node.actions) actions.push({ key: 'Call', kind: 'call', label: '콜' });
+  if ('FOLD' in node.actions) actions.push({ key: 'FOLD', kind: 'fold', label: '폴드' });
+
+  const cells: Record<string, ComboActions> = {};
+  for (const combo of enumerateCombos()) {
+    const cell: Record<string, number> = {};
+    let total = 0;
+    for (const spec of actions) {
+      const v = node.actions[spec.key]?.[combo] ?? 0;
+      if (v <= 0) continue;
+      cell[spec.key] = v;
+      total += v;
+    }
+    // 합이 0 이면 이 라인의 히어로 레인지에 없는 핸드 — 격자가 "범위 밖"으로 그린다.
+    if (total <= 0) continue;
+    for (const k of Object.keys(cell)) cell[k] = cell[k]! / total;
+    cells[combo] = cell;
+  }
+  return { actions, cells };
 }
 
 function isRaiseAction(a: string): boolean {
