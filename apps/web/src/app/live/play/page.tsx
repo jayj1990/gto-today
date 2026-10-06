@@ -4,16 +4,20 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@gto/ui';
 import { POSITIONS_BY_FORMAT } from '@gto/poker-core';
+import { CASH_GROUP_IDS, MTT_GROUP_IDS } from '@gto/gto-data';
 import { SiteHeader } from '@/components/site-header';
 import { ChartNavigator } from '@/components/chart-navigator';
+import { ChartLibraryBrowser } from '@/components/chart-library-browser';
 import { PostflopExplorer } from '@/components/postflop-explorer';
 import { useLiveStore } from '@/lib/live-store';
 
 /**
  * 실전 모드 — interactive game-tree explorer.
  *
- * Two top-level modes:
- *   • 프리플랍 — walk the preflop tree (ChartNavigator). On flop reach,
+ * Three top-level modes:
+ *   • 프리플랍 — RYE 차트 라이브러리(ChartLibraryBrowser). 캐시/토너먼트
+ *     설정에 따라 묶음이 갈린다. 스터디 탭의 기본 화면.
+ *   • 트리 — walk the preflop tree (ChartNavigator). On flop reach,
  *     ChartNavigator surfaces an inline board picker + postflop strategy.
  *   • 포스트플랍 — skip preflop and explore the Wizard-style postflop
  *     chart directly (PostflopExplorer): pairing pills + texture tabs
@@ -25,7 +29,7 @@ import { useLiveStore } from '@/lib/live-store';
  */
 export default function LivePlayPage() {
   const config = useLiveStore((s) => s.config);
-  const [mode, setMode] = useState<'preflop' | 'postflop'>('preflop');
+  const [mode, setMode] = useState<'charts' | 'tree' | 'postflop'>('charts');
 
   const isMtt = config.gameType === 'mtt';
   const typeLabel = isMtt ? '토너먼트 · 1BB 앤티 근사' : '캐시 게임';
@@ -53,7 +57,9 @@ export default function LivePlayPage() {
           <div>
             <h1 className="font-display text-[20px] font-bold tracking-[-0.015em]">GTO 스터디</h1>
             <p className="text-fg-muted mt-0.5 text-[11px]">
-              {typeLabel} · {format === '9max' ? '9맥스' : '6맥스'} · {depth}BB · {sizeLabel}
+              {mode === 'charts'
+                ? `${typeLabel} · 포지션 · 스택별 차트`
+                : `${typeLabel} · ${format === '9max' ? '9맥스' : '6맥스'} · ${depth}BB · ${sizeLabel}`}
             </p>
           </div>
           <Link
@@ -64,9 +70,9 @@ export default function LivePlayPage() {
           </Link>
         </header>
 
-        {/* Preflop / Postflop mode toggle */}
+        {/* 차트 / 트리 / 포스트플랍 */}
         <div className="border-hair surface mb-4 inline-flex self-start rounded-[var(--radius-button)] p-1">
-          {(['preflop', 'postflop'] as const).map((m) => {
+          {(['charts', 'tree', 'postflop'] as const).map((m) => {
             const active = m === mode;
             return (
               <button
@@ -81,13 +87,15 @@ export default function LivePlayPage() {
                     : 'text-fg-muted',
                 )}
               >
-                {m === 'preflop' ? '프리플랍' : '포스트플랍'}
+                {m === 'charts' ? '프리플랍' : m === 'tree' ? '트리' : '포스트플랍'}
               </button>
             );
           })}
         </div>
 
-        {mode === 'preflop' ? (
+        {mode === 'charts' ? (
+          <ChartLibraryBrowser groups={isMtt ? MTT_GROUP_IDS : CASH_GROUP_IDS} />
+        ) : mode === 'tree' ? (
           <ChartNavigator key={dataPath} dataPath={dataPath} positions={positions} />
         ) : (
           <PostflopExplorer />
