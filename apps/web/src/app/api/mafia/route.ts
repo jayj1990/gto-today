@@ -60,14 +60,22 @@ interface MeetRsvpRaw {
   name?: unknown;
   st?: unknown;
   at?: unknown;
+  pay?: unknown;
 }
-/** 모집 페이지 요약. 포커투데이가 안 닿으면 null — 점수판은 그대로 뜬다. */
-async function fetchMeet(code: string): Promise<MeetSummary | null> {
+/**
+ * 모집 페이지 요약 + 참석자 송금처. 포커투데이가 안 닿으면 null — 점수판은 그대로 뜬다.
+ * 송금처는 양쪽에 같은 MEET_SYNC_KEY 가 있을 때만 내려오고(x-meet-sync), 여기서는 관리자 syncMeet 때 state.pay 로만 옮긴다.
+ */
+async function fetchMeet(
+  code: string,
+): Promise<{ summary: MeetSummary; pay: Record<string, PayInfo> } | null> {
   if (!code) return null;
   try {
+    const syncKey = process.env['MEET_SYNC_KEY'];
     const r = await fetch(`${MEET_API}?code=${encodeURIComponent(code)}`, {
       cache: 'no-store',
       signal: AbortSignal.timeout(4000),
+      headers: syncKey ? { 'x-meet-sync': syncKey } : {},
     });
     if (!r.ok) return null;
     const j = (await r.json()) as { data?: unknown };
@@ -82,18 +90,27 @@ async function fetchMeet(code: string): Promise<MeetSummary | null> {
         .map((x) => String(x.name).trim())
         .filter(Boolean);
     const yesAll = names('yes');
+    const pay: Record<string, PayInfo> = {};
+    for (const x of rsvps) {
+      if (typeof x.name !== 'string') continue;
+      const p = cleanPay(x.pay);
+      if (p) pay[x.name.trim()] = p;
+    }
     return {
-      code,
-      url: meetUrl(code),
-      title: typeof d['title'] === 'string' ? d['title'] : '',
-      at: typeof d['at'] === 'number' ? d['at'] : 0,
-      place: typeof d['place'] === 'string' ? d['place'] : '',
-      cap,
-      closed: d['closed'] === true,
-      yes: cap ? yesAll.slice(0, cap) : yesAll,
-      wait: cap ? yesAll.slice(cap) : [],
-      maybe: names('maybe'),
-      noCount: rsvps.filter((x) => x.st === 'no').length,
+      summary: {
+        code,
+        url: meetUrl(code),
+        title: typeof d['title'] === 'string' ? d['title'] : '',
+        at: typeof d['at'] === 'number' ? d['at'] : 0,
+        place: typeof d['place'] === 'string' ? d['place'] : '',
+        cap,
+        closed: d['closed'] === true,
+        yes: cap ? yesAll.slice(0, cap) : yesAll,
+        wait: cap ? yesAll.slice(cap) : [],
+        maybe: names('maybe'),
+        noCount: rsvps.filter((x) => x.st === 'no').length,
+      },
+      pay,
     };
   } catch (err) {
     console.error('[mafia] meet fetch failed', err);
@@ -111,7 +128,7 @@ export async function GET(req: Request) {
   const admin = isAdmin(req);
   try {
     const state = await load();
-    const meet = await fetchMeet(state.meet.code);
+    const meet = (await fetchMeet(state.meet.code))?.summary ?? null;
     return NextResponse.json({ shared: true, admin, state: publicView(state, admin), meet });
   } catch (err) {
     console.error('[mafia] db read failed', err);
@@ -193,8 +210,9 @@ export async function PUT(req: Request) {
   if (isObj(body.meet)) state.meet = { code: parseMeetCode(body.meet['code']) };
   let meet: MeetSummary | null = null;
   if (body.syncMeet === true) {
-    meet = await fetchMeet(state.meet.code);
-    if (!meet) {
+    const fetched = await fetchMeet(state.meet.code);
+    meet = fetched?.summary ?? null;
+    if (!fetched || !meet) {
       return NextResponse.json(
         {
           shared: true,
@@ -209,6 +227,8 @@ export async function PUT(req: Request) {
       );
     }
     state.players = mergePlayers(state.players, meet.yes);
+    // 모집 페이지에 적힌 정산 계좌를 송금처로 — 거기 있는 사람은 덮어쓰고, 없는 사람은 관리자가 넣은 걸 둔다
+    if (Object.keys(fetched.pay).length) state.pay = { ...(state.pay ?? {}), ...fetched.pay };
   }
   if (typeof body.started === 'boolean') {
     if (body.started && !state.started) state.startedAt = Date.now();
@@ -222,6 +242,6 @@ export async function PUT(req: Request) {
     console.error('[mafia] db write failed', err);
     return NextResponse.json({ shared: false, admin, state: null, meet: null }, { status: 503 });
   }
-  if (!meet) meet = await fetchMeet(state.meet.code);
+  if (!meet) meet = (await fetchMeet(state.meet.code))?.summary ?? null;
   return NextResponse.json({ shared: true, admin, state, meet });
 }
