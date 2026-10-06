@@ -70,6 +70,12 @@ const nextConfig: NextConfig = {
           has: [{ type: 'host' as const, value: 'jopt.gto.today' }],
           destination: '/jopt',
         },
+        {
+          // mafia.gto.today — 마피아 나이트 점수판(/mafia). 점수·상금·송금 완료, API 는 /api/mafia.
+          source: '/',
+          has: [{ type: 'host' as const, value: 'mafia.gto.today' }],
+          destination: '/mafia',
+        },
       ],
       afterFiles: [],
       fallback: [],

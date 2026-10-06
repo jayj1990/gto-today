@@ -31,7 +31,7 @@ const DISMISS_COOLDOWN_DAYS = 30;
 // Routes where the install prompt would be intrusive — onboarding,
 // signin, sensitive flows. Everywhere else is fair game after
 // onboarding completes.
-const SUPPRESSED_PATHS = ['/onboarding', '/signin'];
+const SUPPRESSED_PATHS = ['/onboarding', '/signin', '/mafia'];
 
 export function InstallPrompt() {
   const [deferredEvent, setDeferredEvent] = useState<BeforeInstallPromptEvent | null>(null);

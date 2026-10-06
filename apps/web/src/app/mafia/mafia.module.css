@@ -1,0 +1,865 @@
+/* mafia.gto.today — 마피아 나이트 점수판. 누아르 다크 + 골드. 사이트 전역 토큰과 분리해 .root 에 둔다. */
+.root {
+  --bg: #0b0b0d;
+  --bg-2: #121215;
+  --card: #17171b;
+  --card-2: #1e1e24;
+  --line: #2a2a31;
+  --line-2: #3a3a44;
+  --ink: #f4efe6;
+  --ink-2: #c9c3b8;
+  --muted: #8a8a95;
+  --gold: #d4af37;
+  --gold-soft: #e8cc72;
+  --gold-dim: rgba(212, 175, 55, 0.14);
+  --silver: #c0c4cc;
+  --bronze: #c48a5a;
+  --red: #c8102e;
+  --red-soft: rgba(200, 16, 46, 0.16);
+  --green: #3ccf7a;
+  --green-soft: rgba(60, 207, 122, 0.14);
+  --blue: #4a9eff;
+  --r-lg: 20px;
+  --r-md: 14px;
+  --r-sm: 10px;
+  --r-pill: 999px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --num: var(--font-mono, ui-monospace, monospace);
+  min-height: 100svh;
+  background:
+    radial-gradient(900px 500px at 50% -10%, rgba(200, 16, 46, 0.18), transparent 60%), var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body, 'Apple SD Gothic Neo', system-ui, sans-serif);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+.wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: calc(14px + env(safe-area-inset-top)) 16px calc(48px + env(safe-area-inset-bottom));
+}
+
+/* ---------- 상단 ---------- */
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.topBtns {
+  display: flex;
+  gap: 6px;
+}
+.topBtn {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--ink-2);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: 7px 12px;
+  min-height: 32px;
+  cursor: pointer;
+}
+.topBtnOn {
+  color: #1a1400;
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+/* ---------- 헤더 ---------- */
+.hero {
+  padding: 30px 0 8px;
+}
+.eyebrow {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ink-2);
+}
+.title {
+  margin: 4px 0 10px;
+  font-size: 40px;
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.lead {
+  margin: 0 0 6px;
+  font-size: 15px;
+  color: var(--ink-2);
+  white-space: pre-wrap;
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+.stats > div {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stats small {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+.stats b {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--gold-soft);
+  white-space: nowrap;
+}
+.status {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---------- 섹션 ---------- */
+.sec {
+  margin-top: 28px;
+}
+.secHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.secHead h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.secHead small {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+}
+.empty {
+  background: var(--card);
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-md);
+  padding: 18px 14px;
+  font-size: 14px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ---------- 순위 ---------- */
+.board {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.row {
+  display: grid;
+  grid-template-columns: 40px 1fr auto auto;
+  grid-template-areas:
+    'rank who pts prize'
+    'acts acts acts acts';
+  align-items: center;
+  column-gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 12px 12px 12px 10px;
+  transition: border-color 240ms var(--ease);
+}
+.top1 {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.22), var(--card) 60%);
+  border-color: rgba(212, 175, 55, 0.6);
+}
+.top2 {
+  background: linear-gradient(135deg, rgba(192, 196, 204, 0.16), var(--card) 60%);
+  border-color: rgba(192, 196, 204, 0.45);
+}
+.top3 {
+  background: linear-gradient(135deg, rgba(196, 138, 90, 0.18), var(--card) 60%);
+  border-color: rgba(196, 138, 90, 0.5);
+}
+.rowLast {
+  border-style: dashed;
+}
+.rowPaid {
+  opacity: 0.78;
+}
+.rank {
+  grid-area: rank;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--ink);
+  background: var(--card-2);
+  border: 1px solid var(--line-2);
+}
+.top1 .rank {
+  color: #1a1400;
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.top2 .rank {
+  color: #101216;
+  background: var(--silver);
+  border-color: var(--silver);
+}
+.top3 .rank {
+  color: #1c1008;
+  background: var(--bronze);
+  border-color: var(--bronze);
+}
+.who {
+  grid-area: who;
+  min-width: 0;
+}
+.whoName {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.whoName b {
+  font-size: 17px;
+  font-weight: 800;
+}
+.who small {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+.paidNote {
+  color: var(--green);
+}
+.tag,
+.tagSad {
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: var(--r-pill);
+  padding: 2px 7px;
+  line-height: 1.4;
+}
+.tag {
+  color: var(--gold-soft);
+  background: var(--gold-dim);
+}
+.tagSad {
+  color: var(--ink-2);
+  background: var(--card-2);
+}
+.pts {
+  grid-area: pts;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  justify-self: end;
+}
+.pts span {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.pts small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.prize {
+  grid-area: prize;
+  justify-self: end;
+  min-width: 64px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--gold-soft);
+  white-space: nowrap;
+}
+.rowActs {
+  grid-area: acts;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+/* ---------- 버튼 ---------- */
+.btn,
+.btnGhost,
+.btnDone,
+.btnDanger,
+.btnPay,
+.act,
+.mini,
+.addRound {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: var(--r-pill);
+  padding: 9px 14px;
+  min-height: 38px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition:
+    transform 180ms var(--ease),
+    background 180ms var(--ease);
+}
+.btn {
+  color: #1a1400;
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.btn:disabled,
+.addRound:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.btnGhost {
+  color: var(--ink-2);
+  background: transparent;
+  border-color: var(--line-2);
+}
+.btnDone {
+  color: var(--green);
+  background: var(--green-soft);
+  border-color: transparent;
+}
+.btnDanger {
+  color: #ff7b8a;
+  background: var(--red-soft);
+}
+.btnPay {
+  color: #fff;
+  background: var(--blue);
+  border-color: var(--blue);
+}
+.mini {
+  min-height: 32px;
+  padding: 6px 11px;
+  font-size: 12px;
+  color: var(--ink-2);
+  background: var(--card-2);
+  border-color: var(--line-2);
+}
+.btn:active,
+.btnGhost:active,
+.mini:active,
+.addRound:active {
+  transform: scale(0.97);
+}
+.acts {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+.act {
+  color: var(--ink-2);
+  background: var(--card);
+  border-color: var(--line);
+}
+
+/* ---------- 게임 ---------- */
+.games {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.game {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 14px;
+}
+.gameHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.gameNo {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: var(--red);
+}
+.gameHead h3 {
+  margin: 2px 0 0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.gameRule {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold-soft);
+  background: var(--gold-dim);
+  border-radius: var(--r-pill);
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+.gameEmpty {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.rounds {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.round {
+  font: inherit;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 9px 11px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.round:disabled {
+  cursor: default;
+  color: var(--ink);
+}
+.roundOn {
+  border-color: var(--gold);
+}
+.roundNo {
+  flex: none;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+  padding-top: 2px;
+}
+.roundBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.roundWin {
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.roundMvp {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold-soft);
+}
+.addRound {
+  margin-top: 10px;
+  width: 100%;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px dashed var(--line-2);
+}
+
+/* ---------- 라운드 편집 ---------- */
+.editor {
+  margin-top: 10px;
+  padding: 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--gold);
+  border-radius: var(--r-md);
+}
+.editorHead {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold-soft);
+  margin-bottom: 8px;
+}
+.editorSub {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  margin: 12px 0 6px;
+}
+.editorActs {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.quick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.quickNote {
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+/* ---------- 칩 ---------- */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-2);
+  background: var(--card-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-pill);
+  padding: 8px 13px;
+  min-height: 38px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition:
+    background 180ms var(--ease),
+    color 180ms var(--ease),
+    transform 180ms var(--ease);
+}
+.chip:active {
+  transform: scale(0.96);
+}
+.chipOn {
+  color: #1a1400;
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.chipMvp {
+  border-style: dashed;
+}
+.chipMvpOn {
+  color: #fff;
+  background: var(--red);
+  border-color: var(--red);
+  border-style: solid;
+}
+.chipStatic {
+  padding: 0;
+  overflow: hidden;
+  cursor: default;
+}
+.chipStatic:active {
+  transform: none;
+}
+.chipName {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  padding: 8px 12px;
+  min-height: 38px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.chipName:disabled {
+  cursor: default;
+}
+.chipX {
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--line-2);
+  padding: 0 10px;
+  align-self: stretch;
+  cursor: pointer;
+}
+.chipOn .chipX {
+  color: #1a1400;
+  border-left-color: rgba(0, 0, 0, 0.2);
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+/* ---------- 입력 ---------- */
+.input {
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--card-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  min-height: 42px;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+}
+.input:focus {
+  border-color: var(--gold);
+}
+textarea.input {
+  resize: vertical;
+  min-height: 60px;
+}
+.addRow {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.addRow .input {
+  flex: 1;
+}
+.payForm {
+  margin-top: 10px;
+  padding: 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--gold);
+  border-radius: var(--r-md);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.payFormHead {
+  font-size: 13px;
+  color: var(--muted);
+}
+.payFormHead b {
+  color: var(--gold-soft);
+}
+.payFormRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.payFormRow .field {
+  margin-top: 0;
+}
+
+/* ---------- 상금표 ---------- */
+.prizes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+.prizes li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.prizes li b {
+  font-size: 14px;
+  color: var(--ink);
+}
+.prizeTop {
+  border-color: rgba(212, 175, 55, 0.5) !important;
+}
+.prizeTop b {
+  color: var(--gold-soft) !important;
+}
+
+/* ---------- 설정 ---------- */
+.settings {
+  background: var(--card);
+  border: 1px solid var(--gold);
+  border-radius: var(--r-lg);
+  padding: 14px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+.field label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.settingsSub {
+  margin: 16px 0 8px;
+  font-size: 14px;
+  font-weight: 800;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.settingsSub small {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold-soft);
+}
+.prizeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+.prizeCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.prizeCell span {
+  flex: none;
+  width: 34px;
+}
+.gameCfg {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gameCfgRow {
+  display: grid;
+  grid-template-columns: 1fr 64px 64px;
+  gap: 6px;
+  align-items: end;
+}
+.gameCfgRow label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* ---------- 기타 ---------- */
+.foot {
+  margin-top: 36px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: var(--r-pill);
+  padding: 10px 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  max-width: calc(100% - 32px);
+  text-align: center;
+}
+
+@media (max-width: 380px) {
+  .row {
+    grid-template-columns: 36px 1fr auto;
+    grid-template-areas:
+      'rank who pts'
+      'rank who prize'
+      'acts acts acts';
+  }
+  .prize {
+    min-width: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .root * {
+    transition: none !important;
+  }
+}
+
+/* ---------- 모집 페이지 연결 ---------- */
+.meet {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 14px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.meetHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.meetInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.meetInfo b {
+  font-size: 17px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.meetInfo small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.meetCounts {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.meetNote {
+  font-size: 12px;
+  color: var(--green);
+}
+.btnWide {
+  width: 100%;
+}
+.fieldErr {
+  font-size: 12px;
+  color: #ff7b8a;
+}
