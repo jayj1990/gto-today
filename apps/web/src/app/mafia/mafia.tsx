@@ -483,7 +483,22 @@ export function Scoreboard() {
               {paidSum > 0 ? `송금 ${fmtMan(paidSum)} 완료 · ` : ''}점수 → MVP → 승수 순
             </small>
           </div>
-          {rows.length === 0 ? (
+          {rows.length > 0 && roundCount === 0 ? (
+            <div className={s.preRound}>
+              <div className={s.chips}>
+                {rows.map((r) => (
+                  <span key={r.name} className={`${s.chip} ${s.chipStatic}`}>
+                    <span className={s.chipName}>{r.name}</span>
+                  </span>
+                ))}
+              </div>
+              <div className={s.preRoundNote}>
+                {admin
+                  ? '첫 라운드를 저장하면 순위와 상금이 매겨집니다. 아래 게임 카드에서 "+ 라운드 추가"를 누르세요.'
+                  : '첫 라운드가 끝나면 순위와 상금이 여기 뜹니다.'}
+              </div>
+            </div>
+          ) : rows.length === 0 ? (
             <div className={s.empty}>
               {!state.started && meet
                 ? `게임 시작을 누르면 참석자 ${meet.yes.length}명이 여기 올라옵니다.`
@@ -564,7 +579,7 @@ export function Scoreboard() {
               })}
             </ol>
           )}
-          {rows.length > 0 && (
+          {rows.length > 0 && roundCount > 0 && (
             <div className={s.acts}>
               <button type="button" className={s.act} onClick={copyText}>
                 카톡용으로 복사
