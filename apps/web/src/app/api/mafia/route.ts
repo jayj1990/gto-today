@@ -36,9 +36,12 @@ function isObj(v: unknown): v is Record<string, unknown> {
 
 function isAdmin(req: Request): boolean {
   const want = process.env['MAFIA_ADMIN_KEY'];
-  if (!want) return false;
   const got = req.headers.get('x-mafia-key') ?? '';
-  return got.length === want.length && got === want;
+  if (want && got.length === want.length && got === want) return true;
+  // 포커투데이 모집 서버가 "게임 시작"을 대신 누를 때 — 두 서버가 공유하는 MEET_SYNC_KEY(x-meet-sync)
+  const sync = process.env['MEET_SYNC_KEY'];
+  const gotSync = req.headers.get('x-meet-sync') ?? '';
+  return !!sync && gotSync.length === sync.length && gotSync === sync;
 }
 
 async function load(): Promise<MafiaState> {
