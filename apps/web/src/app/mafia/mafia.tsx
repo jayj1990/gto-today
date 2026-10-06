@@ -975,6 +975,36 @@ function Settings({
   const setGame = (i: number, patch: Partial<GameDef>) => {
     setGames((prev) => prev.map((g, j) => (j === i ? { ...g, ...patch } : g)));
   };
+  // 게임 추가·삭제·순서 — 당일 게임이 늘거나 바뀔 수 있어서(2026-10-06 Jay). 지운 게임의 라운드는 데이터에 남지만 점수에서 빠진다.
+  const addGame = () => {
+    setGames((prev) => [...prev, { id: newId(), name: '', winPts: 2, mvpPts: 1 }]);
+  };
+  const removeGame = (i: number) => {
+    const g = games[i];
+    if (!g) return;
+    const rounds = state.rounds[g.id]?.length ?? 0;
+    if (
+      rounds > 0 &&
+      !window.confirm(
+        `${g.name || '이 게임'}에 라운드 ${rounds}개가 있습니다. 지우면 그 점수가 순위에서 빠집니다. 지울까요?`,
+      )
+    )
+      return;
+    setGames((prev) => prev.filter((_, j) => j !== i));
+  };
+  const moveGame = (i: number, dir: -1 | 1) => {
+    setGames((prev) => {
+      const j = i + dir;
+      if (j < 0 || j >= prev.length) return prev;
+      const next = [...prev];
+      const a = next[i];
+      const b = next[j];
+      if (!a || !b) return prev;
+      next[i] = b;
+      next[j] = a;
+      return next;
+    });
+  };
   return (
     <section className={`${s.sec} ${s.settings}`}>
       <div className={s.secHead}>
@@ -1080,7 +1110,9 @@ function Settings({
         </button>
       </div>
 
-      <div className={s.settingsSub}>게임 점수</div>
+      <div className={s.settingsSub}>
+        게임 <small>이름을 비우면 저장할 때 빠집니다</small>
+      </div>
       <div className={s.gameCfg}>
         {games.map((g, i) => (
           <div key={g.id} className={s.gameCfgRow}>
@@ -1089,6 +1121,7 @@ function Settings({
               value={g.name}
               onChange={(e) => setGame(i, { name: e.target.value })}
               maxLength={40}
+              placeholder={`게임 ${i + 1} 이름`}
               aria-label="게임 이름"
             />
             <label>
@@ -1109,8 +1142,42 @@ function Settings({
                 onChange={(e) => setGame(i, { mvpPts: Math.max(0, Number(e.target.value) || 0) })}
               />
             </label>
+            <div className={s.gameCfgActs}>
+              <button
+                type="button"
+                className={s.mini}
+                aria-label="위로"
+                disabled={i === 0}
+                onClick={() => moveGame(i, -1)}
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                className={s.mini}
+                aria-label="아래로"
+                disabled={i === games.length - 1}
+                onClick={() => moveGame(i, 1)}
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                className={`${s.mini} ${s.miniDanger}`}
+                aria-label="게임 지우기"
+                onClick={() => removeGame(i)}
+              >
+                ×
+              </button>
+            </div>
           </div>
         ))}
+      </div>
+      <div className={s.quick}>
+        <button type="button" className={s.mini} onClick={addGame} disabled={games.length >= 20}>
+          + 게임 추가
+        </button>
+        <span className={s.quickNote}>{games.length}개</span>
       </div>
 
       <div className={s.editorActs}>

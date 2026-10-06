@@ -761,9 +761,25 @@ textarea.input {
 }
 .gameCfgRow {
   display: grid;
-  grid-template-columns: 1fr 64px 64px;
+  grid-template-columns: 1fr 56px 56px auto;
   gap: 6px;
   align-items: end;
+}
+.gameCfgActs {
+  display: flex;
+  gap: 4px;
+  padding-bottom: 2px;
+}
+.gameCfgActs .mini {
+  min-width: 32px;
+  padding: 6px 8px;
+}
+.miniDanger {
+  color: #ff7b8a;
+}
+.mini:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 .gameCfgRow label {
   display: flex;
@@ -799,6 +815,18 @@ textarea.input {
   text-align: center;
 }
 
+/* 폰 폭에서는 게임 이름을 한 줄 통째로, 점수·버튼은 아랫줄로 — 한 줄에 넣으면 이름이 "한밤의 늑"까지만 보였다 */
+@media (max-width: 480px) {
+  .gameCfgRow {
+    grid-template-columns: 1fr 1fr auto;
+  }
+  .gameCfgRow > input:first-child {
+    grid-column: 1 / -1;
+  }
+  .gameCfg {
+    gap: 12px;
+  }
+}
 @media (max-width: 380px) {
   .row {
     grid-template-columns: 36px 1fr auto;
