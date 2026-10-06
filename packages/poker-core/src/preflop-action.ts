@@ -46,6 +46,27 @@ export interface ActionSpec {
    * 원본 범례 색을 그대로 가져오는 편이 영상과 대조하기도 쉽다.
    */
   readonly color?: string;
+  /**
+   * 이 액션이 유효한 스택 구간. 없으면 어느 스택에서나 그대로다.
+   *
+   * RYE 차트의 "call 3bet 50bb+", "4bet/jam <30bb", 리잼의 "25bb"(25bb
+   * 이하) 같은 조건을 숫자로 옮긴 것. 구간 밖 스택에서 이 핸드를 어떻게
+   * 치는지는 resolveStack 이 정한다 — 같은 칸의 다른 액션이 있으면 그쪽,
+   * 없으면 `else` 액션.
+   */
+  readonly stack?: StackRule;
+}
+
+/** 액션이 유효한 스택 구간(bb). 비워 둔 쪽은 무한. */
+export interface StackRule {
+  /** 이 스택 이상(포함)에서 유효. "50bb+" */
+  readonly gte?: number;
+  /** 이 스택 미만에서 유효. "<50bb" */
+  readonly lt?: number;
+  /** 이 스택 이하(포함)에서 유효. 리잼 차트의 "25bb" */
+  readonly lte?: number;
+  /** 구간 밖 스택에서 대신 하는 액션의 키. 같은 차트 범례에 있어야 한다. */
+  readonly else: string;
 }
 
 /** 콤보 하나의 액션별 빈도. 합이 1(또는 100)이면 된다. */

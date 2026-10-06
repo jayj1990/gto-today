@@ -13,7 +13,8 @@
     "./equity": "./src/equity.ts",
     "./evaluator": "./src/evaluator.ts",
     "./types": "./src/types.ts",
-    "./preflop-action": "./src/preflop-action.ts"
+    "./preflop-action": "./src/preflop-action.ts",
+    "./stack-resolve": "./src/stack-resolve.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

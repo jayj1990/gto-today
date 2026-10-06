@@ -2,7 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn, ComboDetailSheet, RangeGrid, RangeLegend } from '@gto/ui';
-import type { ActionSpec, ComboActions, PreflopChartData } from '@gto/poker-core';
+import {
+  bucketContains,
+  resolveStack,
+  stackBuckets,
+  type ActionSpec,
+  type ComboActions,
+  type PreflopChartData,
+  type StackBucket,
+} from '@gto/poker-core';
 import { CHART_GROUPS, chartUrl, type ChartGroupId, type LibraryChart } from '@gto/gto-data';
 import { Skeleton } from './skeleton';
 
@@ -13,6 +21,11 @@ import { Skeleton } from './skeleton';
  * 화면을 쓴다. 차트 본체는 고를 때마다 /data/rye/{id}.json 을 받아 오고
  * 한 번 받은 건 페이지가 살아 있는 동안 기억한다. 20/10bb Nash 올인 차트는
  * 옛 {raise, fold} 꼴이라 여기서 같은 모양으로 올린다.
+ *
+ * 스택 조건이 붙은 차트(RYE 오픈·3벳·리잼)는 차트 칩 아래에 스택 칩이 한 줄
+ * 더 선다. "원본"은 영상 그대로(조건은 범례에 글로), 스택을 고르면 그 스택의
+ * 계획으로 다시 칠한다. 고른 스택은 차트를 바꿔도 남는다 — 100bb 차트에서
+ * 45bb 를 보다가 리잼 차트로 가면 거기서도 45bb 구간이 켜진다.
  */
 
 export interface ChartLibraryBrowserProps {
@@ -52,6 +65,18 @@ const PILL_ON =
   'bg-[color:var(--color-accent)]/15 border-[color:var(--color-accent)] text-[color:var(--color-accent)]';
 const PILL_OFF = 'border-hair surface text-fg-muted';
 
+/**
+ * 구간 라벨. 경계가 어느 쪽에 붙는지는 차트의 조건 연산자가 정한다 —
+ * 오픈 차트("50bb+", "<30bb")는 이상/미만, 리잼 차트("25bb" = 25bb 이하)는
+ * 넘게/이하. 칩에서는 단위를 빼고(줄 머리의 "스택 bb" 가 대신한다) 본문에선
+ * 붙인다 — 칩 다섯 개가 390px 한 줄에 들어가야 해서.
+ */
+function bucketLabel(b: StackBucket, inclusive: boolean, unit = ''): string {
+  if (b.min !== undefined && b.max !== undefined) return `${b.min}-${b.max}${unit}`;
+  if (b.min !== undefined) return `${b.min}${unit} ${inclusive ? '넘게' : '이상'}`;
+  return `${b.max}${unit} ${inclusive ? '이하' : '미만'}`;
+}
+
 export function ChartLibraryBrowser({ groups, className }: ChartLibraryBrowserProps) {
   const [groupId, setGroupId] = useState<ChartGroupId>(groups[0]!);
   // 묶음마다 마지막으로 보던 차트를 기억한다 — 오픈 100bb 에서 CO 를 보다가
@@ -60,6 +85,8 @@ export function ChartLibraryBrowser({ groups, className }: ChartLibraryBrowserPr
   const [data, setData] = useState<PreflopChartData | null>(null);
   const [error, setError] = useState(false);
   const [picked, setPicked] = useState<string | null>(null);
+  // null = 원본(조건을 안 푼 차트). 숫자면 그 스택 기준으로 푼다.
+  const [stackBB, setStackBB] = useState<number | null>(null);
 
   const group = CHART_GROUPS[groupId];
   const chart = group.charts.find((c) => c.id === pickById[groupId]) ?? group.charts[0]!;
@@ -86,8 +113,20 @@ export function ChartLibraryBrowser({ groups, className }: ChartLibraryBrowserPr
     };
   }, [chart]);
 
-  const cells = useMemo(() => (data ? (data.cells as Record<string, ComboActions>) : {}), [data]);
-  const actions = data?.actions ?? [];
+  const buckets = useMemo(() => (data ? stackBuckets(data.actions) : []), [data]);
+  const inclusive = data?.actions.some((a) => a.stack?.lte !== undefined) ?? false;
+  const bucket =
+    stackBB === null ? null : (buckets.find((b) => bucketContains(b, stackBB)) ?? null);
+  const shown = useMemo(
+    () => (data && bucket ? resolveStack(data, bucket.bb) : data),
+    [data, bucket],
+  );
+
+  const cells = useMemo(
+    () => (shown ? (shown.cells as Record<string, ComboActions>) : {}),
+    [shown],
+  );
+  const actions = shown?.actions ?? [];
 
   const played = useMemo(
     () => Object.values(cells).filter((c) => (c['fold'] ?? 0) < 1).length,
@@ -144,6 +183,40 @@ export function ChartLibraryBrowser({ groups, className }: ChartLibraryBrowserPr
         </div>
       </section>
 
+      {/* 스택 — 조건이 붙은 차트에만 */}
+      {buckets.length > 0 && (
+        <section className="-mt-1.5 mb-3 overflow-x-auto">
+          <div className="flex min-w-max items-center gap-1.5">
+            <span className="text-fg-muted pr-1 font-mono text-[10px] tracking-[0.18em]">
+              스택 bb
+            </span>
+            <button
+              type="button"
+              onClick={() => setStackBB(null)}
+              aria-pressed={bucket === null}
+              className={cn(PILL, 'h-9 px-2.5', bucket === null ? PILL_ON : PILL_OFF)}
+            >
+              원본
+            </button>
+            {buckets.map((b) => {
+              const active = bucket === b;
+              return (
+                <button
+                  key={b.bb}
+                  type="button"
+                  onClick={() => setStackBB(b.bb)}
+                  aria-pressed={active}
+                  aria-label={bucketLabel(b, inclusive, 'bb')}
+                  className={cn(PILL, 'h-9 px-2.5', active ? PILL_ON : PILL_OFF)}
+                >
+                  {bucketLabel(b, inclusive)}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {error ? (
         <div className="border-[color:var(--color-raise)]/30 bg-[color:var(--color-raise)]/5 mt-4 rounded-[var(--radius-panel)] border p-5 text-center">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--color-raise)]">
@@ -187,12 +260,24 @@ export function ChartLibraryBrowser({ groups, className }: ChartLibraryBrowserPr
               읽는 법
             </p>
             <p className="mt-1">{group.desc}</p>
-            {hasSplit && (
+            {bucket ? (
               <p className="mt-1">
-                {chart.split === 'stack'
-                  ? '한 칸이 둘로 갈린 핸드는 섞어 치라는 뜻이 아니라 스택에 따라 계획이 갈리는 핸드예요. 칸을 누르면 조건이 보여요.'
-                  : '한 칸이 둘로 갈린 핸드는 그 비율로 섞어 쳐요. 칸을 누르면 빈도가 보여요.'}
+                지금은 {bucketLabel(bucket, inclusive, 'bb')} 기준이에요. 조건이 붙은 핸드를 이
+                스택의 계획으로 바꿔 칠했는데, 조건이 빗나갈 때 뭘 하는지는 원본에 글로 없어서 차트
+                구조에서 읽어 넣었어요(50bb 미만 4벳 밸류는 깊으면 3벳에 콜, 25bb 이하 리잼은 깊으면
+                폴드). 영상 설명과 다를 수 있어요.
               </p>
+            ) : (
+              hasSplit && (
+                <p className="mt-1">
+                  {chart.split === 'stack'
+                    ? '한 칸이 둘로 갈린 핸드는 섞어 치라는 뜻이 아니라 스택에 따라 계획이 갈리는 핸드예요. 칸을 누르면 조건이 보여요.'
+                    : '한 칸이 둘로 갈린 핸드는 그 비율로 섞어 쳐요. 칸을 누르면 빈도가 보여요.'}
+                </p>
+              )
+            )}
+            {buckets.length > 0 && !bucket && (
+              <p className="mt-1">위 스택 칩을 고르면 조건을 풀어 그 스택의 계획만 보여요.</p>
             )}
             <p className="mt-1 text-[11px]">
               {chart.source.kind === 'rye'
