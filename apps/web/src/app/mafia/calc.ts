@@ -12,6 +12,8 @@ export interface Round {
   id: string;
   winners: string[];
   mvp?: string;
+  /** 이름 → 추가 점수(음수 가능). 감점 게임·보너스용(2026-10-06 Jay) */
+  adj?: Record<string, number>;
   at: number;
 }
 export interface GameDef {
@@ -149,8 +151,9 @@ export function cleanGames(v: unknown): GameDef[] {
     out.push({
       id,
       name,
-      winPts: cleanInt(raw['winPts'], 1, 0, 100),
-      mvpPts: cleanInt(raw['mvpPts'], 0, 0, 100),
+      // 음수도 받는다 — "진 사람이 깎이는" 게임(2026-10-06 Jay)
+      winPts: cleanInt(raw['winPts'], 1, -100, 100),
+      mvpPts: cleanInt(raw['mvpPts'], 0, -100, 100),
     });
     if (out.length >= 20) break;
   }
@@ -164,6 +167,15 @@ export function cleanRound(v: unknown): Round | null {
   const mvp = cleanName(v['mvp']);
   const r: Round = { id, winners, at: cleanInt(v['at'], Date.now(), 0, 4_102_444_800_000) };
   if (mvp) r.mvp = mvp;
+  if (isObj(v['adj'])) {
+    const adj: Record<string, number> = {};
+    for (const [name, n] of Object.entries(v['adj'])) {
+      const nm = cleanName(name);
+      const num = cleanInt(n, 0, -100, 100);
+      if (nm && num !== 0) adj[nm] = num;
+    }
+    if (Object.keys(adj).length) r.adj = adj;
+  }
   return r;
 }
 export function cleanRounds(v: unknown): Record<string, Round[]> {
@@ -320,6 +332,10 @@ export function tallies(st: MafiaState): Record<string, Tally> {
           t.pts += g.mvpPts;
           t.mvps += 1;
         }
+      }
+      for (const [name, n] of Object.entries(r.adj ?? {})) {
+        const t = out[name];
+        if (t) t.pts += n;
       }
     }
   }

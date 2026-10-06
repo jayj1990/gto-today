@@ -143,3 +143,25 @@ describe('모집 페이지 연결', () => {
     expect(missingPlayers(['Jay', '민수'], ['jay', '혜지'])).toEqual(['혜지']);
   });
 });
+
+describe('점수 조정(adj)·음수 점수', () => {
+  it('라운드의 adj 가 합산되고 0 은 버린다', () => {
+    const st = base();
+    st.games = [{ id: 'g1', name: 'G1', winPts: -2, mvpPts: 0 }];
+    st.rounds = { g1: [{ id: 'a', winners: ['가'], adj: { 나: -3, 다: 2 }, at: 1 }] };
+    const rows = standings(st);
+    expect(rows.map((r) => [r.name, r.pts])).toEqual([
+      ['다', 2],
+      ['라', 0],
+      ['가', -2],
+      ['나', -3],
+    ]);
+    expect(
+      normalize({ rounds: { g1: [{ id: 'a', winners: [], adj: { 가: 0, 나: '5', 다: -200 } }] } })
+        .rounds['g1']?.[0]?.adj,
+    ).toEqual({ 다: -100 });
+    expect(
+      normalize({ games: [{ id: 'x', name: 'X', winPts: -5, mvpPts: 1 }] }).games[0]?.winPts,
+    ).toBe(-5);
+  });
+});

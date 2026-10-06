@@ -62,6 +62,12 @@ interface RoundDraft {
   roundId: string | null;
   winners: string[];
   mvp: string;
+  /** 이름 → 가점·감점 */
+  adj: Record<string, number>;
+}
+
+function fmtSigned(n: number): string {
+  return n > 0 ? `+${n}` : String(n);
 }
 
 function applyPatch(prev: MafiaState, p: Patch): MafiaState {
@@ -265,10 +271,27 @@ export function Scoreboard() {
 
   // ---- 라운드 편집
   const openNew = (g: GameDef) => {
-    setDraft({ gameId: g.id, roundId: null, winners: [], mvp: '' });
+    setDraft({ gameId: g.id, roundId: null, winners: [], mvp: '', adj: {} });
   };
   const openRound = (g: GameDef, r: Round) => {
-    setDraft({ gameId: g.id, roundId: r.id, winners: [...r.winners], mvp: r.mvp ?? '' });
+    setDraft({
+      gameId: g.id,
+      roundId: r.id,
+      winners: [...r.winners],
+      mvp: r.mvp ?? '',
+      adj: { ...(r.adj ?? {}) },
+    });
+  };
+  /** 사람별 가점·감점 한 칸 올리거나 내리기. 0 이 되면 지운다 */
+  const bump = (name: string, d: number) => {
+    setDraft((prev) => {
+      if (!prev) return prev;
+      const adj = { ...prev.adj };
+      const v = Math.max(-100, Math.min(100, (adj[name] ?? 0) + d));
+      if (v === 0) delete adj[name];
+      else adj[name] = v;
+      return { ...prev, adj };
+    });
   };
   const toggleWinner = (name: string) => {
     setDraft((d) =>
@@ -287,8 +310,13 @@ export function Scoreboard() {
   };
   const saveRound = () => {
     if (!draft) return;
-    if (draft.winners.length === 0 && !draft.mvp) {
-      setToast('이긴 사람을 한 명 이상 골라 주세요.');
+    const adj: Record<string, number> = {};
+    for (const p of state.players) {
+      const v = draft.adj[p];
+      if (v) adj[p] = v;
+    }
+    if (draft.winners.length === 0 && !draft.mvp && Object.keys(adj).length === 0) {
+      setToast('이긴 사람을 고르거나 점수를 조정해 주세요.');
       return;
     }
     const list = [...(state.rounds[draft.gameId] ?? [])];
@@ -296,6 +324,7 @@ export function Scoreboard() {
     const winners = state.players.filter((p) => draft.winners.includes(p));
     const r: Round = { id: prev?.id ?? newId(), winners, at: prev?.at ?? Date.now() };
     if (draft.mvp) r.mvp = draft.mvp;
+    if (Object.keys(adj).length) r.adj = adj;
     const idx = prev ? list.findIndex((x) => x.id === prev.id) : -1;
     if (idx >= 0) list[idx] = r;
     else list.push(r);
@@ -564,8 +593,8 @@ export function Scoreboard() {
                       <h3>{g.name}</h3>
                     </div>
                     <div className={s.gameRule}>
-                      승 +{g.winPts}
-                      {g.mvpPts > 0 && <> · MVP +{g.mvpPts}</>}
+                      승 {fmtSigned(g.winPts)}
+                      {g.mvpPts !== 0 && <> · MVP {fmtSigned(g.mvpPts)}</>}
                     </div>
                   </div>
                   {list.length === 0 && !editingHere && (
@@ -587,6 +616,13 @@ export function Scoreboard() {
                                 {r.winners.length ? r.winners.join(', ') : '이긴 사람 없음'}
                               </span>
                               {r.mvp && <span className={s.roundMvp}>MVP {r.mvp}</span>}
+                              {r.adj && (
+                                <span className={s.roundAdj}>
+                                  {Object.entries(r.adj)
+                                    .map(([n, v]) => `${n} ${fmtSigned(v)}`)
+                                    .join(' · ')}
+                                </span>
+                              )}
                             </span>
                           </button>
                         </li>
@@ -637,12 +673,12 @@ export function Scoreboard() {
                           비우기
                         </button>
                         <span className={s.quickNote}>
-                          {draft.winners.length}명 · {g.winPts}점씩
+                          {draft.winners.length}명 · {fmtSigned(g.winPts)}점씩
                         </span>
                       </div>
-                      {g.mvpPts > 0 && (
+                      {g.mvpPts !== 0 && (
                         <>
-                          <div className={s.editorSub}>MVP (한 명, +{g.mvpPts})</div>
+                          <div className={s.editorSub}>MVP (한 명, {fmtSigned(g.mvpPts)})</div>
                           <div className={s.chips}>
                             {state.players.map((p) => (
                               <button
@@ -658,6 +694,38 @@ export function Scoreboard() {
                           </div>
                         </>
                       )}
+                      <div className={s.editorSub}>점수 조정 · 감점은 −, 보너스는 +</div>
+                      <div className={s.adjList}>
+                        {state.players.map((p) => {
+                          const v = draft.adj[p] ?? 0;
+                          return (
+                            <div key={p} className={`${s.adjRow} ${v !== 0 ? s.adjRowOn : ''}`}>
+                              <span className={s.adjName}>{p}</span>
+                              <button
+                                type="button"
+                                className={s.mini}
+                                aria-label={`${p} 1점 빼기`}
+                                onClick={() => bump(p, -1)}
+                              >
+                                −
+                              </button>
+                              <span
+                                className={`${s.adjVal} ${s.num} ${v < 0 ? s.neg : v > 0 ? s.pos : ''}`}
+                              >
+                                {v === 0 ? '0' : fmtSigned(v)}
+                              </span>
+                              <button
+                                type="button"
+                                className={s.mini}
+                                aria-label={`${p} 1점 더하기`}
+                                onClick={() => bump(p, 1)}
+                              >
+                                +
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
                       <div className={s.editorActs}>
                         <button type="button" className={s.btn} onClick={saveRound}>
                           저장
@@ -952,6 +1020,46 @@ function PayForm({
   );
 }
 
+// ---------- 점수 스테퍼: −/+ 로 음수까지 (폰 숫자 키패드엔 − 가 없다) ----------
+
+function Stepper({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  const set = (v: number) => onChange(Math.max(-100, Math.min(100, v)));
+  return (
+    <div className={s.stepper}>
+      <span className={s.stepLabel}>{label}</span>
+      <div className={s.stepCtl}>
+        <button
+          type="button"
+          className={s.mini}
+          aria-label={`${label} 1 빼기`}
+          onClick={() => set(value - 1)}
+        >
+          −
+        </button>
+        <span className={`${s.stepVal} ${s.num} ${value < 0 ? s.neg : ''}`}>
+          {fmtSigned(value)}
+        </span>
+        <button
+          type="button"
+          className={s.mini}
+          aria-label={`${label} 1 더하기`}
+          onClick={() => set(value + 1)}
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ---------- 설정(관리자): 행사 정보 · 상금표 · 게임 점수 ----------
 
 function Settings({
@@ -1124,24 +1232,8 @@ function Settings({
               placeholder={`게임 ${i + 1} 이름`}
               aria-label="게임 이름"
             />
-            <label>
-              승
-              <input
-                className={`${s.input} ${s.num}`}
-                inputMode="numeric"
-                value={g.winPts}
-                onChange={(e) => setGame(i, { winPts: Math.max(0, Number(e.target.value) || 0) })}
-              />
-            </label>
-            <label>
-              MVP
-              <input
-                className={`${s.input} ${s.num}`}
-                inputMode="numeric"
-                value={g.mvpPts}
-                onChange={(e) => setGame(i, { mvpPts: Math.max(0, Number(e.target.value) || 0) })}
-              />
-            </label>
+            <Stepper label="승" value={g.winPts} onChange={(v) => setGame(i, { winPts: v })} />
+            <Stepper label="MVP" value={g.mvpPts} onChange={(v) => setGame(i, { mvpPts: v })} />
             <div className={s.gameCfgActs}>
               <button
                 type="button"
